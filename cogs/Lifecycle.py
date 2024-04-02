@@ -77,7 +77,7 @@ class LifecycleCog(commands.Cog):
             print("Can't join that thread.")
 
     @commands.Cog.listener()
-    async def on_message(self,message:Message):
+    async def on_message(self, message:Message):
         if (message.author == client.user
             or message.author.bot
             or message.author.id in bannedUserIds):
@@ -135,7 +135,10 @@ class LifecycleCog(commands.Cog):
                 await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                 await sentMessage.add_reaction(hc_constants.DELETE)
             await message.delete()
-
+        # if message.channel.id == 132:
+        #     if message.content:
+        #         ...
+                # ctx.author.roles
 
 
     @commands.command()
