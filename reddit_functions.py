@@ -12,7 +12,8 @@ async def postToReddit(image_path:str, title:str, flair:str=""):
         username = NAME
     )
     # print(await reddit.user.me())
-    hellscubeSubreddit:asyncpraw.reddit.Subreddit = await reddit.subreddit('HellsCube')
+    hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit('HellsCube')
+    
     return await hellscubeSubreddit.submit_image(title = title, image_path = image_path, flair_id = flair)
 
     

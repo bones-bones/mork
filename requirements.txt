@@ -11,3 +11,4 @@ pydrive2
 dpymenus
 google-api-python-client
 asyncpraw
+thefuzz

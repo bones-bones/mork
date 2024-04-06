@@ -49,7 +49,7 @@ class LifecycleCog(commands.Cog):
             #     log = ""
 
     @commands.Cog.listener()
-    async def on_member_join(self,member:Member):
+    async def on_member_join(self, member:Member):
         await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.FAQ_CHANNEL}> and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay!")
 
     @commands.Cog.listener()
@@ -87,6 +87,9 @@ class LifecycleCog(commands.Cog):
         if message.channel.id == hc_constants.HELLS_UNO_CHANNEL:
             await message.add_reaction(hc_constants.VOTE_UP)
             await message.add_reaction(hc_constants.VOTE_DOWN)
+        # if message.channel.id == hc_constants.REDDIT_CHANNEL:
+        #         lastTwo = [mess async for mess in message.channel.history(limit = 2)] 
+        #         print(lastTwo[0])
         if message.channel.id == hc_constants.VETO_CHANNEL:
             await message.add_reaction(hc_constants.VOTE_UP)
             await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.CIRION_SPELLING))) # Eratta
@@ -256,7 +259,7 @@ class LifecycleCog(commands.Cog):
                 await messageEntry.add_reaction(hc_constants.ACCEPT) # see ./README.md 
 
             # Veto Hell
-            elif (messageAge > timedelta(days = 7)):
+            elif (messageAge > timedelta(days = 4)):
 
                 thread = cast(Thread, guild.get_channel_or_thread(messageEntry.id))
                 recentlyNotified = False
@@ -268,17 +271,16 @@ class LifecycleCog(commands.Cog):
                     for threadMessage in threadMessages:
                         if threadMessage.content == f"<@&{798689768379908106}>":
                             threadMessageAge = timeNow - threadMessage.created_at
-                            if threadMessageAge < timedelta(days = 7):
+                            if threadMessageAge < timedelta(days = 3):
                                 # then it was recently acted upon
                                 recentlyNotified = True
                                 break
 
                     if not recentlyNotified:
                         role = cast(Role, get(guild.roles, id = hc_constants.VETO_COUNCIL))
-
-                        vetoHellCards.append(getCardMessage(messageEntry.content))
-
                         await thread.send(role.mention)
+
+                    vetoHellCards.append(getCardMessage(messageEntry.content))
                 else:
                     mysteryVetoHellCards.append(getCardMessage(messageEntry.content))
 

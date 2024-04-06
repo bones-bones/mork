@@ -1,3 +1,4 @@
+import io
 import os
 import re
 from typing import cast
@@ -14,21 +15,21 @@ cardSheetUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).
 
 
 async def acceptCard(bot:commands.Bot, cardMessage:str, file:discord.File, cardName:str, authorName:str):
-    cardListChannel = cast(discord.TextChannel, bot.get_channel(hc_constants.FOUR_ONE_CARD_LIST_CHANNEL))
-    await cardListChannel.send( file = file, content = cardMessage)
-
-    extension = re.search("\.([^.]*)$", file.filename)  # this code sucks but i don't remember what the discord file object looks like
-
+    extension = re.search("\.([^.]*)$", file.filename)
     fileType = extension.group() if extension else ".png" # just guess that the file is a png
+    new_file_name = f'{cardName.replace("/", "|")}{fileType}'
+    image_path = f'tempImages/{new_file_name}'
 
-    image_path = f'tempImages/{cardName.replace("/", "|")}{fileType}'
+    file_data = file.fp.read()
+    file_copy_for_reddit = discord.File(fp = io.BytesIO(file_data), filename = new_file_name)
+
+    cardListChannel = cast(discord.TextChannel, bot.get_channel(hc_constants.FOUR_ONE_CARD_LIST_CHANNEL))
+    await cardListChannel.send( file = file_copy_for_reddit, content = cardMessage)
 
     with open(image_path, 'wb') as out:
-        out.write(file.fp.read())
-        out.close()
+        out.write(file_data)
 
     try:
-        # There used to be a try/catch here, but it turned out that reddit was not the flakiest part here. it was llllll
         await postToReddit(
             image_path = image_path,
             title = f"{cardMessage} was accepted!",

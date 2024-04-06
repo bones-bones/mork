@@ -1,17 +1,18 @@
 from shared_vars import allCards
+from thefuzz import fuzz
+
 
 def cardNameRequest(requestName):
   maxWeight = 1
   maxWeightName = ""
   for cardName in allCards.keys():
-    currentWeight = similarity(cardName, requestName)
+    currentWeight = fuzz.partial_ratio(cardName, requestName)
     if currentWeight > maxWeight:
       maxWeight = currentWeight
       maxWeightName = cardName
     elif currentWeight == maxWeight and len(cardName) < len(maxWeightName): # if the similarity is a tie, use the shorter name. seems okay?
         maxWeightName = cardName
   return maxWeightName
-
 
 def similarity(name:str, requestName:str):
     if name == requestName or name + " " == requestName:
@@ -25,7 +26,3 @@ def similarity(name:str, requestName:str):
                     weight += max((x-1) * (x-1) -1, 0) # the further along in the matching we are, the better
                     break
     return weight
-
-
-
-# stuff
