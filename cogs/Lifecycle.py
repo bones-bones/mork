@@ -13,6 +13,7 @@ import random
 from acceptCard import acceptCard
 from typing import cast
 from discord.utils import get
+import asyncpraw
 
 from datetime import datetime, timezone, timedelta
 
@@ -25,6 +26,7 @@ import hc_constants
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
 from reddit_functions import postToReddit
+from secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents
 
 ONE_HOUR = 3600
@@ -39,18 +41,12 @@ class LifecycleCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        # global log
         print(f'{cast(ClientUser,self.bot.user).name} has connected to Discord!')
         self.bot.loop.create_task(status_task(self.bot))
-        while True:
-            await asyncio.sleep(ONE_HOUR)
-            # with open("log.txt", 'a', encoding='utf8') as file:
-            #     file.write(log)
-            #     log = ""
 
     @commands.Cog.listener()
     async def on_member_join(self, member:Member):
-        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.FAQ_CHANNEL}> and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay!")
+        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.FAQ_CHANNEL}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n Right now we're at the tail end of HC4, a vintage powered cube. Head on over to either of the 'brainstorming' channels to get feedback, then post it in <#{hc_constants.SUBMISSIONS_CHANNEL} when you're ready for it to be voted on.")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction:RawReactionActionEvent):
@@ -320,6 +316,10 @@ async def status_task(bot: commands.Bot):
         # print(status)
         await checkSubmissions(bot)
         await checkErrataSubmissions(bot)
+        try:
+            await checkReddit(bot)
+        except:
+            ...
         await bot.change_presence(status = discord.Status.online, activity = discord.Game(status))
         now = datetime.now()
         print(f"time is {now}")
@@ -350,3 +350,35 @@ async def status_task(bot: commands.Bot):
                                 ...
                             os.remove(image_path)
         await asyncio.sleep(FIVE_MINUTES)
+
+
+
+
+
+async def checkReddit(bot:commands.Bot):
+    timeNow = datetime.now(timezone.utc)
+    oneDay = timeNow + timedelta(days=-2)
+    reddit = asyncpraw.Reddit(
+            client_id = ID,
+            client_secret = SECRET,
+            password = PASSWORD,
+            user_agent = USER_AGENT,
+            username = NAME
+    )
+    hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit('HellsCube')
+
+    redditChannel= bot.get_channel(hc_constants.REDDIT_CHANNEL)
+    messagesInLastDay = [mess async for mess in redditChannel.history(after=oneDay)] 
+
+    async for submission in hellscubeSubreddit.search('flair:"Card Idea"', time_filter='day'):
+        print(submission.title,submission.permalink)
+        alreadyPosted = False
+        for discordMessage in messagesInLastDay:
+            if submission.permalink in discordMessage.content:
+                alreadyPosted = True
+                break
+        
+        if not alreadyPosted:
+            await redditChannel.send(content= f"reddit says: https://reddit.com{submission.permalink}")
+            
+

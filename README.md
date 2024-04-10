@@ -60,7 +60,7 @@ Uh just do it
 Don't ask me, seriously.
 
 ## 2. Brainstorming
-Once you have your concept, you'll want to head over to the two brainstorming channels: draw-three and put-two-back. Here you can collect feedback and/or inspire others.
+Once you have your concept, you'll want to head over to the two brainstorming channels: draw-three and put-two-back. Here you can collect feedback and/or inspire others. (if you have a dogshit idea that you just need to get out of your head, go to the brazil channel)
 
 ## 2.a Art
 While the definition of what art is is fraught at best, try to avoid AI art. If you have the concept, but don't have the skills yet, try the #art-request channel

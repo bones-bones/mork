@@ -32,7 +32,7 @@ async def acceptCard(bot:commands.Bot, cardMessage:str, file:discord.File, cardN
     try:
         await postToReddit(
             image_path = image_path,
-            title = f"{cardMessage} was accepted!",
+            title = f"{cardMessage.replace('**', '')} was accepted!",
             flair = hc_constants.ACCEPTED_FLAIR
         )
     except Exception as e:
