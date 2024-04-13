@@ -352,9 +352,6 @@ async def status_task(bot: commands.Bot):
         await asyncio.sleep(FIVE_MINUTES)
 
 
-
-
-
 async def checkReddit(bot:commands.Bot):
     timeNow = datetime.now(timezone.utc)
     oneDay = timeNow + timedelta(days=-2)
@@ -370,8 +367,7 @@ async def checkReddit(bot:commands.Bot):
     redditChannel= bot.get_channel(hc_constants.REDDIT_CHANNEL)
     messagesInLastDay = [mess async for mess in redditChannel.history(after=oneDay)] 
 
-    async for submission in hellscubeSubreddit.search('flair:"Card Idea"', time_filter='day'):
-        print(submission.title,submission.permalink)
+    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter='day'):
         alreadyPosted = False
         for discordMessage in messagesInLastDay:
             if submission.permalink in discordMessage.content:

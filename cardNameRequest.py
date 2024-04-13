@@ -10,7 +10,9 @@ def cardNameRequest(requestName):
     if currentWeight > maxWeight:
       maxWeight = currentWeight
       maxWeightName = cardName
-    elif currentWeight == maxWeight and len(cardName) < len(maxWeightName): # if the similarity is a tie, use the shorter name. seems okay?
+    elif cardName.lower() == requestName.lower():
+        maxWeightName = cardName
+    elif currentWeight == maxWeight and (len(cardName) < len(maxWeightName)): # if the similarity is a tie, use the shorter name. seems okay?
         maxWeightName = cardName
   return maxWeightName
 
