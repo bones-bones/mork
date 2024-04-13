@@ -2,6 +2,7 @@ import asyncio
 from datetime import date, datetime
 import os
 import random
+import re
 from typing import cast
 import aiohttp
 from discord import  ClientUser, Emoji, Guild, Member, RawReactionActionEvent, Role, TextChannel, Thread
@@ -83,12 +84,26 @@ class LifecycleCog(commands.Cog):
         if message.channel.id == hc_constants.HELLS_UNO_CHANNEL:
             await message.add_reaction(hc_constants.VOTE_UP)
             await message.add_reaction(hc_constants.VOTE_DOWN)
-        # if message.channel.id == hc_constants.REDDIT_CHANNEL:
-        #         lastTwo = [mess async for mess in message.channel.history(limit = 2)] 
-        #         print(lastTwo[0])
+        if message.channel.id == hc_constants.REDDIT_CHANNEL:
+            lastTwo = [mess async for mess in message.channel.history(limit = 2)]
+            if not is_mork(lastTwo[0].author.id) and is_mork(lastTwo[1].author.id) and "reddit says: " in lastTwo[1].content:
+                reddit = asyncpraw.Reddit(
+                    client_id = ID,
+                    client_secret = SECRET,
+                    password = PASSWORD,
+                    user_agent = USER_AGENT,
+                    username = NAME
+                )
+                reddit_url = lastTwo[1].content.replace("reddit says: ",'')
+
+                #https://www.reddit.com/r/HellsCube/comments/1c2ii4s/sometitle/
+                post_id =  re.search("comments/([^/]*)", reddit_url).group(1)
+                post = await reddit.submission(post_id)
+                await post.reply(f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}")
+                    
         if message.channel.id == hc_constants.VETO_CHANNEL:
             await message.add_reaction(hc_constants.VOTE_UP)
-            await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.CIRION_SPELLING))) # Eratta
+            await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.CIRION_SPELLING))) # Errata
             await message.add_reaction(hc_constants.VOTE_DOWN)
             await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.MANA_GREEN))) # too strong
             await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.MANA_WHITE))) # too weak
