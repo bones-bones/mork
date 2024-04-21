@@ -7,6 +7,7 @@ from discord import Role
 
 from discord.utils import get
 
+from is_admin import is_admin
 from is_mork import is_mork
 
 
@@ -40,7 +41,8 @@ async def checkSubmissions(bot:commands.Bot):
                 and is_mork(messageEntry.author.id)):
                 prettyValid = False
                 async for user in upvote.users():
-                   if user.id == hc_constants.LLLLLL:
+                   
+                   if is_admin(user):
                        prettyValid = True
                 
                 if downCount == 1 and not prettyValid:

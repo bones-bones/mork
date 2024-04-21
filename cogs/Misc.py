@@ -28,49 +28,28 @@ class MiscCog(commands.Cog):
 
 
 
-    @commands.command()
-    async def personalhell(self, ctx: commands.Context):
-        if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
-            await ctx.send("Veto Council Only")
-            return
-        responseObject = cast(VetoPollResults, await getVetoPollsResults(
-            bot=self.bot,
-            ctx=ctx))
-
-        purgatoryCardMessages = responseObject.purgatoryCardMessages
-
-        links:list[str]=[]
+    # @commands.command()
+    # async def sss(self,ctx:commands.Context):
         
-        for messageEntry in purgatoryCardMessages:
-            hasReacted = False
-            # messageEntry.reactions[0].users
-            up = get(messageEntry.reactions, emoji = hc_constants.VOTE_UP)
-            errata = get(messageEntry.reactions, emoji = hc_constants.CIRION_SPELLING)
-            down = get(messageEntry.reactions, emoji = hc_constants.VOTE_DOWN)
+    #     print(member.get_role(631288945044357141) != None)
+    #     guild = client.get_guild()
+    #     member = await guild.fetch_member(hc_constants.LLLLLL)
+    #     print(member)
 
-            if up:
-                async for user in up.users():
-                    if user.id == ctx.author.id:
-                        hasReacted = True
-            if errata and not hasReacted:
-                async for user in errata.users():
-                    if user.id == ctx.author.id:
-                        hasReacted = True
-            if down and not hasReacted:
-                async for user in down.users():
-                    if user.id == ctx.author.id:
-                        hasReacted = True
+    @commands.Cog.listener()
+    async def on_message(self, message:discord.Message):
+        if message.channel.id == hc_constants.BOT_TEST_CHANNEL:
+            splitString = message.content.split("\n")
+            title = splitString[0]
+            update = splitString[1]
+            reason = splitString[2]
+            if not reason or not update or not title:
+                await message.channel.send(f"<@{message.author.id}>, Make sure your post is formatted like this:\nClockwolf (name of card)\nMake it cost 5 mana (Suggested change. Write Cut if you want the whole card gone)\nToo strong (Reasoning, as brief or detailed as you want, but remember you need to convince others this change is a good idea)")
+                await message.delete()
 
-            if not hasReacted:
-                links.append(f'{messageEntry.content}: {messageEntry.jump_url}')
-        
-        if len(links)>0:
-            await ctx.send(content = "got some work to do: \n{0}".format("\n".join(links)))
-        else:
-            await ctx.send(content = 'all caught up')
 
-    # @commands.Cog.listener()
-    # async def on_message(self, message):
+
+
     #     if message.channel.id == hc_constants.REDDIT_CHANNEL:
     #             lastTwo = [mess async for mess in message.channel.history(limit = 2)]
     #             if not is_mork(lastTwo[0].author.id) and is_mork(lastTwo[1].author.id) and "reddit says: " in lastTwo[1].content:

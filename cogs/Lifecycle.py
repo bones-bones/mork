@@ -123,8 +123,30 @@ class LifecycleCog(commands.Cog):
             await sentMessage.add_reaction(hc_constants.VOTE_UP)
             await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
             await message.delete()
+        if message.channel.id == hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS:
+            if "@" in message.content:
+                # No ping case
+                user = await self.bot.fetch_user(message.author.id)
+                await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
+                await message.delete()
+                return # no pings allowed
+            splitString = message.content.split("\n")
+            if splitString.__len__() != 3:
+                discussionChannel = self.bot.get_channel(hc_constants.FOUR_ONE_ERRATA_DISCUSSION)
+                await discussionChannel.send(f"<@{message.author.id}>, Make sure your post is formatted like this:\nClockwolf (name of card)\nMake it cost 5 mana (Suggested change. Write Cut if you want the whole card gone)\nToo strong (Reasoning, as brief or detailed as you want, but remember you need to convince others this change is a good idea)")
+            else:
+                sentMessage = await message.channel.send(content = message.content)
+                await sentMessage.create_thread(name = sentMessage.content[0:99])
+                await sentMessage.add_reaction(hc_constants.VOTE_UP)
+                await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
+            await message.delete()
         if message.channel.id == hc_constants.SUBMISSIONS_CHANNEL:
-            if(len(message.attachments) > 0) or "https://media.discord" in message.content:
+            if(len(message.attachments) > 0):
+                if message.content == "":
+                    discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
+                    await discussionChannel.send(f"<@{message.author.id}>, make sure to include the name of your card")
+                    await message.delete()
+                    return
                 if "@" in message.content:
                     # No ping case
                     user = await self.bot.fetch_user(message.author.id)
@@ -151,6 +173,8 @@ class LifecycleCog(commands.Cog):
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
                 await message.delete()
+            
+                
         # if message.channel.id == 132:
         #     if message.content:
         #         ...
@@ -505,3 +529,5 @@ class VetoPollResults:
     acceptedCardMessages:list[Message]
     vetoCardMessages:list[Message]
     purgatoryCardMessages:list[Message]
+
+
