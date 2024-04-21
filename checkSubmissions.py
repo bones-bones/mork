@@ -38,7 +38,12 @@ async def checkSubmissions(bot:commands.Bot):
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days = 1)
                 and is_mork(messageEntry.author.id)):
-                if downCount == 1:
+                prettyValid = False
+                async for user in upvote.users():
+                   if user.id == hc_constants.LLLLLL:
+                       prettyValid = True
+                
+                if downCount == 1 and not prettyValid:
                     user = await bot.fetch_user(hc_constants.LLLLLL) # If a message would be accepted, but there's only a single downvote, need llllll to add another downvote
                     await user.send("Verify " + messageEntry.jump_url)
                     continue
@@ -47,7 +52,7 @@ async def checkSubmissions(bot:commands.Bot):
                 mention = f'<@{str(messageEntry.raw_mentions[0])}>'
                 accepted_message_no_mentions = messageEntry.content.replace(mention, messageEntry.mentions[0].name)
                 copy = await messageEntry.attachments[0].to_file()
-                vetoEntry =  await vetoChannel.send(content=accepted_message_no_mentions, file=copy)
+                vetoEntry = await vetoChannel.send(content=accepted_message_no_mentions, file=copy)
 
 
                 await vetoEntry.add_reaction(hc_constants.VOTE_UP)

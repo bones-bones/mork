@@ -1,12 +1,12 @@
 from shared_vars import allCards
-from thefuzz import fuzz
+# from thefuzz import fuzz
 
 
 def cardNameRequest(requestName):
   maxWeight = 1
   maxWeightName = ""
   for cardName in allCards.keys():
-    currentWeight = fuzz.partial_ratio(cardName, requestName)
+    currentWeight = similarity(cardName, requestName)
     if currentWeight > maxWeight:
       maxWeight = currentWeight
       maxWeightName = cardName

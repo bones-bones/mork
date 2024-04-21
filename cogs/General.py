@@ -77,7 +77,7 @@ class GeneralCog(commands.Cog):
 
 
 
-        #for card-brazil and card-netherlands
+    #for card-brazil and card-netherlands
     @commands.command()
     async def goodbye(self,ctx:commands.Context):
         if ctx.channel.id == hc_constants.MAYBE_BRAZIL_CHANNEL or ctx.channel.id == hc_constants.MAYBE_ONE_WORD_CHANNEL:
