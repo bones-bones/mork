@@ -48,7 +48,7 @@ class LifecycleCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member:Member):
-        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.FAQ_CHANNEL}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n Right now we're at the tail end of HC4, a vintage powered cube. Head on over to either of the 'brainstorming' channels to get feedback, then post it in <#{hc_constants.SUBMISSIONS_CHANNEL} when you're ready for it to be voted on.")
+        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.FAQ_CHANNEL}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n Right now we're at the tail end of HC4, a vintage powered cube. Head on over to either of the 'brainstorming' channels to get feedback, then post it in <#{hc_constants.SUBMISSIONS_CHANNEL}> when you're ready for it to be voted on.")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction:RawReactionActionEvent):
@@ -82,7 +82,7 @@ class LifecycleCog(commands.Cog):
             return
         if "{{" in message.content:
             await print_card_images(message)
-        if message.channel.id == hc_constants.HELLS_UNO_CHANNEL:
+        if message.channel.id == hc_constants.HELLS_UNO_CHANNEL or message.channel.id == hc_constants.HELLS_BASICS_SUBMISSIONS:
             await message.add_reaction(hc_constants.VOTE_UP)
             await message.add_reaction(hc_constants.VOTE_DOWN)
         if message.channel.id == hc_constants.REDDIT_CHANNEL:
@@ -131,7 +131,7 @@ class LifecycleCog(commands.Cog):
                 await message.delete()
                 return # no pings allowed
             splitString = message.content.split("\n")
-            if splitString.__len__() != 3:
+            if splitString.__len__() < 2:
                 discussionChannel = self.bot.get_channel(hc_constants.FOUR_ONE_ERRATA_DISCUSSION)
                 await discussionChannel.send(f"<@{message.author.id}>, Make sure your post is formatted like this:\nClockwolf (name of card)\nMake it cost 5 mana (Suggested change. Write Cut if you want the whole card gone)\nToo strong (Reasoning, as brief or detailed as you want, but remember you need to convince others this change is a good idea)")
             else:
@@ -397,8 +397,7 @@ async def status_task(bot: commands.Bot):
                 url = card.img()
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url) as resp:
-                        if resp.status == 200:
-                            print(resp)                       
+                        if resp.status == 200:                      
                             image_path = f'tempImages/{name.replace("/", "|")}'
                             with open(image_path, 'wb') as out: ## Open temporary file as bytes
                                 out.write(await resp.read())  ## Read bytes into file

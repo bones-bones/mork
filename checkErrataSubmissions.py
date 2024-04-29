@@ -6,10 +6,10 @@ from discord.utils import get
 from discord.ext import commands
 
 async def checkErrataSubmissions(bot:commands.Bot):
-    subChannel = bot.get_channel(hc_constants.FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL)
-    acceptedChannel = bot.get_channel(hc_constants.FOUR_ZERO_ERRATA_ACCEPTED_CHANNEL)
+    subChannel = bot.get_channel(hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS)
+    acceptedChannel = bot.get_channel(hc_constants.FOUR_ONE_ERRATA_ACCEPTED)
     timeNow = datetime.now(timezone.utc)
-    oneWeek = timeNow + timedelta(weeks = -1)
+    oneWeek = timeNow + timedelta(weeks = -2)
     messages = subChannel.history(after = oneWeek, limit = None)
     if messages is None:
         return

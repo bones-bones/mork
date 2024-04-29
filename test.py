@@ -11,10 +11,11 @@ from datetime import date, datetime,timedelta
 
 
 
-print(re.search("\.([^.]*)$","image.png").group())
+# print(re.search("\.([^.]*)$","image.png").group())
 
+b=33333
 
-
+a = {"a":33}
 
 # nammappings=[]
 
