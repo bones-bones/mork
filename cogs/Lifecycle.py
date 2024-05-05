@@ -54,18 +54,20 @@ class LifecycleCog(commands.Cog):
     async def on_raw_reaction_add(self, reaction:RawReactionActionEvent):
         if str(reaction.emoji) == hc_constants.DELETE and not is_mork(reaction.user_id):
             guild = cast(Guild, self.bot.get_guild(cast(int,reaction.guild_id)))
-            channel = cast(TextChannel, guild.get_channel(reaction.channel_id))
-            message = await channel.fetch_message(reaction.message_id)
-            if not is_mork(message.author.id):
-                return
-            if reaction.member in message.mentions:
-                await message.delete()
-                return
-            if message.reference:
-                messageReference = await channel.fetch_message(cast(int, message.reference.message_id))
-                if reaction.member == messageReference.author:
+            channel =  guild.get_channel(reaction.channel_id)
+            if channel:
+                channelAsText=cast(TextChannel,channel)
+                message = await channelAsText.fetch_message(reaction.message_id)
+                if not is_mork(message.author.id):
+                    return
+                if reaction.member in message.mentions:
                     await message.delete()
                     return
+                if message.reference:
+                    messageReference = await channelAsText.fetch_message(cast(int, message.reference.message_id))
+                    if reaction.member == messageReference.author:
+                        await message.delete()
+                        return
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread:Thread):
@@ -132,7 +134,7 @@ class LifecycleCog(commands.Cog):
                 return # no pings allowed
             splitString = message.content.split("\n")
             if splitString.__len__() < 2:
-                discussionChannel = self.bot.get_channel(hc_constants.FOUR_ONE_ERRATA_DISCUSSION)
+                discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.FOUR_ONE_ERRATA_DISCUSSION))
                 await discussionChannel.send(f"<@{message.author.id}>, Make sure your post is formatted like this:\nClockwolf (name of card)\nMake it cost 5 mana (Suggested change. Write Cut if you want the whole card gone)\nToo strong (Reasoning, as brief or detailed as you want, but remember you need to convince others this change is a good idea)")
             else:
                 sentMessage = await message.channel.send(content = message.content)
@@ -375,7 +377,6 @@ async def status_task(bot: commands.Bot):
     while True:
         # creator = random.choice(cardSheet.col_values(3)[4:])
         status = random.choice(hc_constants.statusList)
-        # print(status)
         await checkSubmissions(bot)
         await checkErrataSubmissions(bot)
         try:

@@ -106,7 +106,6 @@ class GeneralCog(commands.Cog):
                 if custom_deliminator in i:
                     try:
                         user = await self.bot.fetch_user(int(i.split(custom_deliminator)[0]))
-                        print(game.lower(), user.name)
                         if game.lower() in user.name.lower():
                             userGames.append(i.split(custom_deliminator)[1])
                     except:

@@ -11,7 +11,7 @@ from discord.ext import commands
 
 from reddit_functions import postToReddit
 
-cardSheetUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet("Kopie van Database")
+cardSheetUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet("Database (Unapproved)")
 
 
 async def acceptCard(bot:commands.Bot, cardMessage:str, file:discord.File, cardName:str, authorName:str):
