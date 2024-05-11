@@ -35,6 +35,7 @@ async def sendImage(url, ctx):
           return
         data = io.BytesIO(await resp.read())
         await ctx.send(file=discord.File(data, url))
+        await session.close()
 
 
 class SpecificCardsCog(commands.Cog):

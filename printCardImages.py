@@ -37,3 +37,4 @@ async def sendImageReply(url:str, cardname:str, message:Message):
         data = io.BytesIO(await resp.read())
         sentMessage = await message.reply(file = discord.File(data, parsedFilename), mention_author=False)
         await sentMessage.add_reaction(hc_constants.DELETE)
+        await session.close()

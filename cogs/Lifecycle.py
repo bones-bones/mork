@@ -142,7 +142,7 @@ class LifecycleCog(commands.Cog):
                 await sentMessage.add_reaction(hc_constants.VOTE_UP)
                 await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
             await message.delete()
-        if message.channel.id == hc_constants.SUBMISSIONS_CHANNEL:
+        if message.channel.id == hc_constants.SUBMISSIONS_CHANNEL or message.channel.id == hc_constants.MASTERPIECE_CHANNEL:
             if(len(message.attachments) > 0):
                 if message.content == "":
                     discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
@@ -378,11 +378,14 @@ async def status_task(bot: commands.Bot):
         # creator = random.choice(cardSheet.col_values(3)[4:])
         status = random.choice(hc_constants.statusList)
         await checkSubmissions(bot)
-        await checkErrataSubmissions(bot)
+        try:
+            await checkErrataSubmissions(bot)
+        except Exception as e:
+            print(e)
         try:
             await checkReddit(bot)
-        except:
-            ...
+        except Exception as e:
+            print(e)
         await bot.change_presence(status = discord.Status.online, activity = discord.Game(status))
         now = datetime.now()
         print(f"time is {now}")
@@ -411,6 +414,7 @@ async def status_task(bot: commands.Bot):
                             except:
                                 ...
                             os.remove(image_path)
+                        await session.close()
         await asyncio.sleep(FIVE_MINUTES)
 
 
