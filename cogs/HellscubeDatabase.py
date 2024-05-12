@@ -198,6 +198,11 @@ class HellscubeDatabaseCog(commands.Cog):
                     restrictions["types"].append(i[2:])
                 else:
                     restrictions["types"] = [i[2:]]
+            if i.lower()[0:5] == "type:":
+                if "types" in restrictions.keys():
+                    restrictions["types"].append(i[5:])
+                else:
+                    restrictions["types"] = [i[5:]]
             if i.lower()[0:2] == "n:":
                 if "name" in restrictions.keys():
                     restrictions["name"].append(i[2:])
@@ -213,6 +218,11 @@ class HellscubeDatabaseCog(commands.Cog):
                     restrictions["cardset"].append(i[2:])
                 else:
                     restrictions["cardset"] = [i[2:]]
+            if i.lower()[0:4] == "set:":
+                if "cardset" in restrictions.keys():
+                    restrictions["cardset"].append(i[4:])
+                else:
+                    restrictions["cardset"] = [i[4:]]
             if i.lower()[0:6] == "legal:":
                 if "legality" in restrictions.keys():
                     restrictions["legality"].append(i[6:])

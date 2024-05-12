@@ -1,9 +1,10 @@
 
 
 from datetime import datetime, timezone, timedelta
+from typing import cast
 import hc_constants
 from discord.ext import commands
-from discord import Role
+from discord import Emoji, Member, Role, TextChannel
 
 from discord.utils import get
 
@@ -13,10 +14,10 @@ from is_mork import is_mork
 
 
 async def checkSubmissions(bot:commands.Bot):
-    subChannel = bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL)
-    vetoChannel = bot.get_channel(hc_constants.VETO_CHANNEL)
-    acceptedChannel = bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL)
-    logChannel = bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
+    subChannel = cast(TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL))
+    vetoChannel = cast(TextChannel, bot.get_channel(hc_constants.VETO_CHANNEL))
+    acceptedChannel = cast(TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
+    logChannel = cast(TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
     timeNow = datetime.now(timezone.utc)
     oneWeek = timeNow + timedelta(weeks=-1)
     messages = subChannel.history(after = oneWeek, limit = None)
@@ -41,7 +42,7 @@ async def checkSubmissions(bot:commands.Bot):
                 and is_mork(messageEntry.author.id)):
                 prettyValid = False
                 async for user in upvote.users():
-                   if is_admin(user):
+                   if is_admin(cast(Member, user)):
                        prettyValid = True
                 
                 if downCount == 1 and not prettyValid:
@@ -57,15 +58,15 @@ async def checkSubmissions(bot:commands.Bot):
 
 
                 await vetoEntry.add_reaction(hc_constants.VOTE_UP)
-                await vetoEntry.add_reaction(bot.get_emoji(hc_constants.CIRION_SPELLING))
+                await vetoEntry.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.CIRION_SPELLING)))
                 await vetoEntry.add_reaction(hc_constants.VOTE_DOWN)
-                await vetoEntry.add_reaction(bot.get_emoji(hc_constants.MANA_GREEN))
-                await vetoEntry.add_reaction(bot.get_emoji(hc_constants.MANA_WHITE))
+                await vetoEntry.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.MANA_GREEN)))
+                await vetoEntry.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.MANA_WHITE)))
                 await vetoEntry.add_reaction("🤮")
                 await vetoEntry.add_reaction("🤔")
                 
                 thread = await vetoEntry.create_thread(name = vetoEntry.content[0:99])
-                role:Role = get(vetoEntry.author.guild.roles, id = hc_constants.VETO_COUNCIL)
+                role = get(vetoEntry.author.guild.roles, id = hc_constants.VETO_COUNCIL)
                 await thread.send(role.mention)
 
 

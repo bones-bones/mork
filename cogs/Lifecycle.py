@@ -20,7 +20,7 @@ import asyncpraw
 from datetime import datetime, timezone, timedelta
 
 from checkErrataSubmissions import checkErrataSubmissions
-from checkSubmissions import checkSubmissions
+from checkSubmissions import checkMasterpieceSubmissions, checkSubmissions
 
 from cogs.HellscubeDatabase import searchFor
 from getCardMessage import getCardMessage
@@ -84,7 +84,7 @@ class LifecycleCog(commands.Cog):
             return
         if "{{" in message.content:
             await print_card_images(message)
-        if message.channel.id == hc_constants.HELLS_UNO_CHANNEL or message.channel.id == hc_constants.HELLS_BASICS_SUBMISSIONS:
+        if message.channel.id == hc_constants.HELLS_UNO_CHANNEL or message.channel.id == hc_constants.MASTERPIECE_ICON_CHANNEL:
             await message.add_reaction(hc_constants.VOTE_UP)
             await message.add_reaction(hc_constants.VOTE_DOWN)
         if message.channel.id == hc_constants.REDDIT_CHANNEL:
@@ -100,9 +100,11 @@ class LifecycleCog(commands.Cog):
                 reddit_url = lastTwo[1].content.replace("reddit says: ",'')
 
                 #https://www.reddit.com/r/HellsCube/comments/1c2ii4s/sometitle/
-                post_id =  re.search("comments/([^/]*)", reddit_url).group(1)
-                post = await reddit.submission(post_id)
-                await post.reply(f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}")
+                source_result = re.search("comments/([^/]*)", reddit_url)
+                if source_result:
+                    post_id = source_result.group(1)
+                    post = await reddit.submission(post_id)
+                    await post.reply(f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}")
                     
         if message.channel.id == hc_constants.VETO_CHANNEL:
             await message.add_reaction(hc_constants.VOTE_UP)
@@ -142,7 +144,7 @@ class LifecycleCog(commands.Cog):
                 await sentMessage.add_reaction(hc_constants.VOTE_UP)
                 await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
             await message.delete()
-        if message.channel.id == hc_constants.SUBMISSIONS_CHANNEL or message.channel.id == hc_constants.MASTERPIECE_CHANNEL:
+        if message.channel.id == hc_constants.SUBMISSIONS_CHANNEL:
             if(len(message.attachments) > 0):
                 if message.content == "":
                     discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
@@ -158,6 +160,39 @@ class LifecycleCog(commands.Cog):
                 if reasonableCard():
                     vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
                     acceptedChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
+                    logChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
+                    acceptContent = message.content + " was accepted"
+                    mention = f'<@{str(message.raw_mentions[0])}>'
+                    accepted_message_no_mentions = message.content.replace(mention, message.mentions[0].name)
+                    copy = await message.attachments[0].to_file()
+                    await vetoChannel.send(content = accepted_message_no_mentions, file = copy)
+                    copy2 = await message.attachments[0].to_file()
+                    logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
+                    await acceptedChannel.send(content = "✨✨ {acceptContent} ✨✨")
+                    await acceptedChannel.send(content = "", file = file)
+                    await logChannel.send(content = logContent, file = copy2)
+                else:
+                    sentMessage = await message.channel.send(content = f"{message.content} by {message.author.mention}" , file = file)
+                    await sentMessage.add_reaction(hc_constants.VOTE_UP)
+                    await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
+                    await sentMessage.add_reaction(hc_constants.DELETE)
+                await message.delete()
+        if message.channel.id == hc_constants.MASTERPIECE_CHANNEL:
+            if(len(message.attachments) > 0):
+                if message.content == "":
+                    discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MASTERPIECE_DISCUSSION_CHANNEL))
+                    await discussionChannel.send(f"<@{message.author.id}>, make sure to include the name of your card")
+                    await message.delete()
+                    return
+                if "@" in message.content:
+                    # No ping case
+                    user = await self.bot.fetch_user(message.author.id)
+                    await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
+                    return # no pings allowed
+                file = await message.attachments[0].to_file()
+                if reasonableCard():
+                    vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
+                    acceptedChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MASTERPIECE_DISCUSSION_CHANNEL))
                     logChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
                     acceptContent = message.content + " was accepted"
                     mention = f'<@{str(message.raw_mentions[0])}>'
@@ -379,6 +414,10 @@ async def status_task(bot: commands.Bot):
         status = random.choice(hc_constants.statusList)
         await checkSubmissions(bot)
         try:
+            await checkMasterpieceSubmissions(bot)
+        except Exception as e:
+            print(e)    
+        try:
             await checkErrataSubmissions(bot)
         except Exception as e:
             print(e)
@@ -428,12 +467,12 @@ async def checkReddit(bot:commands.Bot):
             user_agent = USER_AGENT,
             username = NAME
     )
-    hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit('HellsCube')
+    hellscubeSubreddit = cast(asyncpraw.reddit.Subreddit, await reddit.subreddit('HellsCube'))
 
     redditChannel= cast(TextChannel,bot.get_channel(hc_constants.REDDIT_CHANNEL))
     messagesInLastDay = [mess async for mess in redditChannel.history(after=oneDay)] 
 
-    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter='day'):
+    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter='day'): # type: ignore
         alreadyPosted = False
         for discordMessage in messagesInLastDay:
             if submission.permalink in discordMessage.content:
