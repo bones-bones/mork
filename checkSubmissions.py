@@ -36,19 +36,20 @@ async def checkSubmissions(bot:commands.Bot):
             downCount = downvote.count
             messageAge = timeNow - messageEntry.created_at
             # card was voted in
-            if ((upCount - downCount) > 24
+            if ((upCount - downCount) >= 25
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days = 1)
                 and is_mork(messageEntry.author.id)):
-                prettyValid = False
-                async for user in upvote.users():
-                   if is_admin(cast(Member, user)):
-                       prettyValid = True
+                if downCount == 1:
+                    prettyValid = False
+                    async for user in upvote.users():
+                        if is_admin(cast(Member, user)):
+                            prettyValid = True
                 
-                if downCount == 1 and not prettyValid:
-                    user = await bot.fetch_user(hc_constants.LLLLLL) # If a message would be accepted, but there's only a single downvote, need llllll to add another downvote
-                    await user.send("Verify " + messageEntry.jump_url)
-                    continue
+                    if not prettyValid:
+                        user = await bot.fetch_user(hc_constants.LLLLLL) # If a message would be accepted, but there's only a single downvote, need llllll to add another downvote
+                        await user.send("Verify " + messageEntry.jump_url)
+                        continue
                 file = await messageEntry.attachments[0].to_file()
                 acceptContent = messageEntry.content + " was accepted"
                 mention = f'<@{str(messageEntry.raw_mentions[0])}>'
@@ -105,19 +106,21 @@ async def checkMasterpieceSubmissions(bot:commands.Bot):
             downCount = downvote.count
             messageAge = timeNow - messageEntry.created_at
             # card was voted in
-            if ((upCount - downCount) > 31
+            if ((upCount - downCount) >= 30
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days = 1)
                 and is_mork(messageEntry.author.id)):
-                prettyValid = False
-                async for user in upvote.users():
-                   if is_admin(user):
-                       prettyValid = True
+
                 
-                if downCount == 1 and not prettyValid:
-                    user = await bot.fetch_user(hc_constants.LLLLLL) # If a message would be accepted, but there's only a single downvote, need llllll to add another downvote
-                    await user.send("Verify " + messageEntry.jump_url)
-                    continue
+                if downCount == 1:
+                    prettyValid = False
+                    async for user in upvote.users():
+                        if is_admin(user):
+                            prettyValid = True
+                    if not prettyValid:
+                        user = await bot.fetch_user(hc_constants.LLLLLL) # If a message would be accepted, but there's only a single downvote, need llllll to add another downvote
+                        await user.send("Verify " + messageEntry.jump_url)
+                        continue
                 file = await messageEntry.attachments[0].to_file()
                 acceptContent = messageEntry.content + " was accepted"
                 mention = f'<@{str(messageEntry.raw_mentions[0])}>'

@@ -48,7 +48,7 @@ class LifecycleCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member:Member):
-        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.FAQ_CHANNEL}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n Right now we're at the tail end of HC4, a vintage powered cube. Head on over to either of the 'brainstorming' channels to get feedback, then post it in <#{hc_constants.SUBMISSIONS_CHANNEL}> when you're ready for it to be voted on.")
+        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.FAQ_CHANNEL}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n Right now we're at the beginning of HC6, the Commander Cube. Head on over to either of the 'brainstorming' channels to get feedback, then post it in <#{hc_constants.SUBMISSIONS_CHANNEL}> when you're ready for it to be voted on.")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction:RawReactionActionEvent):
@@ -172,10 +172,12 @@ class LifecycleCog(commands.Cog):
                     await acceptedChannel.send(content = "", file = file)
                     await logChannel.send(content = logContent, file = copy2)
                 else:
-                    sentMessage = await message.channel.send(content = f"{message.content} by {message.author.mention}" , file = file)
+                    contentMessage=f"{message.content} by {message.author.mention}"
+                    sentMessage = await message.channel.send(content = contentMessage , file = file)
                     await sentMessage.add_reaction(hc_constants.VOTE_UP)
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
+                    await sentMessage.create_thread(name = message.content[0:99])
                 await message.delete()
         if message.channel.id == hc_constants.MASTERPIECE_CHANNEL:
             if(len(message.attachments) > 0):
@@ -209,6 +211,7 @@ class LifecycleCog(commands.Cog):
                     await sentMessage.add_reaction(hc_constants.VOTE_UP)
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
+                    await sentMessage.create_thread(name = message.content[0:99])
                 await message.delete()
             
                 

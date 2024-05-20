@@ -23,7 +23,7 @@ async def acceptCard(bot:commands.Bot, cardMessage:str, file:discord.File, cardN
     file_data = file.fp.read()
     file_copy_for_reddit = discord.File(fp = io.BytesIO(file_data), filename = new_file_name)
 
-    cardListChannel = cast(discord.TextChannel, bot.get_channel(hc_constants.FOUR_ONE_CARD_LIST_CHANNEL))
+    cardListChannel = cast(discord.TextChannel, bot.get_channel(hc_constants.SIX_ZERO_CARD_LIST))
     await cardListChannel.send( file = file_copy_for_reddit, content = cardMessage)
 
     with open(image_path, 'wb') as out:

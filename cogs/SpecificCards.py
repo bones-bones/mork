@@ -1,3 +1,4 @@
+import re
 import discord
 from discord.ext import commands
 import asyncio
@@ -35,6 +36,19 @@ async def sendImage(url, ctx):
           return
         data = io.BytesIO(await resp.read())
         await ctx.send(file=discord.File(data, url))
+        await session.close()
+
+async def sendDriveImage(url,ctx):
+    async with aiohttp.ClientSession() as session:
+      async with session.get(url) as resp:
+        if resp.status != 200:
+          await ctx.send('Something went wrong while getting the link. Wait for @llllll to fix it.')
+          return
+         # currently extraFilename looks like inline;filename="                                Skald.png"
+        extraFilename = resp.headers.get("Content-Disposition")  
+        parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
+        data = io.BytesIO(await resp.read())
+        await ctx.send(file = discord.File(data, parsedFilename))
         await session.close()
 
 
@@ -690,10 +704,27 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card colossal godmaw
     @commands.command()
-    async def dreadmaw(self, ctx):
-        await sendImage(
-            "https://cdn.discordapp.com/attachments/692914661191974912/697511455972655244/Devotion_to_Dreadmaw_Reminder_Card-1.png",
+    async def dreadmaw(self, ctx): 
+        await sendDriveImage(
+            "https://lh3.googleusercontent.com/d/1uYdnTLOZw42yNGc3xgO0oxhBGwoReo-c",
             ctx)
+
+    @commands.command()
+    async def wickyp(self, ctx: commands.Context):
+       stickersheets = [
+           "https://lh3.googleusercontent.com/d/1uqW4nKy_r7s9HC1mNXCbR4_JiWhZsTkr",
+           "https://lh3.googleusercontent.com/d/15keQ6wbMnw0OZeuVeq9InuGKh7CmTSO1",
+           "https://lh3.googleusercontent.com/d/1FEn41lDcyxbBoi37HKyD7EYRRbearlMV",
+           "https://lh3.googleusercontent.com/d/1FVfTf_5RH8HvUSzLteUhwoa3yLzZzVur",
+           "https://lh3.googleusercontent.com/d/1hBxgoKl5R3iguy2Rt5zpfnt5YRDofA6Z",
+           "https://lh3.googleusercontent.com/d/1LUPppUAuUEhPE_AYa0vJsaDGzuJFeQmr",
+           "https://lh3.googleusercontent.com/d/1b_bnF9gaqCw8I0IluZSwmKcTh7KUMghY",
+           "https://lh3.googleusercontent.com/d/1FAaTqQkUQM5-Hy6hK7_s3rkASHKH1_9D",
+           "https://lh3.googleusercontent.com/d/1SlR0f3H520XwtT65Nt-tnx0trQtNmlVn",
+           "https://lh3.googleusercontent.com/d/1Vo79t5JiEL_vodhXBj8m4z5M4H2xwgU9"]
+       selected = random.sample(stickersheets, k=3)
+       for sheet in selected:
+           await sendDriveImage(sheet, ctx)
 
     # for the card tunak tunak tun
     @commands.command()
