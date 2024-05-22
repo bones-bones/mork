@@ -3,10 +3,10 @@ from datetime import date, datetime
 import os
 import random
 import re
-from typing import cast
+from typing import Dict, List, cast
 import aiohttp
 from attr import dataclass
-from discord import  ClientUser, Emoji, Guild, Member, RawReactionActionEvent, Role, TextChannel, Thread
+from discord import  ClientUser, Emoji, Guild, Member, RawReactionActionEvent, Reaction, Role, TextChannel, Thread
 import discord
 from discord.ext import commands
 from discord.message import Message
@@ -25,9 +25,10 @@ from checkSubmissions import checkMasterpieceSubmissions, checkSubmissions
 from cogs.HellscubeDatabase import searchFor
 from getCardMessage import getCardMessage
 import hc_constants
+from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
-from reddit_functions import postToReddit
+from reddit_functions import postGalleryToReddit, postToReddit
 from secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents
 
@@ -52,22 +53,32 @@ class LifecycleCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction:RawReactionActionEvent):
-        if str(reaction.emoji) == hc_constants.DELETE and not is_mork(reaction.user_id):
-            guild = cast(Guild, self.bot.get_guild(cast(int,reaction.guild_id)))
-            channel =  guild.get_channel(reaction.channel_id)
-            if channel:
-                channelAsText=cast(TextChannel,channel)
-                message = await channelAsText.fetch_message(reaction.message_id)
-                if not is_mork(message.author.id):
-                    return
-                if reaction.member in message.mentions:
-                    await message.delete()
-                    return
-                if message.reference:
-                    messageReference = await channelAsText.fetch_message(cast(int, message.reference.message_id))
-                    if reaction.member == messageReference.author:
+        if is_mork(reaction.user_id):
+            return
+        guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
+        channel =  guild.get_channel(reaction.channel_id)
+        
+        if channel:
+            channelAsText = cast(discord.TextChannel,channel)
+            message = await channelAsText.fetch_message(reaction.message_id)
+
+            if channel.id == hc_constants.VETO_TEST: 
+                member = cast(discord.Member,reaction.member)
+                if not is_veto(member) and not is_admin(member):
+                    await message.remove_reaction(reaction.emoji, member)
+                
+            else:
+                if str(reaction.emoji) == hc_constants.DELETE and not is_mork(reaction.user_id):
+                    if not is_mork(message.author.id):
+                        return
+                    if reaction.member in message.mentions:
                         await message.delete()
                         return
+                    if message.reference:
+                        messageReference = await channelAsText.fetch_message(cast(int, message.reference.message_id))
+                        if reaction.member == messageReference.author:
+                            await message.delete()
+                            return
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread:Thread):
@@ -84,7 +95,7 @@ class LifecycleCog(commands.Cog):
             return
         if "{{" in message.content:
             await print_card_images(message)
-        if message.channel.id == hc_constants.HELLS_UNO_CHANNEL or message.channel.id == hc_constants.MASTERPIECE_ICON_CHANNEL:
+        if message.channel.id == hc_constants.HELLS_UNO_CHANNEL:
             await message.add_reaction(hc_constants.VOTE_UP)
             await message.add_reaction(hc_constants.VOTE_DOWN)
         if message.channel.id == hc_constants.REDDIT_CHANNEL:
@@ -112,8 +123,8 @@ class LifecycleCog(commands.Cog):
             await message.add_reaction(hc_constants.VOTE_DOWN)
             await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.MANA_GREEN))) # too strong
             await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.MANA_WHITE))) # too weak
-            await message.add_reaction("🤮")
-            await message.add_reaction("🤔")
+            await message.add_reaction(hc_constants.BAD)
+            await message.add_reaction(hc_constants.UNSURE)
             thread = await message.create_thread(name = message.content[0:99])
             role = cast(Role, get(cast(Member, message.author).guild.roles, id = hc_constants.VETO_COUNCIL))
             await thread.send(role.mention)
@@ -134,15 +145,15 @@ class LifecycleCog(commands.Cog):
                 await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
                 await message.delete()
                 return # no pings allowed
-            splitString = message.content.split("\n")
-            if splitString.__len__() < 2:
-                discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.FOUR_ONE_ERRATA_DISCUSSION))
-                await discussionChannel.send(f"<@{message.author.id}>, Make sure your post is formatted like this:\nClockwolf (name of card)\nMake it cost 5 mana (Suggested change. Write Cut if you want the whole card gone)\nToo strong (Reasoning, as brief or detailed as you want, but remember you need to convince others this change is a good idea)")
-            else:
-                sentMessage = await message.channel.send(content = message.content)
-                await sentMessage.create_thread(name = sentMessage.content[0:99])
-                await sentMessage.add_reaction(hc_constants.VOTE_UP)
-                await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
+            # splitString = message.content.split("\n")
+            # if splitString.__len__() < 2:
+            #     discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.FOUR_ONE_ERRATA_DISCUSSION))
+            #     await discussionChannel.send(f"<@{message.author.id}>, Make sure your post is formatted like this:\nClockwolf (name of card)\nMake it cost 5 mana (Suggested change. Write Cut if you want the whole card gone)\nToo strong (Reasoning, as brief or detailed as you want, but remember you need to convince others this change is a good idea)")
+            # else:
+            sentMessage = await message.channel.send(content = message.content)
+            await sentMessage.create_thread(name = sentMessage.content[0:99])
+            await sentMessage.add_reaction(hc_constants.VOTE_UP)
+            await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
             await message.delete()
         if message.channel.id == hc_constants.SUBMISSIONS_CHANNEL:
             if(len(message.attachments) > 0):
@@ -151,19 +162,28 @@ class LifecycleCog(commands.Cog):
                     await discussionChannel.send(f"<@{message.author.id}>, make sure to include the name of your card")
                     await message.delete()
                     return
-                if "@" in message.content:
+                splitString = message.content.split("\n")
+                cardName = splitString[0]
+                if "@" in cardName:
                     # No ping case
                     user = await self.bot.fetch_user(message.author.id)
                     await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
                     return # no pings allowed
+                author = message.author.mention
+                print(f'{cardName} submitted by {message.author.mention}')
+
+                if splitString.__len__() > 1:
+                    author = "; ".join([f'<@{str(raw)}>' for raw in message.raw_mentions])
+
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
                     vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
                     acceptedChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
                     logChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
-                    acceptContent = message.content + " was accepted"
-                    mention = f'<@{str(message.raw_mentions[0])}>'
-                    accepted_message_no_mentions = message.content.replace(mention, message.mentions[0].name)
+                    acceptContent = cardName + " by " + author + " was accepted"
+                    accepted_message_no_mentions = acceptContent
+                    for index, mentionEntry in enumerate(message.raw_mentions):
+                        accepted_message_no_mentions = accepted_message_no_mentions.replace(f'<@{str(mentionEntry)}>', message.mentions[index].name)
                     copy = await message.attachments[0].to_file()
                     await vetoChannel.send(content = accepted_message_no_mentions, file = copy)
                     copy2 = await message.attachments[0].to_file()
@@ -172,12 +192,12 @@ class LifecycleCog(commands.Cog):
                     await acceptedChannel.send(content = "", file = file)
                     await logChannel.send(content = logContent, file = copy2)
                 else:
-                    contentMessage=f"{message.content} by {message.author.mention}"
+                    contentMessage=f"{cardName} by {author}"
                     sentMessage = await message.channel.send(content = contentMessage , file = file)
                     await sentMessage.add_reaction(hc_constants.VOTE_UP)
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
-                    await sentMessage.create_thread(name = message.content[0:99])
+                    await sentMessage.create_thread(name = cardName[0:99])
                 await message.delete()
         if message.channel.id == hc_constants.MASTERPIECE_CHANNEL:
             if(len(message.attachments) > 0):
@@ -186,19 +206,30 @@ class LifecycleCog(commands.Cog):
                     await discussionChannel.send(f"<@{message.author.id}>, make sure to include the name of your card")
                     await message.delete()
                     return
-                if "@" in message.content:
+                splitString = message.content.split("\n")
+                cardName = splitString[0]
+                if "@" in cardName:
                     # No ping case
                     user = await self.bot.fetch_user(message.author.id)
                     await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
                     return # no pings allowed
+                author = message.author.mention
+                print(f'{cardName} submitted by {message.author.mention}')
+                if splitString.__len__() > 1:
+                    author = "; ".join([f'<@{str(raw)}>' for raw in message.raw_mentions])
+
+                splitString = message.content.split("\n")
+                cardName = splitString[0]
+                author = message.author.mention
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
                     vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
                     acceptedChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MASTERPIECE_DISCUSSION_CHANNEL))
                     logChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
-                    acceptContent = message.content + " was accepted"
-                    mention = f'<@{str(message.raw_mentions[0])}>'
-                    accepted_message_no_mentions = message.content.replace(mention, message.mentions[0].name)
+                    acceptContent = cardName + " by " + author + " was accepted"
+                    accepted_message_no_mentions = acceptContent
+                    for index, mentionEntry in enumerate(message.raw_mentions):
+                        accepted_message_no_mentions = accepted_message_no_mentions.replace(f'<@{str(mentionEntry)}>', message.mentions[index].name)
                     copy = await message.attachments[0].to_file()
                     await vetoChannel.send(content = accepted_message_no_mentions, file = copy)
                     copy2 = await message.attachments[0].to_file()
@@ -207,7 +238,8 @@ class LifecycleCog(commands.Cog):
                     await acceptedChannel.send(content = "", file = file)
                     await logChannel.send(content = logContent, file = copy2)
                 else:
-                    sentMessage = await message.channel.send(content = f"{message.content} by {message.author.mention}" , file = file)
+                    contentMessage=f"{cardName} by {author}"
+                    sentMessage = await message.channel.send(content = contentMessage , file = file)
                     await sentMessage.add_reaction(hc_constants.VOTE_UP)
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
@@ -228,8 +260,8 @@ class LifecycleCog(commands.Cog):
             await ctx.send("Veto Council Only")
             return
         responseObject = cast(VetoPollResults, await getVetoPollsResults(
-            bot=self.bot,
-            ctx=ctx))
+            bot = self.bot,
+            ctx = ctx))
 
         purgatoryCardMessages = responseObject.purgatoryCardMessages
 
@@ -279,7 +311,7 @@ class LifecycleCog(commands.Cog):
         vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
         timeNow = datetime.now(timezone.utc)        
         fourWeeksAgo = timeNow + timedelta(days=-28*3)
-        epicCatchphrases = ["If processing lasts more than 5 minutes, consult your doctor.", "on it, yo.", "ya ya gimme a sec", "processing...", "You're not the boss of me", "ok, 'DAD'", "but what of the children?", "?", "workin' on it!", "on it!", "can do, cap'n!", "raseworter pro tip: run it back, but with less 'tude next time.", "who? oh yeah sure thing b0ss", "how about no for a change?", "CAAAAAAAAAAAAAAN DO!", "i'm afraid i can't let you do that.", "i mean like, if you say so, man", "WOOOOOOOOOOOOOOOOOOOOOOOOOOOO", "*nuzzles u*","it begins"]
+        epicCatchphrases = ["it begins"]
         
         await ctx.send(random.choice(epicCatchphrases)) 
         
@@ -289,10 +321,19 @@ class LifecycleCog(commands.Cog):
             return
         
         messages = [message async for message in messages]
+        emojiArray=[ hc_constants.ACCEPT, hc_constants.DELETE, hc_constants.BAD, hc_constants.UNSURE, hc_constants.VOTE_UP, hc_constants.VOTE_DOWN, self.bot.get_emoji(hc_constants.CIRION_SPELLING) ]
+        for messageToSanitize in messages:
+            for emojiEntry in emojiArray:
+                acceptingUsers = cast(Reaction, get(messageToSanitize.reactions, emoji = emojiEntry)).users()
+                async for user in acceptingUsers:
+                    if not (is_admin(user) or is_veto(user)):
+                        await messageToSanitize.remove_reaction(emoji = emojiEntry, member = user)
 
-        responseObject = cast(VetoPollResults, await getVetoPollsResults(
-            bot=self.bot,
-            ctx=ctx))
+        responseObject = cast(VetoPollResults,
+                            await getVetoPollsResults(
+                                bot = self.bot,
+                                ctx = ctx
+                                ))
         errataCardMessages = responseObject.errataCardMessages
         acceptedCardMessages = responseObject.acceptedCardMessages
         vetoCardMessages = responseObject.vetoCardMessages
@@ -448,15 +489,43 @@ async def status_task(bot: commands.Bot):
                             with open(image_path, 'wb') as out: ## Open temporary file as bytes
                                 out.write(await resp.read())  ## Read bytes into file
                             try:
-                                await  postToReddit(
+                                await postToReddit(
                                     title = f"HC4 Card of the ~day: {name}",
                                     image_path = image_path,
-                                    flair = "5778f0e4-52c0-11eb-9a1d-0ebf18b4acab"
+                                    flair = hc_constants.OFFICIAL_FLAIR
                                 )
                             except:
                                 ...
                             os.remove(image_path)
                         await session.close()
+            # Get all the messages, download the images, post them to reddit
+            try:
+                subChannel = cast(discord.TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL))
+                timeNow = datetime.now(timezone.utc)
+                oneDay = timeNow + timedelta(days=-1)
+                messages = subChannel.history(after = oneDay, limit = None)
+                images: List[Dict[str, str]]=[]
+                if messages is None:
+                    return
+
+                messages = [message async for message in messages][:10]
+                for messageEntry in messages:
+                    file = await messageEntry.attachments[0].to_file()
+                    file_data = file.fp.read()
+                    image_path = f'tempImages/{file.filename}'
+                    images.append({"image_path": image_path})
+                    with open(image_path, 'wb') as out:
+                        out.write(file_data)
+                await postGalleryToReddit(
+                    title = f"Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
+                    images = images,
+                    flair = hc_constants.OFFICIAL_FLAIR
+                )
+                for imageEntry in images:
+                    os.remove(list(imageEntry.values())[0])
+            except Exception as e:
+                    print(e)
+
         await asyncio.sleep(FIVE_MINUTES)
 
 
@@ -473,9 +542,9 @@ async def checkReddit(bot:commands.Bot):
     hellscubeSubreddit = cast(asyncpraw.reddit.Subreddit, await reddit.subreddit('HellsCube'))
 
     redditChannel= cast(TextChannel,bot.get_channel(hc_constants.REDDIT_CHANNEL))
-    messagesInLastDay = [mess async for mess in redditChannel.history(after=oneDay)] 
+    messagesInLastDay = [mess async for mess in redditChannel.history(after = oneDay)] 
 
-    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter='day'): # type: ignore
+    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter = 'day'): # type: ignore
         alreadyPosted = False
         for discordMessage in messagesInLastDay:
             if submission.permalink in discordMessage.content:
