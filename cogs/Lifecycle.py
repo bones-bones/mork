@@ -6,7 +6,7 @@ import re
 from typing import Dict, List, cast
 import aiohttp
 from attr import dataclass
-from discord import  ClientUser, Emoji, Guild, Member, RawReactionActionEvent, Reaction, Role, TextChannel, Thread
+from discord import  ClientUser,  Guild, Member, RawReactionActionEvent, Reaction, Role, TextChannel, Thread
 import discord
 from discord.ext import commands
 from discord.message import Message
@@ -14,7 +14,6 @@ from discord.utils import get
 import random
 from acceptCard import acceptCard
 from typing import cast
-from discord.utils import get
 import asyncpraw
 
 from datetime import datetime, timezone, timedelta
@@ -24,6 +23,7 @@ from checkSubmissions import checkMasterpieceSubmissions, checkSubmissions
 
 from cogs.HellscubeDatabase import searchFor
 from getCardMessage import getCardMessage
+from handleVetoPost import handleVetoPost
 import hc_constants
 from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonableCard
@@ -62,8 +62,8 @@ class LifecycleCog(commands.Cog):
             channelAsText = cast(discord.TextChannel,channel)
             message = await channelAsText.fetch_message(reaction.message_id)
 
-            if channel.id == hc_constants.VETO_TEST: 
-                member = cast(discord.Member,reaction.member)
+            if channel.id == hc_constants.VETO_HELLPITS: 
+                member = cast(discord.Member, reaction.member)
                 if not is_veto(member) and not is_admin(member):
                     await message.remove_reaction(reaction.emoji, member)
                 
@@ -118,16 +118,7 @@ class LifecycleCog(commands.Cog):
                     await post.reply(f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}")
                     
         if message.channel.id == hc_constants.VETO_CHANNEL:
-            await message.add_reaction(hc_constants.VOTE_UP)
-            await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.CIRION_SPELLING))) # Errata
-            await message.add_reaction(hc_constants.VOTE_DOWN)
-            await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.MANA_GREEN))) # too strong
-            await message.add_reaction(cast(Emoji, self.bot.get_emoji(hc_constants.MANA_WHITE))) # too weak
-            await message.add_reaction(hc_constants.BAD)
-            await message.add_reaction(hc_constants.UNSURE)
-            thread = await message.create_thread(name = message.content[0:99])
-            role = cast(Role, get(cast(Member, message.author).guild.roles, id = hc_constants.VETO_COUNCIL))
-            await thread.send(role.mention)
+            await handleVetoPost(message = message, bot = self.bot)
         if message.channel.id == hc_constants.FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL:
             if "@" in message.content:
                 # No ping case
@@ -145,11 +136,6 @@ class LifecycleCog(commands.Cog):
                 await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
                 await message.delete()
                 return # no pings allowed
-            # splitString = message.content.split("\n")
-            # if splitString.__len__() < 2:
-            #     discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.FOUR_ONE_ERRATA_DISCUSSION))
-            #     await discussionChannel.send(f"<@{message.author.id}>, Make sure your post is formatted like this:\nClockwolf (name of card)\nMake it cost 5 mana (Suggested change. Write Cut if you want the whole card gone)\nToo strong (Reasoning, as brief or detailed as you want, but remember you need to convince others this change is a good idea)")
-            # else:
             sentMessage = await message.channel.send(content = message.content)
             await sentMessage.create_thread(name = sentMessage.content[0:99])
             await sentMessage.add_reaction(hc_constants.VOTE_UP)
@@ -202,7 +188,7 @@ class LifecycleCog(commands.Cog):
         if message.channel.id == hc_constants.MASTERPIECE_CHANNEL:
             if(len(message.attachments) > 0):
                 if message.content == "":
-                    discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MASTERPIECE_DISCUSSION_CHANNEL))
+                    discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
                     await discussionChannel.send(f"<@{message.author.id}>, make sure to include the name of your card")
                     await message.delete()
                     return
@@ -224,7 +210,7 @@ class LifecycleCog(commands.Cog):
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
                     vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
-                    acceptedChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MASTERPIECE_DISCUSSION_CHANNEL))
+                    acceptedChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
                     logChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
                     acceptContent = cardName + " by " + author + " was accepted"
                     accepted_message_no_mentions = acceptContent
@@ -321,12 +307,12 @@ class LifecycleCog(commands.Cog):
             return
         
         messages = [message async for message in messages]
-        emojiArray=[ hc_constants.ACCEPT, hc_constants.DELETE, hc_constants.BAD, hc_constants.UNSURE, hc_constants.VOTE_UP, hc_constants.VOTE_DOWN, self.bot.get_emoji(hc_constants.CIRION_SPELLING) ]
+        emojiArray=[ hc_constants.ACCEPT, hc_constants.DELETE, hc_constants.BAD, hc_constants.UNSURE, hc_constants.VOTE_UP, hc_constants.VOTE_DOWN, self.bot.get_emoji(hc_constants.CIRION_SPELLING), self.bot.get_emoji(hc_constants.MANA_GREEN), self.bot.get_emoji(hc_constants.MANA_WHITE)]
         for messageToSanitize in messages:
             for emojiEntry in emojiArray:
                 acceptingUsers = cast(Reaction, get(messageToSanitize.reactions, emoji = emojiEntry)).users()
                 async for user in acceptingUsers:
-                    if not (is_admin(user) or is_veto(user)):
+                    if not (is_admin(cast(Member, user)) or is_veto(cast(Member, user))):
                         await messageToSanitize.remove_reaction(emoji = emojiEntry, member = user)
 
         responseObject = cast(VetoPollResults,
@@ -472,7 +458,7 @@ async def status_task(bot: commands.Bot):
         await bot.change_presence(status = discord.Status.online, activity = discord.Game(status))
         now = datetime.now()
         print(f"time is {now}")
-        if now.hour == 4 and now.minute <= 4:
+        if now.hour == 10 and now.minute <= 4:
             nowtime = now.date()
             start = date(2024, 3, 13)  # more or less the start date to post to reddit
             days_since_starting = (nowtime - start).days
@@ -498,6 +484,8 @@ async def status_task(bot: commands.Bot):
                                 ...
                             os.remove(image_path)
                         await session.close()
+            
+        if now.hour == 4 and now.minute <= 4:  
             # Get all the messages, download the images, post them to reddit
             try:
                 subChannel = cast(discord.TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL))
@@ -512,12 +500,12 @@ async def status_task(bot: commands.Bot):
                 for messageEntry in messages:
                     file = await messageEntry.attachments[0].to_file()
                     file_data = file.fp.read()
-                    image_path = f'tempImages/{file.filename}'
+                    image_path = f'tempImages/{messageEntry.id}{file.filename}'
                     images.append({"image_path": image_path})
                     with open(image_path, 'wb') as out:
                         out.write(file_data)
                 await postGalleryToReddit(
-                    title = f"Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
+                    title = f"Some of Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
                     images = images,
                     flair = hc_constants.OFFICIAL_FLAIR
                 )
@@ -644,5 +632,7 @@ class VetoPollResults:
     acceptedCardMessages:list[Message]
     vetoCardMessages:list[Message]
     purgatoryCardMessages:list[Message]
+
+
 
 

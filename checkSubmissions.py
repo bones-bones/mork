@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 from typing import cast
 
 import discord
+from handleVetoPost import handleVetoPost
 import hc_constants
 from discord.ext import commands
 from discord import Emoji, Guild, Member, Role, TextChannel
@@ -63,44 +64,16 @@ async def checkSubmissions(bot:commands.Bot):
                         accepted_message_no_mentions = accepted_message_no_mentions.replace(f'<@{str(mentionEntry)}>', messageEntry.mentions[index].name)
               
                 copy = await messageEntry.attachments[0].to_file()
-                vetoEntry = await vetoChannel.send(content=accepted_message_no_mentions, file = copy)
+                vetoEntry = await vetoChannel.send(content = accepted_message_no_mentions, file = copy)
 
 
-                await vetoEntry.add_reaction(hc_constants.VOTE_UP)
-                await vetoEntry.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.CIRION_SPELLING)))
-                await vetoEntry.add_reaction(hc_constants.VOTE_DOWN)
-                await vetoEntry.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.MANA_GREEN)))
-                await vetoEntry.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.MANA_WHITE)))
-                await vetoEntry.add_reaction("🤮")
-                await vetoEntry.add_reaction("🤔")
-                
-                thread = await vetoEntry.create_thread(name = vetoEntry.content[0:99])
-                role = get(vetoEntry.author.guild.roles, id = hc_constants.VETO_COUNCIL)
-                await thread.send(role.mention)
-
+                await handleVetoPost(message = vetoEntry, bot = bot)
 
                 copy2 = await messageEntry.attachments[0].to_file()
                 logContent = f"{acceptContent}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
                 await acceptedChannel.send(content = acceptContent)
                 await acceptedChannel.send(content = "", file = file)
                 await logChannel.send(content = logContent, file = copy2)
-
-                # NEW VETO START
-                try:
-                    copyagain = await messageEntry.attachments[0].to_file()
-                    channel =  guild.get_channel(hc_constants.VETO_TEST)
-            
-                    if channel:
-                        channelAsText = cast(discord.TextChannel,channel)
-                        secretThread = await channelAsText.create_thread(name=accepted_message_no_mentions, type = discord.ChannelType.private_thread)
-                        await secretThread.send(file = copyagain, content=accepted_message_no_mentions)
-                        mentions = [role.mention]
-                        
-                        for raw in messageEntry.raw_mentions:
-                            mentions.append(f'<@{str(raw)}>')
-                        await thread.send(', '.join(mentions))
-                except Exception as e:
-                    print(e)
 
                 await messageEntry.delete()
                 continue
@@ -112,7 +85,7 @@ async def checkSubmissions(bot:commands.Bot):
 async def checkMasterpieceSubmissions(bot:commands.Bot):
     subChannel = bot.get_channel(hc_constants.MASTERPIECE_CHANNEL)
     vetoChannel = bot.get_channel(hc_constants.VETO_CHANNEL)
-    acceptedChannel = bot.get_channel(hc_constants.MASTERPIECE_DISCUSSION_CHANNEL)
+    acceptedChannel = bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL)
     logChannel = bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
     timeNow = datetime.now(timezone.utc)
     oneWeek = timeNow + timedelta(weeks=-1)
@@ -149,7 +122,7 @@ async def checkMasterpieceSubmissions(bot:commands.Bot):
                         continue
                 file = await messageEntry.attachments[0].to_file()
                 acceptContent = messageEntry.content + " was accepted"
-                accepted_message_no_mentions = acceptContent
+                accepted_message_no_mentions = messageEntry.content
                 for index, mentionEntry in enumerate(messageEntry.raw_mentions):
                         accepted_message_no_mentions = accepted_message_no_mentions.replace(f'<@{str(mentionEntry)}>', messageEntry.mentions[index].name)
               

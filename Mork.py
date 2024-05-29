@@ -15,7 +15,7 @@ class MyBot(commands.Bot):
             'cogs.Quotes',
             'cogs.Roles',
            'cogs.SpecificCards'
-    #      'cogs.Misc'
+          #'cogs.Misc'
           ]
         for i in initial_extensions:
             await self.load_extension(i)
