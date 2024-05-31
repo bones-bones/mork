@@ -42,4 +42,5 @@ async def handleVetoPost(message:Message, bot:commands.Bot):
     await secretThread.send(', '.join(mentions))
 
     await thread.send(secretThread.jump_url)
+    await secretThread.send(thread.jump_url)
     await thread.edit(locked = True)

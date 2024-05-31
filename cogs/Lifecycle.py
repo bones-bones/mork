@@ -6,7 +6,7 @@ import re
 from typing import Dict, List, cast
 import aiohttp
 from attr import dataclass
-from discord import  ClientUser,  Guild, Member, RawReactionActionEvent, Reaction, Role, TextChannel, Thread
+from discord import  ClientUser,  Guild, Member, RawReactionActionEvent, Role, TextChannel, Thread
 import discord
 from discord.ext import commands
 from discord.message import Message
@@ -301,19 +301,20 @@ class LifecycleCog(commands.Cog):
         
         await ctx.send(random.choice(epicCatchphrases)) 
         
-        messages = vetoChannel.history(after = fourWeeksAgo, limit = None)
+        # messages = vetoChannel.history(after = fourWeeksAgo, limit = None)
     
-        if messages is None:
-            return
+        # if messages is None:
+        #     return
         
-        messages = [message async for message in messages]
-        emojiArray=[ hc_constants.ACCEPT, hc_constants.DELETE, hc_constants.BAD, hc_constants.UNSURE, hc_constants.VOTE_UP, hc_constants.VOTE_DOWN, self.bot.get_emoji(hc_constants.CIRION_SPELLING), self.bot.get_emoji(hc_constants.MANA_GREEN), self.bot.get_emoji(hc_constants.MANA_WHITE)]
-        for messageToSanitize in messages:
-            for emojiEntry in emojiArray:
-                acceptingUsers = cast(Reaction, get(messageToSanitize.reactions, emoji = emojiEntry)).users()
-                async for user in acceptingUsers:
-                    if not (is_admin(cast(Member, user)) or is_veto(cast(Member, user))):
-                        await messageToSanitize.remove_reaction(emoji = emojiEntry, member = user)
+        # messages = [message async for message in messages]
+        # emojiArray=[ hc_constants.ACCEPT, hc_constants.DELETE, hc_constants.BAD, hc_constants.UNSURE, hc_constants.VOTE_UP, hc_constants.VOTE_DOWN, self.bot.get_emoji(hc_constants.CIRION_SPELLING), self.bot.get_emoji(hc_constants.MANA_GREEN), self.bot.get_emoji(hc_constants.MANA_WHITE)]
+        # for messageToSanitize in messages:
+        #     for emojiEntry in emojiArray:
+        #         print(messageToSanitize)
+        #         acceptingUsers = cast(Reaction, get(messageToSanitize.reactions, emoji = emojiEntry)).users()
+        #         async for user in acceptingUsers:
+        #             if not (is_admin(cast(Member, user)) or is_veto(cast(Member, user))):
+        #                 await messageToSanitize.remove_reaction(emoji = emojiEntry, member = user)
 
         responseObject = cast(VetoPollResults,
                             await getVetoPollsResults(
@@ -414,19 +415,24 @@ class LifecycleCog(commands.Cog):
         # had to use format because python doesn't like \n inside template brackets
         if(len(acceptedCards) > 0):
             vetoMessage = ("\n\nACCEPTED CARDS: \n{0}".format("\n".join(acceptedCards)))
-            await vetoDiscussionChannel.send(content = vetoMessage)
+            for i in range(0, vetoMessage.__len__(),1984):
+                await vetoDiscussionChannel.send(content = vetoMessage[i:i+1984])
         if(len(needsErrataCards) > 0):
             errataMessage = ("\n\nNEEDS ERRATA: \n{0}".format("\n".join(needsErrataCards)))
-            await vetoDiscussionChannel.send(content = errataMessage)
+            for i in range(0, errataMessage.__len__(),1984):
+                await vetoDiscussionChannel.send(content = errataMessage[i:i+1984])
         if(len(vetoedCards) > 0):
             vetoMessage = ("\n\nVETOED: \n{0}".format("\n".join(vetoedCards)))
-            await vetoDiscussionChannel.send(content = vetoMessage)
+            for i in range(0, vetoMessage.__len__(),1984):
+                await vetoDiscussionChannel.send(content = vetoMessage[i:i+1984])
         if(len(vetoHellCards) > 0):
             hellMessage = ("\n\nVETO HELL: \n{0}".format("\n".join(vetoHellCards)))
-            await vetoDiscussionChannel.send(content = hellMessage)
+            for i in range(0, hellMessage.__len__(),1984):
+                await vetoDiscussionChannel.send(content = hellMessage[i:i+1984])
         if(len(mysteryVetoHellCards) > 0):
             mysteryHellMessage = ("\n\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format("\n".join(mysteryVetoHellCards)))
-            await vetoDiscussionChannel.send(content = mysteryHellMessage)
+            for i in range(0, mysteryHellMessage.__len__(),1984):
+                await vetoDiscussionChannel.send(content = mysteryHellMessage[i:i+1984])
 
 
 

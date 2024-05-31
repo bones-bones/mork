@@ -779,6 +779,25 @@ class SpecificCardsCog(commands.Cog):
     async def firstPick(self, ctx):
         await sendImage(
             "https://cdn.discordapp.com/attachments/631289553415700492/631292919390928918/md7fop4la1k31.png", ctx)
+        
+    # Obscure Commander
+    @commands.command()
+    async def obscureCommander(self, ctx:commands.Context):
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.scryfall.com/cards/search?as=grid&order=name&q=command+oracle%3A•+%28game%3Apaper%29") as resp:
+                if resp.status != 200:
+                    #await ctx.send('Something went wrong while getting the link. Wait for @llllll to fix it.')
+                    return
+                response = json.loads( await resp.read())
+                
+                mapped = (map( lambda x: x['oracle_text'], response["data"]))
+                joined = "\n".join(list(mapped))
+                choiceless = joined.replace("Choose two —\n", "")
+                asSplit = choiceless.split('\n')
+
+                results = random.choices(population = asSplit, k = 6)
+                await ctx.send("Choose two —\n{0}".format("\n".join(results)))
+                await session.close()
     
 async def setup(bot:commands.Bot):
     await bot.add_cog(SpecificCardsCog(bot))
