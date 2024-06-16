@@ -10,6 +10,7 @@ import io
 from operator import itemgetter
 import pprint as pp
 
+
 # load json from scryfall
 async def getScryfallJson(targetUrl):
     await asyncio.sleep(0.2)
@@ -30,26 +31,31 @@ async def getImageFromJson(json):
 # send card image to channel
 async def sendImage(url, ctx):
     async with aiohttp.ClientSession() as session:
-      async with session.get(url) as resp:
-        if resp.status != 200:
-          await ctx.send('Something went wrong while getting the link. Wait for @llllll to fix it.')
-          return
-        data = io.BytesIO(await resp.read())
-        await ctx.send(file=discord.File(data, url))
-        await session.close()
+        async with session.get(url) as resp:
+            if resp.status != 200:
+                await ctx.send(
+                    "Something went wrong while getting the link. Wait for @llllll to fix it."
+                )
+                return
+            data = io.BytesIO(await resp.read())
+            await ctx.send(file=discord.File(data, url))
+            await session.close()
 
-async def sendDriveImage(url,ctx):
+
+async def sendDriveImage(url, ctx):
     async with aiohttp.ClientSession() as session:
-      async with session.get(url) as resp:
-        if resp.status != 200:
-          await ctx.send('Something went wrong while getting the link. Wait for @llllll to fix it.')
-          return
-         # currently extraFilename looks like inline;filename="                                Skald.png"
-        extraFilename = resp.headers.get("Content-Disposition")  
-        parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
-        data = io.BytesIO(await resp.read())
-        await ctx.send(file = discord.File(data, parsedFilename))
-        await session.close()
+        async with session.get(url) as resp:
+            if resp.status != 200:
+                await ctx.send(
+                    "Something went wrong while getting the link. Wait for @llllll to fix it."
+                )
+                return
+            # currently extraFilename looks like inline;filename="                                Skald.png"
+            extraFilename = resp.headers.get("Content-Disposition")
+            parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
+            data = io.BytesIO(await resp.read())
+            await ctx.send(file=discord.File(data, parsedFilename))
+            await session.close()
 
 
 class SpecificCardsCog(commands.Cog):
@@ -63,7 +69,7 @@ class SpecificCardsCog(commands.Cog):
         await ctx.send(random.choice(items))
 
     # for the card shell game
-    @commands.command(aliases=['shellgame', 'game'])
+    @commands.command(aliases=["shellgame", "game"])
     async def shell(self, ctx):
         randomNumber = random.randint(0, 2)
         if randomNumber == 0:
@@ -73,8 +79,8 @@ class SpecificCardsCog(commands.Cog):
         await ctx.send(response)
 
     # for the card big money
-    @commands.command(aliases=['big', 'money', 'bigmoney'])
-    async def whammy(self, ctx:commands.Context, number):
+    @commands.command(aliases=["big", "money", "bigmoney"])
+    async def whammy(self, ctx: commands.Context, number):
         try:
             number = int(number)
         except:
@@ -82,7 +88,17 @@ class SpecificCardsCog(commands.Cog):
             return
         ### heres some fun stuff if user inputs a negative number
         if number < 0:
-            deck = ["Garfield of the Dead", "Swamp (the AB Dual)", "Swamp (the basic)", "[[SwAmp]]", "Tropical 2", "Clockwolf", "Force of Hill", "a Grunch creature token", "Plains"]
+            deck = [
+                "Garfield of the Dead",
+                "Swamp (the AB Dual)",
+                "Swamp (the basic)",
+                "[[SwAmp]]",
+                "Tropical 2",
+                "Clockwolf",
+                "Force of Hill",
+                "a Grunch creature token",
+                "Plains",
+            ]
             await ctx.send("Your hits:")
             whammy = False
             random.shuffle(deck)
@@ -114,16 +130,18 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card ballsjr's druidic vow
     @commands.command()
-    async def vow(self, ctx:commands.Context, cost):
+    async def vow(self, ctx: commands.Context, cost):
         try:
-            json = await getScryfallJson("https://api.scryfall.com/cards/random?q=mana%3D" + cost)
+            json = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=mana%3D" + cost
+            )
             await sendImage(await getImageFromJson(json), ctx)
         except:
             await ctx.send("Not a valid mana cost.")
 
     # for the card stormstorm
-    @commands.command(aliases=['stormstorm'])
-    async def storm(self, ctx:commands.Context, number):
+    @commands.command(aliases=["stormstorm"])
+    async def storm(self, ctx: commands.Context, number):
         stormCards = [
             "https://img.scryfall.com/cards/normal/front/f/f/ff301010-c9c9-4abb-9bf2-78d123cff292.jpg",
             "https://img.scryfall.com/cards/normal/front/f/f/ff301010-c9c9-4abb-9bf2-78d123cff292.jpg",
@@ -145,25 +163,97 @@ class SpecificCardsCog(commands.Cog):
             return
         if number < 11:
             for i in range(number):
-                await sendImage(stormCards[random.randint(0,len(stormCards)-1)], ctx)
+                await sendImage(stormCards[random.randint(0, len(stormCards) - 1)], ctx)
         else:
             await ctx.send("Please use 10 or lower.")
 
     # for the card keyword warp
-    @commands.command(aliases=['keyword', 'warp'])
-    async def keywords(self, ctx:commands.Context, number):
-        possibleKeywords = ["Deathtouch", "Defender", "Double Strike", "First Strike", "Flash", "Flying", "Haste",
-                            "Hexproof", "Indestructible", "Lifelink", "Menace", "Prowess", "Reach", "Trample",
-                            "Vigilance", "Ward 1", "Absorb 1", "Afflict 1", "Afterlife 1", "Amplify 1", "Annihilator 1",
-                            "Banding", "Battle Cry", "Bloodthirst 1", "Bushido 1", "Cascade", "Changeling", "Convoke",
-                            "Delve", "Dethrone", "Devoid", "Evolve", "Exalted", "Exploit", "Extort", "Fading 1", "Fear",
-                            "Flanking", "Devour 1", "Dredge 1", "Echo", "Frenzy 1", "Epic", "Graft 1", "Plainswalk",
-                            "Mountainwalk", "Forestwalk", "Hideaway", "Horsemanship", "Infect", "Ingest", "Intimidate",
-                            "Swampwalk", "Islandhome", "Islandwalk", "Protection from Blue", "Protection from White",
-                            "Protection from Red", "Protection from Green", "Protection from Black", "Mentor",
-                            "Modular 1", "Persist", "Phasing", "Poisonous 1", "Myriad", "Provoke", "Skulk", "Shadow",
-                            "Shroud", "Renown 1", "Soulshift 1", "Rampage 1", "Split Second", "Retrace", "Ripple 1",
-                            "Sunburst", "Tribute 1", "Undying", "Unleash", "Vanishing 1", "Wither"]
+    @commands.command(aliases=["keyword", "warp"])
+    async def keywords(self, ctx: commands.Context, number):
+        possibleKeywords = [
+            "Deathtouch",
+            "Defender",
+            "Double Strike",
+            "First Strike",
+            "Flash",
+            "Flying",
+            "Haste",
+            "Hexproof",
+            "Indestructible",
+            "Lifelink",
+            "Menace",
+            "Prowess",
+            "Reach",
+            "Trample",
+            "Vigilance",
+            "Ward 1",
+            "Absorb 1",
+            "Afflict 1",
+            "Afterlife 1",
+            "Amplify 1",
+            "Annihilator 1",
+            "Banding",
+            "Battle Cry",
+            "Bloodthirst 1",
+            "Bushido 1",
+            "Cascade",
+            "Changeling",
+            "Convoke",
+            "Delve",
+            "Dethrone",
+            "Devoid",
+            "Evolve",
+            "Exalted",
+            "Exploit",
+            "Extort",
+            "Fading 1",
+            "Fear",
+            "Flanking",
+            "Devour 1",
+            "Dredge 1",
+            "Echo",
+            "Frenzy 1",
+            "Epic",
+            "Graft 1",
+            "Plainswalk",
+            "Mountainwalk",
+            "Forestwalk",
+            "Hideaway",
+            "Horsemanship",
+            "Infect",
+            "Ingest",
+            "Intimidate",
+            "Swampwalk",
+            "Islandhome",
+            "Islandwalk",
+            "Protection from Blue",
+            "Protection from White",
+            "Protection from Red",
+            "Protection from Green",
+            "Protection from Black",
+            "Mentor",
+            "Modular 1",
+            "Persist",
+            "Phasing",
+            "Poisonous 1",
+            "Myriad",
+            "Provoke",
+            "Skulk",
+            "Shadow",
+            "Shroud",
+            "Renown 1",
+            "Soulshift 1",
+            "Rampage 1",
+            "Split Second",
+            "Retrace",
+            "Ripple 1",
+            "Sunburst",
+            "Tribute 1",
+            "Undying",
+            "Unleash",
+            "Vanishing 1",
+            "Wither",
+        ]
 
         try:
             number = int(number)
@@ -173,13 +263,16 @@ class SpecificCardsCog(commands.Cog):
         if number < 101:
             text = ""
             for i in range(number):
-                text += possibleKeywords[random.randint(0, len(possibleKeywords) - 1)] + ", "
+                text += (
+                    possibleKeywords[random.randint(0, len(possibleKeywords) - 1)]
+                    + ", "
+                )
             await ctx.send(text)
         else:
             await ctx.send("Please use 100 or lower.")
 
     # for the card path to degeneracy
-    @commands.command(aliases=['path', 'degen', 'ptd'])
+    @commands.command(aliases=["path", "degen", "ptd"])
     async def degeneracy(self, ctx):
         femaleWarWalkers = [
             "https://api.scryfall.com/cards/8d7c88ec-0537-4d94-81d1-e1ba877d2cdb?format=json",
@@ -200,13 +293,15 @@ class SpecificCardsCog(commands.Cog):
             "https://api.scryfall.com/cards/981850b2-3013-4f12-ab13-6410431585f2?format=json",
             "https://api.scryfall.com/cards/199e3667-33be-415f-8f10-1c42a78d7637?format=json",
         ]
-        degenJson = await getScryfallJson(femaleWarWalkers[random.randint(0, len(femaleWarWalkers) - 1)])
+        degenJson = await getScryfallJson(
+            femaleWarWalkers[random.randint(0, len(femaleWarWalkers) - 1)]
+        )
         await ctx.send(degenJson["name"])
         await sendImage(await getImageFromJson(degenJson), ctx)
         await ctx.send(degenJson["oracle_text"])
 
     # for the card a blue card
-    @commands.command(aliases=['blue'])
+    @commands.command(aliases=["blue"])
     async def bluecard(self, ctx):
         blueCards = [
             "https://api.scryfall.com/cards/9f7983bf-2a3b-4428-8c01-35285f589da8?format=json",
@@ -230,7 +325,9 @@ class SpecificCardsCog(commands.Cog):
             "https://api.scryfall.com/cards/fec6b189-97e7-4627-9785-a9ce2f1ad89f?format=json",
             "https://api.scryfall.com/cards/7e41765e-43fe-461d-baeb-ee30d13d2d93?format=json",
         ]
-        bluecardJson = await getScryfallJson(blueCards[random.randint(0,len(blueCards)-1)])
+        bluecardJson = await getScryfallJson(
+            blueCards[random.randint(0, len(blueCards) - 1)]
+        )
         await sendImage(await getImageFromJson(bluecardJson), ctx)
 
     # for the card wild magic
@@ -339,7 +436,7 @@ class SpecificCardsCog(commands.Cog):
             "Gain 5 life, draw a card, create a 3/3 green Dinosaur creature token, target opponent discards a card and Wild Magic Surge deals 3 damage to any target.",
         ]
         randomNum = random.randint(1, 100)
-        await ctx.send(str(randomNum) + ": " + wildMagic[randomNum-1])
+        await ctx.send(str(randomNum) + ": " + wildMagic[randomNum - 1])
 
     # for the card hells triome
     @commands.command()
@@ -353,126 +450,386 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card wrath of pod
     @commands.command()
-    async def podcast(self, ctx:commands.Context, number):
-        podSentence = ["When @p said @c had good flavor, I lost all respect for them",
-                       "The next big mechanic is Devotion to @k.", "@p 2024",
-                       "@p is a @s shill! Why do you think they gave @o a good grade?",
-                       "i would buy @o if @p hadn't told me it was the worst thing for @f since @c",
-                       "@0 - now with 50% less @m! I'm so exited.",
-                       "To this day, no one knows why @c was errata'd to give 10 Devotion to Dreadmaw.",
-                       "In five years, the only two people still playing @f will be @p and @p",
-                       "@c should be a basic, change my mind.", "I heard wizards is trying to make @f a @c exclusive",
-                       "Did you see @p's new @c cosplay, it's so hot.",
-                       "What's better @k or @es. They're pretty similar.",
-                       "@c's next character arc: gain @m to be more like @p", "WOTC stole the idea for @c from @r",
-                       "@p is actually a bot programmed by @p", "It was @p with @c in @f.",
-                       "Petition to add @es to @c.", "Legend say @b was actually programmed by @p",
-                       "@b is now hosted on a server sponsored by @s", "@b is just @b but with more jank",
-                       "Move over @c, @c’s the most expensive card in @f now",
-                       "Did you hear the latest gossip, @p and @p are having an affair",
-                       "@p invited me over for dinner yesterday and all he gave me to eat was @c",
-                       "@p has petitioned WotC to name the next function reprint of @c \"@p\"",
-                       "There’s this new @m card I keep hearing about called @c, could be good in @f",
-                       "Just trust me, @k is totally in @m’s pie", "In my opinion @f is just a worse version of @f.",
-                       "I feel @c should be banned in @f.", "Wizards should really make @c but @m.",
-                       "@m's part of the color pie is just @c repeated 100 times.",
-                       "@c is a good budget replacement for @c.", "I feel @m is too good in @f",
-                       "I recently built a new @f deck around @c.",
-                       "Why would you ever play @c when you could just be playing @c.",
-                       "Would it be too much to ask for @c to have @k.", "@k is the best keyword change my mind.",
-                       "i want to see a card thats a combination of @c and @c, maybe even in @m",
-                       "If you ever see @c in draft you should insta first pick it.",
-                       "I'm building a mono @m cube, with the one exception being @c because it's soo good.",
-                       "I can't believe @a is now LGBTQ+ in canon",
-                       "At my local game store I met @p, he owned me with his @c deck.",
-                       "Did you know @c is supposed to represent @p.",
-                       "Did you know that @a is going to be the main character for the next block.", "I stan @a.",
-                       "The @f meta is getting overrun with @c.",
-                       "I just saw @p's latest stream, I can't believe he said @a wasn't hot.",
-                       "I think @c is actually secretly @a.",
-                       "I can't believe my opponent countered my @c, I see what @p meant now.",
-                       "I feel @c is overrated in @f.", "I feel @c is underrated in @f.",
-                       "I heard @p got banned for playing 5 copies of @c in a tournament.",
-                       "@r is way too obsessed with @c", "@r is just a more retarded version of @r",
-                       "@a should be the mascot of @r", "This podcast has been brought to you by @s",
-                       "The next @f tournament will be sponsored by @s", "I can't believe @c is getting banned in @f.",
-                       "Did you see the new Arena exclusive card, it's @c but it costs 1 less.",
-                       "Did you see the latest cantrip it's a 2 mana @m spell with @es and draw a card.",
-                       "Our preview card, it's a @m mythic with @es, @es, @es, @es, @es.",
-                       "New planeswalker, +1: @es, -1: @es, @es, -6: @es, @es, @es, @es.",
-                       "I'm going to make a @f deck around @c.",
-                       "I can't believe @c is getting new promo art on @i but not on @i.",
-                       "New card out on @i, robo-@a.", "Why is there so much porn of @a.",
-                       "The price of @c spiked after @p made a deck around it.",
-                       "@s sent me a booster box of @o and I got @c out of it!",
-                       "I can't believe wizards is rereleasing @o as the summer expension.",
-                       "I want a fanfiction between @a and @a"]
-        podCards = ["Lightning Bolt", "The Unspeakable", "Elder Gargaroth", "Once Upon a Time", "Oko", "Primeval Titan",
-                    "Storm Crow", "Force of Will", "Snapcaster Mage", "Black Lotus", "Blood Moon", "Back to Basics",
-                    "Timetwister", "Thoughtseize", "Bloodbraid Elf", "Dryad of the Ilysian Grove", "Tarmogoyf",
-                    "Sol Ring", "7 Mana Karn", "Thassa's Oricle", "Dig Through Time", "Opt", "Brainstorm", "Fatal Push",
-                    "Teferi, Time Raveler", "Walking Ballista", "Uro", "Island", "Leyline of the Void", "Swords",
-                    "Lotus Petal", "Delver", "Thalia", "Wasteland", "Strip Mine", "Mox Sapphire", "Pyroblast",
-                    "Deathrite Shaman", "Stonecoil Serpent", "Hollow One", "Stinkweed Imp", "Fetch Lands",
-                    "Mishra's Workshop", "Mulldrifter", "Dreadmaw", "Healing Salve", "Gut Shot", "One with Nothing",
-                    "Siege Rhino", "Winter Orb", "Contract from Below", "AAAAAAAAAAAAAAA", "Mana Tithe", "Goblin Game",
-                    "Dark Ritual", "Shock", "Counterspell", "Nekusar, the Mindrazer", "Harmonize",
-                    "Borrowing 100.000 Arrows", "Prophet of Kruphix", "Rystic Study", "Teysa Karlov", "Boros Charm",
-                    "Grizzly Bear", "Uzra", "Infinity Elemental", "Llanowar Tribe", "Maro's Gone Nuts", "Birds",
-                    "Uncle Istvan", "Shahrazad", "Time Walk", "Seasons Beatings", "Thopter Pie Network", "Crow Storm",
-                    "Library of Leng", "Alexander Clamilton", "Moat", "Ragnaros the Firelord", "Predator Ooze",
-                    "Whale Visions", "Mistform Ultimus", "Lord of Tresserhorn"]
-        podKey = ["flying", "horsemanship", "shadow", "epic", "haste", "flash", "phasing", "trample", "annihilator 2",
-                  "affinity for artifacts", "cycling 1", "embalm 1W", "exalted", "persist", "infect", "provoke",
-                  "prowess", "mentor", "rebound", "undying", "slivercycling", "storm", "gravestorm", "fear"]
-        podProduct = ["From the vault: Dreadmaw", "From the vault: Annihilation", "Secret Lair: Fetch lands",
-                      "Signiture Spellbook: @a", "a Homelands booster box", "a vintage masters booster box",
-                      "p3k starter kit", "@p's global deck", "Dragons Maze fat pack", "War of the Spark mythic edition",
-                      "kamigawa block pauper tiny leaders challenger decks", "brawl precons", "@o VIP Edition"]
-        podFormat = ["hellscube sealed", "modern", "legacy", "pauper", "pioneer", "frontier",
-                     "kamigawa block pauper tiny leaders", "commander", "cEDH", "standard", "big deck", "judge's tower",
-                     "chaos draft", "brawl", "oathbreaker", "vintage", "five-headed giant", "momir basic",
-                     "three card vintage", "tiny leaders", "emperor", "usurper", "horde", "prismatic"]
+    async def podcast(self, ctx: commands.Context, number):
+        podSentence = [
+            "When @p said @c had good flavor, I lost all respect for them",
+            "The next big mechanic is Devotion to @k.",
+            "@p 2024",
+            "@p is a @s shill! Why do you think they gave @o a good grade?",
+            "i would buy @o if @p hadn't told me it was the worst thing for @f since @c",
+            "@0 - now with 50% less @m! I'm so exited.",
+            "To this day, no one knows why @c was errata'd to give 10 Devotion to Dreadmaw.",
+            "In five years, the only two people still playing @f will be @p and @p",
+            "@c should be a basic, change my mind.",
+            "I heard wizards is trying to make @f a @c exclusive",
+            "Did you see @p's new @c cosplay, it's so hot.",
+            "What's better @k or @es. They're pretty similar.",
+            "@c's next character arc: gain @m to be more like @p",
+            "WOTC stole the idea for @c from @r",
+            "@p is actually a bot programmed by @p",
+            "It was @p with @c in @f.",
+            "Petition to add @es to @c.",
+            "Legend say @b was actually programmed by @p",
+            "@b is now hosted on a server sponsored by @s",
+            "@b is just @b but with more jank",
+            "Move over @c, @c’s the most expensive card in @f now",
+            "Did you hear the latest gossip, @p and @p are having an affair",
+            "@p invited me over for dinner yesterday and all he gave me to eat was @c",
+            '@p has petitioned WotC to name the next function reprint of @c "@p"',
+            "There’s this new @m card I keep hearing about called @c, could be good in @f",
+            "Just trust me, @k is totally in @m’s pie",
+            "In my opinion @f is just a worse version of @f.",
+            "I feel @c should be banned in @f.",
+            "Wizards should really make @c but @m.",
+            "@m's part of the color pie is just @c repeated 100 times.",
+            "@c is a good budget replacement for @c.",
+            "I feel @m is too good in @f",
+            "I recently built a new @f deck around @c.",
+            "Why would you ever play @c when you could just be playing @c.",
+            "Would it be too much to ask for @c to have @k.",
+            "@k is the best keyword change my mind.",
+            "i want to see a card thats a combination of @c and @c, maybe even in @m",
+            "If you ever see @c in draft you should insta first pick it.",
+            "I'm building a mono @m cube, with the one exception being @c because it's soo good.",
+            "I can't believe @a is now LGBTQ+ in canon",
+            "At my local game store I met @p, he owned me with his @c deck.",
+            "Did you know @c is supposed to represent @p.",
+            "Did you know that @a is going to be the main character for the next block.",
+            "I stan @a.",
+            "The @f meta is getting overrun with @c.",
+            "I just saw @p's latest stream, I can't believe he said @a wasn't hot.",
+            "I think @c is actually secretly @a.",
+            "I can't believe my opponent countered my @c, I see what @p meant now.",
+            "I feel @c is overrated in @f.",
+            "I feel @c is underrated in @f.",
+            "I heard @p got banned for playing 5 copies of @c in a tournament.",
+            "@r is way too obsessed with @c",
+            "@r is just a more retarded version of @r",
+            "@a should be the mascot of @r",
+            "This podcast has been brought to you by @s",
+            "The next @f tournament will be sponsored by @s",
+            "I can't believe @c is getting banned in @f.",
+            "Did you see the new Arena exclusive card, it's @c but it costs 1 less.",
+            "Did you see the latest cantrip it's a 2 mana @m spell with @es and draw a card.",
+            "Our preview card, it's a @m mythic with @es, @es, @es, @es, @es.",
+            "New planeswalker, +1: @es, -1: @es, @es, -6: @es, @es, @es, @es.",
+            "I'm going to make a @f deck around @c.",
+            "I can't believe @c is getting new promo art on @i but not on @i.",
+            "New card out on @i, robo-@a.",
+            "Why is there so much porn of @a.",
+            "The price of @c spiked after @p made a deck around it.",
+            "@s sent me a booster box of @o and I got @c out of it!",
+            "I can't believe wizards is rereleasing @o as the summer expension.",
+            "I want a fanfiction between @a and @a",
+        ]
+        podCards = [
+            "Lightning Bolt",
+            "The Unspeakable",
+            "Elder Gargaroth",
+            "Once Upon a Time",
+            "Oko",
+            "Primeval Titan",
+            "Storm Crow",
+            "Force of Will",
+            "Snapcaster Mage",
+            "Black Lotus",
+            "Blood Moon",
+            "Back to Basics",
+            "Timetwister",
+            "Thoughtseize",
+            "Bloodbraid Elf",
+            "Dryad of the Ilysian Grove",
+            "Tarmogoyf",
+            "Sol Ring",
+            "7 Mana Karn",
+            "Thassa's Oricle",
+            "Dig Through Time",
+            "Opt",
+            "Brainstorm",
+            "Fatal Push",
+            "Teferi, Time Raveler",
+            "Walking Ballista",
+            "Uro",
+            "Island",
+            "Leyline of the Void",
+            "Swords",
+            "Lotus Petal",
+            "Delver",
+            "Thalia",
+            "Wasteland",
+            "Strip Mine",
+            "Mox Sapphire",
+            "Pyroblast",
+            "Deathrite Shaman",
+            "Stonecoil Serpent",
+            "Hollow One",
+            "Stinkweed Imp",
+            "Fetch Lands",
+            "Mishra's Workshop",
+            "Mulldrifter",
+            "Dreadmaw",
+            "Healing Salve",
+            "Gut Shot",
+            "One with Nothing",
+            "Siege Rhino",
+            "Winter Orb",
+            "Contract from Below",
+            "AAAAAAAAAAAAAAA",
+            "Mana Tithe",
+            "Goblin Game",
+            "Dark Ritual",
+            "Shock",
+            "Counterspell",
+            "Nekusar, the Mindrazer",
+            "Harmonize",
+            "Borrowing 100.000 Arrows",
+            "Prophet of Kruphix",
+            "Rystic Study",
+            "Teysa Karlov",
+            "Boros Charm",
+            "Grizzly Bear",
+            "Uzra",
+            "Infinity Elemental",
+            "Llanowar Tribe",
+            "Maro's Gone Nuts",
+            "Birds",
+            "Uncle Istvan",
+            "Shahrazad",
+            "Time Walk",
+            "Seasons Beatings",
+            "Thopter Pie Network",
+            "Crow Storm",
+            "Library of Leng",
+            "Alexander Clamilton",
+            "Moat",
+            "Ragnaros the Firelord",
+            "Predator Ooze",
+            "Whale Visions",
+            "Mistform Ultimus",
+            "Lord of Tresserhorn",
+        ]
+        podKey = [
+            "flying",
+            "horsemanship",
+            "shadow",
+            "epic",
+            "haste",
+            "flash",
+            "phasing",
+            "trample",
+            "annihilator 2",
+            "affinity for artifacts",
+            "cycling 1",
+            "embalm 1W",
+            "exalted",
+            "persist",
+            "infect",
+            "provoke",
+            "prowess",
+            "mentor",
+            "rebound",
+            "undying",
+            "slivercycling",
+            "storm",
+            "gravestorm",
+            "fear",
+        ]
+        podProduct = [
+            "From the vault: Dreadmaw",
+            "From the vault: Annihilation",
+            "Secret Lair: Fetch lands",
+            "Signiture Spellbook: @a",
+            "a Homelands booster box",
+            "a vintage masters booster box",
+            "p3k starter kit",
+            "@p's global deck",
+            "Dragons Maze fat pack",
+            "War of the Spark mythic edition",
+            "kamigawa block pauper tiny leaders challenger decks",
+            "brawl precons",
+            "@o VIP Edition",
+        ]
+        podFormat = [
+            "hellscube sealed",
+            "modern",
+            "legacy",
+            "pauper",
+            "pioneer",
+            "frontier",
+            "kamigawa block pauper tiny leaders",
+            "commander",
+            "cEDH",
+            "standard",
+            "big deck",
+            "judge's tower",
+            "chaos draft",
+            "brawl",
+            "oathbreaker",
+            "vintage",
+            "five-headed giant",
+            "momir basic",
+            "three card vintage",
+            "tiny leaders",
+            "emperor",
+            "usurper",
+            "horde",
+            "prismatic",
+        ]
         podColor = ["white", "black", "green", "red", "blue"]
-        podPerson = ["EpicNessBrian", "MaRo", "Trump", "Exalted", "Ballsjr123", "Putin", "LSV", "Desolator Magic",
-                     "Pleasant Kenobi", "Rystic Studies", "Spice8Rack", "Josh Lee Kwai", "The Proffesor",
-                     "Saffron Olive", "Jon Finkle", "Kibler", "RoboRosewater"]
-        podCharacter = ["Urza", "Nicol Bolas", "Ugin", "Teferi", "Chandra", "Jace", "Nissa", "Niv Mizzet", "Rakdos",
-                        "Kaya", "Fblthp", "Yargle", "K'rrik", "Alexander Clamilton", "Uncle Istvan", "Emrakul",
-                        "Ulamog", "Kozilek", "Darigaaz", "Stangg Twin", "Rakdos", "Vivian", "Azusa", "Doran",
-                        "Grandmother Sengir", "Angus Mackenzie", "Joven", "Oko", "The Elk Form of Kenrith",
-                        "the amalgam between Will and Rowan Kenrith", "Mklthd", "Bresela", "Frankie Peanuts",
-                        "Ihsan's Shade"]
-        podReddit = ["r/Hellscube", "r/custommagic", "r/MagicTheCircleJerking", "r/MTGLardFetcher", "r/MagicTCG",
-                     "r/ShittyJudgeQuestions", "r/MTGpauper", "r/EDH", "r/unbantwin", "r/MagicArena",
-                     "r/MagicDeckBuilding", "r/spikes", "r/mtgfinance", "r/mtgporn", "r/ModernMagic",
-                     "r/CompetitiveEDH", "r/MtgJudge", "r/MTGVintage", "r/Pauper", "r/freemagic", "r/MTGLegacy",
-                     "r/MakingMagic"]
-        podSponsor = ["Audible", "Raid Shadow Legends", "WOTC", "Dollar Shave Club", "the @r moderators",
-                      "@p's youtube channel", "Lords Mobile", "Generic Mobile Game #263"]
-        podSmallEffect = ["Deal 2 damage to any target", "Draw a card", "Search you library for a card named @c.",
-                          "Gain 2 life.", "Target player discards a card", "Exile target card from a graveyard",
-                          "Create a 2/2 zombie token", "counter target spell unless it's controller pays 1",
-                          "Target creature gets +3/+3 until and of turn", "Look at target players hand",
-                          "Mill target player for 3", "scry 2", "Creatures you control get lifelink until end of turn",
-                          "Permanents enter the battlefield tapped this turn",
-                          "You may play an additional land this turn", "Tap target creature", "Draw 3 cards",
-                          "Discard 2 cards", "Destroy target permanent",
-                          "Return up to one target land card from your graveyard to your hand",
-                          "Target player sacrifices a creature",
-                          "creature a 4/4 blue Elemental Bird creature token with flying", "Create 2 food tokens",
-                          "Until your next turn, you may cast spells as though they had flash", "Add RR",
-                          "Create 2 1/1 white Human Soldier tokens.", "Freeze the stack until your next turn",
-                          "target opponent antes a card from their hand",
-                          "Target creature gains haste, haste and haste"]
-        podClient = ["paper", "moto", "arena", "duals of the planeswalkers 2015", "puzzlequest", "shandelar",
-                     "the magic origens client", "cockatrice", "battlenet", ]
+        podPerson = [
+            "EpicNessBrian",
+            "MaRo",
+            "Trump",
+            "Exalted",
+            "Ballsjr123",
+            "Putin",
+            "LSV",
+            "Desolator Magic",
+            "Pleasant Kenobi",
+            "Rystic Studies",
+            "Spice8Rack",
+            "Josh Lee Kwai",
+            "The Proffesor",
+            "Saffron Olive",
+            "Jon Finkle",
+            "Kibler",
+            "RoboRosewater",
+        ]
+        podCharacter = [
+            "Urza",
+            "Nicol Bolas",
+            "Ugin",
+            "Teferi",
+            "Chandra",
+            "Jace",
+            "Nissa",
+            "Niv Mizzet",
+            "Rakdos",
+            "Kaya",
+            "Fblthp",
+            "Yargle",
+            "K'rrik",
+            "Alexander Clamilton",
+            "Uncle Istvan",
+            "Emrakul",
+            "Ulamog",
+            "Kozilek",
+            "Darigaaz",
+            "Stangg Twin",
+            "Rakdos",
+            "Vivian",
+            "Azusa",
+            "Doran",
+            "Grandmother Sengir",
+            "Angus Mackenzie",
+            "Joven",
+            "Oko",
+            "The Elk Form of Kenrith",
+            "the amalgam between Will and Rowan Kenrith",
+            "Mklthd",
+            "Bresela",
+            "Frankie Peanuts",
+            "Ihsan's Shade",
+        ]
+        podReddit = [
+            "r/Hellscube",
+            "r/custommagic",
+            "r/MagicTheCircleJerking",
+            "r/MTGLardFetcher",
+            "r/MagicTCG",
+            "r/ShittyJudgeQuestions",
+            "r/MTGpauper",
+            "r/EDH",
+            "r/unbantwin",
+            "r/MagicArena",
+            "r/MagicDeckBuilding",
+            "r/spikes",
+            "r/mtgfinance",
+            "r/mtgporn",
+            "r/ModernMagic",
+            "r/CompetitiveEDH",
+            "r/MtgJudge",
+            "r/MTGVintage",
+            "r/Pauper",
+            "r/freemagic",
+            "r/MTGLegacy",
+            "r/MakingMagic",
+        ]
+        podSponsor = [
+            "Audible",
+            "Raid Shadow Legends",
+            "WOTC",
+            "Dollar Shave Club",
+            "the @r moderators",
+            "@p's youtube channel",
+            "Lords Mobile",
+            "Generic Mobile Game #263",
+        ]
+        podSmallEffect = [
+            "Deal 2 damage to any target",
+            "Draw a card",
+            "Search you library for a card named @c.",
+            "Gain 2 life.",
+            "Target player discards a card",
+            "Exile target card from a graveyard",
+            "Create a 2/2 zombie token",
+            "counter target spell unless it's controller pays 1",
+            "Target creature gets +3/+3 until and of turn",
+            "Look at target players hand",
+            "Mill target player for 3",
+            "scry 2",
+            "Creatures you control get lifelink until end of turn",
+            "Permanents enter the battlefield tapped this turn",
+            "You may play an additional land this turn",
+            "Tap target creature",
+            "Draw 3 cards",
+            "Discard 2 cards",
+            "Destroy target permanent",
+            "Return up to one target land card from your graveyard to your hand",
+            "Target player sacrifices a creature",
+            "creature a 4/4 blue Elemental Bird creature token with flying",
+            "Create 2 food tokens",
+            "Until your next turn, you may cast spells as though they had flash",
+            "Add RR",
+            "Create 2 1/1 white Human Soldier tokens.",
+            "Freeze the stack until your next turn",
+            "target opponent antes a card from their hand",
+            "Target creature gains haste, haste and haste",
+        ]
+        podClient = [
+            "paper",
+            "moto",
+            "arena",
+            "duals of the planeswalkers 2015",
+            "puzzlequest",
+            "shandelar",
+            "the magic origens client",
+            "cockatrice",
+            "battlenet",
+        ]
         podBulk = ["Eon Storm", "Arashin Sovereign"]
-        podBot = ["Scryfall", "FatesealRise", "ExploreAside", "SurvielStill", "RippleApproach"]
+        podBot = [
+            "Scryfall",
+            "FatesealRise",
+            "ExploreAside",
+            "SurvielStill",
+            "RippleApproach",
+        ]
 
-        podEncoding = [("@f", podFormat), ("@c", podCards), ("@m", podColor), ("@k", podKey), ("@o", podProduct),
-                       ("@p", podPerson), ("@es", podSmallEffect), ("@i", podClient), ("@a", podCharacter),
-                       ("@r", podReddit), ("@s", podSponsor), ("@b", podBot)]
+        podEncoding = [
+            ("@f", podFormat),
+            ("@c", podCards),
+            ("@m", podColor),
+            ("@k", podKey),
+            ("@o", podProduct),
+            ("@p", podPerson),
+            ("@es", podSmallEffect),
+            ("@i", podClient),
+            ("@a", podCharacter),
+            ("@r", podReddit),
+            ("@s", podSponsor),
+            ("@b", podBot),
+        ]
 
         try:
             number = int(number)
@@ -487,13 +844,17 @@ class SpecificCardsCog(commands.Cog):
             output += podSentence[random.randint(0, len(podSentence) - 1)]
             while "@" in output:
                 for key in podEncoding:
-                    output = output.replace(key[0], key[1][random.randint(0, len(key[1]) - 1)], 1)
+                    output = output.replace(
+                        key[0], key[1][random.randint(0, len(key[1]) - 1)], 1
+                    )
             output += "\n"
         await ctx.send(output)
 
     # for the card pyrohyperspasm
     @commands.command()
-    async def pyrohyperspasm(self, ctx:commands.Context, number, buttPlug=False, *creatures):
+    async def pyrohyperspasm(
+        self, ctx: commands.Context, number, buttPlug=False, *creatures
+    ):
         try:
             number = int(number)
         except:
@@ -518,7 +879,13 @@ class SpecificCardsCog(commands.Cog):
             creature.append(alphabet[i])
             State.append(creature)
         for i in range(number):
-            State.extend([[4 + buttPlug, 2 + buttPlug], [2 + buttPlug, 3 + buttPlug], [6 + buttPlug, 1 + buttPlug], ])
+            State.extend(
+                [
+                    [4 + buttPlug, 2 + buttPlug],
+                    [2 + buttPlug, 3 + buttPlug],
+                    [6 + buttPlug, 1 + buttPlug],
+                ]
+            )
             randomNum = random.randint(0, len(State) - 1)
             State[randomNum][0] += 1 + buttPlug
             State[randomNum][1] += buttPlug
@@ -535,12 +902,19 @@ class SpecificCardsCog(commands.Cog):
         amountLeft = 0
         for i in range(len(creatures)):
             if len(State[i]) == 3:
-                result += State[i][2] + ": " + str(State[i][0]) + "/" + str(State[i][1]) + "\n"
+                result += (
+                    State[i][2]
+                    + ": "
+                    + str(State[i][0])
+                    + "/"
+                    + str(State[i][1])
+                    + "\n"
+                )
                 amountLeft += 1
         State = State[amountLeft:]
         State = sorted(State, key=itemgetter(1), reverse=True)
         State = sorted(State, key=itemgetter(0), reverse=True)
-      
+
         for i in State:
             result += str(i[0])
             result += "/"
@@ -558,20 +932,26 @@ class SpecificCardsCog(commands.Cog):
         for i in State:
             totalPower += i[0]
             totalToughness += i[1]
-        await ctx.send("Total (new) stats: (" + str(totalPower) + "/" + str(totalToughness) + ")")
+        await ctx.send(
+            "Total (new) stats: (" + str(totalPower) + "/" + str(totalToughness) + ")"
+        )
 
     # for the card puzzle box of yogg-saron
-    @commands.command(aliases=['puzzle', 'box', 'pbox', 'yogg', 'yoggsaron', 'pb'])
+    @commands.command(aliases=["puzzle", "box", "pbox", "yogg", "yoggsaron", "pb"])
     async def puzzlebox(self, ctx):
         for i in range(10):
-            json = await getScryfallJson("https://api.scryfall.com/cards/random?q=t%3Ainstant+or+t%3Asorcery")
+            json = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=t%3Ainstant+or+t%3Asorcery"
+            )
             await sendImage(await getImageFromJson(json), ctx)
 
     # for the card deathseeker
     @commands.command()
     async def death(self, ctx):
         for i in range(2):
-            deathseekerJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=o%3A%22When+~+dies%22+t%3Acreature")
+            deathseekerJson = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+dies%22+t%3Acreature"
+            )
             try:
                 await sendImage(await getImageFromJson(deathseekerJson), ctx)
             except:
@@ -581,16 +961,20 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def broadcast(self, ctx):
         for i in range(2):
-            broadcastJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=-type%3Anarset+type%3Aplaneswalker+rarity%3Au")
+            broadcastJson = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=-type%3Anarset+type%3Aplaneswalker+rarity%3Au"
+            )
             try:
                 await sendImage(await getImageFromJson(broadcastJson), ctx)
             except:
                 pp.pprint(broadcastJson)
 
     # for the card illusionary GF
-    @commands.command(aliases=['gf', 'chandra'])
+    @commands.command(aliases=["gf", "chandra"])
     async def girlfriend(self, ctx):
-        GFJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=t%3Achandra+t%3Aplaneswalker")
+        GFJson = await getScryfallJson(
+            "https://api.scryfall.com/cards/random?q=t%3Achandra+t%3Aplaneswalker"
+        )
         try:
             await sendImage(await getImageFromJson(GFJson), ctx)
         except:
@@ -598,12 +982,14 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card ballsjrs ultimate curvetopper
     @commands.command()
-    async def topper(self, ctx:commands.Context, amount):
+    async def topper(self, ctx: commands.Context, amount):
         if int(amount) > 10:
             await ctx.send("max is 10")
             return
         for i in range(int(amount)):
-            topperJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=mana%3E%3DX")
+            topperJson = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=mana%3E%3DX"
+            )
             try:
                 await sendImage(await getImageFromJson(topperJson), ctx)
             except:
@@ -648,50 +1034,66 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def cryptic(self, ctx):
         for i in range(4):
-            crypticJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=c%21u+t%3Ainstant")
+            crypticJson = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=c%21u+t%3Ainstant"
+            )
             await sendImage(await getImageFromJson(crypticJson), ctx)
 
     # for the card we need more white cards
     @commands.command()
     async def whitecards(self, ctx):
         for i in range(3):
-            whitecardsJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=c=w")
+            whitecardsJson = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=c=w"
+            )
             await sendImage(await getImageFromJson(whitecardsJson), ctx)
 
     # for the card hugh man, human
-    @commands.command(aliases=['hugh', 'human'])
+    @commands.command(aliases=["hugh", "human"])
     async def hughman(self, ctx):
-        hughmanJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=t%3Ahuman")
+        hughmanJson = await getScryfallJson(
+            "https://api.scryfall.com/cards/random?q=t%3Ahuman"
+        )
         await sendImage(await getImageFromJson(hughmanJson), ctx)
 
     # for the card random growth
     @commands.command()
     async def growth(self, ctx):
-        growthJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=t%3Aland")
+        growthJson = await getScryfallJson(
+            "https://api.scryfall.com/cards/random?q=t%3Aland"
+        )
         await sendImage(await getImageFromJson(growthJson), ctx)
 
     # for the card ultimate ultimatum
     @commands.command()
     async def ultimatum(self, ctx):
-        ultimatumJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=name%3Dultimatum+-c%3Awug")
+        ultimatumJson = await getScryfallJson(
+            "https://api.scryfall.com/cards/random?q=name%3Dultimatum+-c%3Awug"
+        )
         await sendImage(await getImageFromJson(ultimatumJson), ctx)
 
     # for the card regal karakas
     @commands.command()
     async def karakas(self, ctx):
-        karakasJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=t%3Dcreature+t%3Dlegendary")
+        karakasJson = await getScryfallJson(
+            "https://api.scryfall.com/cards/random?q=t%3Dcreature+t%3Dlegendary"
+        )
         await sendImage(await getImageFromJson(karakasJson), ctx)
 
     # for the card pregnant sliver
     @commands.command()
     async def sliver(self, ctx):
-        sliverJson = await getScryfallJson("https://api.scryfall.com/cards/random?q=t%3Asliver")
+        sliverJson = await getScryfallJson(
+            "https://api.scryfall.com/cards/random?q=t%3Asliver"
+        )
         await sendImage(await getImageFromJson(sliverJson), ctx)
 
     # for the card a black six drop
     @commands.command()
     async def black6(self, ctx):
-        black6Json = await getScryfallJson("https://api.scryfall.com/cards/random?q=t%3Acreature+c%21b+cmc%3A6")
+        black6Json = await getScryfallJson(
+            "https://api.scryfall.com/cards/random?q=t%3Acreature+c%21b+cmc%3A6"
+        )
         await sendImage(await getImageFromJson(black6Json), ctx)
 
     # for the card kodama's reach but kodama has really long arms
@@ -704,27 +1106,28 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card colossal godmaw
     @commands.command()
-    async def dreadmaw(self, ctx): 
+    async def dreadmaw(self, ctx):
         await sendDriveImage(
-            "https://lh3.googleusercontent.com/d/1uYdnTLOZw42yNGc3xgO0oxhBGwoReo-c",
-            ctx)
+            "https://lh3.googleusercontent.com/d/1uYdnTLOZw42yNGc3xgO0oxhBGwoReo-c", ctx
+        )
 
     @commands.command()
     async def wickyp(self, ctx: commands.Context):
-       stickersheets = [
-           "https://lh3.googleusercontent.com/d/1uqW4nKy_r7s9HC1mNXCbR4_JiWhZsTkr",
-           "https://lh3.googleusercontent.com/d/15keQ6wbMnw0OZeuVeq9InuGKh7CmTSO1",
-           "https://lh3.googleusercontent.com/d/1FEn41lDcyxbBoi37HKyD7EYRRbearlMV",
-           "https://lh3.googleusercontent.com/d/1FVfTf_5RH8HvUSzLteUhwoa3yLzZzVur",
-           "https://lh3.googleusercontent.com/d/1hBxgoKl5R3iguy2Rt5zpfnt5YRDofA6Z",
-           "https://lh3.googleusercontent.com/d/1LUPppUAuUEhPE_AYa0vJsaDGzuJFeQmr",
-           "https://lh3.googleusercontent.com/d/1b_bnF9gaqCw8I0IluZSwmKcTh7KUMghY",
-           "https://lh3.googleusercontent.com/d/1FAaTqQkUQM5-Hy6hK7_s3rkASHKH1_9D",
-           "https://lh3.googleusercontent.com/d/1SlR0f3H520XwtT65Nt-tnx0trQtNmlVn",
-           "https://lh3.googleusercontent.com/d/1Vo79t5JiEL_vodhXBj8m4z5M4H2xwgU9"]
-       selected = random.sample(stickersheets, k=3)
-       for sheet in selected:
-           await sendDriveImage(sheet, ctx)
+        stickersheets = [
+            "https://lh3.googleusercontent.com/d/1uqW4nKy_r7s9HC1mNXCbR4_JiWhZsTkr",
+            "https://lh3.googleusercontent.com/d/15keQ6wbMnw0OZeuVeq9InuGKh7CmTSO1",
+            "https://lh3.googleusercontent.com/d/1FEn41lDcyxbBoi37HKyD7EYRRbearlMV",
+            "https://lh3.googleusercontent.com/d/1FVfTf_5RH8HvUSzLteUhwoa3yLzZzVur",
+            "https://lh3.googleusercontent.com/d/1hBxgoKl5R3iguy2Rt5zpfnt5YRDofA6Z",
+            "https://lh3.googleusercontent.com/d/1LUPppUAuUEhPE_AYa0vJsaDGzuJFeQmr",
+            "https://lh3.googleusercontent.com/d/1b_bnF9gaqCw8I0IluZSwmKcTh7KUMghY",
+            "https://lh3.googleusercontent.com/d/1FAaTqQkUQM5-Hy6hK7_s3rkASHKH1_9D",
+            "https://lh3.googleusercontent.com/d/1SlR0f3H520XwtT65Nt-tnx0trQtNmlVn",
+            "https://lh3.googleusercontent.com/d/1Vo79t5JiEL_vodhXBj8m4z5M4H2xwgU9",
+        ]
+        selected = random.sample(stickersheets, k=3)
+        for sheet in selected:
+            await sendDriveImage(sheet, ctx)
 
     # for the card tunak tunak tun
     @commands.command()
@@ -734,7 +1137,8 @@ class SpecificCardsCog(commands.Cog):
             "https://cdn.discordapp.com/attachments/699985664992739409/711162972248080444/fjmquizxc6y41.jpg",
             "https://cdn.discordapp.com/attachments/692914661191974912/714795265197998090/Tunak_Tunak_TunG.jpg",
             "https://cdn.discordapp.com/attachments/692914661191974912/714795266758279228/Tunak_Tunak_TunR.jpg",
-            "https://cdn.discordapp.com/attachments/692914661191974912/714795267756523600/Tunak_Tunak_TunU.jpg"]
+            "https://cdn.discordapp.com/attachments/692914661191974912/714795267756523600/Tunak_Tunak_TunU.jpg",
+        ]
 
         tunakSecretTokens = [
             "https://cdn.discordapp.com/attachments/692431610724745247/717492326653755442/Tunak_Tunak_TunP.jpg",
@@ -745,31 +1149,46 @@ class SpecificCardsCog(commands.Cog):
             "https://cdn.discordapp.com/attachments/699985664992739409/711162972248080444/fjmquizxc6y41.jpg",
             "https://cdn.discordapp.com/attachments/692914661191974912/714795265197998090/Tunak_Tunak_TunG.jpg",
             "https://cdn.discordapp.com/attachments/692914661191974912/714795266758279228/Tunak_Tunak_TunR.jpg",
-            "https://cdn.discordapp.com/attachments/692914661191974912/714795267756523600/Tunak_Tunak_TunU.jpg"]
+            "https://cdn.discordapp.com/attachments/692914661191974912/714795267756523600/Tunak_Tunak_TunU.jpg",
+        ]
 
         if random.randint(0, 100) == 50:
-            await sendImage(tunakSecretTokens[random.randint(0, len(tunakSecretTokens) - 1)], ctx)
+            await sendImage(
+                tunakSecretTokens[random.randint(0, len(tunakSecretTokens) - 1)], ctx
+            )
         else:
             await sendImage(tunakTokens[random.randint(0, len(tunakTokens) - 1)], ctx)
 
     # for cards with crystallize
     @commands.command()
     async def crystallize(self, ctx):
-        keywords = ["flying", "first strike", "deathtouch", "hexproof", "lifelink", "menace", "reach", "trample",
-                    "vigilance", "+1/+1"]
+        keywords = [
+            "flying",
+            "first strike",
+            "deathtouch",
+            "hexproof",
+            "lifelink",
+            "menace",
+            "reach",
+            "trample",
+            "vigilance",
+            "+1/+1",
+        ]
         newKW = keywords
         random.shuffle(newKW)
         msg = ""
         for j in newKW:
-            msg += ("||" + j + "||,")
+            msg += "||" + j + "||,"
         await ctx.send(msg)
 
     # for the card department of homelands security
     @commands.command()
-    async def homelands(self, ctx:commands.Context, cost):
+    async def homelands(self, ctx: commands.Context, cost):
         try:
             homelandsJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=%28type%3Aartifact+OR+type%3Acreature+OR+type%3Aenchantment%29+set%3Ahml+cmc%3D" + cost)
+                "https://api.scryfall.com/cards/random?q=%28type%3Aartifact+OR+type%3Acreature+OR+type%3Aenchantment%29+set%3Ahml+cmc%3D"
+                + cost
+            )
             await sendImage(await getImageFromJson(homelandsJson), ctx)
         except:
             await ctx.send("Not a valid mana cost.")
@@ -778,26 +1197,31 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def firstPick(self, ctx):
         await sendImage(
-            "https://cdn.discordapp.com/attachments/631289553415700492/631292919390928918/md7fop4la1k31.png", ctx)
-        
+            "https://cdn.discordapp.com/attachments/631289553415700492/631292919390928918/md7fop4la1k31.png",
+            ctx,
+        )
+
     # Obscure Commander
     @commands.command()
-    async def obscureCommander(self, ctx:commands.Context):
+    async def obscureCommander(self, ctx: commands.Context):
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://api.scryfall.com/cards/search?as=grid&order=name&q=command+oracle%3A•+%28game%3Apaper%29") as resp:
+            async with session.get(
+                "https://api.scryfall.com/cards/search?as=grid&order=name&q=command+oracle%3A•+%28game%3Apaper%29"
+            ) as resp:
                 if resp.status != 200:
-                    #await ctx.send('Something went wrong while getting the link. Wait for @llllll to fix it.')
+                    # await ctx.send('Something went wrong while getting the link. Wait for @llllll to fix it.')
                     return
-                response = json.loads( await resp.read())
-                
-                mapped = (map( lambda x: x['oracle_text'], response["data"]))
+                response = json.loads(await resp.read())
+
+                mapped = map(lambda x: x["oracle_text"], response["data"])
                 joined = "\n".join(list(mapped))
                 choiceless = joined.replace("Choose two —\n", "")
-                asSplit = choiceless.split('\n')
+                asSplit = choiceless.split("\n")
 
-                results = random.sample(population = asSplit, k = 4)
+                results = random.sample(population=asSplit, k=4)
                 await ctx.send("Choose two —\n{0}".format("\n".join(results)))
                 await session.close()
-    
-async def setup(bot:commands.Bot):
+
+
+async def setup(bot: commands.Bot):
     await bot.add_cog(SpecificCardsCog(bot))

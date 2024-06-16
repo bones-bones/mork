@@ -8,7 +8,7 @@ from CardClasses import Card
 import hc_constants
 
 
-allCards:Dict[str,Card] = {}
+allCards: Dict[str, Card] = {}
 
 intents = discord.Intents.default()
 intents.members = True
@@ -19,23 +19,22 @@ intents.guilds = True
 
 scope = [
     "https://spreadsheets.google.com/feeds",
-    'https://www.googleapis.com/auth/spreadsheets',
+    "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/drive"
-    ]
+    "https://www.googleapis.com/auth/drive",
+]
 
 gauth = GoogleAuth()
-gauth.auth_method = 'service'
-creds = ServiceAccountCredentials.from_json_keyfile_name("secrets/client_secrets.json", scope) # type: ignore
-gauth.credentials=creds
+gauth.auth_method = "service"
+creds = ServiceAccountCredentials.from_json_keyfile_name("secrets/client_secrets.json", scope)  # type: ignore
+gauth.credentials = creds
 drive = GoogleDrive(gauth)
 about = drive.GetAbout()
 
-googleClient = gspread.authorize(creds) # type: ignore
+googleClient = gspread.authorize(creds)  # type: ignore
 
 
 cardSheet = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).get_worksheet(0)
 
 
-
-#https://lh3.googleusercontent.com/d/1IZl1kGl0ajV4I7UY5DbQSL2yaF_i_uka
+# https://lh3.googleusercontent.com/d/1IZl1kGl0ajV4I7UY5DbQSL2yaF_i_uka

@@ -6,7 +6,15 @@ import re
 from typing import Dict, List, cast
 import aiohttp
 from attr import dataclass
-from discord import  ClientUser,  Guild, Member, RawReactionActionEvent, Role, TextChannel, Thread
+from discord import (
+    ClientUser,
+    Guild,
+    Member,
+    RawReactionActionEvent,
+    Role,
+    TextChannel,
+    Thread,
+)
 import discord
 from discord.ext import commands
 from discord.message import Message
@@ -28,7 +36,7 @@ import hc_constants
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
 from reddit_functions import postGalleryToReddit, postToReddit
-from secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
+from mork_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents
 
 ONE_HOUR = 3600
@@ -37,54 +45,63 @@ ONE_HOUR = 3600
 client = discord.Client(intents=intents)
 bannedUserIds = []
 
+
 class LifecycleCog(commands.Cog):
-    def __init__(self, bot:commands.Bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f'{cast(ClientUser,self.bot.user).name} has connected to Discord!')
+        print(f"{cast(ClientUser,self.bot.user).name} has connected to Discord!")
         self.bot.loop.create_task(status_task(self.bot))
 
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
-        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC4, a vintage cube, and have moved to HC6, a commander cube.")
+        await member.send(
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC4, a vintage cube, and have moved to HC6, a commander cube."
+        )
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, reaction:RawReactionActionEvent):
+    async def on_raw_reaction_add(self, reaction: RawReactionActionEvent):
         if is_mork(reaction.user_id):
             return
         guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
-        channel =  guild.get_channel_or_thread(reaction.channel_id)
-        
+        channel = guild.get_channel_or_thread(reaction.channel_id)
+
         if channel:
-            channelAsText = cast(discord.TextChannel,channel)
+            channelAsText = cast(discord.TextChannel, channel)
             message = await channelAsText.fetch_message(reaction.message_id)
 
-            if str(reaction.emoji) == hc_constants.DELETE and not is_mork(reaction.user_id):
+            if str(reaction.emoji) == hc_constants.DELETE and not is_mork(
+                reaction.user_id
+            ):
                 if not is_mork(message.author.id):
                     return
                 if reaction.member in message.mentions:
                     await message.delete()
                     return
                 if message.reference:
-                    messageReference = await channelAsText.fetch_message(cast(int, message.reference.message_id))
+                    messageReference = await channelAsText.fetch_message(
+                        cast(int, message.reference.message_id)
+                    )
                     if reaction.member == messageReference.author:
                         await message.delete()
                         return
 
     @commands.Cog.listener()
-    async def on_thread_create(self, thread:Thread):
+    async def on_thread_create(self, thread: Thread):
         try:
-           await thread.join()
+            await thread.join()
         except:
             print("Can't join that thread.")
 
     @commands.Cog.listener()
-    async def on_message(self, message:Message):
-        if (message.author == client.user
+    async def on_message(self, message: Message):
+        if (
+            message.author == client.user
             or message.author.bot
-            or message.author.id in bannedUserIds):
+            or message.author.id in bannedUserIds
+        ):
             return
         if "{{" in message.content:
             await print_card_images(message)
@@ -92,33 +109,41 @@ class LifecycleCog(commands.Cog):
             await message.add_reaction(hc_constants.VOTE_UP)
             await message.add_reaction(hc_constants.VOTE_DOWN)
         if message.channel.id == hc_constants.REDDIT_CHANNEL:
-            lastTwo = [mess async for mess in message.channel.history(limit = 2)]
-            if not is_mork(lastTwo[0].author.id) and is_mork(lastTwo[1].author.id) and "reddit says: " in lastTwo[1].content:
+            lastTwo = [mess async for mess in message.channel.history(limit=2)]
+            if (
+                not is_mork(lastTwo[0].author.id)
+                and is_mork(lastTwo[1].author.id)
+                and "reddit says: " in lastTwo[1].content
+            ):
                 reddit = asyncpraw.Reddit(
-                    client_id = ID,
-                    client_secret = SECRET,
-                    password = PASSWORD,
-                    user_agent = USER_AGENT,
-                    username = NAME
+                    client_id=ID,
+                    client_secret=SECRET,
+                    password=PASSWORD,
+                    user_agent=USER_AGENT,
+                    username=NAME,
                 )
-                reddit_url = lastTwo[1].content.replace("reddit says: ",'')
+                reddit_url = lastTwo[1].content.replace("reddit says: ", "")
 
-                #https://www.reddit.com/r/HellsCube/comments/1c2ii4s/sometitle/
+                # https://www.reddit.com/r/HellsCube/comments/1c2ii4s/sometitle/
                 source_result = re.search("comments/([^/]*)", reddit_url)
                 if source_result:
                     post_id = source_result.group(1)
                     post = await reddit.submission(post_id)
-                    await post.reply(f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}")
-                    
+                    await post.reply(
+                        f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}"
+                    )
+
         if message.channel.id == hc_constants.VETO_CHANNEL:
-            await handleVetoPost(message = message, bot = self.bot)
+            await handleVetoPost(message=message, bot=self.bot)
         if message.channel.id == hc_constants.FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL:
             if "@" in message.content:
                 # No ping case
                 user = await self.bot.fetch_user(message.author.id)
-                await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
-                return # no pings allowed
-            sentMessage = await message.channel.send(content = message.content)
+                await user.send(
+                    'No "@" are allowed in card title submissions to prevent me from spamming'
+                )
+                return  # no pings allowed
+            sentMessage = await message.channel.send(content=message.content)
             await sentMessage.add_reaction(hc_constants.VOTE_UP)
             await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
             await message.delete()
@@ -126,19 +151,28 @@ class LifecycleCog(commands.Cog):
             if "@" in message.content:
                 # No ping case
                 user = await self.bot.fetch_user(message.author.id)
-                await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
+                await user.send(
+                    'No "@" are allowed in card title submissions to prevent me from spamming'
+                )
                 await message.delete()
-                return # no pings allowed
-            sentMessage = await message.channel.send(content = message.content)
-            await sentMessage.create_thread(name = sentMessage.content[0:99])
+                return  # no pings allowed
+            sentMessage = await message.channel.send(content=message.content)
+            await sentMessage.create_thread(name=sentMessage.content[0:99])
             await sentMessage.add_reaction(hc_constants.VOTE_UP)
             await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
             await message.delete()
         if message.channel.id == hc_constants.SUBMISSIONS_CHANNEL:
-            if(len(message.attachments) > 0):
+            if len(message.attachments) > 0:
                 if message.content == "":
-                    discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
-                    await discussionChannel.send(f"<@{message.author.id}>, make sure to include the name of your card")
+                    discussionChannel = cast(
+                        TextChannel,
+                        self.bot.get_channel(
+                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                        ),
+                    )
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, make sure to include the name of your card"
+                    )
                     await message.delete()
                     return
                 splitString = message.content.split("\n")
@@ -146,43 +180,74 @@ class LifecycleCog(commands.Cog):
                 if "@" in cardName:
                     # No ping case
                     user = await self.bot.fetch_user(message.author.id)
-                    await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
-                    return # no pings allowed
+                    await user.send(
+                        'No "@" are allowed in card title submissions to prevent me from spamming'
+                    )
+                    return  # no pings allowed
                 author = message.author.mention
-                print(f'{cardName} submitted by {message.author.mention}')
+                print(f"{cardName} submitted by {message.author.mention}")
 
                 if splitString.__len__() > 1:
-                    author = "; ".join([f'<@{str(raw)}>' for raw in message.raw_mentions])
+                    author = "; ".join(
+                        [f"<@{str(raw)}>" for raw in message.raw_mentions]
+                    )
 
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
-                    vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
-                    acceptedChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
-                    logChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
+                    vetoChannel = cast(
+                        TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL)
+                    )
+                    acceptedChannel = cast(
+                        TextChannel,
+                        self.bot.get_channel(
+                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                        ),
+                    )
+                    logChannel = cast(
+                        TextChannel,
+                        self.bot.get_channel(
+                            hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL
+                        ),
+                    )
                     acceptContent = cardName + " by " + author + " was accepted"
                     accepted_message_no_mentions = acceptContent
                     for index, mentionEntry in enumerate(message.raw_mentions):
-                        accepted_message_no_mentions = accepted_message_no_mentions.replace(f'<@{str(mentionEntry)}>', message.mentions[index].name)
+                        accepted_message_no_mentions = (
+                            accepted_message_no_mentions.replace(
+                                f"<@{str(mentionEntry)}>", message.mentions[index].name
+                            )
+                        )
                     copy = await message.attachments[0].to_file()
-                    await vetoChannel.send(content = accepted_message_no_mentions, file = copy)
+                    await vetoChannel.send(
+                        content=accepted_message_no_mentions, file=copy
+                    )
                     copy2 = await message.attachments[0].to_file()
                     logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
-                    await acceptedChannel.send(content = "✨✨ {acceptContent} ✨✨")
-                    await acceptedChannel.send(content = "", file = file)
-                    await logChannel.send(content = logContent, file = copy2)
+                    await acceptedChannel.send(content="✨✨ {acceptContent} ✨✨")
+                    await acceptedChannel.send(content="", file=file)
+                    await logChannel.send(content=logContent, file=copy2)
                 else:
-                    contentMessage=f"{cardName} by {author}"
-                    sentMessage = await message.channel.send(content = contentMessage , file = file)
+                    contentMessage = f"{cardName} by {author}"
+                    sentMessage = await message.channel.send(
+                        content=contentMessage, file=file
+                    )
                     await sentMessage.add_reaction(hc_constants.VOTE_UP)
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
-                    await sentMessage.create_thread(name = cardName[0:99])
+                    await sentMessage.create_thread(name=cardName[0:99])
                 await message.delete()
         if message.channel.id == hc_constants.MASTERPIECE_CHANNEL:
-            if(len(message.attachments) > 0):
+            if len(message.attachments) > 0:
                 if message.content == "":
-                    discussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
-                    await discussionChannel.send(f"<@{message.author.id}>, make sure to include the name of your card")
+                    discussionChannel = cast(
+                        TextChannel,
+                        self.bot.get_channel(
+                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                        ),
+                    )
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, make sure to include the name of your card"
+                    )
                     await message.delete()
                     return
                 splitString = message.content.split("\n")
@@ -190,69 +255,93 @@ class LifecycleCog(commands.Cog):
                 if "@" in cardName:
                     # No ping case
                     user = await self.bot.fetch_user(message.author.id)
-                    await user.send('No "@" are allowed in card title submissions to prevent me from spamming')
-                    return # no pings allowed
+                    await user.send(
+                        'No "@" are allowed in card title submissions to prevent me from spamming'
+                    )
+                    return  # no pings allowed
                 author = message.author.mention
-                print(f'{cardName} submitted by {message.author.mention}')
+                print(f"{cardName} submitted by {message.author.mention}")
                 if splitString.__len__() > 1:
-                    author = "; ".join([f'<@{str(raw)}>' for raw in message.raw_mentions])
+                    author = "; ".join(
+                        [f"<@{str(raw)}>" for raw in message.raw_mentions]
+                    )
 
                 splitString = message.content.split("\n")
                 cardName = splitString[0]
                 author = message.author.mention
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
-                    vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
-                    acceptedChannel = cast(TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
-                    logChannel = cast(TextChannel, self.bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
+                    vetoChannel = cast(
+                        TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL)
+                    )
+                    acceptedChannel = cast(
+                        TextChannel,
+                        self.bot.get_channel(
+                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                        ),
+                    )
+                    logChannel = cast(
+                        TextChannel,
+                        self.bot.get_channel(
+                            hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL
+                        ),
+                    )
                     acceptContent = cardName + " by " + author + " was accepted"
                     accepted_message_no_mentions = acceptContent
                     for index, mentionEntry in enumerate(message.raw_mentions):
-                        accepted_message_no_mentions = accepted_message_no_mentions.replace(f'<@{str(mentionEntry)}>', message.mentions[index].name)
+                        accepted_message_no_mentions = (
+                            accepted_message_no_mentions.replace(
+                                f"<@{str(mentionEntry)}>", message.mentions[index].name
+                            )
+                        )
                     copy = await message.attachments[0].to_file()
-                    await vetoChannel.send(content = accepted_message_no_mentions, file = copy)
+                    await vetoChannel.send(
+                        content=accepted_message_no_mentions, file=copy
+                    )
                     copy2 = await message.attachments[0].to_file()
                     logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
-                    await acceptedChannel.send(content = "✨✨ {acceptContent} ✨✨")
-                    await acceptedChannel.send(content = "", file = file)
-                    await logChannel.send(content = logContent, file = copy2)
+                    await acceptedChannel.send(content="✨✨ {acceptContent} ✨✨")
+                    await acceptedChannel.send(content="", file=file)
+                    await logChannel.send(content=logContent, file=copy2)
                 else:
-                    contentMessage=f"{cardName} by {author}"
-                    sentMessage = await message.channel.send(content = contentMessage , file = file)
+                    contentMessage = f"{cardName} by {author}"
+                    sentMessage = await message.channel.send(
+                        content=contentMessage, file=file
+                    )
                     await sentMessage.add_reaction(hc_constants.VOTE_UP)
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
-                    await sentMessage.create_thread(name = message.content[0:99])
+                    await sentMessage.create_thread(name=message.content[0:99])
                 await message.delete()
-            
-                
+
         # if message.channel.id == 132:
         #     if message.content:
         #         ...
-                # ctx.author.roles
-
-
+        # ctx.author.roles
 
     @commands.command()
     async def personalhell(self, ctx: commands.Context):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return
-        responseObject = cast(VetoPollResults, await getVetoPollsResults(
-            bot = self.bot,
-            ctx = ctx))
+        responseObject = cast(
+            VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
+        )
 
         purgatoryCardMessages = responseObject.purgatoryCardMessages
 
-        links:list[str]=[]
-        
+        links: list[str] = []
+
         for messageEntry in purgatoryCardMessages:
             hasReacted = False
             # messageEntry.reactions[0].users
-            up = get(messageEntry.reactions, emoji = hc_constants.VOTE_UP)
-            errata = get(messageEntry.reactions, emoji = self.bot.get_emoji(hc_constants.CIRION_SPELLING))
-            down = get(messageEntry.reactions, emoji = hc_constants.VOTE_DOWN)
-            think = get(messageEntry.reactions, emoji = "🤔")
+            up = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
+            errata = get(
+                messageEntry.reactions,
+                emoji=self.bot.get_emoji(hc_constants.CIRION_SPELLING),
+            )
+            down = get(messageEntry.reactions, emoji=hc_constants.VOTE_DOWN)
+            think = get(messageEntry.reactions, emoji="🤔")
 
             if up:
                 async for user in up.users():
@@ -272,14 +361,14 @@ class LifecycleCog(commands.Cog):
                         hasReacted = False
 
             if not hasReacted:
-                links.append(f'{messageEntry.content}: {messageEntry.jump_url}')
-        
-        if len(links)>0:
-            await ctx.send(content = "got some work to do: \n{0}".format("\n".join(links)))
+                links.append(f"{messageEntry.content}: {messageEntry.jump_url}")
+
+        if len(links) > 0:
+            await ctx.send(
+                content="got some work to do: \n{0}".format("\n".join(links))
+            )
         else:
-            await ctx.send(content = 'all caught up!')
-
-
+            await ctx.send(content="all caught up!")
 
     @commands.command()
     async def compileveto(self, ctx: commands.Context):
@@ -288,17 +377,17 @@ class LifecycleCog(commands.Cog):
             return
 
         vetoChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL))
-        timeNow = datetime.now(timezone.utc)        
-        fourWeeksAgo = timeNow + timedelta(days=-28*3)
+        timeNow = datetime.now(timezone.utc)
+        fourWeeksAgo = timeNow + timedelta(days=-28 * 3)
         epicCatchphrases = ["it begins"]
-        
-        await ctx.send(random.choice(epicCatchphrases)) 
-        
+
+        await ctx.send(random.choice(epicCatchphrases))
+
         # messages = vetoChannel.history(after = fourWeeksAgo, limit = None)
-    
+
         # if messages is None:
         #     return
-        
+
         # messages = [message async for message in messages]
         # emojiArray=[ hc_constants.ACCEPT, hc_constants.DELETE, hc_constants.BAD, hc_constants.UNSURE, hc_constants.VOTE_UP, hc_constants.VOTE_DOWN, self.bot.get_emoji(hc_constants.CIRION_SPELLING), self.bot.get_emoji(hc_constants.MANA_GREEN), self.bot.get_emoji(hc_constants.MANA_WHITE)]
         # for messageToSanitize in messages:
@@ -309,34 +398,32 @@ class LifecycleCog(commands.Cog):
         #             if not (is_admin(cast(Member, user)) or is_veto(cast(Member, user))):
         #                 await messageToSanitize.remove_reaction(emoji = emojiEntry, member = user)
 
-        responseObject = cast(VetoPollResults,
-                            await getVetoPollsResults(
-                                bot = self.bot,
-                                ctx = ctx
-                                ))
+        responseObject = cast(
+            VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
+        )
         errataCardMessages = responseObject.errataCardMessages
         acceptedCardMessages = responseObject.acceptedCardMessages
         vetoCardMessages = responseObject.vetoCardMessages
         purgatoryCardMessages = responseObject.purgatoryCardMessages
 
         # actual processing
-        vetoHellCards:list[str] = []
-        mysteryVetoHellCards:list[str] = []
-        vetoedCards:list[str] = []
-        acceptedCards:list[str] = []
-        needsErrataCards:list[str] = []
+        vetoHellCards: list[str] = []
+        mysteryVetoHellCards: list[str] = []
+        vetoedCards: list[str] = []
+        acceptedCards: list[str] = []
+        needsErrataCards: list[str] = []
 
         for messageEntry in acceptedCardMessages:
             file = await messageEntry.attachments[0].to_file()
-            
+
             acceptanceMessage = messageEntry.content
             # consider putting most of this into acceptCard
             # this is pretty much the same as getCardMessage but teasing out the db logic too was gonna suck
             dbname = ""
             card_author = ""
             if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
-                ... # This is really the case of setting both to "", but due to scoping i got lazy
-            elif (acceptanceMessage[0:3] == "by "):
+                ...  # This is really the case of setting both to "", but due to scoping i got lazy
+            elif acceptanceMessage[0:3] == "by ":
                 card_author = str((acceptanceMessage.split("by "))[1])
             else:
                 [firstPart, secondPart] = acceptanceMessage.split(" by ")
@@ -349,22 +436,22 @@ class LifecycleCog(commands.Cog):
             acceptedCards.append(cardMessage)
 
             await acceptCard(
-                bot = self.bot,
-                file = file,
-                cardMessage = cardMessage,
-                cardName = dbname,
-                authorName = card_author
+                bot=self.bot,
+                file=file,
+                cardMessage=cardMessage,
+                cardName=dbname,
+                authorName=card_author,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)
             guild = cast(Guild, messageEntry.guild)
             thread = cast(Thread, guild.get_channel_or_thread(messageEntry.id))
             if thread:
-                await thread.edit(archived = True)
+                await thread.edit(archived=True)
 
         for messageEntry in vetoCardMessages:
             vetoedCards.append(getCardMessage(messageEntry.content))
-            await messageEntry.add_reaction(hc_constants.ACCEPT) # see ./README.md
+            await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md
 
         for messageEntry in errataCardMessages:
             guild = cast(Guild, messageEntry.guild)
@@ -373,11 +460,11 @@ class LifecycleCog(commands.Cog):
             needsErrataCards.append(getCardMessage(messageEntry.content))
             await messageEntry.add_reaction(hc_constants.ACCEPT)
             if thread:
-                await cast(Thread, thread).edit(archived = True)
+                await cast(Thread, thread).edit(archived=True)
 
         for messageEntry in purgatoryCardMessages:
             messageAge = timeNow - messageEntry.created_at
-            if messageAge > timedelta(days = 4):
+            if messageAge > timedelta(days=4):
                 thread = cast(Thread, guild.get_channel_or_thread(messageEntry.id))
                 recentlyNotified = False
 
@@ -388,54 +475,64 @@ class LifecycleCog(commands.Cog):
                     for threadMessage in threadMessages:
                         if threadMessage.content == f"<@&{798689768379908106}>":
                             threadMessageAge = timeNow - threadMessage.created_at
-                            if threadMessageAge < timedelta(days = 3):
+                            if threadMessageAge < timedelta(days=3):
                                 # then it was recently acted upon
                                 recentlyNotified = True
                                 break
 
                     if not recentlyNotified:
-                        role = cast(Role, get(guild.roles, id = hc_constants.VETO_COUNCIL))
+                        role = cast(
+                            Role, get(guild.roles, id=hc_constants.VETO_COUNCIL)
+                        )
                         await thread.send(role.mention)
 
                     vetoHellCards.append(getCardMessage(messageEntry.content))
                 else:
                     mysteryVetoHellCards.append(getCardMessage(messageEntry.content))
 
-        vetoDiscussionChannel = cast(TextChannel, self.bot.get_channel(hc_constants.VETO_DISCUSSION_CHANNEL))
+        vetoDiscussionChannel = cast(
+            TextChannel, self.bot.get_channel(hc_constants.VETO_DISCUSSION_CHANNEL)
+        )
 
-        await vetoDiscussionChannel.send(content= f"!! VETO POLLS HAVE BEEN PROCESSED !!")
+        await vetoDiscussionChannel.send(
+            content=f"!! VETO POLLS HAVE BEEN PROCESSED !!"
+        )
 
         # had to use format because python doesn't like \n inside template brackets
-        if(len(acceptedCards) > 0):
-            vetoMessage = ("\n\nACCEPTED CARDS: \n{0}".format("\n".join(acceptedCards)))
-            for i in range(0, vetoMessage.__len__(),1984):
-                await vetoDiscussionChannel.send(content = vetoMessage[i:i+1984])
-        if(len(needsErrataCards) > 0):
-            errataMessage = ("\n\nNEEDS ERRATA: \n{0}".format("\n".join(needsErrataCards)))
-            for i in range(0, errataMessage.__len__(),1984):
-                await vetoDiscussionChannel.send(content = errataMessage[i:i+1984])
-        if(len(vetoedCards) > 0):
-            vetoMessage = ("\n\nVETOED: \n{0}".format("\n".join(vetoedCards)))
-            for i in range(0, vetoMessage.__len__(),1984):
-                await vetoDiscussionChannel.send(content = vetoMessage[i:i+1984])
-        if(len(vetoHellCards) > 0):
-            hellMessage = ("\n\nVETO HELL: \n{0}".format("\n".join(vetoHellCards)))
-            for i in range(0, hellMessage.__len__(),1984):
-                await vetoDiscussionChannel.send(content = hellMessage[i:i+1984])
-        if(len(mysteryVetoHellCards) > 0):
-            mysteryHellMessage = ("\n\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format("\n".join(mysteryVetoHellCards)))
-            for i in range(0, mysteryHellMessage.__len__(),1984):
-                await vetoDiscussionChannel.send(content = mysteryHellMessage[i:i+1984])
+        if len(acceptedCards) > 0:
+            vetoMessage = "\n\nACCEPTED CARDS: \n{0}".format("\n".join(acceptedCards))
+            for i in range(0, vetoMessage.__len__(), 1984):
+                await vetoDiscussionChannel.send(content=vetoMessage[i : i + 1984])
+        if len(needsErrataCards) > 0:
+            errataMessage = "\n\nNEEDS ERRATA: \n{0}".format(
+                "\n".join(needsErrataCards)
+            )
+            for i in range(0, errataMessage.__len__(), 1984):
+                await vetoDiscussionChannel.send(content=errataMessage[i : i + 1984])
+        if len(vetoedCards) > 0:
+            vetoMessage = "\n\nVETOED: \n{0}".format("\n".join(vetoedCards))
+            for i in range(0, vetoMessage.__len__(), 1984):
+                await vetoDiscussionChannel.send(content=vetoMessage[i : i + 1984])
+        if len(vetoHellCards) > 0:
+            hellMessage = "\n\nVETO HELL: \n{0}".format("\n".join(vetoHellCards))
+            for i in range(0, hellMessage.__len__(), 1984):
+                await vetoDiscussionChannel.send(content=hellMessage[i : i + 1984])
+        if len(mysteryVetoHellCards) > 0:
+            mysteryHellMessage = "\n\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format(
+                "\n".join(mysteryVetoHellCards)
+            )
+            for i in range(0, mysteryHellMessage.__len__(), 1984):
+                await vetoDiscussionChannel.send(
+                    content=mysteryHellMessage[i : i + 1984]
+                )
 
 
-
-
-async def setup(bot:commands.Bot):
+async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
 
 
-
 FIVE_MINUTES = 300
+
 
 async def status_task(bot: commands.Bot):
     while True:
@@ -445,7 +542,7 @@ async def status_task(bot: commands.Bot):
         try:
             await checkMasterpieceSubmissions(bot)
         except Exception as e:
-            print(e)    
+            print(e)
         try:
             await checkErrataSubmissions(bot)
         except Exception as e:
@@ -454,14 +551,18 @@ async def status_task(bot: commands.Bot):
             await checkReddit(bot)
         except Exception as e:
             print(e)
-        await bot.change_presence(status = discord.Status.online, activity = discord.Game(status))
+        await bot.change_presence(
+            status=discord.Status.online, activity=discord.Game(status)
+        )
         now = datetime.now()
         print(f"time is {now}")
         if now.hour == 10 and now.minute <= 4:
             nowtime = now.date()
             start = date(2024, 3, 13)  # more or less the start date to post to reddit
             days_since_starting = (nowtime - start).days
-            cardOffset = 608 - days_since_starting # 608 is how many cards there were in hc4 at the time
+            cardOffset = (
+                608 - days_since_starting
+            )  # 608 is how many cards there were in hc4 at the time
             if cardOffset >= 0:
                 cards = searchFor({"cardset": "hc4"})
                 card = cards[cardOffset]
@@ -469,29 +570,34 @@ async def status_task(bot: commands.Bot):
                 url = card.img()
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url) as resp:
-                        if resp.status == 200:                      
+                        if resp.status == 200:
                             image_path = f'tempImages/{name.replace("/", "|")}'
-                            with open(image_path, 'wb') as out: ## Open temporary file as bytes
+                            with open(
+                                image_path, "wb"
+                            ) as out:  ## Open temporary file as bytes
                                 out.write(await resp.read())  ## Read bytes into file
                             try:
                                 await postToReddit(
-                                    title = f"HC4 Card of the ~day: {name}",
-                                    image_path = image_path,
-                                    flair = hc_constants.OFFICIAL_FLAIR
+                                    title=f"HC4 Card of the ~day: {name}",
+                                    image_path=image_path,
+                                    flair=hc_constants.OFFICIAL_FLAIR,
                                 )
                             except:
                                 ...
                             os.remove(image_path)
                         await session.close()
-            
-        if now.hour == 4 and now.minute <= 4:  
+
+        if now.hour == 4 and now.minute <= 4:
             # Get all the messages, download the images, post them to reddit
             try:
-                subChannel = cast(discord.TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL))
+                subChannel = cast(
+                    discord.TextChannel,
+                    bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL),
+                )
                 timeNow = datetime.now(timezone.utc)
                 oneDay = timeNow + timedelta(days=-1)
-                messages = subChannel.history(after = oneDay, limit = None)
-                images: List[Dict[str, str]]=[]
+                messages = subChannel.history(after=oneDay, limit=None)
+                images: List[Dict[str, str]] = []
                 if messages is None:
                     return
 
@@ -499,117 +605,128 @@ async def status_task(bot: commands.Bot):
                 for messageEntry in messages:
                     file = await messageEntry.attachments[0].to_file()
                     file_data = file.fp.read()
-                    image_path = f'tempImages/{messageEntry.id}{file.filename}'
+                    image_path = f"tempImages/{messageEntry.id}{file.filename}"
                     images.append({"image_path": image_path})
-                    with open(image_path, 'wb') as out:
+                    with open(image_path, "wb") as out:
                         out.write(file_data)
                 await postGalleryToReddit(
-                    title = f"Some of Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
-                    images = images,
-                    flair = hc_constants.OFFICIAL_FLAIR
+                    title=f"Some of Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
+                    images=images,
+                    flair=hc_constants.OFFICIAL_FLAIR,
                 )
                 for imageEntry in images:
                     os.remove(list(imageEntry.values())[0])
             except Exception as e:
-                    print(e)
+                print(e)
 
         await asyncio.sleep(FIVE_MINUTES)
 
 
-async def checkReddit(bot:commands.Bot):
+async def checkReddit(bot: commands.Bot):
     timeNow = datetime.now(timezone.utc)
     oneDay = timeNow + timedelta(days=-2)
     reddit = asyncpraw.Reddit(
-            client_id = ID,
-            client_secret = SECRET,
-            password = PASSWORD,
-            user_agent = USER_AGENT,
-            username = NAME
+        client_id=ID,
+        client_secret=SECRET,
+        password=PASSWORD,
+        user_agent=USER_AGENT,
+        username=NAME,
     )
-    hellscubeSubreddit = cast(asyncpraw.reddit.Subreddit, await reddit.subreddit('HellsCube'))
+    hellscubeSubreddit = cast(
+        asyncpraw.reddit.Subreddit, await reddit.subreddit("HellsCube")
+    )
 
-    redditChannel= cast(TextChannel,bot.get_channel(hc_constants.REDDIT_CHANNEL))
-    messagesInLastDay = [mess async for mess in redditChannel.history(after = oneDay)] 
+    redditChannel = cast(TextChannel, bot.get_channel(hc_constants.REDDIT_CHANNEL))
+    messagesInLastDay = [mess async for mess in redditChannel.history(after=oneDay)]
 
-    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter = 'day'): # type: ignore
+    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter="day"):  # type: ignore
         alreadyPosted = False
         for discordMessage in messagesInLastDay:
             if submission.permalink in discordMessage.content:
                 alreadyPosted = True
                 break
-        
+
         if not alreadyPosted:
-            await redditChannel.send(content= f"reddit says: https://reddit.com{submission.permalink}")
-            
+            await redditChannel.send(
+                content=f"reddit says: https://reddit.com{submission.permalink}"
+            )
 
 
-
-async def getVetoPollsResults(bot:commands.Bot, ctx):
+async def getVetoPollsResults(bot: commands.Bot, ctx):
     vetoChannel = cast(TextChannel, bot.get_channel(hc_constants.VETO_CHANNEL))
-    timeNow = datetime.now(timezone.utc)        
-    fourWeeksAgo = timeNow + timedelta(days=-28*3)
-    epicCatchphrases = ["If processing lasts more than 5 minutes, consult your doctor.", "on it, yo.", "ya ya gimme a sec", "processing...", "You're not the boss of me", "ok, 'DAD'", "but what of the children?", "?", "workin' on it!", "on it!", "can do, cap'n!", "raseworter pro tip: run it back, but with less 'tude next time.", "who? oh yeah sure thing b0ss", "how about no for a change?", "CAAAAAAAAAAAAAAN DO!", "i'm afraid i can't let you do that.", "i mean like, if you say so, man", "WOOOOOOOOOOOOOOOOOOOOOOOOOOOO", "*nuzzles u*","it begins"]
-    
-    await ctx.send(random.choice(epicCatchphrases)) 
-    
-    messages = vetoChannel.history(after = fourWeeksAgo, limit = None)
+    timeNow = datetime.now(timezone.utc)
+    fourWeeksAgo = timeNow + timedelta(days=-28 * 3)
+    epicCatchphrases = [
+        "If processing lasts more than 5 minutes, consult your doctor.",
+        "on it, yo.",
+        "ya ya gimme a sec",
+        "processing...",
+        "You're not the boss of me",
+        "ok, 'DAD'",
+        "but what of the children?",
+        "?",
+        "workin' on it!",
+        "on it!",
+        "can do, cap'n!",
+        "raseworter pro tip: run it back, but with less 'tude next time.",
+        "who? oh yeah sure thing b0ss",
+        "how about no for a change?",
+        "CAAAAAAAAAAAAAAN DO!",
+        "i'm afraid i can't let you do that.",
+        "i mean like, if you say so, man",
+        "WOOOOOOOOOOOOOOOOOOOOOOOOOOOO",
+        "*nuzzles u*",
+        "it begins",
+    ]
+
+    await ctx.send(random.choice(epicCatchphrases))
+
+    messages = vetoChannel.history(after=fourWeeksAgo, limit=None)
 
     if messages is None:
         return
-    
+
     messages = [message async for message in messages]
 
-    errataCardMessages:list[Message] = []
-    acceptedCardMessages:list[Message] = []
-    vetoCardMessages:list[Message] = []
-    purgatoryCardMessages:list[Message] = []
-    
+    errataCardMessages: list[Message] = []
+    acceptedCardMessages: list[Message] = []
+    vetoCardMessages: list[Message] = []
+    purgatoryCardMessages: list[Message] = []
 
     for messageEntry in messages:
-        if (len(messageEntry.attachments) == 0):
+        if len(messageEntry.attachments) == 0:
             continue
 
         messageAge = timeNow - messageEntry.created_at
 
         if (
-            get(messageEntry.reactions, emoji = hc_constants.ACCEPT)
-            or get(messageEntry.reactions, emoji = hc_constants.DELETE)
-            or messageAge < timedelta(days = 1)
+            get(messageEntry.reactions, emoji=hc_constants.ACCEPT)
+            or get(messageEntry.reactions, emoji=hc_constants.DELETE)
+            or messageAge < timedelta(days=1)
         ):
-            continue # Skip cards that have been marked, or are only a day old
+            continue  # Skip cards that have been marked, or are only a day old
 
-        up = get(messageEntry.reactions, emoji = hc_constants.VOTE_UP)
+        up = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
         upvote = up.count if up else -1
 
-        down = get(messageEntry.reactions, emoji = hc_constants.VOTE_DOWN)
+        down = get(messageEntry.reactions, emoji=hc_constants.VOTE_DOWN)
         downvote = down.count if down else -1
 
-        erratas = get(messageEntry.reactions, emoji = bot.get_emoji(hc_constants.CIRION_SPELLING))
+        erratas = get(
+            messageEntry.reactions, emoji=bot.get_emoji(hc_constants.CIRION_SPELLING)
+        )
         errata = erratas.count if erratas else -1
-        
 
         # Errata needed case
-        if (
-            errata > 4
-            and errata >= upvote
-            and errata >= downvote
-        ):
+        if errata > 4 and errata >= upvote and errata >= downvote:
             errataCardMessages.append(messageEntry)
 
         # Accepted case
-        elif (
-            upvote > 4
-            and upvote >= downvote
-            and upvote >= errata
-        ):
+        elif upvote > 4 and upvote >= downvote and upvote >= errata:
             acceptedCardMessages.append(messageEntry)
 
         # Veto case
-        elif (
-            downvote > 4
-            and downvote >= upvote
-            and downvote >= errata
-        ):
+        elif downvote > 4 and downvote >= upvote and downvote >= errata:
             vetoCardMessages.append(messageEntry)
 
         # Purgatorio Hell
@@ -617,21 +734,16 @@ async def getVetoPollsResults(bot:commands.Bot, ctx):
             purgatoryCardMessages.append(messageEntry)
 
     return VetoPollResults(
-        errataCardMessages = errataCardMessages,
-        acceptedCardMessages = acceptedCardMessages,
-        vetoCardMessages = vetoCardMessages,
-        purgatoryCardMessages = purgatoryCardMessages
+        errataCardMessages=errataCardMessages,
+        acceptedCardMessages=acceptedCardMessages,
+        vetoCardMessages=vetoCardMessages,
+        purgatoryCardMessages=purgatoryCardMessages,
     )
-
 
 
 @dataclass
 class VetoPollResults:
-    errataCardMessages:list[Message]
-    acceptedCardMessages:list[Message]
-    vetoCardMessages:list[Message]
-    purgatoryCardMessages:list[Message]
-
-
-
-
+    errataCardMessages: list[Message]
+    acceptedCardMessages: list[Message]
+    vetoCardMessages: list[Message]
+    purgatoryCardMessages: list[Message]

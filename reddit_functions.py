@@ -2,7 +2,7 @@
 from typing import Dict, List
 import asyncpraw
 
-from secrets.reddit_secrets import ID,SECRET,PASSWORD,USER_AGENT,NAME
+from mork_secrets.reddit_secrets import ID,SECRET,PASSWORD,USER_AGENT,NAME
 
 async def postToReddit(image_path:str, title:str, flair:str=""):
     reddit = asyncpraw.Reddit(

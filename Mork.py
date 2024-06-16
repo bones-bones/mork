@@ -1,7 +1,7 @@
 from discord.ext import commands
 
 from shared_vars import intents
-from secrets.discord_token import DISCORD_ACCESS_TOKEN
+from mork_secrets.discord_token import DISCORD_ACCESS_TOKEN
 
 
 class MyBot(commands.Bot):

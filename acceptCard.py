@@ -11,29 +11,43 @@ from discord.ext import commands
 
 from reddit_functions import postToReddit
 
-cardSheetUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet("Database (Unapproved)")
+cardSheetUnapproved = googleClient.open_by_key(
+    hc_constants.HELLSCUBE_DATABASE
+).worksheet("Database (Unapproved)")
 
 
-async def acceptCard(bot:commands.Bot, cardMessage:str, file:discord.File, cardName:str, authorName:str):
+async def acceptCard(
+    bot: commands.Bot,
+    cardMessage: str,
+    file: discord.File,
+    cardName: str,
+    authorName: str,
+):
     extension = re.search("\.([^.]*)$", file.filename)
-    fileType = extension.group() if extension else ".png" # just guess that the file is a png
+    fileType = (
+        extension.group() if extension else ".png"
+    )  # just guess that the file is a png
     new_file_name = f'{cardName.replace("/", "|")}{fileType}'
-    image_path = f'tempImages/{new_file_name}'
+    image_path = f"tempImages/{new_file_name}"
 
     file_data = file.fp.read()
-    file_copy_for_cardlist = discord.File(fp = io.BytesIO(file_data), filename = new_file_name)
+    file_copy_for_cardlist = discord.File(
+        fp=io.BytesIO(file_data), filename=new_file_name
+    )
 
-    cardListChannel = cast(discord.TextChannel, bot.get_channel(hc_constants.SIX_ZERO_CARD_LIST))
-    await cardListChannel.send( file = file_copy_for_cardlist, content = cardMessage)
+    cardListChannel = cast(
+        discord.TextChannel, bot.get_channel(hc_constants.SIX_ZERO_CARD_LIST)
+    )
+    await cardListChannel.send(file=file_copy_for_cardlist, content=cardMessage)
 
-    with open(image_path, 'wb') as out:
+    with open(image_path, "wb") as out:
         out.write(file_data)
 
     try:
         await postToReddit(
-            image_path = image_path,
-            title = f"{cardMessage.replace('**', '')} was accepted!",
-            flair = hc_constants.ACCEPTED_FLAIR
+            image_path=image_path,
+            title=f"{cardMessage.replace('**', '')} was accepted!",
+            flair=hc_constants.ACCEPTED_FLAIR,
         )
     except Exception as e:
         print("tried to post to reddit", e)
@@ -56,7 +70,7 @@ async def acceptCard(bot:commands.Bot, cardMessage:str, file:discord.File, cardN
             cardName = "NO NAME"
 
     cardSheetUnapproved.update_cell(dbRowIndex, 2, imageUrl)
-    
+
     if newCard:
         cardSheetUnapproved.update_cell(dbRowIndex, 1, cardName)
         cardSheetUnapproved.update_cell(dbRowIndex, 3, authorName)
