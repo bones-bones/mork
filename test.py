@@ -5,6 +5,7 @@
 # import asyncio
 # import hc_constants
 import re
+from typing import Dict, List
 from dateutil.parser import parse
 
 from datetime import date, datetime,timedelta
@@ -15,7 +16,18 @@ from datetime import date, datetime,timedelta
 
 b=33333
 
-a = {"a":33}
+a = {b:"33"}
+
+images: List[Dict[str, str]]=[]
+images.append({"a":"stuff"})
+print(list(images[0].values())[0])
+
+
+# vetoMessage= "htnaetaeuohtsneushntaeushntaeohtneuotnshatsnaehnstaeotnuestnaoetnsuneosnthauoestnueshtnoeushnseus"
+
+# for i in range(0, vetoMessage.__len__(),10):
+#     print(i)
+#     print(vetoMessage[i:i+10])
 
 # nammappings=[]
 

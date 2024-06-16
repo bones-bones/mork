@@ -795,7 +795,7 @@ class SpecificCardsCog(commands.Cog):
                 choiceless = joined.replace("Choose two —\n", "")
                 asSplit = choiceless.split('\n')
 
-                results = random.choices(population = asSplit, k = 6)
+                results = random.sample(population = asSplit, k = 4)
                 await ctx.send("Choose two —\n{0}".format("\n".join(results)))
                 await session.close()
     

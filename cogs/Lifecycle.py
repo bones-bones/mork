@@ -25,7 +25,6 @@ from cogs.HellscubeDatabase import searchFor
 from getCardMessage import getCardMessage
 from handleVetoPost import handleVetoPost
 import hc_constants
-from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
 from reddit_functions import postGalleryToReddit, postToReddit
@@ -48,37 +47,31 @@ class LifecycleCog(commands.Cog):
         self.bot.loop.create_task(status_task(self.bot))
 
     @commands.Cog.listener()
-    async def on_member_join(self, member:Member):
-        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.FAQ_CHANNEL}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n Right now we're at the beginning of HC6, the Commander Cube. Head on over to either of the 'brainstorming' channels to get feedback, then post it in <#{hc_constants.SUBMISSIONS_CHANNEL}> when you're ready for it to be voted on.")
+    async def on_member_join(self, member: Member):
+        await member.send(f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC4, a vintage cube, and have moved to HC6, a commander cube.")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction:RawReactionActionEvent):
         if is_mork(reaction.user_id):
             return
         guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
-        channel =  guild.get_channel(reaction.channel_id)
+        channel =  guild.get_channel_or_thread(reaction.channel_id)
         
         if channel:
             channelAsText = cast(discord.TextChannel,channel)
             message = await channelAsText.fetch_message(reaction.message_id)
 
-            if channel.id == hc_constants.VETO_HELLPITS: 
-                member = cast(discord.Member, reaction.member)
-                if not is_veto(member) and not is_admin(member):
-                    await message.remove_reaction(reaction.emoji, member)
-                
-            else:
-                if str(reaction.emoji) == hc_constants.DELETE and not is_mork(reaction.user_id):
-                    if not is_mork(message.author.id):
-                        return
-                    if reaction.member in message.mentions:
+            if str(reaction.emoji) == hc_constants.DELETE and not is_mork(reaction.user_id):
+                if not is_mork(message.author.id):
+                    return
+                if reaction.member in message.mentions:
+                    await message.delete()
+                    return
+                if message.reference:
+                    messageReference = await channelAsText.fetch_message(cast(int, message.reference.message_id))
+                    if reaction.member == messageReference.author:
                         await message.delete()
                         return
-                    if message.reference:
-                        messageReference = await channelAsText.fetch_message(cast(int, message.reference.message_id))
-                        if reaction.member == messageReference.author:
-                            await message.delete()
-                            return
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread:Thread):

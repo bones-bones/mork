@@ -1,7 +1,12 @@
 
 from datetime import datetime, timedelta, timezone
+import io
+import json
+import os
+import random
 import re
-from typing import cast
+from typing import Dict, List, cast
+import aiohttp
 import discord
 from discord.ext import commands
 from discord.utils import get
@@ -11,10 +16,11 @@ import asyncpraw
 
 
 from acceptCard import acceptCard
-from cogs.Lifecycle import VetoPollResults, getVetoPollsResults
 import hc_constants
+from is_admin import is_veto
+import is_admin
 from is_mork import is_mork
-from secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
+
 from shared_vars import intents,cardSheet,allCards
 
 
@@ -27,6 +33,64 @@ class MiscCog(commands.Cog):
 
 
 
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     global log
+    #     async with aiohttp.ClientSession() as session:
+    #         async with session.get("https://api.scryfall.com/cards/search?as=grid&order=name&q=command+oracle%3A•+%28game%3Apaper%29") as resp:
+    #             if resp.status != 200:
+    #                 #await ctx.send('Something went wrong while getting the link. Wait for @llllll to fix it.')
+    #                 return
+    #             response = json.loads( await resp.read())
+                
+    #             mapped = (map( lambda x: x['oracle_text'], response["data"]))
+    #             joined = "\n".join(list(mapped))
+    #             choiceless = joined.replace("Choose two —\n", "")
+    #             asSplit = choiceless.split('\n')
+
+    #             results = random.choices(population = asSplit, k = 6)
+    #             ctx.send("Choose two —\n{0}".format("\n".join(results)))
+    #             await session.close()
+        # print(f'{self.bot.user.name} has connected to Discord!')
+        # print( get(self.bot.users, name="llllll______").id)
+        # the_thread = vetoChannel.threads[0]
+        
+        # print([message async for message in vetoChannel.threads[0].history(limit = 1, oldest_first = True)])
+        # vetoChannel = cast(discord.TextChannel, self.bot.get_channel(hc_constants.BOT_TEST_CHANNEL))
+        # print( [message async for message in vetoChannel.history(limit=1)][0].content)
+        # # [message async for message in vetoChannel.history(limit=1)][0]
+        # print(vetoChannel.threads)
+
+       
+       
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, reaction:discord.RawReactionActionEvent):
+        guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
+        channel =  guild.get_channel_or_thread(reaction.channel_id)
+        
+        print(channel,  reaction.message_id, reaction.channel_id)
+
+
+    # @commands.Cog.listener()
+    # async def on_message(self, message:discord.Message):
+    #     print('ping')
+    #     if message.channel.id == hc_constants.VETO_TEST and not is_mork(message.author.id):
+    #         print('second')
+    #         guild = cast(discord.Guild, message.guild)
+    #         role = get(message.author.guild.roles, id = hc_constants.VETO_COUNCIL)
+
+    #         copyagain = await message.attachments[0].to_file()
+    #         channel =  guild.get_channel(hc_constants.VETO_TEST)
+    
+    #         if channel:
+    #             channelAsText = cast(discord.TextChannel,channel)
+    #             secretThread = await channelAsText.create_thread(name="hey", type = discord.ChannelType.private_thread)
+    #             await secretThread.send(file = copyagain, content="heyyyyyy")
+    #             mentions = [role.mention]
+                
+    #             for raw in message.raw_mentions:
+    #                 mentions.append(f'<@{str(raw)}>')
+    #             await secretThread.send(', '.join(mentions))
 
     # @commands.command()
     # async def sss(self,ctx:commands.Context):
@@ -35,21 +99,6 @@ class MiscCog(commands.Cog):
     #     guild = client.get_guild()
     #     member = await guild.fetch_member(hc_constants.LLLLLL)
     #     print(member)
-
-    @commands.Cog.listener()
-    async def on_message(self, message:discord.Message):
-        if message.channel.id == hc_constants.BOT_TEST_CHANNEL:
-            splitString = message.content.split("\n")
-            title = splitString[0]
-            update = splitString[1]
-            reason = splitString[2]
-            if not reason or not update or not title:
-                await message.channel.send(f"<@{message.author.id}>, Make sure your post is formatted like this:\nClockwolf (name of card)\nMake it cost 5 mana (Suggested change. Write Cut if you want the whole card gone)\nToo strong (Reasoning, as brief or detailed as you want, but remember you need to convince others this change is a good idea)")
-                await message.delete()
-
-
-
-
     #     if message.channel.id == hc_constants.REDDIT_CHANNEL:
     #             lastTwo = [mess async for mess in message.channel.history(limit = 2)]
     #             if not is_mork(lastTwo[0].author.id) and is_mork(lastTwo[1].author.id) and "reddit says: " in lastTwo[1].content:
@@ -72,6 +121,32 @@ class MiscCog(commands.Cog):
 
     # @commands.Cog.listener()
     # async def on_ready(self):
+    #     # try:
+    #     #         subChannel = cast(discord.TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL))
+    #     #         timeNow = datetime.now(timezone.utc)
+    #     #         oneDay = timeNow + timedelta(days=-1)
+    #     #         messages = subChannel.history(after = oneDay, limit = None)
+    #     #         images: List[Dict[str, str]]=[]
+    #     #         if messages is None:
+    #     #             return
+
+    #     #         messages = [message async for message in messages][:10]
+    #     #         for messageEntry in messages:
+    #     #             file = await messageEntry.attachments[0].to_file()
+    #     #             file_data = file.fp.read()
+    #     #             image_path = f'tempImages/{file.filename}'
+    #     #             images.append({"image_path": image_path})
+    #     #             with open(image_path, 'wb') as out:
+    #     #                 out.write(file_data)
+    #     #         await postGalleryToReddit(
+    #     #             title = f"Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
+    #     #             images = images,
+    #     #             flair = hc_constants.OFFICIAL_FLAIR
+    #     #         )
+    #     #         for imageEntry in images:
+    #     #             os.remove(list(imageEntry.values())[0])
+    #     # except Exception as e:
+    #     #         print(e)
 
 
 
@@ -117,20 +192,7 @@ class MiscCog(commands.Cog):
 
 
 
-
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     global log
-    #     print(f'{self.bot.user.name} has connected to Discord!')
-    #     vetoChannel = self.bot.get_channel(hc_constants.VETO_CHANNEL)
-
-       
-    #     messages = vetoChannel.history( limit=4 )
-    #     # messages = [message async for message in messages]
-    #     # for message in messages:
-    #     #     if message.content == "EXACT SUBJECT":
-    #     #         print(message.content)
-    #     #        # await message.delete()
+  
 
     # @commands.command()
     # async def modal(self, ctx:commands.Context):
