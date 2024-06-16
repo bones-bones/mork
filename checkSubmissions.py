@@ -91,10 +91,14 @@ async def checkSubmissions(bot: commands.Bot):
 
 
 async def checkMasterpieceSubmissions(bot: commands.Bot):
-    subChannel = bot.get_channel(hc_constants.MASTERPIECE_CHANNEL)
-    vetoChannel = bot.get_channel(hc_constants.VETO_CHANNEL)
-    acceptedChannel = bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL)
-    logChannel = bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
+    subChannel = cast(TextChannel, bot.get_channel(hc_constants.MASTERPIECE_CHANNEL))
+    vetoChannel = cast(TextChannel, bot.get_channel(hc_constants.VETO_CHANNEL))
+    acceptedChannel = cast(
+        TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL)
+    )
+    logChannel = cast(
+        TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
+    )
     timeNow = datetime.now(timezone.utc)
     oneWeek = timeNow + timedelta(weeks=-1)
     messages = subChannel.history(after=oneWeek, limit=None)
@@ -123,7 +127,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 if downCount == 1:
                     prettyValid = False
                     async for user in upvote.users():
-                        if is_admin(user):
+                        if is_admin(cast(Member, user)):
                             prettyValid = True
                     if not prettyValid:
                         user = await bot.fetch_user(
@@ -144,21 +148,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                     content="HC6: " + accepted_message_no_mentions, file=copy
                 )
 
-                await vetoEntry.add_reaction(hc_constants.VOTE_UP)
-                await vetoEntry.add_reaction(
-                    bot.get_emoji(hc_constants.CIRION_SPELLING)
-                )
-                await vetoEntry.add_reaction(hc_constants.VOTE_DOWN)
-                await vetoEntry.add_reaction(bot.get_emoji(hc_constants.MANA_GREEN))
-                await vetoEntry.add_reaction(bot.get_emoji(hc_constants.MANA_WHITE))
-                await vetoEntry.add_reaction("🤮")
-                await vetoEntry.add_reaction("🤔")
-
-                thread = await vetoEntry.create_thread(name=vetoEntry.content[0:99])
-                role: Role = get(
-                    vetoEntry.author.guild.roles, id=hc_constants.VETO_COUNCIL
-                )
-                await thread.send(role.mention)
+                await handleVetoPost(vetoEntry, bot)
 
                 copy2 = await messageEntry.attachments[0].to_file()
                 logContent = f"{acceptContent}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
