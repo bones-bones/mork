@@ -1,7 +1,7 @@
 .DS_store
-mork_secrets/discord_token.py
-mork_secrets/client_secrets.json
-mork_secrets/reddit_secrets.py
+secrets/discord_token.py
+secrets/client_secrets.json
+secrets/reddit_secrets.py
 
 tempImages/.*
 

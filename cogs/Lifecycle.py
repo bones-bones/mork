@@ -37,7 +37,7 @@ import hc_constants
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
 from reddit_functions import postGalleryToReddit, postToReddit
-from mork_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
+from secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents
 
 ONE_HOUR = 3600
@@ -467,6 +467,7 @@ class LifecycleCog(commands.Cog):
                         role = cast(
                             Role, get(guild.roles, id=hc_constants.VETO_COUNCIL)
                         )
+                        # TODO get the pit thread
                         await thread.send(role.mention)
 
                     vetoHellCards.append(getCardMessage(messageEntry.content))
