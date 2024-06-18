@@ -68,7 +68,7 @@ While the definition of what art is is fraught at best, try to avoid AI art. If 
 ## 3. Submitting
 One you have your finished card and are ready to throw it into the lion pit, head over to #submissions. Create a post that consists of the name of your card and the picture. Nothing more, nothing less. Make sure you do it right, because you can only post once an hour. Once posted, Mork will delete your post, and repost it as a poll. Polls with have thumbs up, thumbs down, and X. The X is there in case you decide you need that post to be removed.
 
-And now you wait. If your card has 25 more upvotes than downvotes after 24 hours, but within 7 days. It makes it to the next round! When the conditions are met, Mork will delete the post and announce it in #submissions-discussion.
+And now you wait. If your card has 30 more upvotes than downvotes after 24 hours, but within 7 days. It makes it to the next round! When the conditions are met, Mork will delete the post and announce it in #submissions-discussion.
 
 ## 4. Veto time
 Right after Mork sends the message in #submissions-discussion, it'll create a thread in a secret channel accessed only by the Veto Council. Mork attaches the relevant voting emoji and tags the Veto Council. They will discuss and assess the card and after some amount of time (when the council has decided on a handful of cards) it will meet one of its fates

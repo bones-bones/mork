@@ -41,7 +41,7 @@ async def checkSubmissions(bot: commands.Bot):
             messageAge = timeNow - messageEntry.created_at
             # card was voted in
             if (
-                (upCount - downCount) >= 25
+                (upCount - downCount) >= 30
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days=1)
                 and is_mork(messageEntry.author.id)
