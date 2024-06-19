@@ -26,12 +26,16 @@ async def handleVetoPost(message: Message, bot: commands.Bot):
 
     role = cast(
         Role,
-        get(cast(Member, message.author).guild.roles, id=hc_constants.VETO_COUNCIL),
+        get(cast(Member, message.author).guild.roles, id=hc_constants.VETO_COUNCIL)
+    )
+    judgeRole = cast(
+        Role,
+        get(cast(Member,message.author).guild.roles, id=hc_constants.JUDGES)
     )
 
     copy_for_discussion = await message.attachments[0].to_file()
 
-    mentions = [role.mention]
+    mentions = [role.mention, judgeRole.mention]
 
     author_s = message.content.split(" by ")[1]
     creator_mentions = author_s.split("; ")

@@ -36,7 +36,7 @@ async def sendImageReply(url: str, cardname: str, message: Message):
                 await message.reply(
                     "Something went wrong while getting the link for "
                     + cardname
-                    + ". Wait for @llllll to fix it."
+                    + ". Wait for llllll to fix it."
                 )
                 return
             # currently extraFilename looks like inline;filename="                                Skald.png"

@@ -37,7 +37,7 @@ import hc_constants
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
 from reddit_functions import postGalleryToReddit, postToReddit
-from secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
+from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents
 
 ONE_HOUR = 3600
@@ -456,7 +456,10 @@ class LifecycleCog(commands.Cog):
                     threadMessages = [tm async for tm in threadMessages]
 
                     for threadMessage in threadMessages:
-                        if threadMessage.content == f"<@&{hc_constants.VETO_COUNCIL}>":
+                        if (
+                            threadMessage.content
+                            == f"<@&{hc_constants.VETO_COUNCIL}>, <@&{hc_constants.JUDGES}>"
+                        ):
                             threadMessageAge = timeNow - threadMessage.created_at
                             if threadMessageAge < timedelta(days=1):
                                 # then it was recently acted upon
@@ -467,8 +470,10 @@ class LifecycleCog(commands.Cog):
                         role = cast(
                             Role, get(guild.roles, id=hc_constants.VETO_COUNCIL)
                         )
+                        judgeRole = cast(Role, get(guild.roles, id=hc_constants.JUDGES))
+
                         # TODO get the pit thread
-                        await thread.send(role.mention)
+                        await thread.send(role.mention + ", " + judgeRole.mention)
 
                     vetoHellCards.append(getCardMessage(messageEntry.content))
                 else:

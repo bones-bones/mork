@@ -34,7 +34,7 @@ async def sendImage(url, ctx):
         async with session.get(url) as resp:
             if resp.status != 200:
                 await ctx.send(
-                    "Something went wrong while getting the link. Wait for @llllll to fix it."
+                    "Something went wrong while getting the link. Wait for llllll to fix it."
                 )
                 return
             data = io.BytesIO(await resp.read())
@@ -47,7 +47,7 @@ async def sendDriveImage(url, ctx):
         async with session.get(url) as resp:
             if resp.status != 200:
                 await ctx.send(
-                    "Something went wrong while getting the link. Wait for @llllll to fix it."
+                    "Something went wrong while getting the link. Wait for llllll to fix it."
                 )
                 return
             # currently extraFilename looks like inline;filename="                                Skald.png"
@@ -1209,7 +1209,7 @@ class SpecificCardsCog(commands.Cog):
                 "https://api.scryfall.com/cards/search?as=grid&order=name&q=command+oracle%3A•+%28game%3Apaper%29"
             ) as resp:
                 if resp.status != 200:
-                    # await ctx.send('Something went wrong while getting the link. Wait for @llllll to fix it.')
+                    # await ctx.send('Something went wrong while getting the link. Wait for llllll to fix it.')
                     return
                 response = json.loads(await resp.read())
 

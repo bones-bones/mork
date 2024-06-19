@@ -110,7 +110,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
     # okay not technically a DB command
     @commands.command()
-    async def randomReject(self, channel, num=0):
+    async def randomReject(self, channel, num=0):    
         """
         Returns a random card image from #submissions.
         Chooses a random date between the start of submissions and now, then gets history near that date.
