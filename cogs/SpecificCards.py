@@ -36,6 +36,7 @@ async def sendImage(url, ctx):
                 await ctx.send(
                     "Something went wrong while getting the link. Wait for llllll to fix it."
                 )
+                await session.close()
                 return
             data = io.BytesIO(await resp.read())
             await ctx.send(file=discord.File(data, url))
@@ -49,6 +50,7 @@ async def sendDriveImage(url, ctx):
                 await ctx.send(
                     "Something went wrong while getting the link. Wait for llllll to fix it."
                 )
+                await session.close()
                 return
             # currently extraFilename looks like inline;filename="                                Skald.png"
             extraFilename = resp.headers.get("Content-Disposition")
@@ -1210,6 +1212,7 @@ class SpecificCardsCog(commands.Cog):
             ) as resp:
                 if resp.status != 200:
                     # await ctx.send('Something went wrong while getting the link. Wait for llllll to fix it.')
+                    await session.close()
                     return
                 response = json.loads(await resp.read())
 

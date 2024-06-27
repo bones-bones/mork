@@ -110,7 +110,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
     # okay not technically a DB command
     @commands.command()
-    async def randomReject(self, channel, num=0):    
+    async def randomReject(self, channel, num=0):
         """
         Returns a random card image from #submissions.
         Chooses a random date between the start of submissions and now, then gets history near that date.
@@ -169,13 +169,52 @@ class HellscubeDatabaseCog(commands.Cog):
                         message = message + "\n```" + i + "```"
         await channel.send(message)
 
+    @commands.command(rest_is_raw=True)
+    async def judgement(self, ctx: commands.Context, *, args: str):
+
+        if ctx.channel.id != hc_constants.JUDGES_TOWER:
+            await ctx.send("Only allowed in the judge's tower")
+            return
+        cardName = args.split("\n")[0].strip()
+        ruling = args.split("\n")[1].strip()
+
+        name = cardNameRequest(cardName.lower())
+        if name != cardName.lower():
+            await ctx.send(
+                f"unable to find an exact match for {cardName}. did you mean: {name}"
+            )
+            return
+
+        cardSheetUnapproved = googleClient.open_by_key(
+            hc_constants.HELLSCUBE_DATABASE
+        ).worksheet("Database (Unapproved)")
+
+        allCardNames = cardSheetUnapproved.col_values(1)
+
+        rulings = cardSheetUnapproved.col_values(6)
+
+        dbRowIndex = allCardNames.index(cardName) + 1
+
+        currentRuling = (
+            rulings[dbRowIndex - 1] if rulings.__len__() >= dbRowIndex else ""
+        )
+
+        print(currentRuling)
+
+        cardSheetUnapproved.update_cell(
+            dbRowIndex,
+            6,
+            (f"{currentRuling}\n" if currentRuling != "" else "")
+            + f"{ruling}- {ctx.author.name} {datetime.today().strftime('%Y-%m-%d')}",
+        )
+        await ctx.send("ruling updated")
+
     @commands.command()
     async def info(self, channel, *cardName):
         name = cardNameRequest(" ".join(cardName).lower())
         message = "something went wrong!"
         for card in cardList:
-            if "ightbear" in card.name():
-                print(f".{name}.{card.name()}")
+
             if card.name().lower() == name:
                 creator = card.creator()
                 cardset = card.cardset()

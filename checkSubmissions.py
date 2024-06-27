@@ -5,7 +5,7 @@ import discord
 from handleVetoPost import handleVetoPost
 import hc_constants
 from discord.ext import commands
-from discord import Emoji, Guild, Member, Role, TextChannel
+from discord import Emoji, Guild, Member, Message, Role, TextChannel
 
 from discord.utils import get
 
@@ -30,7 +30,7 @@ async def checkSubmissions(bot: commands.Bot):
 
     messages = [message async for message in messages]
     for messageEntry in messages:
-
+        messageEntry = cast(Message, messageEntry)
         if "@everyone" in messageEntry.content:
             continue  # just ignore these
         upvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
@@ -39,9 +39,10 @@ async def checkSubmissions(bot: commands.Bot):
             upCount = upvote.count
             downCount = downvote.count
             messageAge = timeNow - messageEntry.created_at
-            # card was voted in
+
+            positiveMargin = upCount - downCount
             if (
-                (upCount - downCount) >= 30
+                positiveMargin >= 30
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days=1)
                 and is_mork(messageEntry.author.id)
@@ -49,7 +50,6 @@ async def checkSubmissions(bot: commands.Bot):
                 # This case here is to stop prevent spamming. If there is a single downvote, do a check to see if an admin has voted
                 if downCount == 1:
                     guild = cast(Guild, messageEntry.guild)
-
                     prettyValid = False
                     async for user in upvote.users():
                         if guild.get_member(user.id) is not None and is_admin(
@@ -87,6 +87,14 @@ async def checkSubmissions(bot: commands.Bot):
 
                 await messageEntry.delete()
                 continue
+            elif (
+                positiveMargin >= 25
+                and len(messageEntry.attachments) > 0
+                and messageAge >= timedelta(days=1)
+                and is_mork(messageEntry.author.id)
+            ):
+                ...
+
     print("------done checking submissions-----")
 
 
@@ -100,7 +108,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
         TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
     )
     timeNow = datetime.now(timezone.utc)
-    oneWeek = timeNow + timedelta(weeks=-1)
+    oneWeek = timeNow + timedelta(weeks=-2)
     messages = subChannel.history(after=oneWeek, limit=None)
     if messages is None:
         return

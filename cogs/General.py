@@ -2,6 +2,7 @@ import pprint as pp
 from typing import cast
 import discord
 from discord.ext import commands
+from cardNameRequest import cardNameRequest
 from shared_vars import drive
 import hc_constants
 from discord.utils import get
@@ -39,6 +40,10 @@ class GeneralCog(commands.Cog):
             await ctx.send("cirion Only Command")
 
     @commands.command()
+    async def ai(self, ctx: commands.Context):
+        await ctx.send("¡ai caramba!")
+
+    @commands.command()
     async def help(self, ctx: commands.Context):
         await ctx.send(
             "https://discord.com/channels/631288872814247966/803384271766683668/803389199503982632"
@@ -54,7 +59,7 @@ class GeneralCog(commands.Cog):
                 title="Resources Menu",
                 description="[Channel Explanation](https://discord.com/channels/631288872814247966/803384271766683668/803384426360078336)\n[Command List](https://discord.com/channels/631288872814247966/803384271766683668/803389199503982632)\n[Achievements](https://discord.com/channels/631288872814247966/803384271766683668/803389622247882782)\n[Database](https://discord.com/channels/631288872814247966/803384271766683668/803390530145878057)\n[Release Notes](https://discord.com/channels/631288872814247966/803384271766683668/803390718801346610)\n[Cubecobras](https://discord.com/channels/631288872814247966/803384271766683668/803391239294025748)\n[Tabletop Simulator](https://discord.com/channels/631288872814247966/803384271766683668/803391314095636490)",
             )
-            await ctx.send(embed)
+            await ctx.send(embed=embed)
 
     @commands.command()
     async def getMessage(self, ctx: commands.Context, id):

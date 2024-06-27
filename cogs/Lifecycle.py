@@ -220,11 +220,11 @@ class LifecycleCog(commands.Cog):
                         )
                     copy = await message.attachments[0].to_file()
                     await vetoChannel.send(
-                        content=accepted_message_no_mentions, file=copy
+                        content=cardName + " by " + message.author.name, file=copy
                     )
                     copy2 = await message.attachments[0].to_file()
                     logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
-                    await acceptedChannel.send(content="✨✨ {acceptContent} ✨✨")
+                    await acceptedChannel.send(content=f"✨✨ {acceptContent} ✨✨")
                     await acceptedChannel.send(content="", file=file)
                     await logChannel.send(content=logContent, file=copy2)
                 else:
@@ -297,11 +297,11 @@ class LifecycleCog(commands.Cog):
                         )
                     copy = await message.attachments[0].to_file()
                     await vetoChannel.send(
-                        content=accepted_message_no_mentions, file=copy
+                        content=cardName + " by " + message.author.name, file=copy
                     )
                     copy2 = await message.attachments[0].to_file()
                     logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
-                    await acceptedChannel.send(content="✨✨ {acceptContent} ✨✨")
+                    await acceptedChannel.send(content=f"✨✨ {acceptContent} ✨✨")
                     await acceptedChannel.send(content="", file=file)
                     await logChannel.send(content=logContent, file=copy2)
                 else:
@@ -470,10 +470,10 @@ class LifecycleCog(commands.Cog):
                         role = cast(
                             Role, get(guild.roles, id=hc_constants.VETO_COUNCIL)
                         )
-                        judgeRole = cast(Role, get(guild.roles, id=hc_constants.JUDGES))
+                        #  judgeRole = cast(Role, get(guild.roles, id=hc_constants.JUDGES))
 
                         # TODO get the pit thread
-                        await thread.send(role.mention + ", " + judgeRole.mention)
+                        await thread.send(role.mention)  # + ", " + judgeRole.mention)
 
                     vetoHellCards.append(getCardMessage(messageEntry.content))
                 else:

@@ -4,6 +4,7 @@ from shared_vars import allCards
 
 
 def cardNameRequest(requestName):
+    print(f"cnr {requestName}")
     maxWeight = 1
     maxWeightName = ""
     for cardName in allCards.keys():

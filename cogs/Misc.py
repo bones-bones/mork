@@ -9,12 +9,14 @@ import aiohttp
 import discord
 from discord.ext import commands
 from discord.utils import get
+from shared_vars import googleClient
 
 
 import asyncpraw
 
 
 from acceptCard import acceptCard
+from cardNameRequest import cardNameRequest
 import hc_constants
 from is_admin import is_veto
 import is_admin
@@ -58,12 +60,12 @@ class MiscCog(commands.Cog):
     # # [message async for message in vetoChannel.history(limit=1)][0]
     # print(vetoChannel.threads)
 
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
-        guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
-        channel = guild.get_channel_or_thread(reaction.channel_id)
+    # @commands.Cog.listener()
+    # async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
+    #     guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
+    #     channel = guild.get_channel_or_thread(reaction.channel_id)
 
-        print(channel, reaction.message_id, reaction.channel_id)
+    #     print(channel, reaction.message_id, reaction.channel_id)
 
     # @commands.Cog.listener()
     # async def on_message(self, message:discord.Message):

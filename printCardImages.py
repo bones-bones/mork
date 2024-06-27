@@ -9,6 +9,8 @@ from discord.message import Message
 
 
 async def print_card_images(message: Message):
+    print("print")
+    print(message.author)
     message_text = message.content.lower().split("{{")[1:]
     for i in range(len(message_text)):  # TODO: maybe use a .map here
         message_text[i] = message_text[i].split("}}")[0]
@@ -30,6 +32,7 @@ async def print_card_images(message: Message):
 
 
 async def sendImageReply(url: str, cardname: str, message: Message):
+    print(f"sendimage{message.author.id}")
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             if resp.status != 200:
@@ -38,6 +41,7 @@ async def sendImageReply(url: str, cardname: str, message: Message):
                     + cardname
                     + ". Wait for llllll to fix it."
                 )
+                await session.close()
                 return
             # currently extraFilename looks like inline;filename="                                Skald.png"
             extraFilename = resp.headers.get("Content-Disposition")
