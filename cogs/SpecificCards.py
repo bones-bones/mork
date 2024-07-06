@@ -506,7 +506,6 @@ class SpecificCardsCog(commands.Cog):
             "I feel @c is underrated in @f.",
             "I heard @p got banned for playing 5 copies of @c in a tournament.",
             "@r is way too obsessed with @c",
-            "@r is just a more retarded version of @r",
             "@a should be the mascot of @r",
             "This podcast has been brought to you by @s",
             "The next @f tournament will be sponsored by @s",
@@ -1211,7 +1210,9 @@ class SpecificCardsCog(commands.Cog):
                 "https://api.scryfall.com/cards/search?as=grid&order=name&q=command+oracle%3A•+%28game%3Apaper%29"
             ) as resp:
                 if resp.status != 200:
-                    # await ctx.send('Something went wrong while getting the link. Wait for llllll to fix it.')
+                    await ctx.send(
+                        "Something went wrong while getting the link. Wait for llllll to fix it."
+                    )
                     await session.close()
                     return
                 response = json.loads(await resp.read())

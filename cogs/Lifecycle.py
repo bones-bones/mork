@@ -32,6 +32,7 @@ from checkSubmissions import checkMasterpieceSubmissions, checkSubmissions
 from cogs.HellscubeDatabase import searchFor
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
+from getters import getVetoChannel
 from handleVetoPost import handleVetoPost
 import hc_constants
 from is_mork import is_mork, reasonableCard
@@ -195,9 +196,7 @@ class LifecycleCog(commands.Cog):
 
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
-                    vetoChannel = cast(
-                        TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL)
-                    )
+                    vetoChannel = getVetoChannel(bot=self.bot)
                     acceptedChannel = cast(
                         TextChannel,
                         self.bot.get_channel(
@@ -272,9 +271,7 @@ class LifecycleCog(commands.Cog):
                 author = message.author.mention
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
-                    vetoChannel = cast(
-                        TextChannel, self.bot.get_channel(hc_constants.VETO_CHANNEL)
-                    )
+                    vetoChannel = getVetoChannel(self.bot)
                     acceptedChannel = cast(
                         TextChannel,
                         self.bot.get_channel(
@@ -360,9 +357,11 @@ class LifecycleCog(commands.Cog):
                 links.append(f"{messageEntry.content}: {messageEntry.jump_url}")
 
         if len(links) > 0:
-            await ctx.send(
-                content="got some work to do: \n{0}".format("\n".join(links))
-            )
+
+            await ctx.send(content="got some work to do:")
+            textToSend = "\n".join(links)
+            for i in range(0, textToSend.__len__(), hc_constants.LITERALLY_1984):
+                await ctx.send(content=textToSend[i : i + hc_constants.LITERALLY_1984])
         else:
             await ctx.send(content="all caught up!")
 
@@ -409,7 +408,10 @@ class LifecycleCog(commands.Cog):
             elif acceptanceMessage[0:3] == "by ":
                 card_author = str((acceptanceMessage.split("by "))[1])
             else:
-                [firstPart, secondPart] = acceptanceMessage.split(" by ")
+                messageChunks = acceptanceMessage.split(" by ")
+                firstPart = messageChunks[0]
+                secondPart = "".join(messageChunks[1:])
+
                 dbname = str(firstPart)
                 card_author = str(secondPart)
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
@@ -470,10 +472,9 @@ class LifecycleCog(commands.Cog):
                         role = cast(
                             Role, get(guild.roles, id=hc_constants.VETO_COUNCIL)
                         )
-                        #  judgeRole = cast(Role, get(guild.roles, id=hc_constants.JUDGES))
 
-                        # TODO get the pit thread
-                        await thread.send(role.mention)  # + ", " + judgeRole.mention)
+                        # TODO get the pit thread and include it here. Will require reading up the thread
+                        await thread.send(role.mention)
 
                     vetoHellCards.append(getCardMessage(messageEntry.content))
                 else:

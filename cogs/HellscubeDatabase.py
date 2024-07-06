@@ -6,7 +6,7 @@ from discord.ext import commands
 from random import randrange
 
 from datetime import datetime, timezone, timedelta
-from CardClasses import Card, Side, cardSearch
+from CardClasses import Card, Side, CardSearch
 from cardNameRequest import cardNameRequest
 import hc_constants
 from printCardImages import sendImageReply
@@ -14,26 +14,22 @@ from printCardImages import sendImageReply
 
 from shared_vars import intents, allCards, googleClient, cardSheet
 
-cardList: list[cardSearch] = []
+cardList: list[CardSearch] = []
 
-cardSheetSearch = googleClient.open("Hellscube Database").worksheet("Database Bot Read")
+cardSheetSearch = googleClient.open("Hellscube Database").worksheet("Database")
 
-cardsDataSearch = cast(list[str], cardSheetSearch.col_values(2))
+cardsDataSearch = cardSheetSearch.get_all_values()[3:]
 
 client = discord.Client(intents=intents)
 
 
-def genSide(stats):
+# in theory: cost, super, type, sub, power, toughness, loyalty, text box, flavor text
+def genSide(stats: list[str]):
     cost = stats[0]
-    if stats[1] != "":
-        supertypes = stats[1].split(";")
-    else:
-        supertypes = []
+    supertypes = (stats[1] if stats[1] else "").split(";")
     types = stats[2].split(";")
-    if stats[3] != "":
-        subtypes = stats[3].split(";")
-    else:
-        subtypes = []
+    subtypes = (stats[3] if stats[3] else "").split(";")
+
     power = 0
     toughness = 0
     loyalty = 0
@@ -44,51 +40,44 @@ def genSide(stats):
         newToughness = re.sub(r"[^\d]", "", stats[5])
         toughness = int(newToughness if newToughness != "" else "0")
     if stats[6] != "" and stats[6] != " ":
-        loyalty = int(stats[6])
+        newLoyalty = re.sub(r"[^\d]", "", stats[6])
+
+        loyalty = int(newLoyalty if newLoyalty != "" else "0")
     text = stats[7]
-    flavor = stats[8]
+    flavor = stats[8] if stats.__len__() >= 9 else ""
     return Side(
         cost, supertypes, types, subtypes, power, toughness, loyalty, text, flavor
     )
 
 
-for i in cardsDataSearch:
+for entry in cardsDataSearch:
     try:
-        if (
-            i
-            == "%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%%&%&%"
-        ):
-            break
-        stats = i.lower().split("%&%&%")
-        name = stats[0]
-        img = i.split("%&%&%")[1]
-        creator = stats[2]
-        cmc = 0
-        cardset = stats[3]
-        legality = stats[4]
-        rulings = stats[5]
-        if stats[6] != "" and stats[6] != " ":
-            cmc = int(stats[6])
-        if stats[7] == "colorless":
-            stats[7] = ""
-        colors = stats[7].split(";")
+        name = entry[0]
+        img = entry[1]
+        creator = entry[2]
+        cardset = entry[3]
+        legality = entry[4]
+        rulings = entry[5]
+        cmc = entry[6] if entry[6] else 0
+        colors = entry[7].split(";")
+
+        # 8
         sides = []
-        sides.append(genSide(stats[8:]))
-        if stats[20] != "" and stats[20] != " ":
-            sides.append(genSide(stats[18:]))
-        if stats[29] != "" and stats[29] != " ":
-            sides.append(genSide(stats[27:]))
-        if stats[38] != "" and stats[38] != " ":
-            sides.append(genSide(stats[36:]))
-        # if "ghtbear" in name:
-        #    print('found',name)
+        sides.append(genSide(entry[8:17]))
+        if entry[21] != "" and entry[21] != " ":
+            sides.append(genSide(entry[18:26]))
+        if entry[29] != "" and entry[29] != " ":
+            sides.append(genSide(entry[27:35]))
+        if entry[38] != "" and entry[38] != " ":
+            sides.append(genSide(entry[36:45]))
+
         cardList.append(
-            cardSearch(
+            CardSearch(
                 name, img, creator, cmc, colors, sides, cardset, legality, rulings
             )
         )
     except Exception as e:
-        print(f"couldn't parse {i}", e)
+        print(f"couldn't parse {entry}", e)
 
 
 class HellscubeDatabaseCog(commands.Cog):
@@ -127,7 +116,7 @@ class HellscubeDatabaseCog(commands.Cog):
         randomSecond = randrange(intDelta)
         randomDate = subStart + timedelta(seconds=randomSecond)
         subChannel = self.bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL)
-        subHistory = subChannel.history(around=randomDate)
+        subHistory = cast(discord.TextChannel, subChannel).history(around=randomDate)
         subHistory = [message async for message in subHistory]
         randomNum = randrange(1, len(subHistory)) - 1
         if len(subHistory[randomNum].attachments) > 0:
@@ -171,7 +160,6 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.command(rest_is_raw=True)
     async def judgement(self, ctx: commands.Context, *, args: str):
-
         if ctx.channel.id != hc_constants.JUDGES_TOWER:
             await ctx.send("Only allowed in the judge's tower")
             return
@@ -179,6 +167,8 @@ class HellscubeDatabaseCog(commands.Cog):
         ruling = args.split("\n")[1].strip()
 
         name = cardNameRequest(cardName.lower())
+
+        print(f"[{name}], [{cardName.lower()}]")
         if name != cardName.lower():
             await ctx.send(
                 f"unable to find an exact match for {cardName}. did you mean: {name}"
@@ -192,38 +182,69 @@ class HellscubeDatabaseCog(commands.Cog):
         allCardNames = cardSheetUnapproved.col_values(1)
 
         rulings = cardSheetUnapproved.col_values(6)
-
-        dbRowIndex = allCardNames.index(cardName) + 1
+        lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
+        dbRowIndex = lowerList.index(cardName.lower()) + 1
 
         currentRuling = (
             rulings[dbRowIndex - 1] if rulings.__len__() >= dbRowIndex else ""
         )
 
-        print(currentRuling)
+        newRuling = (
+            f"{currentRuling}\n" if currentRuling != "" else ""
+        ) + f"{ruling}- {ctx.author.name} {datetime.today().strftime('%Y-%m-%d')}"
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
             6,
-            (f"{currentRuling}\n" if currentRuling != "" else "")
-            + f"{ruling}- {ctx.author.name} {datetime.today().strftime('%Y-%m-%d')}",
+            newRuling,
         )
-        await ctx.send("ruling updated")
+        await ctx.send("ruling updated to:\n{newRuling}")
+
+    @commands.command(rest_is_raw=True)
+    async def tag(self, ctx: commands.Context, *, args: str):
+
+        cardName = args.split("\n")[0].strip()
+        tag = args.split("\n")[1].strip()
+        if tag.__contains__(" "):
+            await ctx.send('no spaces allowed, use "-"')
+        print(tag, ctx.author.name)
+        name = cardNameRequest(cardName.lower())
+        if name != cardName.lower():
+            await ctx.send(
+                f"unable to find an exact match for {cardName}. did you mean: {name}"
+            )
+            return
+
+        cardSheetUnapproved = googleClient.open_by_key(
+            hc_constants.HELLSCUBE_DATABASE
+        ).worksheet("Database (Unapproved)")
+
+        allCardNames = cardSheetUnapproved.col_values(1)
+        tags = cardSheetUnapproved.col_values(18)
+
+        dbRowIndex = allCardNames.index(cardName) + 1
+
+        currentTags = tags[dbRowIndex - 1] if tags.__len__() >= dbRowIndex else ""
+
+        cardSheetUnapproved.update_cell(
+            dbRowIndex,
+            18,
+            (f"{currentTags};" if currentTags != "" else "") + f"{tag}",
+        )
+        await ctx.send("successfully tagged")
 
     @commands.command()
     async def info(self, channel, *cardName):
         name = cardNameRequest(" ".join(cardName).lower())
         message = "something went wrong!"
         for card in cardList:
-
+            # print(card.name())
             if card.name().lower() == name:
                 creator = card.creator()
                 cardset = card.cardset()
                 legality = card.legality()
                 rulings = card.rulings()
-                rulingsList = rulings.split("\\\\\\")
-                message = f"{name}\ncreator: {creator}\nset: {cardset}\nlegality: {legality}\nrulings: "
-                for i in rulingsList:
-                    message = message + "\n```" + i + "```"
+                message = f"{card.name()}\ncreator: {creator}\nset: {cardset}\nlegality: {legality}\nrulings:\n{rulings}"
         await channel.send(message)
 
     @commands.command()
@@ -300,7 +321,7 @@ class HellscubeDatabaseCog(commands.Cog):
                     restrictions["color"].append((i[2:], i[1]))
                 else:
                     restrictions["color"] = [(i[2:], i[1])]
-        print(restrictions)
+
         if restrictions == {}:
             return
 
@@ -330,16 +351,18 @@ def searchFor(searchDict: dict):
     for i in ["cmc", "pow", "tou", "loy", "color"]:
         if not i in searchDict.keys():
             searchDict[i] = [(None, None)]
-    hits: list[cardSearch] = []
+    hits: list[CardSearch] = []
     for i in cardList:
         if (
-            checkForString(searchDict["types"], i.types())
-            and checkForString(searchDict["text"], i.text())
-            and checkForString(searchDict["flavor"], i.flavor())
-            and checkForString(searchDict["name"], i.name())
-            and checkForString(searchDict["creator"], i.creator())
-            and checkForString(searchDict["cardset"], i.cardset())
-            and checkForString(searchDict["legality"], i.legality())
+            checkForString(
+                searchDict["types"], list(map(lambda x: x.lower(), i.types()))
+            )
+            and checkForString(searchDict["text"], i.text().lower())
+            and checkForString(searchDict["flavor"], i.flavor().lower())
+            and checkForString(searchDict["name"], i.name().lower())
+            and checkForString(searchDict["creator"], i.creator().lower())
+            and checkForString(searchDict["cardset"], i.cardset().lower())
+            and checkForString(searchDict["legality"], i.legality().lower())
         ):
             if (
                 checkForInt(searchDict["cmc"], i.cmc())
@@ -347,7 +370,9 @@ def searchFor(searchDict: dict):
                 and checkForInt(searchDict["pow"], i.power())
                 and checkForInt(searchDict["loy"], i.loyalty())
             ):
-                if checkForColor(searchDict["color"], i.colors()):
+                if checkForColor(
+                    searchDict["color"], list(map(lambda x: x.lower(), i.colors()))
+                ):
                     hits.append(i)
     return hits
 

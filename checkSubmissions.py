@@ -2,6 +2,7 @@ from datetime import datetime, timezone, timedelta
 from typing import cast
 
 import discord
+from getters import getSubmissionDiscussionChannel, getVetoChannel
 from handleVetoPost import handleVetoPost
 import hc_constants
 from discord.ext import commands
@@ -15,10 +16,8 @@ from is_mork import is_mork
 
 async def checkSubmissions(bot: commands.Bot):
     subChannel = cast(TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL))
-    vetoChannel = cast(TextChannel, bot.get_channel(hc_constants.VETO_CHANNEL))
-    acceptedChannel = cast(
-        TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL)
-    )
+    vetoChannel = getVetoChannel(bot)
+    acceptedChannel = getSubmissionDiscussionChannel(bot)
     logChannel = cast(
         TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
     )
@@ -90,20 +89,28 @@ async def checkSubmissions(bot: commands.Bot):
             elif (
                 positiveMargin >= 25
                 and len(messageEntry.attachments) > 0
-                and messageAge >= timedelta(days=1)
+                and messageAge >= timedelta(days=6)
                 and is_mork(messageEntry.author.id)
             ):
-                ...
+                hasMork = False
+                timeReacts = get(messageEntry.reactions, emoji="🕛")
+                if timeReacts:
+                    async for user in timeReacts.users():
+                        if is_mork(user.id):
+                            hasMork = True
+                if not hasMork:
+                    await acceptedChannel.send(
+                        f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
+                    )
+                    await messageEntry.add_reaction("🕛")
 
     print("------done checking submissions-----")
 
 
 async def checkMasterpieceSubmissions(bot: commands.Bot):
     subChannel = cast(TextChannel, bot.get_channel(hc_constants.MASTERPIECE_CHANNEL))
-    vetoChannel = cast(TextChannel, bot.get_channel(hc_constants.VETO_CHANNEL))
-    acceptedChannel = cast(
-        TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL)
-    )
+    vetoChannel = getVetoChannel(bot)
+    acceptedChannel = getSubmissionDiscussionChannel(bot)
     logChannel = cast(
         TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
     )

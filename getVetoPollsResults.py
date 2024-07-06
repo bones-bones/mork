@@ -7,11 +7,12 @@ from discord.ext import commands
 from discord.utils import get
 
 
+from getters import getVetoChannel
 import hc_constants
 
 
 async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
-    vetoChannel = cast(TextChannel, bot.get_channel(hc_constants.VETO_CHANNEL))
+    vetoChannel = getVetoChannel(bot)
     timeNow = datetime.now(timezone.utc)
     fourWeeksAgo = timeNow + timedelta(days=-28 * 3)
     epicCatchphrases = [
@@ -20,7 +21,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         "ya ya gimme a sec",
         "processing...",
         "You're not the boss of me",
-        "ok, 'ZADDY'",
+        "ok, daddy~",
         "but what of the children?",
         "?",
         "workin' on it!",
@@ -63,7 +64,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
             or get(messageEntry.reactions, emoji=hc_constants.DELETE)
             or messageAge < timedelta(days=1)
         ):
-            continue  # Skip cards that have been marked, or are only a day old
+            continue  # Skip cards that have been marked or are only a day old
 
         up = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
         upvote = up.count if up else -1

@@ -6,7 +6,9 @@ def getCardMessage(acceptanceMessage: str):
     elif acceptanceMessage[0:3] == "by ":
         card_author = str((acceptanceMessage.split("by "))[1])
     else:
-        [firstPart, secondPart] = acceptanceMessage.split(" by ")
+        messageChunks = acceptanceMessage.split(" by ")
+        firstPart = messageChunks[0]
+        secondPart = "".join(messageChunks[1:])
         dbname = str(firstPart)
         card_author = str(secondPart)
 

@@ -1,3 +1,6 @@
+from typing import List, Type
+
+
 class Card:
     def __init__(self, name, img, creator):
         self._name = name
@@ -14,9 +17,63 @@ class Card:
         return self._creator
 
 
-class cardSearch:
+class Side:
     def __init__(
-        self, name, img, creator, cmc, colors, sides, cardset, legality, rulings
+        self,
+        cost: str,
+        supertypes: list[str],
+        types: list[str],
+        subtypes: list[str],
+        power: int,
+        toughness: int,
+        loyalty: int,
+        text: str,
+        flavor: str,
+    ):
+        self._cost = cost
+        self._supertypes = supertypes
+        self._types = types
+        self._subtypes = subtypes
+        self._power = power
+        self._toughness = toughness
+        self._loyalty = loyalty
+        self._text = text
+        self._flavor = flavor
+
+    def cost(self):
+        return self._cost
+
+    def types(self):
+        return self._supertypes + self._types + self._subtypes
+
+    def power(self):
+        return self._power
+
+    def toughness(self):
+        return self._toughness
+
+    def loyalty(self):
+        return self._loyalty
+
+    def text(self):
+        return self._text
+
+    def flavor(self):
+        return self._flavor
+
+
+class CardSearch:
+    def __init__(
+        self,
+        name: str,
+        img: str,
+        creator: str,
+        cmc: int,
+        colors: list[str],
+        sides: list[Side],
+        cardset: str,
+        legality: str,
+        rulings: str,
     ):
         self._name = name
         self._img = img
@@ -56,7 +113,7 @@ class cardSearch:
         return self._sides
 
     def types(self):
-        returnList = []
+        returnList: list[str] = []
         for i in self._sides:
             returnList += i.types()
         return list(set(returnList))
@@ -90,39 +147,3 @@ class cardSearch:
         for i in self._sides:
             returnString += i.flavor()
         return returnString
-
-
-class Side:
-    def __init__(
-        self, cost, supertypes, types, subtypes, power, toughness, loyalty, text, flavor
-    ):
-        self._cost = cost
-        self._supertypes = supertypes
-        self._types = types
-        self._subtypes = subtypes
-        self._power = power
-        self._toughness = toughness
-        self._loyalty = loyalty
-        self._text = text
-        self._flavor = flavor
-
-    def cost(self):
-        return self._cost
-
-    def types(self):
-        return self._supertypes + self._types + self._subtypes
-
-    def power(self):
-        return self._power
-
-    def toughness(self):
-        return self._toughness
-
-    def loyalty(self):
-        return self._loyalty
-
-    def text(self):
-        return self._text
-
-    def flavor(self):
-        return self._flavor

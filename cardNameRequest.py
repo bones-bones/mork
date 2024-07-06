@@ -3,8 +3,8 @@ from shared_vars import allCards
 # from thefuzz import fuzz
 
 
-def cardNameRequest(requestName):
-    print(f"cnr {requestName}")
+def cardNameRequest(requestName: str):
+    print(f"cnr [{requestName}]")
     maxWeight = 1
     maxWeightName = ""
     for cardName in allCards.keys():
