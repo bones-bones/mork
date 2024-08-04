@@ -13,3 +13,7 @@ def getSubmissionDiscussionChannel(bot: commands.Bot):
     return cast(
         TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL)
     )
+
+
+def getErrataSubmissionChannel(bot: commands.Bot):
+    return cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))

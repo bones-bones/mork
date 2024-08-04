@@ -41,7 +41,7 @@ async def checkSubmissions(bot: commands.Bot):
 
             positiveMargin = upCount - downCount
             if (
-                positiveMargin >= 30
+                positiveMargin >= 25
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days=1)
                 and is_mork(messageEntry.author.id)
@@ -87,7 +87,7 @@ async def checkSubmissions(bot: commands.Bot):
                 await messageEntry.delete()
                 continue
             elif (
-                positiveMargin >= 25
+                positiveMargin >= 20
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days=6)
                 and is_mork(messageEntry.author.id)

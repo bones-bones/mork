@@ -26,7 +26,7 @@ scope = [
 
 gauth = GoogleAuth()
 gauth.auth_method = "service"
-creds = ServiceAccountCredentials.from_json_keyfile_name("bot_secrets/client_secrets.json", scope)  # type: ignore
+creds = ServiceAccountCredentials.from_json_keyfile_name("./bot_secrets/client_secrets.json", scope)  # type: ignore
 gauth.credentials = creds
 drive = GoogleDrive(gauth)
 about = drive.GetAbout()

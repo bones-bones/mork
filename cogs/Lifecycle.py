@@ -7,6 +7,7 @@ from typing import Dict, List, cast
 import aiohttp
 from discord import (
     ClientUser,
+    Emoji,
     Guild,
     Member,
     RawReactionActionEvent,
@@ -32,9 +33,10 @@ from checkSubmissions import checkMasterpieceSubmissions, checkSubmissions
 from cogs.HellscubeDatabase import searchFor
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
-from getters import getVetoChannel
+from getters import getErrataSubmissionChannel, getVetoChannel
 from handleVetoPost import handleVetoPost
 import hc_constants
+from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
 from reddit_functions import postGalleryToReddit, postToReddit
@@ -89,6 +91,47 @@ class LifecycleCog(commands.Cog):
                     if reaction.member == messageReference.author:
                         await message.delete()
                         return
+
+            if (
+                str(reaction.emoji) == hc_constants.ACCEPT
+                and cast(discord.Thread, channel).parent
+                and cast(discord.TextChannel, cast(discord.Thread, channel).parent).id
+                == hc_constants.VETO_HELLPITS
+            ):
+                message = await channelAsText.fetch_message(reaction.message_id)
+                thread_messages = [
+                    message
+                    async for message in message.channel.history(
+                        limit=3, oldest_first=True
+                    )
+                ]
+
+                first_message = thread_messages[0]
+                link_message = thread_messages[2]
+
+                if is_admin(cast(discord.Member, reaction.member)) or is_veto(
+                    cast(discord.Member, reaction.member)
+                ):
+                    vetoChall = getVetoChannel(bot=self.bot)
+                    # TODO: compartmentalize this
+                    ogMessage = await vetoChall.fetch_message(
+                        int(link_message.content.split("/").pop())
+                    )
+
+                    copy = await message.attachments[0].to_file()
+                    copy2 = await message.attachments[0].to_file()
+                    if copy and copy2:
+                        vetoChannel = getVetoChannel(bot=self.bot)
+                        vetoEntry = await vetoChannel.send(
+                            content=first_message.content, file=copy
+                        )
+                        await handleVetoPost(message=vetoEntry, bot=self.bot)
+                        await ogMessage.add_reaction(hc_constants.DELETE)
+                    errata_submissions_channel = getErrataSubmissionChannel(
+                        bot=self.bot
+                    )
+                    esubMessage = await errata_submissions_channel.send(file=copy2)
+                    await esubMessage.add_reaction("☑️")
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
@@ -370,7 +413,7 @@ class LifecycleCog(commands.Cog):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return
-
+        guild = cast(Guild, ctx.guild)
         timeNow = datetime.now(timezone.utc)
         epicCatchphrases = [
             "it begins",
@@ -429,7 +472,6 @@ class LifecycleCog(commands.Cog):
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)
-            guild = cast(Guild, messageEntry.guild)
             thread = cast(Thread, guild.get_channel_or_thread(messageEntry.id))
             if thread:
                 await thread.edit(archived=True)
@@ -439,7 +481,6 @@ class LifecycleCog(commands.Cog):
             await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md
 
         for messageEntry in errataCardMessages:
-            guild = cast(Guild, messageEntry.guild)
             thread = guild.get_channel_or_thread(messageEntry.id)
 
             needsErrataCards.append(getCardMessage(messageEntry.content))
@@ -603,12 +644,13 @@ async def status_task(bot: commands.Bot):
 
                 messages = [message async for message in messages][:10]
                 for messageEntry in messages:
-                    file = await messageEntry.attachments[0].to_file()
-                    file_data = file.fp.read()
-                    image_path = f"tempImages/{messageEntry.id}{file.filename}"
-                    images.append({"image_path": image_path})
-                    with open(image_path, "wb") as out:
-                        out.write(file_data)
+                    if len(messageEntry.attachments) > 0:
+                        file = await messageEntry.attachments[0].to_file()
+                        file_data = file.fp.read()
+                        image_path = f"tempImages/{messageEntry.id}{file.filename}"
+                        images.append({"image_path": image_path})
+                        with open(image_path, "wb") as out:
+                            out.write(file_data)
                 await postGalleryToReddit(
                     title=f"Some of Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
                     images=images,

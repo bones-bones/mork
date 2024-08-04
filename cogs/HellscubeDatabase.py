@@ -301,21 +301,36 @@ class HellscubeDatabaseCog(commands.Cog):
                     restrictions["cmc"].append((i[4:], i[3]))
                 else:
                     restrictions["cmc"] = [(i[4:], i[3])]
-            if i.lower()[0:3] == "pow":
+            if i.lower()[0:3] == "pow" and i.lower()[3] in "<=>":
                 if "pow" in restrictions.keys():
                     restrictions["pow"].append((i[4:], i[3]))
                 else:
                     restrictions["pow"] = [(i[4:], i[3])]
-            if i.lower()[0:3] == "tou":
+            if i.lower()[0:5] == "power":
+                if "pow" in restrictions.keys():
+                    restrictions["pow"].append((i[6:], i[5]))
+                else:
+                    restrictions["pow"] = [(i[6:], i[5])]
+            if i.lower()[0:3] == "tou" and i.lower()[3] in ["<", "=", ">"]:
                 if "tou" in restrictions.keys():
                     restrictions["tou"].append((i[4:], i[3]))
                 else:
                     restrictions["tou"] = [(i[4:], i[3])]
-            if i.lower()[0:3] == "loy":
+            if i.lower()[0:9] == "toughness":
+                if "tou" in restrictions.keys():
+                    restrictions["tou"].append((i[10:], i[9]))
+                else:
+                    restrictions["tou"] = [(i[10:], i[9])]
+            if i.lower()[0:3] == "loy" and i.lower()[3] in "<=>":
                 if "loy" in restrictions.keys():
                     restrictions["loy"].append((i[4:], i[3]))
                 else:
                     restrictions["loy"] = [(i[4:], i[3])]
+            if i.lower()[0:7] == "loyalty":
+                if "loy" in restrictions.keys():
+                    restrictions["loy"].append((i[8:], i[7]))
+                else:
+                    restrictions["loy"] = [(i[8:], i[7])]
             if i.lower()[0] == "c" and i.lower()[1] in "<=>":
                 if "color" in restrictions.keys():
                     restrictions["color"].append((i[2:], i[1]))
@@ -393,19 +408,19 @@ def checkForInt(condition, data):
             number = int(i[0])
             operator = i[1]
             if operator == "=":
-                if not number in data:
+                if not number in list(map(lambda x: int(x), data)):
                     return False
             if operator == ">":
                 works = False
                 for j in data:
-                    if j > number:
+                    if int(j) > (number):
                         works = True
                 if not works:
                     return False
             if operator == "<":
                 works = False
                 for j in data:
-                    if j < number:
+                    if int(j) < (number):
                         works = True
                 if not works:
                     return False

@@ -1,4 +1,6 @@
+from datetime import datetime, timezone
 import re
+from typing import cast
 import discord
 from discord.ext import commands
 import asyncio
@@ -9,6 +11,10 @@ import aiohttp
 import io
 from operator import itemgetter
 import pprint as pp
+from discord.utils import get
+
+
+import hc_constants
 
 
 # load json from scryfall
@@ -61,7 +67,7 @@ async def sendDriveImage(url, ctx):
 
 
 class SpecificCardsCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # for the card item block
@@ -1099,7 +1105,7 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card kodama's reach but kodama has really long arms
     @commands.command()
-    async def reach(self, ctx):
+    async def reach(self, ctx: commands.Context):
         lands = ["Plains", "Mountain", "Forest", "Swamp", "Island"]
         random.shuffle(lands)
         for i in range(2):
@@ -1111,6 +1117,26 @@ class SpecificCardsCog(commands.Cog):
         await sendDriveImage(
             "https://lh3.googleusercontent.com/d/1uYdnTLOZw42yNGc3xgO0oxhBGwoReo-c", ctx
         )
+
+    @commands.command()
+    async def thisIsntMagic(self, ctx: commands.Context):
+        chan = cast(
+            discord.TextChannel, self.bot.get_channel(hc_constants.THIS_IS_NOT_MAGIC)
+        )
+        subStart = datetime.strptime("7/4/2024 2:30 PM", "%m/%d/%Y %I:%M %p")
+        timeNow = datetime.now(timezone.utc)
+        timeNow = timeNow.replace(tzinfo=None)
+        messages = chan.history(after=subStart)  # 07/04/2024 2:00 PM
+        messages = [message async for message in messages]
+        toNotify = []
+        for message in messages:
+            hasQuestion = get(message.reactions, emoji="❓")
+            veto = get(message.reactions, emoji=hc_constants.DELETE)
+            accept = get(message.reactions, emoji=hc_constants.DELETE)
+            if hasQuestion and veto == None and accept == None:
+                toNotify.append(message.jump_url)
+        await ctx.send("these still have some uncertainty")
+        await ctx.send("\n".join(toNotify))
 
     @commands.command()
     async def wickyp(self, ctx: commands.Context):
