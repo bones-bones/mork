@@ -30,8 +30,7 @@ async def print_card_images(message: Message):
                 allCards[post].getImg(), allCards[post].getName(), message
             )
 
-
-async def sendImageReply(url: str, cardname: str, message: Message):
+async def sendImageReply(url: str, cardname: str, text: str, message: Message):
     print(f"sendimage{message.author.id}")
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
@@ -39,15 +38,15 @@ async def sendImageReply(url: str, cardname: str, message: Message):
                 await message.reply(
                     "Something went wrong while getting the link for "
                     + cardname
-                    + ". Wait for llllll to fix it."
+                    + ". Wait for llllll or klunker to fix it."
                 )
                 await session.close()
                 return
-            # currently extraFilename looks like inline;filename="                                Skald.png"
+            # currently extraFilename looks like inline;filename="Skald.png"
             extraFilename = resp.headers.get("Content-Disposition")
             parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
             data = io.BytesIO(await resp.read())
-            sentMessage = await message.reply(
+            sentMessage = await message.reply(text,
                 file=discord.File(data, parsedFilename), mention_author=False
             )
             await sentMessage.add_reaction(hc_constants.DELETE)
