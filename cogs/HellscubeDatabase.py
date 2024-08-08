@@ -22,6 +22,10 @@ cardsDataSearch = cardSheetSearch.get_all_values()[3:]
 
 client = discord.Client(intents=intents)
 
+notMagicCardSheet = googleClient.open_by_key(
+    hc_constants.HELLSCUBE_DATABASE
+).worksheet("NotMagic")
+
 
 # in theory: cost, super, type, sub, power, toughness, loyalty, text box, flavor text
 def genSide(stats: list[str]):
@@ -126,6 +130,17 @@ class HellscubeDatabaseCog(commands.Cog):
             num += 1
             command = self.bot.get_command("randomReject")
             await channel.invoke(command, num)
+    
+    @commands.command()
+    async def notMagic(self, ctx: commands.Context):
+        random_card = random.randint(2,len(notMagicCardSheet.col_values(1)))
+        print(random_card)
+        name = notMagicCardSheet.col_values(1)[random_card]
+        img = notMagicCardSheet.col_values(2)[random_card]
+        ruling = notMagicCardSheet.col_values(4)[random_card]
+        await sendImageReply(
+            url=img, cardname=name, text=ruling,message=ctx.message
+            )
 
     @commands.command(name="random")
     async def randomCard(self, ctx: commands.Context):
