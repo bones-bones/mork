@@ -32,7 +32,6 @@ async def print_card_images(message: Message):
 
 async def sendImageReply(url: str, cardname: str, text: str, message: Message):
     print(f"sendimage{message.author.id}")
-    content = text
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             if resp.status != 200:
@@ -47,7 +46,7 @@ async def sendImageReply(url: str, cardname: str, text: str, message: Message):
             extraFilename = resp.headers.get("Content-Disposition")
             parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
             data = io.BytesIO(await resp.read())
-            sentMessage = await message.reply(content,
+            sentMessage = await message.reply(content=text,
                 file=discord.File(data, parsedFilename), mention_author=False
             )
             await sentMessage.add_reaction(hc_constants.DELETE)
