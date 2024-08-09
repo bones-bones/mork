@@ -27,10 +27,14 @@ async def print_card_images(message: Message):
             await message.reply("No Match Found!", mention_author=False)
         else:
             await sendImageReply(
-                allCards[post].getImg(), allCards[post].getName(), message
+                url=allCards[post].getImg(),
+                cardname=allCards[post].getName(),
+                message=message,
+                text=None,
             )
 
-async def sendImageReply(url: str, cardname: str, text: str, message: Message):
+
+async def sendImageReply(url: str, cardname: str, text: str | None, message: Message):
     print(f"sendimage{message.author.id}")
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
@@ -46,8 +50,10 @@ async def sendImageReply(url: str, cardname: str, text: str, message: Message):
             extraFilename = resp.headers.get("Content-Disposition")
             parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
             data = io.BytesIO(await resp.read())
-            sentMessage = await message.reply(content=text,
-                file=discord.File(data, parsedFilename), mention_author=False
+            sentMessage = await message.reply(
+                content=text,
+                file=discord.File(data, parsedFilename),
+                mention_author=False,
             )
             await sentMessage.add_reaction(hc_constants.DELETE)
             await session.close()

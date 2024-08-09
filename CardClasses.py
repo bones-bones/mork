@@ -118,6 +118,9 @@ class CardSearch:
             returnList += i.types()
         return list(set(returnList))
 
+    def setRuling(self, rulin):
+        self._rulings = rulin
+
     def power(self):
         returnList = []
         for i in self._sides:
