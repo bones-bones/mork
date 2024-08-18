@@ -17,10 +17,9 @@ QUICKSTART_GUIDE = 1247218155324047472
 JUDGES_TOWER = 1249772140824231946
 ERRATA_SUBMISSIONS = 862023130716438549
 THIS_IS_NOT_MAGIC = 1258527797820002304
+DESIGN_HELL_SUBMISSION_CHANNEL = 1273085587964035183
 
 
-FOUR_ZERO_ERRATA_ACCEPTED_CHANNEL = 1124083254916550796
-FOUR_ONE_CARD_LIST_CHANNEL = 1102708195081850880
 VETO_DISCUSSION_CHANNEL = 798690594029305856
 RESOURCES_CHANNEL = 803384271766683668
 
@@ -39,7 +38,6 @@ EXALTED_ONE = 224936529179443200
 MORK = 803032464301621268
 MORK_2 = 1213912810422009877
 MORK_3 = 1260704352503337051
-CIRION = 243310302995677184
 LLLLLL = 693318474847617055
 
 # Roles
@@ -102,6 +100,7 @@ macroList = {
     "snart": "https://cdn.discordapp.com/attachments/654835483771273218/809616000919797770/21e.png",
     "eu": "https://cdn.discordapp.com/attachments/744779598503346278/747547380777484360/AmericaMoney.png",
     "art": "Art matters is banned because it's generally vague and can cause arguments between players. (Except dreadmaw because funny)",
+    "rules": "https://media.discordapp.net/attachments/636013795507961892/1168702527198466119/image.png",
     "shut": "shut\nshut\nshut\nshut\nshut\nshut\nshut\nshut\nshut\nshut\nshut",
     "capital": "Capitalize the beginning of sentences, proper nouns, card names, subtypes, and each part of the cost in an activated ability. Don't capitalize keywords unless they begin a line.",
     "skylions": "https://cdn.discordapp.com/attachments/636013910386016276/744772820550287411/sky_lions_meme.png",
@@ -133,7 +132,7 @@ statusList = [
     "Haha Gottem in 2024",
     "Hugh Man in EDH",
     "the funny dreadmaw card",
-    "Hellscube Victory in Competative",
+    "Hellscube Victory in Competitive",
     "with old companion rules",
     "Obama tribal EDH",
     "irefeT tribal",

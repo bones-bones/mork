@@ -15,7 +15,7 @@ async def print_card_images(message: Message):
     for i in range(len(message_text)):  # TODO: maybe use a .map here
         message_text[i] = message_text[i].split("}}")[0]
     requestedCards = []
-    if len(message_text) > 10 and message.author.id != hc_constants.CIRION:
+    if len(message_text) > 10:
         await message.reply(
             "Don't call more than 10 cards per message, final warning, keep trying and you get blacklisted from the bot. Blame dRafter for this if you're actually trying to use the bot."
         )

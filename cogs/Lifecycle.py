@@ -62,7 +62,7 @@ class LifecycleCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
         await member.send(
-            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC4, a vintage cube, and have moved to HC6, a commander cube."
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC4, a vintage cube, and have moved to HC6, a commander cube. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color and no non-legendary multicolor cards."
         )
 
     @commands.Cog.listener()
@@ -150,7 +150,10 @@ class LifecycleCog(commands.Cog):
             return
         if "{{" in message.content:
             await print_card_images(message)
-        if message.channel.id == hc_constants.HELLS_UNO_CHANNEL:
+        if (
+            message.channel.id == hc_constants.HELLS_UNO_CHANNEL
+            or message.channel.id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL
+        ):
             await message.add_reaction(hc_constants.VOTE_UP)
             await message.add_reaction(hc_constants.VOTE_DOWN)
         if message.channel.id == hc_constants.REDDIT_CHANNEL:

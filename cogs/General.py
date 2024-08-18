@@ -27,19 +27,6 @@ class GeneralCog(commands.Cog):
                 print("log dumped")
 
     @commands.command()
-    async def BlueRed(self, ctx: commands.Context):
-        if ctx.author.id == hc_constants.CIRION:
-            global BlueRed
-            if BlueRed:
-                BlueRed = False
-                await ctx.send("Turned Off")
-            else:
-                BlueRed = True
-                await ctx.send("Turned On")
-        else:
-            await ctx.send("cirion Only Command")
-
-    @commands.command()
     async def ai(self, ctx: commands.Context):
         await ctx.send("¡ai caramba!")
 

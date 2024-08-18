@@ -192,6 +192,10 @@ class HellscubeDatabaseCog(commands.Cog):
             hc_constants.HELLSCUBE_DATABASE
         ).worksheet("Database (Unapproved)")
 
+        cardSheetApproved = googleClient.open_by_key(
+            hc_constants.HELLSCUBE_DATABASE
+        ).worksheet("Database")
+
         allCardNames = cardSheetUnapproved.col_values(1)
 
         rulings = cardSheetUnapproved.col_values(6)
@@ -214,6 +218,11 @@ class HellscubeDatabaseCog(commands.Cog):
                 break
 
         cardSheetUnapproved.update_cell(
+            dbRowIndex,
+            6,
+            newRuling,
+        )
+        cardSheetApproved.update_cell(
             dbRowIndex,
             6,
             newRuling,

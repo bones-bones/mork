@@ -151,18 +151,9 @@ class SpecificCardsCog(commands.Cog):
     @commands.command(aliases=["stormstorm"])
     async def storm(self, ctx: commands.Context, number):
         stormCards = [
-            "https://img.scryfall.com/cards/normal/front/f/f/ff301010-c9c9-4abb-9bf2-78d123cff292.jpg",
-            "https://img.scryfall.com/cards/normal/front/f/f/ff301010-c9c9-4abb-9bf2-78d123cff292.jpg",
-            "https://img.scryfall.com/cards/normal/front/f/f/ff301010-c9c9-4abb-9bf2-78d123cff292.jpg",
-            "https://img.scryfall.com/cards/normal/front/f/f/ff301010-c9c9-4abb-9bf2-78d123cff292.jpg",
-            "https://img.scryfall.com/cards/normal/front/2/e/2ea8d5cb-cf7e-4194-8019-812b3f56cf20.jpg",
-            "https://img.scryfall.com/cards/normal/front/3/c/3cd19bdf-64f1-4c59-920b-1165f3551928.jpg",
-            "https://img.scryfall.com/cards/normal/front/8/d/8d42d7aa-7f53-4cfc-842a-086aab2448d1.jpg",
-            "https://img.scryfall.com/cards/normal/front/b/e/beb755c1-9221-480e-bef9-73f1f13a3345.jpg",
-            "https://img.scryfall.com/cards/normal/front/a/2/a2d4ea78-16f1-46ac-8a60-db20c37aad5e.jpg",
-            "https://img.scryfall.com/cards/normal/front/d/f/dfe87b59-b456-4532-a695-0dea3110d878.jpg",
-            "https://img.scryfall.com/cards/normal/front/2/9/2955a257-302c-48df-9eec-8561cbc8374c.jpg",
-            "https://img.scryfall.com/cards/normal/front/7/e/7e573308-40d0-43ce-be04-dbab6bc1ed35.jpg",
+            "https://cards.scryfall.io/large/front/2/8/2890c2ee-e989-43e5-ac4b-683c52bd6527.jpg",
+            "https://cards.scryfall.io/normal/front/0/3/036ef8c9-72ac-46ce-af07-83b79d736538.jpg",
+            "https://cards.scryfall.io/large/front/8/b/8b6723f5-a7a9-425d-b4b0-f380da578ef8.jpg",
         ]
         try:
             number = int(number)
