@@ -9,7 +9,6 @@ from discord.message import Message
 
 
 async def print_card_images(message: Message):
-    print("print")
     print(message.author)
     message_text = message.content.lower().split("{{")[1:]
     for i in range(len(message_text)):  # TODO: maybe use a .map here
@@ -35,7 +34,7 @@ async def print_card_images(message: Message):
 
 
 async def sendImageReply(url: str, cardname: str, text: str | None, message: Message):
-    print(f"sendimage{message.author.id}")
+
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             if resp.status != 200:
@@ -47,8 +46,10 @@ async def sendImageReply(url: str, cardname: str, text: str | None, message: Mes
                 await session.close()
                 return
             # currently extraFilename looks like inline;filename="Skald.png"
+            # PSA: renaming the file in drive is NOT enough to update the content disposition, gotta reupload the file.
             extraFilename = resp.headers.get("Content-Disposition")
             parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
+
             data = io.BytesIO(await resp.read())
             sentMessage = await message.reply(
                 content=text,

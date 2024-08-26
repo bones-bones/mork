@@ -74,6 +74,7 @@ class CardSearch:
         cardset: str,
         legality: str,
         rulings: str,
+        tags: list[str],
     ):
         self._name = name
         self._img = img
@@ -84,6 +85,7 @@ class CardSearch:
         self._cardset = cardset
         self._legality = legality
         self._rulings = rulings
+        self._tags = tags
 
     def name(self):
         return self._name
@@ -112,14 +114,20 @@ class CardSearch:
     def sides(self):
         return self._sides
 
+    def tags(self):
+        return self._tags
+
+    def addTag(self, tag):
+        self._tags.append(tag)
+
     def types(self):
         returnList: list[str] = []
         for i in self._sides:
             returnList += i.types()
         return list(set(returnList))
 
-    def setRuling(self, rulin):
-        self._rulings = rulin
+    def setRuling(self, ruling):
+        self._rulings = ruling
 
     def power(self):
         returnList = []

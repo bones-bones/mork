@@ -280,6 +280,13 @@ class LifecycleCog(commands.Cog):
                     await sentMessage.add_reaction(hc_constants.VOTE_UP)
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
+                    # await sentMessage.add_reaction(
+                    #     cast(Emoji, self.bot.get_emoji(hc_constants.JIMMY))
+                    # )
+                    # await sentMessage.add_reaction(
+                    #     cast(Emoji, self.bot.get_emoji(hc_constants.WALL))
+                    # )
+
                     await sentMessage.create_thread(name=cardName[0:99])
                 await message.delete()
         if message.channel.id == hc_constants.MASTERPIECE_CHANNEL:

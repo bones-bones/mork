@@ -64,6 +64,7 @@ for entry in cardsDataSearch:
         rulings = entry[5]
         cmc = entry[6] if entry[6] else 0
         colors = entry[7].split(";")
+        tags = entry[17].split(";") if entry[17] != "" else []
 
         # 8
         sides = []
@@ -77,7 +78,16 @@ for entry in cardsDataSearch:
 
         cardList.append(
             CardSearch(
-                name, img, creator, cmc, colors, sides, cardset, legality, rulings
+                name,
+                img,
+                creator,
+                cmc,
+                colors,
+                sides,
+                cardset,
+                legality,
+                rulings,
+                tags=tags,
             )
         )
     except Exception as e:
@@ -143,7 +153,7 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.command(name="random")
     async def randomCard(self, ctx: commands.Context):
         card = allCards[random.choice(list(allCards.keys()))]
-
+        print(card)
         await sendImageReply(
             url=card.getImg(), cardname=card.getName(), message=ctx.message, text=None
         )
@@ -234,6 +244,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardName = args.split("\n")[0].strip()
         tag = args.split("\n")[1].strip()
+
         if tag.__contains__(" "):
             await ctx.send('no spaces allowed, use "-"')
         print(tag, ctx.author.name)
@@ -249,9 +260,11 @@ class HellscubeDatabaseCog(commands.Cog):
         ).worksheet("Database (Unapproved)")
 
         allCardNames = cardSheetUnapproved.col_values(1)
-        tags = cardSheetUnapproved.col_values(18)
 
-        dbRowIndex = allCardNames.index(cardName) + 1
+        lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
+        dbRowIndex = lowerList.index(cardName.lower()) + 1
+
+        tags = cardSheetUnapproved.col_values(18)
 
         currentTags = tags[dbRowIndex - 1] if tags.__len__() >= dbRowIndex else ""
 
@@ -260,6 +273,14 @@ class HellscubeDatabaseCog(commands.Cog):
             18,
             (f"{currentTags};" if currentTags != "" else "") + f"{tag}",
         )
+
+        global cardList
+        for card in cardList:
+            # print(card.name())
+            if card.name().lower() == cardName.lower():
+                card.addTag(tag=tag)
+                break
+
         await ctx.send("successfully tagged")
 
     @commands.command()
@@ -273,13 +294,27 @@ class HellscubeDatabaseCog(commands.Cog):
                 cardset = card.cardset()
                 legality = card.legality()
                 rulings = card.rulings()
-                message = f"{card.name()}\ncreator: {creator}\nset: {cardset}\nlegality: {legality}\nrulings:\n{rulings}"
+                tags = card.tags()
+                toSend = [
+                    card.name(),
+                    f"creator: {creator}",
+                    f"set: {cardset}",
+                    f"legality: {legality}",
+                ]
+                if tags.__len__() > 0:
+                    toSend.append("tags: " + ", ".join(tags))
+
+                if rulings:
+                    toSend.append("rulings: \n" + rulings)
+
+                message = "\n".join(toSend)
                 break
         await channel.send(message)
 
     @commands.command()
     async def search(self, ctx: commands.Context, *conditions: str):
         restrictions = {}
+        print("searching")
         for i in conditions:
             if i.lower()[0:2] == "o:":
                 if "text" in restrictions.keys():
@@ -301,6 +336,11 @@ class HellscubeDatabaseCog(commands.Cog):
                     restrictions["types"].append(i[5:])
                 else:
                     restrictions["types"] = [i[5:]]
+            if i.lower()[0:4] == "tag:":
+                if "tag" in restrictions.keys():
+                    restrictions["tag"].append(i[4:])
+                else:
+                    restrictions["tag"] = [i[4:]]
             if i.lower()[0:2] == "n:":
                 if "name" in restrictions.keys():
                     restrictions["name"].append(i[2:])
@@ -369,7 +409,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         if restrictions == {}:
             return
-
+        print(restrictions)
         matchingCards = searchFor(restrictions)
         if matchingCards.__len__() > 100:
             await ctx.send(
@@ -390,7 +430,16 @@ async def setup(bot: commands.Bot):
 
 
 def searchFor(searchDict: dict):
-    for i in ["types", "text", "flavor", "name", "creator", "cardset", "legality"]:
+    for i in [
+        "types",
+        "text",
+        "flavor",
+        "name",
+        "creator",
+        "cardset",
+        "legality",
+        "tag",
+    ]:
         if not i in searchDict.keys():
             searchDict[i] = None
     for i in ["cmc", "pow", "tou", "loy", "color"]:
@@ -401,6 +450,9 @@ def searchFor(searchDict: dict):
         if (
             checkForString(
                 searchDict["types"], list(map(lambda x: x.lower(), i.types()))
+            )
+            and checkForString(
+                searchDict["tag"], list(map(lambda x: x.lower(), i.tags()))
             )
             and checkForString(searchDict["text"], i.text().lower())
             and checkForString(searchDict["flavor"], i.flavor().lower())

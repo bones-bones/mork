@@ -35,7 +35,7 @@ async def getImageFromJson(json):
 
 
 # send card image to channel
-async def sendImage(url, ctx):
+async def sendImage(url, ctx: commands.Context):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             if resp.status != 200:

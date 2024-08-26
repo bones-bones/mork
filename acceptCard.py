@@ -36,7 +36,7 @@ async def acceptCard(
     )
 
     cardListChannel = cast(
-        discord.TextChannel, bot.get_channel(hc_constants.SIX_ZERO_CARD_LIST)
+        discord.TextChannel, bot.get_channel(hc_constants.SIX_ONE_CARD_LIST)
     )
     await cardListChannel.send(file=file_copy_for_cardlist, content=cardMessage)
 
