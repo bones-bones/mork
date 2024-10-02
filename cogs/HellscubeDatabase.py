@@ -9,6 +9,7 @@ from datetime import datetime, timezone, timedelta
 from CardClasses import Card, Side, CardSearch
 from cardNameRequest import cardNameRequest
 import hc_constants
+from isRealCard import isRealCard
 from printCardImages import sendImageReply
 
 
@@ -186,16 +187,11 @@ class HellscubeDatabaseCog(commands.Cog):
         if ctx.channel.id != hc_constants.JUDGES_TOWER:
             await ctx.send("Only allowed in the judge's tower")
             return
-        cardName = args.split("\n")[0].strip()
+
         ruling = args.split("\n")[1].strip()
+        cardName = args.split("\n")[0].strip()
 
-        name = cardNameRequest(cardName.lower())
-
-        print(f"[{name}], [{cardName.lower()}]")
-        if name != cardName.lower():
-            await ctx.send(
-                f"unable to find an exact match for {cardName}. did you mean: {name}"
-            )
+        if not isRealCard(cardName=cardName, ctx=ctx):
             return
 
         cardSheetUnapproved = googleClient.open_by_key(
@@ -247,12 +243,8 @@ class HellscubeDatabaseCog(commands.Cog):
 
         if tag.__contains__(" "):
             await ctx.send('no spaces allowed, use "-"')
-        print(tag, ctx.author.name)
-        name = cardNameRequest(cardName.lower())
-        if name != cardName.lower():
-            await ctx.send(
-                f"unable to find an exact match for {cardName}. did you mean: {name}"
-            )
+
+        if not isRealCard(cardName=cardName, ctx=ctx):
             return
 
         cardSheetUnapproved = googleClient.open_by_key(
@@ -562,3 +554,5 @@ def printCardNames(cards):
     for i in cards:
         returnString += i.name() + "\n"
     return returnString
+
+

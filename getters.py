@@ -17,3 +17,19 @@ def getSubmissionDiscussionChannel(bot: commands.Bot):
 
 def getErrataSubmissionChannel(bot: commands.Bot):
     return cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
+
+
+def getSubmissionsChannel(bot: commands.Bot):
+    return cast(TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL))
+
+
+def getTokenSubmissionChannel(bot: commands.Bot):
+    return cast(TextChannel, bot.get_channel(hc_constants.TOKEN_SUBMISSIONS))
+
+
+def getTokenListChannel(bot: commands.Bot):
+    return cast(TextChannel, bot.get_channel(hc_constants.TOKEN_LIST))
+
+
+def getBotTest(bot: commands.Bot):
+    return cast(TextChannel, bot.get_channel(hc_constants.BOT_TEST_CHANNEL))

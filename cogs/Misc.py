@@ -10,8 +10,9 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 from CardClasses import Side, CardSearch
-from getters import getVetoChannel
+from getters import getBotTest, getSubmissionDiscussionChannel, getVetoChannel
 from handleVetoPost import handleVetoPost
+from isRealCard import isRealCard
 from shared_vars import googleClient
 
 
@@ -34,6 +35,32 @@ print(cardList)
 class MiscCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    # @commands.Cog.listener()
+    # async def on_message(self, message: discord.Message):
+    #     if message.channel.id == hc_constants.BOT_TEST_CHANNEL:
+    #         wholeMessage = message.content.split("\n")
+    #         submissionDiscussion = getSubmissionDiscussionChannel(self.bot)
+    #         if wholeMessage.__len__() != 2:
+
+    #             await submissionDiscussion.send(
+    #                 content=f"<@{message.author.id}>, make sure to include the name of your token and at least one card it is for on a new line"
+    #             )
+    #         forCards = re.split(r"; ?", wholeMessage[1])
+    #         weGood = True
+    #         for card in forCards:
+    #             if not await isRealCard(cardName=card, ctx=getBotTest(self.bot)):
+    #                 weGood = False
+
+    #         if not weGood:
+    #             await message.delete()
+    #             await submissionDiscussion.send(
+    #                 content=f"<@{message.author.id}>, ^ looks like one of the cards wasn't found, try again"
+    #             )
+    #             return
+    #         await message.add_reaction(hc_constants.VOTE_UP)
+    #         await message.add_reaction(hc_constants.VOTE_DOWN)
+    #         await message.add_reaction(hc_constants.DELETE)
 
     # @commands.command(rest_is_raw=True)
     # async def judgement2(self, ctx: commands.Context, *, args: str):

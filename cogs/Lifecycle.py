@@ -28,14 +28,23 @@ from datetime import datetime, timezone, timedelta
 
 import acceptCard
 from checkErrataSubmissions import checkErrataSubmissions
-from checkSubmissions import checkMasterpieceSubmissions, checkSubmissions
+from checkSubmissions import (
+    checkMasterpieceSubmissions,
+    checkSubmissions,
+    checkTokenSubmissions,
+)
 
 from cogs.HellscubeDatabase import searchFor
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
-from getters import getErrataSubmissionChannel, getVetoChannel
+from getters import (
+    getErrataSubmissionChannel,
+    getSubmissionDiscussionChannel,
+    getVetoChannel,
+)
 from handleVetoPost import handleVetoPost
 import hc_constants
+from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
@@ -76,6 +85,7 @@ class LifecycleCog(commands.Cog):
             channelAsText = cast(discord.TextChannel, channel)
             message = await channelAsText.fetch_message(reaction.message_id)
 
+            # The "have mork delete my card" react
             if str(reaction.emoji) == hc_constants.DELETE and not is_mork(
                 reaction.user_id
             ):
@@ -91,7 +101,7 @@ class LifecycleCog(commands.Cog):
                     if reaction.member == messageReference.author:
                         await message.delete()
                         return
-
+            # The hellpit resubmit case
             if (
                 str(reaction.emoji) == hc_constants.ACCEPT
                 and cast(discord.Thread, channel).parent
@@ -132,6 +142,13 @@ class LifecycleCog(commands.Cog):
                     )
                     esubMessage = await errata_submissions_channel.send(file=copy2)
                     await esubMessage.add_reaction("☑️")
+
+            if (
+                str(reaction.emoji) == "☑️"
+                and reaction.member
+                and hc_constants.LLLLLL == reaction.member.id
+            ):
+                ...
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
@@ -180,6 +197,36 @@ class LifecycleCog(commands.Cog):
                     await post.reply(
                         f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}"
                     )
+        if message.channel.id == hc_constants.TOKEN_SUBMISSIONS:
+            wholeMessage = message.content.split("\n")
+            submissionDiscussion = getSubmissionDiscussionChannel(self.bot)
+            if wholeMessage.__len__() != 2:
+                await submissionDiscussion.send(
+                    content=f"<@{message.author.id}>, make sure to include the name of your token and at least one card it is for on a new line"
+                )
+            forCards = re.split(r"; ?", wholeMessage[1])
+            weGood = True
+            for card in forCards:
+                if not (await isRealCard(cardName=card, ctx=submissionDiscussion)):
+                    weGood = False
+
+            if not weGood:
+                await submissionDiscussion.send(
+                    content=f"<@{message.author.id}>, ^ looks like one of the cards wasn't found, try again"
+                )
+                await message.delete()
+                return
+            theFile = await message.attachments[0].to_file()
+            morkMessage = await message.channel.send(
+                file=theFile,
+                content=f"{wholeMessage[0]} by <@{message.author.id}>\n"
+                + "; ".join(forCards),
+            )
+
+            await morkMessage.add_reaction(hc_constants.VOTE_UP)
+            await morkMessage.add_reaction(hc_constants.VOTE_DOWN)
+            await morkMessage.add_reaction(hc_constants.DELETE)
+            await message.delete()
 
         if message.channel.id == hc_constants.VETO_CHANNEL:
             await handleVetoPost(message=message, bot=self.bot)
@@ -596,6 +643,10 @@ async def status_task(bot: commands.Bot):
             print(e)
         try:
             await checkErrataSubmissions(bot)
+        except Exception as e:
+            print(e)
+        try:
+            await checkTokenSubmissions(bot)
         except Exception as e:
             print(e)
         try:

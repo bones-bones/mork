@@ -21,7 +21,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         "ya ya gimme a sec",
         "processing...",
         "You're not the boss of me",
-        "ok, daddy~",
+        "ok, zaddy~",
         "but what of the children?",
         "?",
         "workin' on it!",

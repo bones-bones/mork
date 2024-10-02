@@ -1,3 +1,6 @@
+from typing import cast
+
+from discord import TextChannel
 import hc_constants
 from datetime import datetime, timezone, timedelta
 from discord.utils import get
@@ -5,8 +8,12 @@ from discord.ext import commands
 
 
 async def checkErrataSubmissions(bot: commands.Bot):
-    subChannel = bot.get_channel(hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS)
-    acceptedChannel = bot.get_channel(hc_constants.FOUR_ONE_ERRATA_ACCEPTED)
+    subChannel = cast(
+        TextChannel, bot.get_channel(hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS)
+    )
+    acceptedChannel = cast(
+        TextChannel, bot.get_channel(hc_constants.FOUR_ONE_ERRATA_ACCEPTED)
+    )
     timeNow = datetime.now(timezone.utc)
     oneWeek = timeNow + timedelta(weeks=-2)
     messages = subChannel.history(after=oneWeek, limit=None)

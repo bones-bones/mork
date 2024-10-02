@@ -13,6 +13,7 @@ async def handleVetoPost(message: Message, bot: commands.Bot):
         cast(Emoji, bot.get_emoji(hc_constants.CIRION_SPELLING))
     )  # Errata
     await message.add_reaction(hc_constants.VOTE_DOWN)
+
     await message.add_reaction(
         cast(Emoji, bot.get_emoji(hc_constants.MANA_GREEN))
     )  # too strong
@@ -26,11 +27,10 @@ async def handleVetoPost(message: Message, bot: commands.Bot):
 
     role = cast(
         Role,
-        get(cast(Member, message.author).guild.roles, id=hc_constants.VETO_COUNCIL)
+        get(cast(Member, message.author).guild.roles, id=hc_constants.VETO_COUNCIL),
     )
     judgeRole = cast(
-        Role,
-        get(cast(Member,message.author).guild.roles, id=hc_constants.JUDGES)
+        Role, get(cast(Member, message.author).guild.roles, id=hc_constants.JUDGES)
     )
 
     copy_for_discussion = await message.attachments[0].to_file()
