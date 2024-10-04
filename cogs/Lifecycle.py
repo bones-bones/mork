@@ -29,6 +29,7 @@ from datetime import datetime, timezone, timedelta
 import acceptCard
 from checkErrataSubmissions import checkErrataSubmissions
 from checkSubmissions import (
+    acceptTokenSubmission,
     checkMasterpieceSubmissions,
     checkSubmissions,
     checkTokenSubmissions,
@@ -148,7 +149,7 @@ class LifecycleCog(commands.Cog):
                 and reaction.member
                 and hc_constants.LLLLLL == reaction.member.id
             ):
-                ...
+                await acceptTokenSubmission(bot=self.bot, message=message)
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):

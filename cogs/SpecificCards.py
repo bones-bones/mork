@@ -1147,6 +1147,16 @@ class SpecificCardsCog(commands.Cog):
         for sheet in selected:
             await sendDriveImage(sheet, ctx)
 
+    # for the card ballsjr's druidic vow
+    @commands.command()
+    async def willsSchemes(self, ctx: commands.Context):
+        # https://scryfall.com/random?q=will+type=scheme
+
+        json = await getScryfallJson(
+            "https://api.scryfall.com/cards/random?q=will+type=scheme"
+        )
+        await sendImage(await getImageFromJson(json), ctx)
+
     # for the card tunak tunak tun
     @commands.command()
     async def tunak(self, ctx):

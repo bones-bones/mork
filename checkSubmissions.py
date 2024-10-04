@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, timedelta
 import io
+from operator import le
 import os
 import re
 from typing import cast
@@ -245,10 +246,6 @@ async def checkTokenSubmissions(bot: commands.Bot):
 
 async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     tokenListChannel = getTokenListChannel(bot)
-    file = await message.attachments[0].to_file()
-    copy = await message.attachments[0].to_file()
-    cardName = message.content.split("\n")[0].split(" by ")[0]
-
     accepted_message_no_mentions = message.content
 
     for index, mentionEntry in enumerate(message.raw_mentions):
@@ -256,14 +253,17 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
             f"<@{str(mentionEntry)}>", message.mentions[index].name
         )
 
+    cardName = accepted_message_no_mentions.split("\n")[0].split(" by ")[0]
+    creator = accepted_message_no_mentions.split("\n")[0].split(" by ")[1]
+    relatedCards = accepted_message_no_mentions.split("\n")[1]
+
     await message.add_reaction(hc_constants.ACCEPT)
 
+    file = await message.attachments[0].to_file()
+    copy = await message.attachments[0].to_file()
+
     await tokenListChannel.send(
-        content=accepted_message_no_mentions.split("\n")[0]
-        + " by "
-        + message.author.name
-        + "\n"
-        + accepted_message_no_mentions.split("\n")[1],
+        content=cardName + " by " + creator + "\n" + relatedCards,
         file=copy,
     )
 
@@ -290,9 +290,6 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     dbRowIndex = allCardNames.__len__() + 1
 
     tokenUnapproved.update_cell(dbRowIndex, 2, imageUrl)
-    tokenUnapproved.update_cell(
-        dbRowIndex, 8, message.content.split("\n")[0].split(" by ")[1]
-    )
-
+    tokenUnapproved.update_cell(dbRowIndex, 8, creator)
     tokenUnapproved.update_cell(dbRowIndex, 1, cardName)
-    tokenUnapproved.update_cell(dbRowIndex, 6, message.content.split("\n")[1])
+    tokenUnapproved.update_cell(dbRowIndex, 6, relatedCards)
