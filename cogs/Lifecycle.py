@@ -137,10 +137,10 @@ class LifecycleCog(commands.Cog):
                         )
                         await handleVetoPost(message=vetoEntry, bot=self.bot)
                         await ogMessage.add_reaction(hc_constants.DELETE)
-                    errata_submissions_channel = getErrataSubmissionChannel(
+                    _submissions_channel = getSubmissionChannel(
                         bot=self.bot
                     )
-                    esubMessage = await errata_submissions_channel.send(file=copy2)
+                    esubMessage = await _submissions_channel.send(file=copy2)
                     await esubMessage.add_reaction("☑️")
 
             if (
@@ -230,7 +230,7 @@ class LifecycleCog(commands.Cog):
 
         if message.channel.id == hc_constants.VETO_CHANNEL:
             await handleVetoPost(message=message, bot=self.bot)
-        if message.channel.id == hc_constants.FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL:
+        if message.channel.id == hc_constants.FOUR_ZERO__SUBMISSIONS_CHANNEL:
             if "@" in message.content:
                 # No ping case
                 user = await self.bot.fetch_user(message.author.id)
@@ -242,7 +242,7 @@ class LifecycleCog(commands.Cog):
             await sentMessage.add_reaction(hc_constants.VOTE_UP)
             await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
             await message.delete()
-        if message.channel.id == hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS:
+        if message.channel.id == hc_constants.FOUR_ONE__SUBMISSIONS:
             if "@" in message.content:
                 # No ping case
                 user = await self.bot.fetch_user(message.author.id)
@@ -429,7 +429,7 @@ class LifecycleCog(commands.Cog):
             hasReacted = False
             # messageEntry.reactions[0].users
             up = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
-            errata = get(
+             = get(
                 messageEntry.reactions,
                 emoji=self.bot.get_emoji(hc_constants.CIRION_SPELLING),
             )
@@ -440,8 +440,8 @@ class LifecycleCog(commands.Cog):
                 async for user in up.users():
                     if user.id == ctx.author.id:
                         hasReacted = True
-            if errata and not hasReacted:
-                async for user in errata.users():
+            if  and not hasReacted:
+                async for user in .users():
                     if user.id == ctx.author.id:
                         hasReacted = True
             if down and not hasReacted:
@@ -483,7 +483,7 @@ class LifecycleCog(commands.Cog):
         responseObject = cast(
             VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
         )
-        errataCardMessages = responseObject.errataCardMessages
+        CardMessages = responseObject.CardMessages
         acceptedCardMessages = responseObject.acceptedCardMessages
         vetoCardMessages = responseObject.vetoCardMessages
         purgatoryCardMessages = responseObject.purgatoryCardMessages
@@ -493,7 +493,7 @@ class LifecycleCog(commands.Cog):
         mysteryVetoHellCards: list[str] = []
         vetoedCards: list[str] = []
         acceptedCards: list[str] = []
-        needsErrataCards: list[str] = []
+        needsCards: list[str] = []
 
         for messageEntry in acceptedCardMessages:
             file = await messageEntry.attachments[0].to_file()
@@ -537,10 +537,10 @@ class LifecycleCog(commands.Cog):
             vetoedCards.append(getCardMessage(messageEntry.content))
             await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md
 
-        for messageEntry in errataCardMessages:
+        for messageEntry in CardMessages:
             thread = guild.get_channel_or_thread(messageEntry.id)
 
-            needsErrataCards.append(getCardMessage(messageEntry.content))
+            needsCards.append(getCardMessage(messageEntry.content))
             await messageEntry.add_reaction(hc_constants.ACCEPT)
             if thread:
                 await cast(Thread, thread).edit(archived=True)
@@ -587,13 +587,15 @@ class LifecycleCog(commands.Cog):
         )
 
         # had to use format because python doesn't like \n inside template brackets
+        copyableText = ""
         if len(acceptedCards) > 0:
-            vetoMessage = "\n\nACCEPTED CARDS: \n{0}".format("\n".join(acceptedCards))
+            acceptMessage = "\n\nACCEPTED CARDS: \n{0}".format("\n".join(acceptedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
-        if len(needsErrataCards) > 0:
+            copyableText += acceptMessage + "\n\n"
+        if len(needsCards) > 0:
             errataMessage = "\n\nNEEDS ERRATA: \n{0}".format(
                 "\n".join(needsErrataCards)
             )
@@ -601,18 +603,21 @@ class LifecycleCog(commands.Cog):
                 await vetoDiscussionChannel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
+                copyableText += errataMessage + "\n\n"
         if len(vetoedCards) > 0:
             vetoMessage = "\n\nVETOED: \n{0}".format("\n".join(vetoedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
+                copyableText += vetoMessage + "\n\n"
         if len(vetoHellCards) > 0:
             hellMessage = "\n\nVETO HELL: \n{0}".format("\n".join(vetoHellCards))
             for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
+                copyableText += hellMessage + "\n\n"
         if len(mysteryVetoHellCards) > 0:
             mysteryHellMessage = "\n\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format(
                 "\n".join(mysteryVetoHellCards)
@@ -623,6 +628,10 @@ class LifecycleCog(commands.Cog):
                 await vetoDiscussionChannel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
+                copyableText += mysteryHellMessage + "\n\n"
+        await vetoDiscussionChannel.send(
+            content=f"Copy and paste below this line:\n{copyableText}"
+        )
 
 
 async def setup(bot: commands.Bot):
