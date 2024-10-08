@@ -588,13 +588,13 @@ class LifecycleCog(commands.Cog):
 
         # had to use format because python doesn't like \n inside template brackets
         if len(acceptedCards) > 0:
-            vetoMessage = "\n\nACCEPTED CARDS: \n{0}".format("\n".join(acceptedCards))
+            acceptedMessage = "||​||\nACCEPTED CARDS: \n{0}".format("\n".join(acceptedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
-            errataMessage = "\n\nNEEDS ERRATA: \n{0}".format(
+            errataMessage = "||​||\nNEEDS ERRATA: \n{0}".format(
                 "\n".join(needsErrataCards)
             )
             for i in range(0, errataMessage.__len__(), hc_constants.LITERALLY_1984):
@@ -602,19 +602,19 @@ class LifecycleCog(commands.Cog):
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
-            vetoMessage = "\n\nVETOED: \n{0}".format("\n".join(vetoedCards))
+            vetoMessage = "||​||\nVETOED: \n{0}".format("\n".join(vetoedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
-            hellMessage = "\n\nVETO HELL: \n{0}".format("\n".join(vetoHellCards))
+            hellMessage = "||​||\nVETO HELL: \n{0}".format("\n".join(vetoHellCards))
             for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
-            mysteryHellMessage = "\n\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format(
+            mysteryHellMessage = "||​||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format(
                 "\n".join(mysteryVetoHellCards)
             )
             for i in range(
