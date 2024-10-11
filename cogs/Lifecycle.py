@@ -29,7 +29,6 @@ from datetime import datetime, timezone, timedelta
 import acceptCard
 from checkErrataSubmissions import checkErrataSubmissions
 from checkSubmissions import (
-    acceptTokenSubmission,
     checkMasterpieceSubmissions,
     checkSubmissions,
     checkTokenSubmissions,
@@ -47,17 +46,22 @@ from handleVetoPost import handleVetoPost
 import hc_constants
 from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
-from is_mork import is_mork, reasonableCard
+from is_mork import getDriveUrl, is_mork, reasonableCard, uploadToDrive
 from printCardImages import print_card_images
 from reddit_functions import postGalleryToReddit, postToReddit
 from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
-from shared_vars import intents
+from shared_vars import intents, googleClient
+
 
 ONE_HOUR = 3600
 
 
 client = discord.Client(intents=intents)
 bannedUserIds = []
+
+tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
+    hc_constants.TOKEN_UNAPPROVED
+)
 
 
 class LifecycleCog(commands.Cog):
@@ -149,7 +153,41 @@ class LifecycleCog(commands.Cog):
                 and reaction.member
                 and hc_constants.LLLLLL == reaction.member.id
             ):
-                await acceptTokenSubmission(bot=self.bot, message=message)
+
+                cardName = message.content.split("\n")[0]
+                creator = message.author.name
+
+                file = await message.attachments[0].to_file()
+                extension = re.search("\.([^.]*)$", file.filename)
+                fileType = (
+                    extension.group() if extension else ".png"
+                )  # just guess that the file is a png
+                new_file_name = f'{cardName.replace("/", "|")}{fileType}'
+                image_path = f"tempImages/{new_file_name}"
+
+                file_data = file.fp.read()
+
+                with open(image_path, "wb") as out:
+                    out.write(file_data)
+
+                google_drive_file_id = uploadToDrive(image_path)
+
+                os.remove(image_path)
+
+                imageUrl = getDriveUrl(google_drive_file_id)
+
+                allCardNames = tokenUnapproved.col_values(1)
+
+                dbRowIndex = allCardNames.__len__() + 1
+
+                tokenUnapproved.update_cell(dbRowIndex, 2, imageUrl)
+                tokenUnapproved.update_cell(dbRowIndex, 8, creator)
+                tokenUnapproved.update_cell(dbRowIndex, 1, cardName)
+
+                if message.content.split("\n").__len__() > 1:
+                    tokenUnapproved.update_cell(
+                        dbRowIndex, 6, message.content.split("\n")[1]
+                    )
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
