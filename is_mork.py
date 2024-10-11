@@ -18,7 +18,7 @@ def is_mork_two(user_id: int):
 
 
 def reasonableCard():
-    return random.randint(0, 2000) == 69
+    return random.randint(0, 3000) == 69
 
 
 def uploadToDrive(path: str):
