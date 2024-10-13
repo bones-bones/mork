@@ -404,10 +404,6 @@ class LifecycleCog(commands.Cog):
                     author = "; ".join(
                         [f"<@{str(raw)}>" for raw in message.raw_mentions]
                     )
-
-                splitString = message.content.split("\n")
-                cardName = splitString[0]
-                author = message.author.mention
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
                     vetoChannel = getVetoChannel(self.bot)
