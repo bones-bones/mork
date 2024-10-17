@@ -14,7 +14,9 @@ import pprint as pp
 from discord.utils import get
 
 
+from cogs.HellscubeDatabase import searchFor
 import hc_constants
+from printCardImages import sendImageReply
 
 
 # load json from scryfall
@@ -805,7 +807,6 @@ class SpecificCardsCog(commands.Cog):
             "cockatrice",
             "battlenet",
         ]
-        podBulk = ["Eon Storm", "Arashin Sovereign"]
         podBot = [
             "Scryfall",
             "FatesealRise",
@@ -1253,6 +1254,17 @@ class SpecificCardsCog(commands.Cog):
                 await ctx.send("Choose two —\n{0}".format("\n".join(results)))
                 await session.close()
 
+    # for the card Avatar of BallsJr123
+    @commands.command()
+    async def avatarOfBalls(self, ctx: commands.Context, cost):
+        results = searchFor({"cmc": [(cost, "=")], "types": ["creature"]})
+        if results.__len__() == 0:
+            await ctx.send("nothing found for that cmc")
+        result = random.choice(results)
+        print(results.__len__())
+        await sendImageReply(
+            url=result.img(), cardname=result.name(), text=None, message=ctx.message
+        )
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(SpecificCardsCog(bot))

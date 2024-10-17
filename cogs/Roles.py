@@ -1,3 +1,5 @@
+from typing import cast
+from discord import Member
 from discord.ext import commands
 from discord.utils import get
 import pprint as pp
@@ -49,7 +51,9 @@ class RolesCog(commands.Cog):
 
     @commands.command()
     async def wantToEdh(self, ctx: commands.Context):
-        role = get(ctx.message.author.guild.roles, id=int(720043670870425691))
+        role = get(
+            cast(Member, ctx.message.author).guild.roles, id=int(720043670870425691)
+        )
         if role in ctx.author.roles:
             await ctx.author.remove_roles(role)
             await ctx.send("Removed WantToEdh from " + str(ctx.message.author))

@@ -7,7 +7,6 @@ from typing import cast
 from venv import create
 from shared_vars import googleClient
 
-import discord
 from getters import (
     getSubmissionDiscussionChannel,
     getSubmissionsChannel,
@@ -57,7 +56,7 @@ async def checkSubmissions(bot: commands.Bot):
 
             positiveMargin = upCount - downCount
             if (
-                positiveMargin >= 25
+                positiveMargin >= (hc_constants.SUBMISSIONS_THRESHOLD)
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days=1)
                 and is_mork(messageEntry.author.id)
@@ -112,7 +111,7 @@ async def checkSubmissions(bot: commands.Bot):
                 await messageEntry.delete()
                 continue
             elif (
-                positiveMargin >= 20
+                positiveMargin >= (hc_constants.SUBMISSIONS_THRESHOLD - 5)
                 and len(messageEntry.attachments) > 0
                 and messageAge >= timedelta(days=6)
                 and is_mork(messageEntry.author.id)
@@ -197,23 +196,23 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 await logChannel.send(content=logContent, file=copy2)
                 await messageEntry.delete()
                 continue
-        elif (
-            (upCount - downCount) >= 25
-            and len(messageEntry.attachments) > 0
-            and messageAge >= timedelta(days=13)
-            and is_mork(messageEntry.author.id)
-        ):
-            hasMork = False
-            timeReacts = get(messageEntry.reactions, emoji="🕛")
-            if timeReacts:
-                async for user in timeReacts.users():
-                    if is_mork(user.id):
-                        hasMork = True
-            if not hasMork:
-                await acceptedChannel.send(
-                    f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
-                )
-                await messageEntry.add_reaction("🕛")
+            elif (
+                (upCount - downCount) >= 25
+                and len(messageEntry.attachments) > 0
+                and messageAge >= timedelta(days=13)
+                and is_mork(messageEntry.author.id)
+            ):
+                hasMork = False
+                timeReacts = get(messageEntry.reactions, emoji="🕛")
+                if timeReacts:
+                    async for user in timeReacts.users():
+                        if is_mork(user.id):
+                            hasMork = True
+                if not hasMork:
+                    await acceptedChannel.send(
+                        f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
+                    )
+                    await messageEntry.add_reaction("🕛")
     print("------done checking submissions-----")
 
 

@@ -10,9 +10,11 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 from CardClasses import Side, CardSearch
+from cogs.HellscubeDatabase import searchFor
 from getters import getBotTest, getSubmissionDiscussionChannel, getVetoChannel
 from handleVetoPost import handleVetoPost
 from isRealCard import isRealCard
+from printCardImages import sendImageReply
 from shared_vars import googleClient
 
 
@@ -35,6 +37,19 @@ print(cardList)
 class MiscCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    # for the card Avatar of BallsJr123
+    @commands.command()
+    async def avatarOfBalls(self, ctx: commands.Context, cost):
+        print("oi")
+        results = searchFor({"cmc": [(cost, "=")], "types": ["creature"]})
+        if results.__len__() == 0:
+            await ctx.send("nothing found for that cmc")
+        result = random.choice(results)
+        print(results.__len__())
+        await sendImageReply(
+            url=result.img(), cardname=result.name(), text=None, message=ctx.message
+        )
 
     # @commands.Cog.listener()
     # async def on_message(self, message: discord.Message):

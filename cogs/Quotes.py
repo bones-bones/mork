@@ -1,4 +1,5 @@
 import random
+from typing import cast
 import discord
 from discord.ext import commands
 from is_mork import is_mork
@@ -63,21 +64,32 @@ class QuotesCog(commands.Cog):
         fileID = hc_constants.QUOTES_FILE
 
         if message.reference:
-            original_message = await message.channel.fetch_message(message.reference.message_id)
+            original_message = await message.channel.fetch_message(
+                cast(int, message.reference.message_id)
+            )
             if "@" in original_message.content:
                 await ctx.send(
                     "You think you're fucking funny, bitch\n\nOh, I'll try to quote a ping it'll be funny and totally not annoying at all.\nYou're a bitch. You suck. Fuck you\n\nYou useless piece of shit. You absolute waste of space and air. You uneducated, ignorant, idiotic dumb swine, you’re an absolute embarrassment to humanity and all life as a whole. The magnitude of your failure just now is so indescribably massive that one hundred years into the future your name will be used as moniker of evil for heretics. Even if all of humanity put together their collective intelligence there is no conceivable way they could have thought up a way to fuck up on the unimaginable scale you just did. When Jesus died for our sins, he must not have seen the sacrilegious act we just witnessed you performing, because if he did he would have forsaken humanity long ago so that your birth may have never become reality. After you die, your skeleton will be displayed in a museum after being scientifically researched so that all future generations may learn not to generate your bone structure, because every tiny detail anyone may have in common with you degrades them to a useless piece of trash and a burden to society."
                 )
                 return
-            if is_mork(original_message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
+            if (
+                is_mork(original_message.author.id)
+                and ctx.channel.id != hc_constants.CUBE_CHANNEL
+            ):
                 await ctx.send("The bot can't quote itself")
                 return
-            await addToDrive(f'{original_message.author}: {original_message.content}\n⤷{message.content}', user, fileID)
-            await ctx.send(f'"{original_message.author}: {original_message.content}\n\n⤷{message.content}"\n-{user}')
+            await addToDrive(
+                f"{original_message.author}: {original_message.content}\n⤷{message.content}",
+                user,
+                fileID,
+            )
+            await ctx.send(
+                f'"{original_message.author}: {original_message.content}\n\n⤷{message.content}"\n-{user}'
+            )
         else:
             await addToDrive(message.content, user, fileID)
             await ctx.send('"' + message.content + '"\n-' + user)
-    
+
     @commands.command()
     async def randomquote(self, ctx: commands.Context, *user):
         fileID = hc_constants.QUOTES_FILE

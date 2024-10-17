@@ -15,9 +15,10 @@ async def postToReddit(image_path: str, title: str, flair: str = ""):
     # print(await reddit.user.me())
     hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit("HellsCube")
 
-    return await hellscubeSubreddit.submit_image(
+    await hellscubeSubreddit.submit_image(
         title=title, image_path=image_path, flair_id=flair
     )
+    await reddit.close()
 
 
 async def postGalleryToReddit(
@@ -33,6 +34,5 @@ async def postGalleryToReddit(
     # print(await reddit.user.me())
     hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit("HellsCube")
 
-    return await hellscubeSubreddit.submit_gallery(
-        title=title, images=images, flair_id=flair
-    )
+    await hellscubeSubreddit.submit_gallery(title=title, images=images, flair_id=flair)
+    await reddit.close()

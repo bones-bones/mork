@@ -236,6 +236,7 @@ class LifecycleCog(commands.Cog):
                     await post.reply(
                         f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}"
                     )
+                await reddit.close()
         if message.channel.id == hc_constants.TOKEN_SUBMISSIONS:
             wholeMessage = message.content.split("\n")
             submissionDiscussion = getSubmissionDiscussionChannel(self.bot)
@@ -582,7 +583,7 @@ class LifecycleCog(commands.Cog):
 
         for messageEntry in purgatoryCardMessages:
             messageAge = timeNow - messageEntry.created_at
-            if messageAge > timedelta(days=3):
+            if messageAge > timedelta(days=6):
                 thread = cast(Thread, guild.get_channel_or_thread(messageEntry.id))
                 recentlyNotified = False
 
@@ -623,10 +624,12 @@ class LifecycleCog(commands.Cog):
 
         # had to use format because python doesn't like \n inside template brackets
         if len(acceptedCards) > 0:
-            acceptedMessage = "||​||\nACCEPTED CARDS: \n{0}".format("\n".join(acceptedCards))
-            for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
+            acceptedMessage = "||​||\nACCEPTED CARDS: \n{0}".format(
+                "\n".join(acceptedCards)
+            )
+            for i in range(0, acceptedMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
-                    content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
+                    content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
             errataMessage = "||​||\nNEEDS ERRATA: \n{0}".format(
@@ -788,3 +791,4 @@ async def checkReddit(bot: commands.Bot):
             await redditChannel.send(
                 content=f"reddit says: https://reddit.com{submission.permalink}"
             )
+    await reddit.close()
