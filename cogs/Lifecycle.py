@@ -570,7 +570,36 @@ class LifecycleCog(commands.Cog):
                 await thread.edit(archived=True)
 
         for messageEntry in vetoCardMessages:
+            file = await messageEntry.attachments[0].to_file()
+            
+            acceptanceMessage = messageEntry.content
+            dbname = ""
+            card_author = ""
+            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
+                ...
+            elif acceptanceMessage[0:3] == "by ":
+                card_author = str((acceptanceMessage.split("by "))[1])
+            else:
+                messageChunks = acceptanceMessage.split(" by ")
+                firstPart = messageChunks[0]
+                secondPart = "".join(messageChunks[1:])
+
+                dbname = str(firstPart)
+                card_author = str(secondPart)
+            resolvedName = dbname if dbname != "" else "Crazy card with no name"
+            resolvedAuthor = card_author if card_author != "" else "no author"
+            cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
+
             vetoedCards.append(getCardMessage(messageEntry.content))
+
+            await acceptCard.acceptVetoCard(
+                bot=self.bot,
+                file=file,
+                cardMessage=cardMessage,
+                cardName=dbname,
+                authorName=card_author,
+            )
+
             await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md
 
         for messageEntry in errataCardMessages:
