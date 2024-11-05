@@ -690,6 +690,39 @@ class LifecycleCog(commands.Cog):
                 await vetoDiscussionChannel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
+    @commands.command()
+    async def instaerrata(self, ctx: commands.Context, *, cardMessage: str):
+        if not ctx.message.attachments:
+            await ctx.send("Please attach an image file.")
+            return
+
+        file = ctx.message.attachments[0]
+
+        if not file.content_type.startswith("image/"):
+            await ctx.send("The attached file must be an image.")
+            return
+
+        if (len(cardMessage)) == 0 or "by " not in cardMessage:
+            await ctx.send("Please attach a card message.")
+            return
+        elif cardMessage[0:3] == "by ":
+            await ctx.send("Please include a card name")
+            return
+        else:
+            messageChunks = cardMessage.split(" by ")
+            firstPart = messageChunks[0]
+            secondPart = "".join(messageChunks[1:])
+
+            dbname = str(firstPart)
+            card_author = str(secondPart)
+        await acceptCard.acceptCard(
+            bot=self.bot,
+            file=file,
+            cardMessage=cardMessage,
+            cardName=dbname,
+            authorName=card_author,
+            errata=True
+        )
 
 
 async def setup(bot: commands.Bot):
