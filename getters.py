@@ -33,3 +33,7 @@ def getTokenListChannel(bot: commands.Bot):
 
 def getBotTest(bot: commands.Bot):
     return cast(TextChannel, bot.get_channel(hc_constants.BOT_TEST_CHANNEL))
+
+
+def getGraveyardChannel(bot: commands.Bot):
+    return cast(TextChannel, bot.get_channel(hc_constants.GRAVEYARD_CARD_LIST))

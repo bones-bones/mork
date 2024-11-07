@@ -148,47 +148,6 @@ class LifecycleCog(commands.Cog):
                     esubMessage = await errata_submissions_channel.send(file=copy2)
                     await esubMessage.add_reaction("☑️")
 
-            if (
-                str(reaction.emoji) == "☑️"
-                and reaction.member
-                and hc_constants.LLLLLL == reaction.member.id
-            ):
-
-                cardName = message.content.split("\n")[0]
-                creator = message.author.name
-
-                file = await message.attachments[0].to_file()
-                extension = re.search("\.([^.]*)$", file.filename)
-                fileType = (
-                    extension.group() if extension else ".png"
-                )  # just guess that the file is a png
-                new_file_name = f'{cardName.replace("/", "|")}{fileType}'
-                image_path = f"tempImages/{new_file_name}"
-
-                file_data = file.fp.read()
-
-                with open(image_path, "wb") as out:
-                    out.write(file_data)
-
-                google_drive_file_id = uploadToDrive(image_path)
-
-                os.remove(image_path)
-
-                imageUrl = getDriveUrl(google_drive_file_id)
-
-                allCardNames = tokenUnapproved.col_values(1)
-
-                dbRowIndex = allCardNames.__len__() + 1
-
-                tokenUnapproved.update_cell(dbRowIndex, 2, imageUrl)
-                tokenUnapproved.update_cell(dbRowIndex, 8, creator)
-                tokenUnapproved.update_cell(dbRowIndex, 1, cardName)
-
-                if message.content.split("\n").__len__() > 1:
-                    tokenUnapproved.update_cell(
-                        dbRowIndex, 6, message.content.split("\n")[1]
-                    )
-
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
         try:

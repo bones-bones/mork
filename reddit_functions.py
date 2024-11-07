@@ -19,6 +19,7 @@ async def postToReddit(image_path: str, title: str, flair: str = ""):
         title=title, image_path=image_path, flair_id=flair
     )
     await reddit.close()
+    return
 
 
 async def postGalleryToReddit(

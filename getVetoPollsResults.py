@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import random
-from typing import cast
-from discord import Message, TextChannel
+
+from discord import Message
 from attr import dataclass
 from discord.ext import commands
 from discord.utils import get

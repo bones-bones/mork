@@ -10,6 +10,7 @@ FOUR_ONE_ERRATA_DISCUSSION = 1231402932302385203
 FOUR_ONE_ERRATA_ACCEPTED = 1231402715855192085
 SIX_ZERO_CARD_LIST = 1240503040721813545
 SIX_ONE_CARD_LIST = 1260724438241116170
+GRAVEYARD_CARD_LIST = 1289285006061080658
 SUBMISSIONS_DISCUSSION_CHANNEL = 842605813238464542
 MORK_SUBMISSIONS_LOGGING_CHANNEL = 1053602170177589278
 HELLS_BASICS_SUBMISSIONS = 1233249408414519427
@@ -21,6 +22,7 @@ THIS_IS_NOT_MAGIC = 1258527797820002304
 DESIGN_HELL_SUBMISSION_CHANNEL = 1273085587964035183
 TOKEN_SUBMISSIONS = 1284365375475023884
 TOKEN_LIST = 692914661191974912
+
 
 SUBMISSIONS_THRESHOLD = 30
 
@@ -71,12 +73,16 @@ MANA_WHITE = 636012953535119373
 JIMMY = 1009993523497541672
 WALL = 935277715668492308
 
+# Veto council votes
 VOTE_UP = "👍"
 VOTE_DOWN = "👎"
 ACCEPT = "✅"
 DELETE = "❌"
 BAD = "🤮"
 UNSURE = "🤔"
+
+TOMBSTONE = "🪦"
+
 
 LITERALLY_1984 = 1984
 
@@ -130,7 +136,7 @@ macroList = {
         "podcast": "https://www.youtube.com/watch?v=vwG0igxy2Do",
         "cardsmith": "https://www.youtube.com/watch?v=a8VLXlXRlIY",
         "purple": "https://www.youtube.com/watch?v=JV4aLhLh6i8",
-        "auroch": "https://www.youtube.com/watch?v=4Al7txEvR4Y",
+        "aurochs": "https://www.youtube.com/watch?v=4Al7txEvR4Y",
         "modabuse": "https://www.youtube.com/watch?v=-e_-rs23SpI",
         "bears": "https://www.youtube.com/watch?v=pP-q8C-wp2Q",
         "progression": "https://www.youtube.com/watch?v=zfJUrKfjaNQ",

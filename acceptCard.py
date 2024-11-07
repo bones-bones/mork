@@ -22,6 +22,8 @@ async def acceptCard(
     file: discord.File,
     cardName: str,
     authorName: str,
+    channelIdForCard: int = hc_constants.SIX_ONE_CARD_LIST,
+    setId: str = "HC6",
 ):
     extension = re.search("\.([^.]*)$", file.filename)
     fileType = (
@@ -35,9 +37,7 @@ async def acceptCard(
         fp=io.BytesIO(file_data), filename=new_file_name
     )
 
-    cardListChannel = cast(
-        discord.TextChannel, bot.get_channel(hc_constants.SIX_ONE_CARD_LIST)
-    )
+    cardListChannel = cast(discord.TextChannel, bot.get_channel(channelIdForCard))
     await cardListChannel.send(file=file_copy_for_cardlist, content=cardMessage)
 
     with open(image_path, "wb") as out:
@@ -74,3 +74,5 @@ async def acceptCard(
     if newCard:
         cardSheetUnapproved.update_cell(dbRowIndex, 1, cardName)
         cardSheetUnapproved.update_cell(dbRowIndex, 3, authorName)
+        cardSheetUnapproved.update_cell(dbRowIndex, 4, setId)
+    return

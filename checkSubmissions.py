@@ -1,13 +1,15 @@
 from datetime import datetime, timezone, timedelta
-import io
-from operator import le
+
+
 import os
 import re
 from typing import cast
-from venv import create
+
+from acceptCard import acceptCard
 from shared_vars import googleClient
 
 from getters import (
+    getGraveyardChannel,
     getSubmissionDiscussionChannel,
     getSubmissionsChannel,
     getTokenListChannel,
@@ -45,25 +47,27 @@ async def checkSubmissions(bot: commands.Bot):
     messages = [message async for message in messages]
     for messageEntry in messages:
         messageEntry = cast(Message, messageEntry)
-        if "@everyone" in messageEntry.content:
+        if (
+            "@everyone" in messageEntry.content
+            or len(messageEntry.attachments) == 0
+            or not is_mork(messageEntry.author.id)
+        ):
             continue  # just ignore these
         upvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
         downvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_DOWN)
+
         if upvote and downvote:
             upCount = upvote.count
             downCount = downvote.count
             messageAge = timeNow - messageEntry.created_at
 
             positiveMargin = upCount - downCount
-            if (
-                positiveMargin >= (hc_constants.SUBMISSIONS_THRESHOLD)
-                and len(messageEntry.attachments) > 0
-                and messageAge >= timedelta(days=1)
-                and is_mork(messageEntry.author.id)
-            ):
+            if positiveMargin >= (
+                hc_constants.SUBMISSIONS_THRESHOLD
+            ) and messageAge >= timedelta(days=1):
+                guild = cast(Guild, messageEntry.guild)
                 # This case here is to stop prevent spamming. If there is a single downvote, do a check to see if an admin has voted
                 if downCount == 1:
-                    guild = cast(Guild, messageEntry.guild)
                     prettyValid = False
                     async for user in upvote.users():
                         if guild.get_member(user.id) is not None and is_admin(
@@ -87,6 +91,54 @@ async def checkSubmissions(bot: commands.Bot):
                     )
 
                 copy = await messageEntry.attachments[0].to_file()
+
+                # The spooky block is to determine if cards should automatically go to the graveyard channel
+                tombstone = get(messageEntry.reactions, emoji=hc_constants.TOMBSTONE)
+                if tombstone:
+                    spooky = False
+                    async for user in tombstone.users():
+                        if guild.get_member(user.id) is not None and (
+                            is_admin(cast(Member, user)) or is_mork(user.id)
+                        ):
+                            spooky = True
+                    if spooky:
+                        dbname = ""
+                        card_author = ""
+                        if (
+                            len(accepted_message_no_mentions)
+                        ) == 0 or "by " not in accepted_message_no_mentions:
+                            ...  # This is really the case of setting both to "", but due to scoping i got lazy
+                        elif accepted_message_no_mentions[0:3] == "by ":
+                            card_author = str(
+                                (accepted_message_no_mentions.split("by "))[1]
+                            )
+                        else:
+                            messageChunks = accepted_message_no_mentions.split(" by ")
+                            firstPart = messageChunks[0]
+                            secondPart = "".join(messageChunks[1:])
+
+                            dbname = str(firstPart)
+                            card_author = str(secondPart)
+                        resolvedName = (
+                            dbname if dbname != "" else "Crazy card with no name"
+                        )
+                        resolvedAuthor = (
+                            card_author if card_author != "" else "no author"
+                        )
+                        cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
+                        copy2 = await messageEntry.attachments[0].to_file()
+                        await acceptCard(
+                            bot=bot,
+                            channelIdForCard=hc_constants.GRAVEYARD_CARD_LIST,
+                            setId="HCV",
+                            file=copy2,
+                            cardMessage=cardMessage,
+                            authorName=card_author,
+                            cardName=dbname,
+                        )
+                        await messageEntry.delete()
+                        continue  # and then stop processing the card
+
                 vetoEntry = await vetoChannel.send(
                     content=accepted_message_no_mentions, file=copy
                 )
@@ -95,8 +147,7 @@ async def checkSubmissions(bot: commands.Bot):
 
                 copy2 = await messageEntry.attachments[0].to_file()
                 logContent = f"{acceptContent}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
-                await acceptedChannel.send(content=acceptContent)
-                await acceptedChannel.send(content="", file=file)
+                await acceptedChannel.send(content=acceptContent, file=file)
                 await logChannel.send(content=logContent, file=copy2)
 
                 yesUsers = "voted yes:\n"
@@ -110,12 +161,9 @@ async def checkSubmissions(bot: commands.Bot):
 
                 await messageEntry.delete()
                 continue
-            elif (
-                positiveMargin >= (hc_constants.SUBMISSIONS_THRESHOLD - 5)
-                and len(messageEntry.attachments) > 0
-                and messageAge >= timedelta(days=6)
-                and is_mork(messageEntry.author.id)
-            ):
+            elif positiveMargin >= (
+                hc_constants.SUBMISSIONS_THRESHOLD - 5
+            ) and messageAge >= timedelta(days=6):
                 hasMork = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")
                 if timeReacts:
@@ -147,7 +195,11 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
     messages = [message async for message in messages]
     for messageEntry in messages:
 
-        if "@everyone" in messageEntry.content:
+        if (
+            "@everyone" in messageEntry.content
+            or len(messageEntry.attachments) == 0
+            or not is_mork(messageEntry.author.id)
+        ):
             continue  # just ignore these
         upvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
         downvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_DOWN)
@@ -156,12 +208,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
             downCount = downvote.count
             messageAge = timeNow - messageEntry.created_at
             # card was voted in
-            if (
-                (upCount - downCount) >= 30
-                and len(messageEntry.attachments) > 0
-                and messageAge >= timedelta(days=1)
-                and is_mork(messageEntry.author.id)
-            ):
+            if (upCount - downCount) >= 30 and messageAge >= timedelta(days=1):
 
                 if downCount == 1:
                     prettyValid = False
@@ -196,12 +243,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 await logChannel.send(content=logContent, file=copy2)
                 await messageEntry.delete()
                 continue
-            elif (
-                (upCount - downCount) >= 25
-                and len(messageEntry.attachments) > 0
-                and messageAge >= timedelta(days=13)
-                and is_mork(messageEntry.author.id)
-            ):
+            elif (upCount - downCount) >= 25 and messageAge >= timedelta(days=13):
                 hasMork = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")
                 if timeReacts:
@@ -229,7 +271,11 @@ async def checkTokenSubmissions(bot: commands.Bot):
     messages = [message async for message in messages]
     for messageEntry in messages:
         messageEntry = cast(Message, messageEntry)
-        if "@everyone" in messageEntry.content:
+        if (
+            "@everyone" in messageEntry.content
+            or len(messageEntry.attachments) == 0
+            or not is_mork(messageEntry.author.id)
+        ):
             continue  # just ignore these
         acceptReact = get(messageEntry.reactions, emoji=hc_constants.ACCEPT)
         if acceptReact and acceptReact.count > 0:  # TODO: does this do anything?
@@ -249,12 +295,7 @@ async def checkTokenSubmissions(bot: commands.Bot):
             messageAge = timeNow - messageEntry.created_at
 
             positiveMargin = upCount - downCount
-            if (
-                positiveMargin >= 5
-                and len(messageEntry.attachments) > 0
-                and messageAge >= timedelta(days=1)
-                and is_mork(messageEntry.author.id)
-            ):
+            if positiveMargin >= 5 and messageAge >= timedelta(days=1):
                 await acceptTokenSubmission(bot=bot, message=messageEntry)
 
     print("------done checking submissions-----")
