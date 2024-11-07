@@ -75,3 +75,76 @@ async def acceptCard(
     if newCard:
         cardSheetUnapproved.update_cell(dbRowIndex, 1, cardName)
         cardSheetUnapproved.update_cell(dbRowIndex, 3, authorName)
+async def acceptVetoCard(
+        bot: commands.Bot,
+        cardMessage: str,
+        file: discord.File,
+        cardName: str,
+        authorName: str
+):
+    extension = re.search("\.([^.]*)$", file.filename)
+    fileType = (
+        extension.group() if extension else ".png"
+    )  # just guess that the file is a png
+    new_file_name = f'{cardName.replace("/", "|")}{fileType}'
+    image_path = f"tempImages/{new_file_name}"
+
+    file_data = file.fp.read()
+    file_copy_for_cardlist = discord.File(
+        fp=io.BytesIO(file_data), filename=new_file_name
+    )
+    cardListChannel = cast(
+        discord.TextChannel, bot.get_channel(hc_constants.SIX_ONE_CARD_LIST)
+    )
+    vetoCardListChannel = cast(
+        discord.TextChannel, bot.get_channel(hc_constants.VETO_CARD_LIST)
+    )
+
+    with open(image_path, "wb") as out:
+        out.write(file_data)
+
+    google_drive_file_id = uploadToDrive(image_path)
+
+    os.remove(image_path)
+
+    imageUrl = getDriveUrl(google_drive_file_id)
+
+    allCardNames = cardSheetUnapproved.col_values(1)
+
+    newCard = True
+    if cardName in allCardNames and cardName != "":
+        dbRowIndex = allCardNames.index(cardName) + 1
+        newCard = False
+    else:
+        dbRowIndex = len(allCardNames) + 1
+        if cardName == "":
+            cardName = "NO NAME"
+
+    cardSheetUnapproved.update_cell(dbRowIndex, 2, imageUrl)
+    cardSheetUnapproved.update_cell(dbRowIndex, 4, "HCV")
+
+    if newCard:
+        cardSheetUnapproved.update_cell(dbRowIndex, 1, cardName)
+        cardSheetUnapproved.update_cell(dbRowIndex, 3, authorName)
+
+    async for message in vetoCardListChannel.history(limit=None):
+        if message.content == cardMessage:
+            try:
+                await message.delete()  # Delete message if it matches
+                print(f"Deleted message: {message.content}")
+            except discord.Forbidden:
+                print("Bot lacks permissions to delete messages.")
+            except discord.HTTPException as e:
+                print(f"Failed to delete message: {e}")
+
+    async for message in cardListChannel.history(limit=None):
+        if message.content == cardMessage:
+            try:
+                await message.delete()  # Delete message if it matches
+                print(f"Deleted message: {message.content}")
+            except discord.Forbidden:
+                print("Bot lacks permissions to delete messages.")
+            except discord.HTTPException as e:
+                print(f"Failed to delete message: {e}")
+
+    await vetoCardListChannel.send(file=file_copy_for_cardlist, content=cardMessage)
