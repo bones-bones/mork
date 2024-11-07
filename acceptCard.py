@@ -22,6 +22,7 @@ async def acceptCard(
     file: discord.File,
     cardName: str,
     authorName: str,
+    errata: bool = False
 ):
     extension = re.search("\.([^.]*)$", file.filename)
     fileType = (
@@ -42,15 +43,15 @@ async def acceptCard(
 
     with open(image_path, "wb") as out:
         out.write(file_data)
-
-    try:
-        await postToReddit(
-            image_path=image_path,
-            title=f"{cardMessage.replace('**', '')} was accepted!",
-            flair=hc_constants.ACCEPTED_FLAIR,
-        )
-    except Exception as e:
-        print("tried to post to reddit", e)
+    if not errata:
+        try:
+            await postToReddit(
+                image_path=image_path,
+                title=f"{cardMessage.replace('**', '')} was accepted!",
+                flair=hc_constants.ACCEPTED_FLAIR,
+            )
+        except Exception as e:
+            print("tried to post to reddit", e)
 
     google_drive_file_id = uploadToDrive(image_path)
 
