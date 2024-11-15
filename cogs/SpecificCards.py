@@ -1158,6 +1158,44 @@ class SpecificCardsCog(commands.Cog):
         )
         await sendImage(await getImageFromJson(json), ctx)
 
+    #For the card Omnath, Locus of the Locus
+    @commands.command()
+    async def locus(self, ctx: commands.Context):
+        locusCards = [
+            "https://cards.scryfall.io/large/front/2/f/2f28ecdc-a4f0-4327-a78c-340be41555ee.jpg",
+            "https://cards.scryfall.io/large/front/8/b/8b63efb6-249c-4f57-9af1-baffe938520c.jpg",
+            "https://cards.scryfall.io/large/front/4/a/4afcabf8-8f84-489d-8496-5bec55b351bd.jpg",
+            "https://cards.scryfall.io/large/front/2/8/28603c1c-f9b4-4001-bc56-d1453d5cacf5.jpg",
+            "https://cards.scryfall.io/large/front/d/a/da785d1b-6b90-4b65-9efb-d7f329405318.jpg",
+            "https://cards.scryfall.io/large/front/c/2/c2536a4f-9e73-482b-8c1b-71974ef8950c.jpg",
+            "https://cards.scryfall.io/large/front/e/c/eca23062-6014-4a0e-8210-2e86a6308aab.jpg",
+            ("https://lh3.googleusercontent.com/d/1EsgQVM7jEAy3Yy_KvaVAUpifaEK_GtQh", "Mavren Fein, Dusk post"),
+            ("https://lh3.googleusercontent.com/d/1rcJhs0VO41VHvTY2Y80TjCQldi_3LYDN", "seachrome post"),
+            ("https://lh3.googleusercontent.com/d/1RCnsxsollhx1xmF58bt35DXVUi9NleAw", "shitpost"),
+            ("https://lh3.googleusercontent.com/d/1GFV86fBLkGZ9QPNyXGoiIenYFevXvy8p", "Omnath, Locus of the Locus")
+        ]
+        rlocus = random.randint(0, len(locusCards) - 1)
+        #This is not super future proofed against new black border locus, if one gets printed, add it to the list under the scryfall links and add 1 to the number
+        black_border_posts = 7
+        if rlocus < black_border_posts:
+            await sendImage(locusCards[rlocus], ctx)
+        else:
+            await sendImageReply(
+                url=locusCards[rlocus][0],
+                cardname=locusCards[rlocus][1],
+                message=ctx.message,
+                text=None
+            )
+
+    #And this one is for if they spell the command wrong
+    @commands.command()
+    async def locust(self, ctx: commands.Context):
+        await ctx.send('COMMAND CANCELED!!!!! LOCUST FARM GO')
+        await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
+        await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
+        await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
+        await ctx.send('You probably want !locus')
+
     # for the card tunak tunak tun
     @commands.command()
     async def tunak(self, ctx):
