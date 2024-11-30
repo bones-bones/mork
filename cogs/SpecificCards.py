@@ -1190,7 +1190,7 @@ class SpecificCardsCog(commands.Cog):
     #And this one is for if they spell the command wrong
     @commands.command()
     async def locust(self, ctx: commands.Context):
-        await ctx.send('COMMAND CANCELED!!!!! LOCUST FARM GO')
+        await ctx.send('COMMAND CANCELED!!!!! LOCUST ARMY GO')
         await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
         await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
         await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
