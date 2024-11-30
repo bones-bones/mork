@@ -1157,8 +1157,7 @@ class SpecificCardsCog(commands.Cog):
             "https://api.scryfall.com/cards/random?q=will+type=scheme"
         )
         await sendImage(await getImageFromJson(json), ctx)
-
-    #For the card Omnath, Locus of the Locus
+      
     @commands.command()
     async def locus(self, ctx: commands.Context):
         locusCards = [
@@ -1169,13 +1168,25 @@ class SpecificCardsCog(commands.Cog):
             "https://cards.scryfall.io/large/front/d/a/da785d1b-6b90-4b65-9efb-d7f329405318.jpg",
             "https://cards.scryfall.io/large/front/c/2/c2536a4f-9e73-482b-8c1b-71974ef8950c.jpg",
             "https://cards.scryfall.io/large/front/e/c/eca23062-6014-4a0e-8210-2e86a6308aab.jpg",
-            ("https://lh3.googleusercontent.com/d/1EsgQVM7jEAy3Yy_KvaVAUpifaEK_GtQh", "Mavren Fein, Dusk post"),
-            ("https://lh3.googleusercontent.com/d/1rcJhs0VO41VHvTY2Y80TjCQldi_3LYDN", "seachrome post"),
-            ("https://lh3.googleusercontent.com/d/1RCnsxsollhx1xmF58bt35DXVUi9NleAw", "shitpost"),
-            ("https://lh3.googleusercontent.com/d/1GFV86fBLkGZ9QPNyXGoiIenYFevXvy8p", "Omnath, Locus of the Locus")
+            (
+                "https://lh3.googleusercontent.com/d/1EsgQVM7jEAy3Yy_KvaVAUpifaEK_GtQh",
+                "Mavren Fein, Dusk post",
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1rcJhs0VO41VHvTY2Y80TjCQldi_3LYDN",
+                "seachrome post",
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1RCnsxsollhx1xmF58bt35DXVUi9NleAw",
+                "shitpost",
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1GFV86fBLkGZ9QPNyXGoiIenYFevXvy8p",
+                "Omnath, Locus of the Locus",
+            ),
         ]
         rlocus = random.randint(0, len(locusCards) - 1)
-        #This is not super future proofed against new black border locus, if one gets printed, add it to the list under the scryfall links and add 1 to the number
+        # This is not super future proofed against new black border locus, if one gets printed, add it to the list under the scryfall links and add 1 to the number
         black_border_posts = 7
         if rlocus < black_border_posts:
             await sendImage(locusCards[rlocus], ctx)
@@ -1195,6 +1206,8 @@ class SpecificCardsCog(commands.Cog):
         await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
         await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
         await ctx.send('You probably want !locus')
+                text=None,
+            )
 
     # for the card tunak tunak tun
     @commands.command()
@@ -1303,6 +1316,140 @@ class SpecificCardsCog(commands.Cog):
         await sendImageReply(
             url=result.img(), cardname=result.name(), text=None, message=ctx.message
         )
+
+    # for the card Grunch
+    # Original: https://zaxer2.github.io/howtogrunch
+    @commands.command()
+    async def grunch(self, ctx: commands.Context):
+        rules_text_options = [
+            (
+                "asshole",
+                "To Grunch, add a token copy of Grunch to your hand.\n'?' is equal to 3.",
+            ),
+            (
+                "boy",
+                "To Grunch, Grunch fights up to one target creature.\n'?' is equal to the number of creatures on the battlefield.",
+            ),
+            ("chap", "To Grunch, draw a card.\n'?' is equal to four."),
+            (
+                "dude",
+                "To Grunch, create four token copies of Grunch, except they don't have this ability.\n'?' is equal to 1.",
+            ),
+            (
+                "egotist",
+                "To Grunch, pay X mana. '?' is equal to 2 to the power of (X+1).",
+            ),
+            (
+                "fella",
+                "To Grunch, take an extra turn after this one. Exile grunch.\n'?' is equal to NaN.",
+            ),
+            (
+                "guy",
+                "To Grunch, draw two cards.\n'?' is equal to the number of cards in your hand.",
+            ),
+            (
+                "hooligan",
+                "To Grunch, do up to seven push-ups in real life.\n'?' is equal to the number of push-ups you did. You are allowed to lie.\nDoing push-ups is a special action and does not use the stack.",
+            ),
+            (
+                "ingrate",
+                "To Grunch, attach Grunch to target land you control. Grunch has the abilities of the land he is attached to.\n'?' is equal to the number of lands you control.",
+            ),
+            (
+                "jerk",
+                "To Grunch, Put a Grunch counter on Grunch. For as long as Grunch has a Grunch counter, Grunch has 'tap: Grunch.' *(Be sure to revisit tinyurl.com/howtoGRUNCH each time you tap Grunch.)*\n'?' is perpetually equal to one. '?' cannot be changed for the rest of the game.",
+            ),
+            (
+                "killer",
+                "To Grunch, destroy up to two target creatures with combined power 5 or less.\n'?' is equal to 2.",
+            ),
+            (
+                "lhurgoyf",
+                "To Grunch, mill up to 10 cards.\n'?' is equal to the number of creature types among cards in your graveyard.",
+            ),
+            (
+                "monster",
+                "To Grunch, replace target creature's power and toughness numbers with Grunch's power and toughness question marks. *(Use scissors if you have to.)*\n'?' is equal to 0.",
+            ),
+            (
+                "nonce",
+                "To Grunch, gain control of up to one target creature with power 3 or less.\n'?' is equal to the number of creatures you control.",
+            ),
+            (
+                "oaf",
+                "To Grunch, name a card. Target opponent reveals their hand. If their hand contains the named card, '?' becomes 8. Otherwise, '?' is 4.",
+            ),
+            (
+                "prick",
+                "To Grunch, Grunch becomes a token copy of Questing Beast. You may not use a physical token, replacement card, or overlay to represent this. Just use your memory.\n'?' is irrelevant in this instance. Go google the p/t of Questing Beast.",
+            ),
+            (
+                "quack",
+                "To Grunch, draw target card in any zone.\n'?' is equal to the number of cards in your hand.",
+            ),
+            ("ruffian", "To Grunch, create a token copy of Grunch."),
+        ]
+
+        flavor_text_options = [
+            "'Grunch.' -Grunch",
+            "'Grunch?' -Grunch",
+            "A grungle saved is a wungle earned.",
+            "Grunch? Grunch!! Gruuuuuuunch!!",
+            "What the grunch did you just say about me, you little grunch?",
+            "I \\*grunch\\* my family!",
+            "\\*annoyed grunch\\*",
+            "To grunch, or not to grunch?",
+            "I am the grunch that is approaching",
+            "All signs point to grunch",
+            "Grunch again later",
+            "A word of advice: grunch.",
+            "That'll do, grunch. That'll do.",
+            "This one is sentient. If you close the page he will die.",
+            "GG stands for Good Grunch. There will be no further questions.",
+            "I AM NOT CRAZY.\nI am not crazy! I know he swapped those numbers. I knew it was one. The grunch count starts at \\*one\\*. As if I could ever make such a mistake. Never. Never! I just - I just couldn't prove it. He covered his tracks, he got that idiot on the council to lie for him. You think this is something? You think this is bad? This? This... chicanery? He's done worse. That errata! Are you telling me that a card just happens to change like that? No! \\*He\\* orchestrated it! Grunch! He had no \\*rules text\\*! And we accepted him! We shouldn't have. We took him into our own cube! What was I \\*thinking\\*? He'll never change. He'll \\*never\\* change! Ever since he was drawn, \\*always\\* the same! Couldn't keep himself out of the design contests! But not our Grunch! Couldn't be precious \\*Grunch\\*! Grunching them blind! And \\*HE\\* gets to be a card? What a sick joke! I should've stopped him when I had the chance!\nBut you have to stop him! You-",
+            "Ikora's most wanted",
+            "(This card is every gender.)",
+            "Despite his hostile demeanor, Grunch has his roots deep in the trans community.",
+            "Okay, okay. You can have a little grunch. As a treat.",
+            "It was Felipe's son, Andre Felipe Felipe, who developed what he called the “Grunching” strategy.",
+            "Move your grunch around more.",
+            "GG stands for Grunch Grass. There will be no further questions.",
+            "Chili dogs?! - Classic Grunch Quote",
+            "Blame Gerrit for this one.",
+            "Grunch Pro Tip: Hover your mouse over Grunch for his sage words of wisdom.",
+            "It's grunchin' time.",
+        ]
+
+        default_grunch_image = "https://i.imgur.com/gbFuCzV.png"
+        grunch_image_options = [
+            "https://i.imgur.com/prDIShY.gif",
+            "https://i.imgur.com/xXFJIER.gif",
+            "https://i.imgur.com/BaRCH9U.gif",
+            "https://i.imgur.com/ZT3ofcu.gif",
+            "https://i.imgur.com/7rFA7wX.gif",
+            "https://i.imgur.com/K6HXuGT.gif",
+        ]
+
+        random_rules_text = random.choice(rules_text_options)
+        random_flavor_text = random.choice(flavor_text_options)
+
+        chosen_image = default_grunch_image
+        random_image_chance = random.random()
+
+        if random_image_chance >= 0.3:
+            chosen_image = random.choice(grunch_image_options)
+
+        message_parts = [
+            f"# [How to Grunch]({chosen_image} \"Secret Grunch rules text: '?' is not a number until it can be determined, either by the static CDA text on this website or the triggered Grunch ability. If '?' remains undefined, it is not zero. A Grunch with no P/T cannot die to damage or as a result of having 'zero toughness'. If '?' changes after it has been determined to be a number, it changes globally for all creatures with a '?' in their P/T box.\")",
+            f"So you want to learn how to deal with this wacky little {random_rules_text[0]}? Well here's how!",
+        ]
+
+        message_parts.extend(f"## {line}" for line in random_rules_text[1].split("\n"))
+        message_parts.extend(f"### *{line}*" for line in random_flavor_text.split("\n"))
+        message_parts.append(f"-# [original](https://zaxer2.github.io/howtogrunch)")
+
+        await ctx.send("\n".join(message_parts))
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(SpecificCardsCog(bot))

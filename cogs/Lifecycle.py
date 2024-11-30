@@ -530,7 +530,7 @@ class LifecycleCog(commands.Cog):
 
         for messageEntry in vetoCardMessages:
             file = await messageEntry.attachments[0].to_file()
-            
+
             acceptanceMessage = messageEntry.content
             dbname = ""
             card_author = ""
@@ -651,7 +651,7 @@ class LifecycleCog(commands.Cog):
                 )
 
     @commands.command()
-    async def instaerrata(self, ctx: commands.Context, *, cardMessage: str):
+    async def instaerrata(self, ctx: commands.Context, *, cardMessage: str = ""):
         if not is_admin(ctx.author):
             return
 
@@ -661,7 +661,8 @@ class LifecycleCog(commands.Cog):
 
         file = ctx.message.attachments[0]
 
-        if not file.content_type.startswith("image/"):
+
+        if not file.content_type or not file.content_type.startswith("image/"):
             await ctx.send("The attached file must be an image.")
             return
 
@@ -680,11 +681,11 @@ class LifecycleCog(commands.Cog):
             card_author = str(secondPart)
         await acceptCard.acceptCard(
             bot=self.bot,
-            file=file,
+            file=await file.to_file(),
             cardMessage=cardMessage,
             cardName=dbname,
             authorName=card_author,
-            errata=True
+            errata=True,
         )
 
 
