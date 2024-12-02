@@ -9,7 +9,6 @@ import aiohttp
 import discord
 from discord.ext import commands
 from discord.utils import get
-from CardClasses import Side, CardSearch
 from cogs.HellscubeDatabase import searchFor
 from getters import getBotTest, getSubmissionDiscussionChannel, getVetoChannel
 from handleVetoPost import handleVetoPost
@@ -26,12 +25,6 @@ from is_admin import is_veto, is_admin
 from is_mork import is_mork
 
 from shared_vars import intents, cardSheet, allCards
-
-
-cardList: list[CardSearch] = []
-
-
-print(cardList)
 
 
 class MiscCog(commands.Cog):

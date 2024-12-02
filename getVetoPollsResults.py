@@ -32,7 +32,6 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         "who? oh yeah sure thing b0ss",
         "how about nyaaaa for a change?",
         "CAAAAAAAAAAAAAAN DO!",
-        "i'm afraid i can't let you do that.",
         "i mean like, if you say so, man",
         "WOOOOOOOOOOOOOOOOOOOOOOOOOOOO",
         "*nuzzles u*",

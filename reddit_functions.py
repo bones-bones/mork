@@ -4,7 +4,7 @@ import asyncpraw
 from bot_secrets.reddit_secrets import ID, SECRET, PASSWORD, USER_AGENT, NAME
 
 
-async def postToReddit(image_path: str, title: str, flair: str = ""):
+async def post_to_reddit(image_path: str, title: str, flair: str = ""):
     reddit = asyncpraw.Reddit(
         client_id=ID,
         client_secret=SECRET,
@@ -22,7 +22,7 @@ async def postToReddit(image_path: str, title: str, flair: str = ""):
     return
 
 
-async def postGalleryToReddit(
+async def post_gallery_to_reddit(
     images: List[Dict[str, str]], title: str, flair: str = ""
 ):
     reddit = asyncpraw.Reddit(

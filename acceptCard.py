@@ -9,7 +9,7 @@ from shared_vars import googleClient
 from discord.ext import commands
 
 
-from reddit_functions import postToReddit
+from reddit_functions import post_to_reddit
 
 cardSheetUnapproved = googleClient.open_by_key(
     hc_constants.HELLSCUBE_DATABASE
@@ -45,7 +45,7 @@ async def acceptCard(
         out.write(file_data)
     if not errata:
         try:
-            await postToReddit(
+            await post_to_reddit(
                 image_path=image_path,
                 title=f"{cardMessage.replace('**', '')} was accepted!",
                 flair=hc_constants.ACCEPTED_FLAIR,

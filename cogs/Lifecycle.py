@@ -7,7 +7,6 @@ from typing import Dict, List, cast
 import aiohttp
 from discord import (
     ClientUser,
-    Emoji,
     Guild,
     Member,
     RawReactionActionEvent,
@@ -35,6 +34,7 @@ from checkSubmissions import (
 )
 
 from cogs.HellscubeDatabase import searchFor
+from cogs.lifecycle.check_reddit import check_reddit
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
 from getters import (
@@ -46,9 +46,9 @@ from handleVetoPost import handleVetoPost
 import hc_constants
 from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
-from is_mork import getDriveUrl, is_mork, reasonableCard, uploadToDrive
+from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
-from reddit_functions import postGalleryToReddit, postToReddit
+from reddit_functions import post_gallery_to_reddit, post_to_reddit
 from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents, googleClient
 
@@ -132,21 +132,25 @@ class LifecycleCog(commands.Cog):
                     ogMessage = await vetoChall.fetch_message(
                         int(link_message.content.split("/").pop())
                     )
+                    attachment_reference = message.attachments[0]
 
-                    copy = await message.attachments[0].to_file()
-                    copy2 = await message.attachments[0].to_file()
-                    if copy and copy2:
+                    copy_of_file_for_veto_channel = await attachment_reference.to_file()
+                    copy2 = await attachment_reference.to_file()
+                    if copy_of_file_for_veto_channel and copy2:
                         vetoChannel = getVetoChannel(bot=self.bot)
                         vetoEntry = await vetoChannel.send(
-                            content=first_message.content, file=copy
+                            content=first_message.content,
+                            file=copy_of_file_for_veto_channel,
                         )
                         await handleVetoPost(message=vetoEntry, bot=self.bot)
                         await ogMessage.add_reaction(hc_constants.DELETE)
                     errata_submissions_channel = getErrataSubmissionChannel(
                         bot=self.bot
                     )
-                    esubMessage = await errata_submissions_channel.send(file=copy2)
-                    await esubMessage.add_reaction("☑️")
+                    errata_submission_message = await errata_submissions_channel.send(
+                        file=copy2
+                    )
+                    await errata_submission_message.add_reaction("☑️")
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
@@ -326,12 +330,6 @@ class LifecycleCog(commands.Cog):
                     await sentMessage.add_reaction(hc_constants.VOTE_UP)
                     await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
                     await sentMessage.add_reaction(hc_constants.DELETE)
-                    # await sentMessage.add_reaction(
-                    #     cast(Emoji, self.bot.get_emoji(hc_constants.JIMMY))
-                    # )
-                    # await sentMessage.add_reaction(
-                    #     cast(Emoji, self.bot.get_emoji(hc_constants.WALL))
-                    # )
 
                     await sentMessage.create_thread(name=cardName[0:99])
                 await message.delete()
@@ -652,7 +650,7 @@ class LifecycleCog(commands.Cog):
 
     @commands.command()
     async def instaerrata(self, ctx: commands.Context, *, cardMessage: str = ""):
-        if not is_admin(ctx.author):
+        if not is_admin(cast(Member, ctx.author)):
             return
 
         if not ctx.message.attachments:
@@ -698,7 +696,7 @@ FIVE_MINUTES = 300
 
 async def status_task(bot: commands.Bot):
     while True:
-        # creator = random.choice(cardSheet.col_values(3)[4:])
+
         status = random.choice(hc_constants.statusList)
         await checkSubmissions(bot)
         try:
@@ -714,7 +712,7 @@ async def status_task(bot: commands.Bot):
         except Exception as e:
             print(e)
         try:
-            await checkReddit(bot)
+            await check_reddit(bot)
         except Exception as e:
             print(e)
         await bot.change_presence(
@@ -743,7 +741,7 @@ async def status_task(bot: commands.Bot):
                             ) as out:  ## Open temporary file as bytes
                                 out.write(await resp.read())  ## Read bytes into file
                             try:
-                                await postToReddit(
+                                await post_to_reddit(
                                     title=f"HC4 Card of the ~day: {name}",
                                     image_path=image_path,
                                     flair=hc_constants.OFFICIAL_FLAIR,
@@ -776,7 +774,7 @@ async def status_task(bot: commands.Bot):
                         images.append({"image_path": image_path})
                         with open(image_path, "wb") as out:
                             out.write(file_data)
-                await postGalleryToReddit(
+                await post_gallery_to_reddit(
                     title=f"Some of Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
                     images=images,
                     flair=hc_constants.OFFICIAL_FLAIR,
@@ -787,34 +785,3 @@ async def status_task(bot: commands.Bot):
                 print(e)
 
         await asyncio.sleep(FIVE_MINUTES)
-
-
-async def checkReddit(bot: commands.Bot):
-    timeNow = datetime.now(timezone.utc)
-    oneDay = timeNow + timedelta(days=-2)
-    reddit = asyncpraw.Reddit(
-        client_id=ID,
-        client_secret=SECRET,
-        password=PASSWORD,
-        user_agent=USER_AGENT,
-        username=NAME,
-    )
-    hellscubeSubreddit = cast(
-        asyncpraw.reddit.Subreddit, await reddit.subreddit("HellsCube")
-    )
-
-    redditChannel = cast(TextChannel, bot.get_channel(hc_constants.REDDIT_CHANNEL))
-    messagesInLastDay = [mess async for mess in redditChannel.history(after=oneDay)]
-
-    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter="day"):  # type: ignore
-        alreadyPosted = False
-        for discordMessage in messagesInLastDay:
-            if submission.permalink in discordMessage.content:
-                alreadyPosted = True
-                break
-
-        if not alreadyPosted:
-            await redditChannel.send(
-                content=f"reddit says: https://reddit.com{submission.permalink}"
-            )
-    await reddit.close()

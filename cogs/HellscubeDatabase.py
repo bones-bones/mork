@@ -198,9 +198,9 @@ class HellscubeDatabaseCog(commands.Cog):
             hc_constants.HELLSCUBE_DATABASE
         ).worksheet("Database (Unapproved)")
 
-        cardSheetApproved = googleClient.open_by_key(
-            hc_constants.HELLSCUBE_DATABASE
-        ).worksheet("Database")
+        # cardSheetApproved = googleClient.open_by_key(
+        #     hc_constants.HELLSCUBE_DATABASE
+        # ).worksheet("Database")
 
         allCardNames = cardSheetUnapproved.col_values(1)
 
@@ -228,11 +228,11 @@ class HellscubeDatabaseCog(commands.Cog):
             6,
             newRuling,
         )
-        cardSheetApproved.update_cell(
-            dbRowIndex,
-            6,
-            newRuling,
-        )
+        # cardSheetApproved.update_cell(
+        #     dbRowIndex,
+        #     6,
+        #     newRuling,
+        # )
         await ctx.send(f"ruling updated to:\n{newRuling}")
 
     @commands.command(rest_is_raw=True)
@@ -554,5 +554,3 @@ def printCardNames(cards):
     for i in cards:
         returnString += i.name() + "\n"
     return returnString
-
-

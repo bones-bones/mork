@@ -9,7 +9,6 @@ from acceptCard import acceptCard
 from shared_vars import googleClient
 
 from getters import (
-    getGraveyardChannel,
     getSubmissionDiscussionChannel,
     getSubmissionsChannel,
     getTokenListChannel,

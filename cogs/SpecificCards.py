@@ -1181,7 +1181,7 @@ class SpecificCardsCog(commands.Cog):
                 "shitpost",
             ),
             (
-                "https://lh3.googleusercontent.com/d/1GFV86fBLkGZ9QPNyXGoiIenYFevXvy8p",
+                "https://lh3.googleusercontent.com/d/1Chv8ICvXMQIuRg_eAvXEUQR4_-cQTdxR",
                 "Omnath, Locus of the Locus",
             ),
         ]
