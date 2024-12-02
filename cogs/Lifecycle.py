@@ -661,6 +661,7 @@ class LifecycleCog(commands.Cog):
 
         file = ctx.message.attachments[0]
 
+
         if not file.content_type or not file.content_type.startswith("image/"):
             await ctx.send("The attached file must be an image.")
             return
