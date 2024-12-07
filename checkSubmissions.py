@@ -207,7 +207,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
             downCount = downvote.count
             messageAge = timeNow - messageEntry.created_at
             # card was voted in
-            if (upCount - downCount) >= 30 and messageAge >= timedelta(days=1):
+            if (upCount - downCount) >= hc_constants.SUBMISSIONS_THRESHOLD and messageAge >= timedelta(days=1):
 
                 if downCount == 1:
                     prettyValid = False
@@ -323,7 +323,7 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
         file=copy,
     )
 
-    extension = re.search("\.([^.]*)$", file.filename)
+    extension = re.search(r"\.([^.]*)$", file.filename)
     fileType = (
         extension.group() if extension else ".png"
     )  # just guess that the file is a png

@@ -114,9 +114,10 @@ class LifecycleCog(commands.Cog):
                 == hc_constants.VETO_HELLPITS
             ):
                 message = await channelAsText.fetch_message(reaction.message_id)
+                hellpit_thread = cast(discord.Thread, channel)
                 thread_messages = [
                     message
-                    async for message in message.channel.history(
+                    async for message in hellpit_thread.history(
                         limit=3, oldest_first=True
                     )
                 ]
@@ -142,8 +143,11 @@ class LifecycleCog(commands.Cog):
                             content=first_message.content,
                             file=copy_of_file_for_veto_channel,
                         )
-                        await handleVetoPost(message=vetoEntry, bot=self.bot)
+                        new_hellpit_thread = await handleVetoPost(message=vetoEntry, bot=self.bot, old_thread=hellpit_thread)
+                        new_thread_link = await hellpit_thread.send(f"New thread: {new_hellpit_thread.jump_url}")
+                        await new_thread_link.pin()
                         await ogMessage.add_reaction(hc_constants.DELETE)
+                        await hellpit_thread.edit(name=f"[🍕] {hellpit_thread.name}")
                     errata_submissions_channel = getErrataSubmissionChannel(
                         bot=self.bot
                     )

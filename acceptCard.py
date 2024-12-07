@@ -26,7 +26,7 @@ async def acceptCard(
     setId: str = "HC6",
     errata: bool = False,
 ):
-    extension = re.search("\.([^.]*)$", file.filename)
+    extension = re.search(r"\.([^.]*)$", file.filename)
     fileType = (
         extension.group() if extension else ".png"
     )  # just guess that the file is a png
