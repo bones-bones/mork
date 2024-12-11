@@ -14,7 +14,7 @@ def is_mork(user_id: int):
 
 def reasonableCard():
     """This function is used to determine if a card gets auto-magically accepted. Be sure to add 1000 each time it happens"""
-    return random.randint(0, 3000) == 69
+    return random.randint(0, 4000) == 69
 
 
 def uploadToDrive(path: str):

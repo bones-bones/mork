@@ -1157,7 +1157,7 @@ class SpecificCardsCog(commands.Cog):
             "https://api.scryfall.com/cards/random?q=will+type=scheme"
         )
         await sendImage(await getImageFromJson(json), ctx)
-      
+
     @commands.command()
     async def locus(self, ctx: commands.Context):
         locusCards = [
@@ -1195,19 +1195,26 @@ class SpecificCardsCog(commands.Cog):
                 url=locusCards[rlocus][0],
                 cardname=locusCards[rlocus][1],
                 message=ctx.message,
-                text=None
-            )
-
-    #And this one is for if they spell the command wrong
-    @commands.command()
-    async def locust(self, ctx: commands.Context):
-        await ctx.send('COMMAND CANCELED!!!!! LOCUST ARMY GO')
-        await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
-        await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
-        await sendImage('https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif',ctx)
-        await ctx.send('You probably want !locus')
                 text=None,
             )
+
+    # And this one is for if they spell the command wrong
+    @commands.command()
+    async def locust(self, ctx: commands.Context):
+        await ctx.send("COMMAND CANCELED!!!!! LOCUST ARMY GO")
+        await sendImage(
+            "https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif",
+            ctx,
+        )
+        await sendImage(
+            "https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif",
+            ctx,
+        )
+        await sendImage(
+            "https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif",
+            ctx,
+        )
+        await ctx.send("You probably want !locus")
 
     # for the card tunak tunak tun
     @commands.command()
