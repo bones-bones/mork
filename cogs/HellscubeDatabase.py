@@ -188,7 +188,7 @@ class HellscubeDatabaseCog(commands.Cog):
             await ctx.send("Only allowed in the judge's tower")
             return
 
-        ruling = args.split("\n")[1].strip()
+        ruling = ("\n".join(args.split("\n")[1:])).strip()
         cardName = args.split("\n")[0].strip()
 
         if not isRealCard(cardName=cardName, ctx=ctx):

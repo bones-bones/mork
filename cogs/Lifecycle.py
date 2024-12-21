@@ -233,26 +233,17 @@ class LifecycleCog(commands.Cog):
 
         if message.channel.id == hc_constants.VETO_CHANNEL:
             await handleVetoPost(message=message, bot=self.bot)
-        if message.channel.id == hc_constants.FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL:
+        if (
+            message.channel.id == hc_constants.FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL
+            or message.channel.id == hc_constants.SIX_ERRATA
+            or message.channel.id == hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS
+        ):
             if "@" in message.content:
                 # No ping case
                 user = await self.bot.fetch_user(message.author.id)
                 await user.send(
                     'No "@" are allowed in card title submissions to prevent me from spamming'
                 )
-                return  # no pings allowed
-            sentMessage = await message.channel.send(content=message.content)
-            await sentMessage.add_reaction(hc_constants.VOTE_UP)
-            await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
-            await message.delete()
-        if message.channel.id == hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS:
-            if "@" in message.content:
-                # No ping case
-                user = await self.bot.fetch_user(message.author.id)
-                await user.send(
-                    'No "@" are allowed in card title submissions to prevent me from spamming'
-                )
-                await message.delete()
                 return  # no pings allowed
             sentMessage = await message.channel.send(content=message.content)
             await sentMessage.create_thread(name=sentMessage.content[0:99])
@@ -658,7 +649,6 @@ class LifecycleCog(commands.Cog):
             return
 
         file = ctx.message.attachments[0]
-
 
         if not file.content_type or not file.content_type.startswith("image/"):
             await ctx.send("The attached file must be an image.")
