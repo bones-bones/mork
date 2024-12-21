@@ -11,10 +11,10 @@ from getters import getVetoChannel
 import hc_constants
 
 
-async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
+
+async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context, date_range: datetime | None):
     vetoChannel = getVetoChannel(bot)
     timeNow = datetime.now(timezone.utc)
-    fourWeeksAgo = timeNow + timedelta(days=-28 * 3)
     epicCatchphrases = [
         "If processing lasts more than 5 minutes, consult your doctor.",
         "on it, yo.",
@@ -40,7 +40,11 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
 
     await ctx.send(random.choice(epicCatchphrases))
 
-    messages = vetoChannel.history(after=fourWeeksAgo, limit=None)
+    if not date_range:
+        fourWeeksAgo = timeNow + timedelta(days=-28 * 3)
+        date_range = fourWeeksAgo
+
+    messages = vetoChannel.history(after=date_range, limit=None)
 
     if messages is None:
         return

@@ -59,18 +59,18 @@ async def handleVetoPost(message: Message, bot: commands.Bot, old_thread: Thread
     await hellpit_discussion_thread.send(
         file=copy_for_discussion, content=message.content[0:99]
     )
-    await hellpit_discussion_thread.send(", ".join(mentions))
-
-    await veto_poll_thread.send(hellpit_discussion_thread.jump_url)
-
-    await hellpit_discussion_thread.send(message.jump_url)
 
     if old_thread:
         old_thread_link = await hellpit_discussion_thread.send(f"Old thread: {old_thread.jump_url}")
         await old_thread_link.pin()
-    else:
-        await hellpit_discussion_thread.send(f"{", ".join(authors_to_message_mention)}, the Veto Council will deliberate on the card and discuss their thoughts here, and say if any changes are required.")
+
+    await hellpit_discussion_thread.send(f"Veto polls: {message.jump_url}")
+    await hellpit_discussion_thread.send(", ".join(mentions))
+
+    if not old_thread:
+         await hellpit_discussion_thread.send(f"{", ".join(authors_to_message_mention)}, the Veto Council will deliberate on the card and discuss their thoughts here, and say if any changes are required.")
 
     await veto_poll_thread.edit(locked=True)
+    await veto_poll_thread.send(hellpit_discussion_thread.jump_url)
 
     return hellpit_discussion_thread

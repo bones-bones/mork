@@ -9,13 +9,13 @@ class MyBot(commands.Bot):
         print("This is asynchronous!")
 
         initial_extensions = [
-            "cogs.General",
-            "cogs.HellscubeDatabase",
+            # "cogs.General",
+            # "cogs.HellscubeDatabase",
             "cogs.Lifecycle",
-            "cogs.Quotes",
-            "cogs.Roles",
-            "cogs.SpecificCards",
-            # "cogs.Misc",
+            # "cogs.Quotes",
+            # "cogs.Roles",
+            # "cogs.SpecificCards",
+            "cogs.Misc",
         ]
         for i in initial_extensions:
             await self.load_extension(i)
