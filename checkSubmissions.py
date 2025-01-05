@@ -163,13 +163,13 @@ async def checkSubmissions(bot: commands.Bot):
             elif positiveMargin >= (
                 hc_constants.SUBMISSIONS_THRESHOLD - 5
             ) and messageAge >= timedelta(days=6):
-                hasMork = False
+                has_mork_marked_it = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")
                 if timeReacts:
                     async for user in timeReacts.users():
                         if is_mork(user.id):
-                            hasMork = True
-                if not hasMork:
+                            has_mork_marked_it = True
+                if not has_mork_marked_it:
                     await acceptedChannel.send(
                         f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
                     )
@@ -207,7 +207,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
             downCount = downvote.count
             messageAge = timeNow - messageEntry.created_at
             # card was voted in
-            if (upCount - downCount) >= 30 and messageAge >= timedelta(days=1):
+            if (upCount - downCount) >= 25 and messageAge >= timedelta(days=1):
 
                 if downCount == 1:
                     prettyValid = False
@@ -230,7 +230,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
 
                 copy = await messageEntry.attachments[0].to_file()
                 vetoEntry = await vetoChannel.send(
-                    content="HC6: " + accepted_message_no_mentions, file=copy
+                    content="HCP: " + accepted_message_no_mentions, file=copy
                 )
 
                 await handleVetoPost(vetoEntry, bot)
@@ -242,7 +242,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 await logChannel.send(content=logContent, file=copy2)
                 await messageEntry.delete()
                 continue
-            elif (upCount - downCount) >= 25 and messageAge >= timedelta(days=13):
+            elif (upCount - downCount) >= 20 and messageAge >= timedelta(days=13):
                 hasMork = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")
                 if timeReacts:

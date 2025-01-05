@@ -127,9 +127,9 @@ class LifecycleCog(commands.Cog):
                 if is_admin(cast(discord.Member, reaction.member)) or is_veto(
                     cast(discord.Member, reaction.member)
                 ):
-                    vetoChall = getVetoChannel(bot=self.bot)
+                    veto_channel = getVetoChannel(bot=self.bot)
                     # TODO: compartmentalize this
-                    ogMessage = await vetoChall.fetch_message(
+                    ogMessage = await veto_channel.fetch_message(
                         int(link_message.content.split("/").pop())
                     )
                     attachment_reference = message.attachments[0]
@@ -504,12 +504,22 @@ class LifecycleCog(commands.Cog):
 
             acceptedCards.append(cardMessage)
 
+            set_to_add_to = "HCP" if dbname.startswith("HCP:") else "HC6"
+
+            channel_to_add_to = (
+                hc_constants.HC_POSSE_CARD_LIST
+                if dbname.startswith("HCP:")
+                else hc_constants.SIX_ONE_CARD_LIST
+            )
+
             await acceptCard.acceptCard(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
                 cardName=dbname,
                 authorName=card_author,
+                setId=set_to_add_to,
+                channelIdForCard=channel_to_add_to,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)
@@ -746,7 +756,7 @@ async def status_task(bot: commands.Bot):
             try:
                 subChannel = cast(
                     discord.TextChannel,
-                    bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL),
+                    bot.get_channel(hc_constants.MASTERPIECE_CHANNEL),
                 )
                 timeNow = datetime.now(timezone.utc)
                 oneDay = timeNow + timedelta(days=-1)

@@ -22,8 +22,8 @@ async def acceptCard(
     file: discord.File,
     cardName: str,
     authorName: str,
-    channelIdForCard: int = hc_constants.SIX_ONE_CARD_LIST,
-    setId: str = "HC6",
+    channelIdForCard: int = hc_constants.HC_POSSE_CARD_LIST,
+    setId: str = "HCP",
     errata: bool = False,
 ):
     extension = re.search("\.([^.]*)$", file.filename)
