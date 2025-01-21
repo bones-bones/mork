@@ -13,7 +13,7 @@ from reddit_functions import post_to_reddit
 
 cardSheetUnapproved = googleClient.open_by_key(
     hc_constants.HELLSCUBE_DATABASE
-).worksheet("Database (Unapproved)")
+).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
 
 async def acceptCard(
@@ -23,7 +23,7 @@ async def acceptCard(
     cardName: str,
     authorName: str,
     channelIdForCard: int = hc_constants.HC_POSSE_CARD_LIST,
-    setId: str = "HCP",
+    setId: str = "HC6",
     errata: bool = False,
 ):
     extension = re.search("\.([^.]*)$", file.filename)
@@ -62,7 +62,7 @@ async def acceptCard(
     allCardNames = cardSheetUnapproved.col_values(1)
 
     newCard = True
-    if cardName in allCardNames and cardName != "":
+    if cardName != "" and cardName in allCardNames:
         dbRowIndex = allCardNames.index(cardName) + 1
         newCard = False
     else:

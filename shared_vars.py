@@ -34,6 +34,7 @@ about = drive.GetAbout()
 googleClient = gspread.authorize(creds)  # type: ignore
 
 
+# TODO: change this to use an id instead of an index
 cardSheet = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).get_worksheet(0)
 
 

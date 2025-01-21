@@ -516,7 +516,7 @@ class LifecycleCog(commands.Cog):
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
-                cardName=dbname,
+                cardName=dbname.removeprefix("HCP: "),
                 authorName=card_author,
                 setId=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
@@ -677,6 +677,7 @@ class LifecycleCog(commands.Cog):
 
             dbname = str(firstPart)
             card_author = str(secondPart)
+            # TODO: do a set lookup
         await acceptCard.acceptCard(
             bot=self.bot,
             file=await file.to_file(),

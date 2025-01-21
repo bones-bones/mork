@@ -207,7 +207,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
             downCount = downvote.count
             messageAge = timeNow - messageEntry.created_at
             # card was voted in
-            if (upCount - downCount) >= 25 and messageAge >= timedelta(days=1):
+            if (upCount - downCount) >= 20 and messageAge >= timedelta(days=1):
 
                 if downCount == 1:
                     prettyValid = False
@@ -242,7 +242,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 await logChannel.send(content=logContent, file=copy2)
                 await messageEntry.delete()
                 continue
-            elif (upCount - downCount) >= 20 and messageAge >= timedelta(days=13):
+            elif (upCount - downCount) >= 15 and messageAge >= timedelta(days=13):
                 hasMork = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")
                 if timeReacts:

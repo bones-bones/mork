@@ -19,7 +19,7 @@ cardList: list[CardSearch] = []
 
 cardSheetSearch = googleClient.open("Hellscube Database").worksheet("Database")
 
-cardsDataSearch = cardSheetSearch.get_all_values()[3:]
+cardsDataSearch = cardSheetSearch.get_all_values()[2:]
 
 client = discord.Client(intents=intents)
 
@@ -102,9 +102,9 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         # global log
-        nameList = cast(list[str], cardSheet.col_values(1)[3:])
-        imgList = cardSheet.col_values(2)[3:]
-        creatorList = cardSheet.col_values(3)[3:]
+        nameList = cast(list[str], cardSheet.col_values(1)[2:])
+        imgList = cardSheet.col_values(2)[2:]
+        creatorList = cardSheet.col_values(2)[2:]
         global allCards  # Need to modify shared allCards object
 
         for i in range(len(nameList)):
@@ -196,7 +196,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved = googleClient.open_by_key(
             hc_constants.HELLSCUBE_DATABASE
-        ).worksheet("Database (Unapproved)")
+        ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
         # cardSheetApproved = googleClient.open_by_key(
         #     hc_constants.HELLSCUBE_DATABASE
@@ -206,6 +206,9 @@ class HellscubeDatabaseCog(commands.Cog):
 
         rulings = cardSheetUnapproved.col_values(6)
         lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
+        if not cardName.lower() in lowerList:
+            await ctx.send("Unable to find the card... this shouldn't happen")
+            return
         dbRowIndex = lowerList.index(cardName.lower()) + 1
 
         currentRuling = (
@@ -249,7 +252,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved = googleClient.open_by_key(
             hc_constants.HELLSCUBE_DATABASE
-        ).worksheet("Database (Unapproved)")
+        ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
         allCardNames = cardSheetUnapproved.col_values(1)
 
