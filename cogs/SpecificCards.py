@@ -170,7 +170,7 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card keyword warp
     @commands.command(aliases=["keyword", "warp"])
-    async def keywords(self, ctx: commands.Context, number):
+    async def keywords(self, ctx: commands.Context, number: int):
         possibleKeywords = [
             "Deathtouch",
             "Defender",
@@ -274,7 +274,7 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card path to degeneracy
     @commands.command(aliases=["path", "degen", "ptd"])
-    async def degeneracy(self, ctx):
+    async def degeneracy(self, ctx: commands.Context):
         femaleWarWalkers = [
             "https://api.scryfall.com/cards/8d7c88ec-0537-4d94-81d1-e1ba877d2cdb?format=json",
             "https://api.scryfall.com/cards/1f2b1975-183b-4989-aa1f-a653ec732abf?format=json",
@@ -303,7 +303,7 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card a blue card
     @commands.command(aliases=["blue"])
-    async def bluecard(self, ctx):
+    async def bluecard(self, ctx: commands.Context):
         blueCards = [
             "https://api.scryfall.com/cards/9f7983bf-2a3b-4428-8c01-35285f589da8?format=json",
             "https://api.scryfall.com/cards/9e7fb3c0-5159-4d1f-8490-ce4c9a60f567?format=json",
@@ -333,7 +333,7 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card wild magic
     @commands.command()
-    async def wild(self, ctx):
+    async def wild(self, ctx: commands.Context):
         wildMagic = [
             "If you roll this text, roll an additional 5 times on the Wild Magic Surge table and gain all that text instead, ignoring this result on subsequent rolls.",
             "Until the end of your next turn, players cast spells as if they were copies of Wild Magic Surge.",
@@ -441,7 +441,7 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card hells triome
     @commands.command()
-    async def triome(self, ctx):
+    async def triome(self, ctx: commands.Context):
         message = ""
         lands = ["Plains", "Mountain", "Forest", "Swamp", "Island"]
         random.shuffle(lands)
@@ -937,7 +937,7 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card puzzle box of yogg-saron
     @commands.command(aliases=["puzzle", "box", "pbox", "yogg", "yoggsaron", "pb"])
-    async def puzzlebox(self, ctx):
+    async def puzzlebox(self, ctx: commands.Context):
         for i in range(10):
             json = await getScryfallJson(
                 "https://api.scryfall.com/cards/random?q=t%3Ainstant+or+t%3Asorcery"
@@ -946,7 +946,7 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card deathseeker
     @commands.command()
-    async def death(self, ctx):
+    async def death(self, ctx: commands.Context):
         for i in range(2):
             deathseekerJson = await getScryfallJson(
                 "https://api.scryfall.com/cards/random?q=o%3A%22When+~+dies%22+t%3Acreature"

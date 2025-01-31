@@ -76,7 +76,7 @@ class LifecycleCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
         await member.send(
-            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC4, a vintage cube, and have moved to HC6, a commander cube. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color and no non-legendary multicolor cards."
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC6, a commander cube, and have moved to HC7, a cube. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
         )
 
     @commands.Cog.listener()
@@ -504,19 +504,15 @@ class LifecycleCog(commands.Cog):
 
             acceptedCards.append(cardMessage)
 
-            set_to_add_to = "HCP" if dbname.startswith("HCP:") else "HC6"
+            set_to_add_to = "HC7.0"
 
-            channel_to_add_to = (
-                hc_constants.HC_POSSE_CARD_LIST
-                if dbname.startswith("HCP:")
-                else hc_constants.SIX_ONE_CARD_LIST
-            )
+            channel_to_add_to = hc_constants.SEVEN_CARD_LIST
 
             await acceptCard.acceptCard(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
-                cardName=dbname.removeprefix("HCP: "),
+                cardName=dbname,
                 authorName=card_author,
                 setId=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
@@ -757,7 +753,7 @@ async def status_task(bot: commands.Bot):
             try:
                 subChannel = cast(
                     discord.TextChannel,
-                    bot.get_channel(hc_constants.MASTERPIECE_CHANNEL),
+                    bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL),
                 )
                 timeNow = datetime.now(timezone.utc)
                 oneDay = timeNow + timedelta(days=-1)
