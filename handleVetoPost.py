@@ -61,3 +61,4 @@ async def handleVetoPost(message: Message, bot: commands.Bot):
     await hellpit_discussion_thread.send(message.jump_url)
 
     await veto_poll_thread.edit(locked=True)
+    return

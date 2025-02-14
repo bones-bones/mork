@@ -43,3 +43,7 @@ def getMorkSubmissionsLoggingChannel(bot: commands.Bot):
     return cast(
         TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
     )
+
+
+def getVetoDiscussionChannel(bot: commands.Bot):
+    return cast(TextChannel, bot.get_channel(hc_constants.VETO_DISCUSSION_CHANNEL))

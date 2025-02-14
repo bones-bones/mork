@@ -29,7 +29,6 @@ from datetime import datetime, timezone, timedelta
 import acceptCard
 from submissions.checkErrataSubmissions import checkErrataSubmissions
 from checkSubmissions import (
-    checkMasterpieceSubmissions,
     checkSubmissions,
 )
 
@@ -42,6 +41,7 @@ from getters import (
     getMorkSubmissionsLoggingChannel,
     getSubmissionDiscussionChannel,
     getVetoChannel,
+    getVetoDiscussionChannel,
 )
 from handleVetoPost import handleVetoPost
 import hc_constants
@@ -52,11 +52,8 @@ from printCardImages import print_card_images
 from reddit_functions import post_gallery_to_reddit, post_to_reddit
 from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents, googleClient
+from submissions.checkMasterpieceSubmissions import checkMasterpieceSubmissions
 from submissions.tokenSubmissions import checkTokenSubmissions
-
-
-ONE_HOUR = 3600
-
 
 client = discord.Client(intents=intents)
 bannedUserIds = []
@@ -88,71 +85,68 @@ class LifecycleCog(commands.Cog):
         guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
         channel = guild.get_channel_or_thread(reaction.channel_id)
 
-        if channel:
-            channelAsText = cast(discord.TextChannel, channel)
-            message = await channelAsText.fetch_message(reaction.message_id)
+        if channel == None:
+            return
 
-            # The "have mork delete my card" react
-            if str(reaction.emoji) == hc_constants.DELETE and not is_mork(
-                reaction.user_id
-            ):
-                if not is_mork(message.author.id):
-                    return
-                if reaction.member in message.mentions:
+        channelAsText = cast(discord.TextChannel, channel)
+        message = await channelAsText.fetch_message(reaction.message_id)
+
+        # The "have mork delete my card" react
+        if str(reaction.emoji) == hc_constants.DELETE and not is_mork(reaction.user_id):
+            if not is_mork(message.author.id):
+                return
+            if reaction.member in message.mentions:
+                await message.delete()
+                return
+            if message.reference:
+                messageReference = await channelAsText.fetch_message(
+                    cast(int, message.reference.message_id)
+                )
+                if reaction.member == messageReference.author:
                     await message.delete()
                     return
-                if message.reference:
-                    messageReference = await channelAsText.fetch_message(
-                        cast(int, message.reference.message_id)
-                    )
-                    if reaction.member == messageReference.author:
-                        await message.delete()
-                        return
-            # The hellpit resubmit case
-            if (
-                str(reaction.emoji) == hc_constants.ACCEPT
-                and cast(discord.Thread, channel).parent
-                and cast(discord.TextChannel, cast(discord.Thread, channel).parent).id
-                == hc_constants.VETO_HELLPITS
+
+        # The hellpit resubmit case
+        if (
+            str(reaction.emoji) == hc_constants.ACCEPT
+            and cast(discord.Thread, channel).parent
+            and cast(discord.TextChannel, cast(discord.Thread, channel).parent).id
+            == hc_constants.VETO_HELLPITS
+        ):
+            message = await channelAsText.fetch_message(reaction.message_id)
+            thread_messages = [
+                message
+                async for message in message.channel.history(limit=3, oldest_first=True)
+            ]
+
+            first_message = thread_messages[0]
+            link_message = thread_messages[2]
+
+            if is_admin(cast(discord.Member, reaction.member)) or is_veto(
+                cast(discord.Member, reaction.member)
             ):
-                message = await channelAsText.fetch_message(reaction.message_id)
-                thread_messages = [
-                    message
-                    async for message in message.channel.history(
-                        limit=3, oldest_first=True
-                    )
-                ]
+                veto_channel = getVetoChannel(bot=self.bot)
+                # TODO: compartmentalize this
+                ogMessage = await veto_channel.fetch_message(
+                    int(link_message.content.split("/").pop())
+                )
+                attachment_reference = message.attachments[0]
 
-                first_message = thread_messages[0]
-                link_message = thread_messages[2]
-
-                if is_admin(cast(discord.Member, reaction.member)) or is_veto(
-                    cast(discord.Member, reaction.member)
-                ):
-                    veto_channel = getVetoChannel(bot=self.bot)
-                    # TODO: compartmentalize this
-                    ogMessage = await veto_channel.fetch_message(
-                        int(link_message.content.split("/").pop())
+                copy_of_file_for_veto_channel = await attachment_reference.to_file()
+                copy2 = await attachment_reference.to_file()
+                if copy_of_file_for_veto_channel and copy2:
+                    vetoChannel = getVetoChannel(bot=self.bot)
+                    vetoEntry = await vetoChannel.send(
+                        content=first_message.content,
+                        file=copy_of_file_for_veto_channel,
                     )
-                    attachment_reference = message.attachments[0]
-
-                    copy_of_file_for_veto_channel = await attachment_reference.to_file()
-                    copy2 = await attachment_reference.to_file()
-                    if copy_of_file_for_veto_channel and copy2:
-                        vetoChannel = getVetoChannel(bot=self.bot)
-                        vetoEntry = await vetoChannel.send(
-                            content=first_message.content,
-                            file=copy_of_file_for_veto_channel,
-                        )
-                        await handleVetoPost(message=vetoEntry, bot=self.bot)
-                        await ogMessage.add_reaction(hc_constants.DELETE)
-                    errata_submissions_channel = getErrataSubmissionChannel(
-                        bot=self.bot
-                    )
-                    errata_submission_message = await errata_submissions_channel.send(
-                        file=copy2
-                    )
-                    await errata_submission_message.add_reaction("☑️")
+                    await handleVetoPost(message=vetoEntry, bot=self.bot)
+                    await ogMessage.add_reaction(hc_constants.DELETE)
+                errata_submissions_channel = getErrataSubmissionChannel(bot=self.bot)
+                errata_submission_message = await errata_submissions_channel.send(
+                    file=copy2
+                )
+                await errata_submission_message.add_reaction("☑️")
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
@@ -319,77 +313,78 @@ class LifecycleCog(commands.Cog):
                         await sentMessage.create_thread(name=cardName[0:99])
                     await message.delete()
 
-        if message.channel.id == hc_constants.MASTERPIECE_CHANNEL:
-            if len(message.attachments) > 0:
-                if message.content == "":
-                    discussionChannel = cast(
-                        TextChannel,
-                        self.bot.get_channel(
-                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
-                        ),
-                    )
-                    await discussionChannel.send(
-                        f"<@{message.author.id}>, make sure to include the name of your card"
-                    )
-                    await message.delete()
-                    return
-                splitString = message.content.split("\n")
-                cardName = splitString[0]
-                if "@" in cardName:
-                    # No ping case
-                    user = await self.bot.fetch_user(message.author.id)
-                    await user.send(
-                        'No "@" are allowed in card title submissions to prevent me from spamming'
-                    )
-                    return  # no pings allowed
-                author = message.author.mention
-                print(f"{cardName} submitted by {message.author.mention}")
-                if splitString.__len__() > 1:
-                    author = "; ".join(
-                        [f"<@{str(raw)}>" for raw in message.raw_mentions]
-                    )
-                file = await message.attachments[0].to_file()
-                if reasonableCard():
-                    vetoChannel = getVetoChannel(self.bot)
-                    acceptedChannel = cast(
-                        TextChannel,
-                        self.bot.get_channel(
-                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
-                        ),
-                    )
-                    logChannel = cast(
-                        TextChannel,
-                        self.bot.get_channel(
-                            hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL
-                        ),
-                    )
-                    acceptContent = cardName + " by " + author + " was accepted"
-                    accepted_message_no_mentions = acceptContent
-                    for index, mentionEntry in enumerate(message.raw_mentions):
-                        accepted_message_no_mentions = (
-                            accepted_message_no_mentions.replace(
-                                f"<@{str(mentionEntry)}>", message.mentions[index].name
-                            )
+            case hc_constants.MASTERPIECE_CHANNEL:
+                if len(message.attachments) > 0:
+                    if message.content == "":
+                        discussionChannel = cast(
+                            TextChannel,
+                            self.bot.get_channel(
+                                hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                            ),
                         )
-                    copy = await message.attachments[0].to_file()
-                    await vetoChannel.send(
-                        content=cardName + " by " + message.author.name, file=copy
-                    )
-                    copy2 = await message.attachments[0].to_file()
-                    logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
-                    await acceptedChannel.send(content=f"✨✨ {acceptContent} ✨✨")
-                    await acceptedChannel.send(content="", file=file)
-                    await logChannel.send(content=logContent, file=copy2)
-                else:
-                    contentMessage = f"{cardName} by {author}"
-                    sentMessage = await message.channel.send(
-                        content=contentMessage, file=file
-                    )
-                    await sentMessage.add_reaction(hc_constants.VOTE_UP)
-                    await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
-                    await sentMessage.add_reaction(hc_constants.DELETE)
-                    await sentMessage.create_thread(name=message.content[0:99])
-                await message.delete()
+                        await discussionChannel.send(
+                            f"<@{message.author.id}>, make sure to include the name of your card"
+                        )
+                        await message.delete()
+                        return
+                    splitString = message.content.split("\n")
+                    cardName = splitString[0]
+                    if "@" in cardName:
+                        # No ping case
+                        user = await self.bot.fetch_user(message.author.id)
+                        await user.send(
+                            'No "@" are allowed in card title submissions to prevent me from spamming'
+                        )
+                        return  # no pings allowed
+                    author = message.author.mention
+                    print(f"{cardName} submitted by {message.author.mention}")
+                    if splitString.__len__() > 1:
+                        author = "; ".join(
+                            [f"<@{str(raw)}>" for raw in message.raw_mentions]
+                        )
+                    file = await message.attachments[0].to_file()
+                    if reasonableCard():
+                        vetoChannel = getVetoChannel(self.bot)
+                        acceptedChannel = cast(
+                            TextChannel,
+                            self.bot.get_channel(
+                                hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                            ),
+                        )
+                        logChannel = cast(
+                            TextChannel,
+                            self.bot.get_channel(
+                                hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL
+                            ),
+                        )
+                        acceptContent = cardName + " by " + author + " was accepted"
+                        accepted_message_no_mentions = acceptContent
+                        for index, mentionEntry in enumerate(message.raw_mentions):
+                            accepted_message_no_mentions = (
+                                accepted_message_no_mentions.replace(
+                                    f"<@{str(mentionEntry)}>",
+                                    message.mentions[index].name,
+                                )
+                            )
+                        copy = await message.attachments[0].to_file()
+                        await vetoChannel.send(
+                            content=cardName + " by " + message.author.name, file=copy
+                        )
+                        copy2 = await message.attachments[0].to_file()
+                        logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
+                        await acceptedChannel.send(content=f"✨✨ {acceptContent} ✨✨")
+                        await acceptedChannel.send(content="", file=file)
+                        await logChannel.send(content=logContent, file=copy2)
+                    else:
+                        contentMessage = f"{cardName} by {author}"
+                        sentMessage = await message.channel.send(
+                            content=contentMessage, file=file
+                        )
+                        await sentMessage.add_reaction(hc_constants.VOTE_UP)
+                        await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
+                        await sentMessage.add_reaction(hc_constants.DELETE)
+                        await sentMessage.create_thread(name=message.content[0:99])
+                    await message.delete()
 
     @commands.command()
     async def personalhell(self, ctx: commands.Context):
@@ -592,9 +587,7 @@ class LifecycleCog(commands.Cog):
             except:
                 print(f"ERROR: unable to process: {messageEntry.content}")
 
-        vetoDiscussionChannel = cast(
-            TextChannel, self.bot.get_channel(hc_constants.VETO_DISCUSSION_CHANNEL)
-        )
+        vetoDiscussionChannel = getVetoDiscussionChannel(self.bot)
 
         await vetoDiscussionChannel.send(
             content=f"!! VETO POLLS HAVE BEEN PROCESSED !!"
@@ -688,7 +681,6 @@ FIVE_MINUTES = 300
 
 async def status_task(bot: commands.Bot):
     while True:
-
         status = random.choice(hc_constants.statusList)
         await checkSubmissions(bot)
         try:
@@ -699,6 +691,7 @@ async def status_task(bot: commands.Bot):
             await checkErrataSubmissions(bot)
         except Exception as e:
             print(e)
+
         try:
             await checkTokenSubmissions(bot)
         except Exception as e:
