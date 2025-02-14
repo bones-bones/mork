@@ -10,7 +10,7 @@ from CardClasses import Card, Side, CardSearch
 from cardNameRequest import cardNameRequest
 import hc_constants
 from isRealCard import isRealCard
-from printCardImages import sendImageReply
+from printCardImages import send_image_reply
 
 
 from shared_vars import intents, allCards, googleClient, cardSheet
@@ -149,13 +149,13 @@ class HellscubeDatabaseCog(commands.Cog):
         name = cast(str, notMagicCardSheet.col_values(1)[random_card])
         img = cast(str, notMagicCardSheet.col_values(2)[random_card])
         ruling = cast(str, notMagicCardSheet.col_values(4)[random_card])
-        await sendImageReply(url=img, cardname=name, text=ruling, message=ctx.message)
+        await send_image_reply(url=img, cardname=name, text=ruling, message=ctx.message)
 
     @commands.command(name="random")
     async def randomCard(self, ctx: commands.Context):
         card = allCards[random.choice(list(allCards.keys()))]
         print(card)
-        await sendImageReply(
+        await send_image_reply(
             url=card.getImg(), cardname=card.getName(), message=ctx.message, text=None
         )
 

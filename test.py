@@ -3,6 +3,7 @@
 # import asyncpraw
 # import asyncio
 # import hc_constants
+from operator import itemgetter
 import re
 from typing import Dict, List
 from dateutil.parser import parse

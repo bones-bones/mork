@@ -11,6 +11,11 @@ from getters import getVetoChannel
 import hc_constants
 
 
+"""
+This function groups previous poll results. It's used in two ways: for the compile veto command, where actual processing is done, and in personalhell, which is a read-only op.
+"""
+
+
 async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
     vetoChannel = getVetoChannel(bot)
     timeNow = datetime.now(timezone.utc)

@@ -25,7 +25,7 @@ async def print_card_images(message: Message):
         if post == "":
             await message.reply("No Match Found!", mention_author=False)
         else:
-            await sendImageReply(
+            await send_image_reply(
                 url=allCards[post].getImg(),
                 cardname=allCards[post].getName(),
                 message=message,
@@ -33,8 +33,7 @@ async def print_card_images(message: Message):
             )
 
 
-async def sendImageReply(url: str, cardname: str, text: str | None, message: Message):
-
+async def send_image_reply(url: str, cardname: str, text: str | None, message: Message):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             if resp.status != 200:

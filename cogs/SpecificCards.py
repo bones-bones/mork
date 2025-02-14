@@ -16,7 +16,7 @@ from discord.utils import get
 
 from cogs.HellscubeDatabase import searchFor
 import hc_constants
-from printCardImages import sendImageReply
+from printCardImages import send_image_reply
 
 
 # load json from scryfall
@@ -1191,7 +1191,7 @@ class SpecificCardsCog(commands.Cog):
         if rlocus < black_border_posts:
             await sendImage(locusCards[rlocus], ctx)
         else:
-            await sendImageReply(
+            await send_image_reply(
                 url=locusCards[rlocus][0],
                 cardname=locusCards[rlocus][1],
                 message=ctx.message,
@@ -1320,7 +1320,7 @@ class SpecificCardsCog(commands.Cog):
             await ctx.send("nothing found for that cmc")
         result = random.choice(results)
         print(results.__len__())
-        await sendImageReply(
+        await send_image_reply(
             url=result.img(), cardname=result.name(), text=None, message=ctx.message
         )
 

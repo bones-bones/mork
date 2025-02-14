@@ -8,4 +8,6 @@ def is_admin(member: Member):
 
 
 def is_veto(member: Member):
-    return member.get_role(hc_constants.VETO_COUNCIL) != None
+    return member.get_role(hc_constants.VETO_COUNCIL) != None or member.get_role(
+        hc_constants.VETO_COUNCIL_2
+    )

@@ -37,3 +37,9 @@ def getBotTest(bot: commands.Bot):
 
 def getGraveyardChannel(bot: commands.Bot):
     return cast(TextChannel, bot.get_channel(hc_constants.GRAVEYARD_CARD_LIST))
+
+
+def getMorkSubmissionsLoggingChannel(bot: commands.Bot):
+    return cast(
+        TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
+    )

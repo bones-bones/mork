@@ -108,10 +108,10 @@ class QuotesCog(commands.Cog):
         await ctx.send('"' + message.replace("\\n", "\n") + '"\n-' + user)
 
     @commands.command()
-    async def searchquote(self, ctx: commands.Context, text, *user):
+    async def searchquote(self, ctx: commands.Context, text: str, *user):
         fileID = hc_constants.QUOTES_FILE
         file = drive.CreateFile({"id": fileID})
-        quoteList = file.GetContentString().split(QUOTE_SPLIT)
+        quoteList = cast(list[str], file.GetContentString().split(QUOTE_SPLIT))
         for i in range(len(quoteList)):
             quoteList[i] = quoteList[i].split(authorSplit)
         if user:

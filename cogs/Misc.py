@@ -13,7 +13,7 @@ from cogs.HellscubeDatabase import searchFor
 from getters import getBotTest, getSubmissionDiscussionChannel, getVetoChannel
 from handleVetoPost import handleVetoPost
 from isRealCard import isRealCard
-from printCardImages import sendImageReply
+from printCardImages import send_image_reply
 from shared_vars import googleClient
 
 
@@ -31,18 +31,37 @@ class MiscCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    # @commands.Cog.listener()
+    # async def on_ready(self):
+    #     print(
+    #         f"{cast(discord.ClientUser,self.bot.user).name} has connected to Discord!"
+    #     )
+    #     subChannel = getVetoChannel(self.bot)
+    #     message = await subChannel.fetch_message(1338647514940833935)
+    #     guild = cast(discord.Guild, self.bot.get_guild(hc_constants.SERVER_ID))
+    #     thread = cast(discord.Thread, guild.get_channel_or_thread(message.id))
+    #     if thread:
+    #         threadMessages = thread.history(oldest_first=True, limit=2)
+    #         threadMessages = [tm async for tm in threadMessages]
+    #         hellpit_target = int(threadMessages[1].content.split("/").pop())
+    #         hellpit_thread = cast(
+    #             discord.Thread, guild.get_channel_or_thread(hellpit_target)
+    #         )
+    #         newest_message = await hellpit_thread.history(limit=1).__anext__()
+    #         print(newest_message)
+
     # for the card Avatar of BallsJr123
-    @commands.command()
-    async def avatarOfBalls(self, ctx: commands.Context, cost):
-        print("oi")
-        results = searchFor({"cmc": [(cost, "=")], "types": ["creature"]})
-        if results.__len__() == 0:
-            await ctx.send("nothing found for that cmc")
-        result = random.choice(results)
-        print(results.__len__())
-        await sendImageReply(
-            url=result.img(), cardname=result.name(), text=None, message=ctx.message
-        )
+    # @commands.command()
+    # async def avatarOfBalls(self, ctx: commands.Context, cost):
+    #     print("oi")
+    #     results = searchFor({"cmc": [(cost, "=")], "types": ["creature"]})
+    #     if results.__len__() == 0:
+    #         await ctx.send("nothing found for that cmc")
+    #     result = random.choice(results)
+    #     print(results.__len__())
+    #     await send_image_reply(
+    #         url=result.img(), cardname=result.name(), text=None, message=ctx.message
+    #     )
 
     # @commands.Cog.listener()
     # async def on_message(self, message: discord.Message):
