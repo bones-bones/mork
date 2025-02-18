@@ -17,7 +17,9 @@ from shared_vars import intents, allCards, googleClient, cardSheet
 
 cardList: list[CardSearch] = []
 
-cardSheetSearch = googleClient.open("Hellscube Database").worksheet("Database")
+cardSheetSearch = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
+    "Database"
+)
 
 cardsDataSearch = cardSheetSearch.get_all_values()[2:]
 
@@ -28,8 +30,10 @@ notMagicCardSheet = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).wo
 )
 
 
-# in theory: cost, super, type, sub, power, toughness, loyalty, text box, flavor text
-def genSide(stats: list[str]):
+def create_side(stats: list[str]):
+    """
+    in theory: cost, super, type, sub, power, toughness, loyalty, text box, flavor text
+    """
     cost = stats[0]
     supertypes = (stats[1] if stats[1] else "").split(";")
     types = stats[2].split(";")
@@ -62,32 +66,32 @@ for entry in cardsDataSearch:
         creator = entry[2]
         cardset = entry[3]
         legality = entry[4]
-        rulings = entry[5]
-        cmc = entry[6] if entry[6] else 0
-        colors = entry[7].split(";")
-        tags = entry[17].split(";") if entry[17] != "" else []
+        rulings = entry[6]
+        cmc = entry[7] if entry[7] else 0
+        colors = entry[8].split(";")
+        tags = entry[18].split(";") if entry[18] != "" else []
 
-        # 8
+        # 9
         sides = []
-        sides.append(genSide(entry[8:17]))
-        if entry[21] != "" and entry[21] != " ":
-            sides.append(genSide(entry[18:26]))
-        if entry[29] != "" and entry[29] != " ":
-            sides.append(genSide(entry[27:35]))
-        if entry[38] != "" and entry[38] != " ":
-            sides.append(genSide(entry[36:45]))
-
+        sides.append(create_side(entry[9:18]))
+        if entry[22] != "" and entry[22] != " ":
+            sides.append(create_side(entry[20:29]))
+        if entry[32] != "" and entry[32] != " ":
+            sides.append(create_side(entry[30:39]))
+        if entry[42] != "" and entry[42] != " ":
+            sides.append(create_side(entry[40:49]))
+        print(name)
         cardList.append(
             CardSearch(
-                name,
-                img,
-                creator,
-                cmc,
-                colors,
-                sides,
-                cardset,
-                legality,
-                rulings,
+                name=name,
+                img=img,
+                creator=creator,
+                cmc=cmc,
+                colors=colors,
+                sides=sides,
+                cardset=cardset,
+                legality=legality,
+                rulings=rulings,
                 tags=tags,
             )
         )
@@ -198,10 +202,6 @@ class HellscubeDatabaseCog(commands.Cog):
             hc_constants.HELLSCUBE_DATABASE
         ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
-        # cardSheetApproved = googleClient.open_by_key(
-        #     hc_constants.HELLSCUBE_DATABASE
-        # ).worksheet("Database")
-
         allCardNames = cardSheetUnapproved.col_values(1)
 
         rulings = cardSheetUnapproved.col_values(6)
@@ -231,11 +231,7 @@ class HellscubeDatabaseCog(commands.Cog):
             6,
             newRuling,
         )
-        # cardSheetApproved.update_cell(
-        #     dbRowIndex,
-        #     6,
-        #     newRuling,
-        # )
+
         await ctx.send(f"ruling updated to:\n{newRuling}")
 
     @commands.command(rest_is_raw=True)
@@ -299,7 +295,7 @@ class HellscubeDatabaseCog(commands.Cog):
                 if tags.__len__() > 0:
                     toSend.append("tags: " + ", ".join(tags))
 
-                if rulings:
+                if rulings and rulings.__len__() > 0:
                     toSend.append("rulings: \n" + rulings)
 
                 message = "\n".join(toSend)

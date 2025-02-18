@@ -1,10 +1,9 @@
 import asyncio
 from datetime import date, datetime
-from operator import itemgetter
 import os
 import random
 import re
-from typing import Dict, List, cast
+from typing import cast
 import aiohttp
 from discord import (
     ClientUser,
@@ -27,6 +26,7 @@ import asyncpraw
 from datetime import datetime, timezone, timedelta
 
 import acceptCard
+from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from submissions.checkErrataSubmissions import checkErrataSubmissions
 from checkSubmissions import (
     checkSubmissions,
@@ -680,6 +680,33 @@ FIVE_MINUTES = 300
 
 
 async def status_task(bot: commands.Bot):
+    async def post_reddit_card_of_the_day():
+        nowtime = datetime.now().date()
+        start = date(2024, 3, 13)
+        days_since_starting = (nowtime - start).days
+        cardOffset = 608 - days_since_starting
+        if cardOffset >= 0:
+            cards = searchFor({"cardset": "hc4"})
+            card = cards[cardOffset]
+            name = card.name()
+            url = card.img()
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    if resp.status == 200:
+                        image_path = f'tempImages/{name.replace("/", "|")}'
+                        with open(image_path, "wb") as out:
+                            out.write(await resp.read())
+                        try:
+                            await post_to_reddit(
+                                title=f"HC4 Card of the ~day: {name}",
+                                image_path=image_path,
+                                flair=hc_constants.OFFICIAL_FLAIR,
+                            )
+                        except:
+                            pass
+                        os.remove(image_path)
+                    await session.close()
+
     while True:
         status = random.choice(hc_constants.statusList)
         await checkSubmissions(bot)
@@ -691,7 +718,6 @@ async def status_task(bot: commands.Bot):
             await checkErrataSubmissions(bot)
         except Exception as e:
             print(e)
-
         try:
             await checkTokenSubmissions(bot)
         except Exception as e:
@@ -706,67 +732,10 @@ async def status_task(bot: commands.Bot):
         now = datetime.now()
         print(f"time is {now}")
         if now.hour == 10 and now.minute <= 4:
-            nowtime = now.date()
-            start = date(2024, 3, 13)  # more or less the start date to post to reddit
-            days_since_starting = (nowtime - start).days
-            cardOffset = (
-                608 - days_since_starting
-            )  # 608 is how many cards there were in hc4 at the time
-            if cardOffset >= 0:
-                cards = searchFor({"cardset": "hc4"})
-                card = cards[cardOffset]
-                name = card.name()
-                url = card.img()
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(url) as resp:
-                        if resp.status == 200:
-                            image_path = f'tempImages/{name.replace("/", "|")}'
-                            with open(
-                                image_path, "wb"
-                            ) as out:  ## Open temporary file as bytes
-                                out.write(await resp.read())  ## Read bytes into file
-                            try:
-                                await post_to_reddit(
-                                    title=f"HC4 Card of the ~day: {name}",
-                                    image_path=image_path,
-                                    flair=hc_constants.OFFICIAL_FLAIR,
-                                )
-                            except:
-                                ...
-                            os.remove(image_path)
-                        await session.close()
-
+            await post_reddit_card_of_the_day()
         if now.hour == 4 and now.minute <= 4:
-            # Get all the messages, download the images, post them to reddit
             try:
-                subChannel = cast(
-                    discord.TextChannel,
-                    bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL),
-                )
-                timeNow = datetime.now(timezone.utc)
-                oneDay = timeNow + timedelta(days=-1)
-                messages = subChannel.history(after=oneDay, limit=None)
-                images: List[Dict[str, str]] = []
-                if messages is None:
-                    return
-
-                messages = [message async for message in messages][:10]
-                for messageEntry in messages:
-                    if len(messageEntry.attachments) > 0:
-                        file = await messageEntry.attachments[0].to_file()
-                        file_data = file.fp.read()
-                        image_path = f"tempImages/{messageEntry.id}{file.filename}"
-                        images.append({"image_path": image_path})
-                        with open(image_path, "wb") as out:
-                            out.write(file_data)
-                await post_gallery_to_reddit(
-                    title=f"Some of Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
-                    images=images,
-                    flair=hc_constants.OFFICIAL_FLAIR,
-                )
-                for imageEntry in images:
-                    os.remove(list(imageEntry.values())[0])
+                await post_daily_submissions(bot)
             except Exception as e:
                 print(e)
-
         await asyncio.sleep(FIVE_MINUTES)

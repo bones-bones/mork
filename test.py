@@ -13,14 +13,68 @@ from datetime import date, datetime, timedelta
 
 # print(re.search("\.([^.]*)$","image.png").group())
 
-b = 33333
+# b = 33333
 
-a = {b: "33"}
+# a = {b: "33"}
 
-images: List[Dict[str, str]] = []
-images.append({"a": "stuff"})
-print(list(images[0].values())[0])
+# images: List[Dict[str, str]] = []
+# images.append({"a": "stuff"})
+# print(list(images[0].values())[0])
 
+
+a = [
+    "Name",
+    "Image",
+    "Creator",
+    "Set",
+    "Constructed",
+    "Component of",
+    "Rulings",
+    "CMC",
+    "Color(s)",
+    "Cost",
+    "Supertype(s)",
+    "Card Type(s)",
+    "Subtype(s)",
+    "power",
+    "toughness",
+    "Loyalty",
+    "Text Box",
+    "Flavor Text",
+    "Image",
+    "Tags",
+    "Cost",
+    "Supertype(s)",
+    "Card Type(s)",
+    "Subtype(s)",
+    "power",
+    "toughness",
+    "Loyalty",
+    "Text Box",
+    "Flavor Text",
+    "Image",
+    "Cost",
+    "Supertype(s)",
+    "Card Type(s)",
+    "Subtype(s)",
+    "power",
+    "toughness",
+    "Loyalty",
+    "Text Box",
+    "Flavor Text",
+    "Image",
+    "Cost",
+    "Supertype(s)",
+    "Card Type(s)",
+    "Subtype(s)",
+    "power",
+    "toughness",
+    "Loyalty",
+    "Text Box",
+    "Flavor Text",
+    "Image",
+]
+print(a[6])
 
 # vetoMessage= "htnaetaeuohtsneushntaeushntaeohtneuotnshatsnaehnstaeotnuestnaoetnsuneosnthauoestnueshtnoeushnseus"
 
