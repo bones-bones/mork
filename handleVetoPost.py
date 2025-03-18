@@ -1,4 +1,5 @@
-from typing import cast
+import random
+from typing import Optional, cast
 from discord import Emoji, Member, Message, Role
 import discord
 from discord.ext import commands
@@ -7,19 +8,31 @@ from discord.utils import get
 import hc_constants
 
 
-async def handleVetoPost(message: Message, bot: commands.Bot):
+async def handleVetoPost(
+    message: Message,
+    bot: commands.Bot,
+    veto_council: int | None,
+):
+    if veto_council == None:
+        veto_council = random.choice(
+            [hc_constants.VETO_COUNCIL, hc_constants.VETO_COUNCIL_2]
+        )
+    if veto_council == hc_constants.VETO_COUNCIL:
+        await message.add_reaction(hc_constants.CLOCK)
+    else:
+        await message.add_reaction(hc_constants.WOLF)
+
     await message.add_reaction(hc_constants.VOTE_UP)
-    await message.add_reaction(
-        cast(Emoji, bot.get_emoji(hc_constants.CIRION_SPELLING))
-    )  # Errata
+
+    # Errata
+    await message.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.CIRION_SPELLING)))
     await message.add_reaction(hc_constants.VOTE_DOWN)
 
-    await message.add_reaction(
-        cast(Emoji, bot.get_emoji(hc_constants.MANA_GREEN))
-    )  # too strong
-    await message.add_reaction(
-        cast(Emoji, bot.get_emoji(hc_constants.MANA_WHITE))
-    )  # too weak
+    # too strong
+    await message.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.MANA_GREEN)))
+
+    # too weak
+    await message.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.MANA_WHITE)))
     await message.add_reaction(hc_constants.BAD)
     await message.add_reaction(hc_constants.UNSURE)
 
@@ -27,7 +40,7 @@ async def handleVetoPost(message: Message, bot: commands.Bot):
 
     role = cast(
         Role,
-        get(cast(Member, message.author).guild.roles, id=hc_constants.VETO_COUNCIL),
+        get(cast(Member, message.author).guild.roles, id=veto_council),
     )
     judgeRole = cast(
         Role, get(cast(Member, message.author).guild.roles, id=hc_constants.JUDGES)

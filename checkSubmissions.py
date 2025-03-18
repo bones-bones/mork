@@ -69,7 +69,7 @@ async def checkSubmissions(bot: commands.Bot):
                     if not prettyValid:
                         user = await bot.fetch_user(
                             hc_constants.LLLLLL
-                        )  # If a message would be accepted, but there's only a single downvote, need llllll to add another downvote
+                        )  # If a message would be accepted, but there's only a single downvote, need sixel to add another downvote
                         await user.send("Verify " + messageEntry.jump_url)
                         continue
                 file = await messageEntry.attachments[0].to_file()
@@ -134,7 +134,7 @@ async def checkSubmissions(bot: commands.Bot):
                     content=accepted_message_no_mentions, file=copy
                 )
 
-                await handleVetoPost(message=vetoEntry, bot=bot)
+                await handleVetoPost(message=vetoEntry, bot=bot, veto_council=None)
 
                 copy2 = await messageEntry.attachments[0].to_file()
                 logContent = f"{acceptContent}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"

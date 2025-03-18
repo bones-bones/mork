@@ -17,17 +17,20 @@ from shared_vars import intents, allCards, googleClient, cardSheet
 
 cardList: list[CardSearch] = []
 
-cardSheetSearch = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
-    "Database"
-)
+databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
+
+cardSheetSearch = databaseSheets.worksheet("Database")
 
 cardsDataSearch = cardSheetSearch.get_all_values()[2:]
 
-client = discord.Client(intents=intents)
 
-notMagicCardSheet = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
-    "NotMagic"
-)
+notMagicCardSheet = databaseSheets.worksheet("NotMagic")
+
+usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
+
+usernameMappings = usernameMappingSheet.get_all_values()[1:]
+
+client = discord.Client(intents=intents)
 
 
 def create_side(stats: list[str]):
@@ -60,10 +63,18 @@ def create_side(stats: list[str]):
 
 
 for entry in cardsDataSearch:
+    creator_alias = next(
+        (
+            usernameEntry
+            for usernameEntry in usernameMappings
+            if entry[2] in usernameEntry[1]
+        ),
+        None,
+    )
     try:
         name = entry[0]
         img = entry[1]
-        creator = entry[2]
+        creator = creator_alias[0] if creator_alias else entry[2]
         cardset = entry[3]
         legality = entry[4]
         rulings = entry[6]
@@ -80,7 +91,6 @@ for entry in cardsDataSearch:
             sides.append(create_side(entry[30:39]))
         if entry[42] != "" and entry[42] != " ":
             sides.append(create_side(entry[40:49]))
-        print(name)
         cardList.append(
             CardSearch(
                 name=name,
@@ -204,7 +214,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         allCardNames = cardSheetUnapproved.col_values(1)
 
-        rulings = cardSheetUnapproved.col_values(6)
+        rulings = cardSheetUnapproved.col_values(7)
         lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
         if not cardName.lower() in lowerList:
             await ctx.send("Unable to find the card... this shouldn't happen")
@@ -228,7 +238,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
-            6,
+            7,
             newRuling,
         )
 

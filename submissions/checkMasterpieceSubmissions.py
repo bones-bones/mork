@@ -75,7 +75,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                     content="HC7: " + accepted_message_no_mentions, file=copy
                 )
 
-                await handleVetoPost(vetoEntry, bot)
+                await handleVetoPost(vetoEntry, bot, None)
 
                 copy2 = await messageEntry.attachments[0].to_file()
                 logContent = f"{acceptContent}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"

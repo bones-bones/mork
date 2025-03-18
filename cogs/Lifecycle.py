@@ -140,7 +140,21 @@ class LifecycleCog(commands.Cog):
                         content=first_message.content,
                         file=copy_of_file_for_veto_channel,
                     )
-                    await handleVetoPost(message=vetoEntry, bot=self.bot)
+
+                    veto_council_to_notify = (
+                        hc_constants.VETO_COUNCIL
+                        if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
+                        else (
+                            hc_constants.VETO_COUNCIL_2
+                            if get(ogMessage.reactions, emoji=hc_constants.WOLF)
+                            else None
+                        )
+                    )
+                    await handleVetoPost(
+                        message=vetoEntry,
+                        bot=self.bot,
+                        veto_council=veto_council_to_notify,
+                    )
                     await ogMessage.add_reaction(hc_constants.DELETE)
                 errata_submissions_channel = getErrataSubmissionChannel(bot=self.bot)
                 errata_submission_message = await errata_submissions_channel.send(
@@ -232,7 +246,7 @@ class LifecycleCog(commands.Cog):
                 await message.delete()
 
             case hc_constants.VETO_CHANNEL:
-                await handleVetoPost(message=message, bot=self.bot)
+                await handleVetoPost(message=message, bot=self.bot, veto_council=None)
 
             case (
                 hc_constants.FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL
@@ -416,6 +430,7 @@ class LifecycleCog(commands.Cog):
                         hasReacted = True
             if errata and not hasReacted:
                 async for user in errata.users():
+
                     if user.id == ctx.author.id:
                         hasReacted = True
             if down and not hasReacted:
@@ -573,8 +588,15 @@ class LifecycleCog(commands.Cog):
                         # then it was recently acted upon
                         recentlyNotified = threadMessageAge < timedelta(days=1)
                         if not recentlyNotified:
+
+                            veto_council_to_notify = (
+                                hc_constants.VETO_COUNCIL
+                                if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
+                                else hc_constants.VETO_COUNCIL_2
+                            )
+
                             role = cast(
-                                Role, get(guild.roles, id=hc_constants.VETO_COUNCIL)
+                                Role, get(guild.roles, id=veto_council_to_notify)
                             )
 
                             await thread.send(role.mention)
