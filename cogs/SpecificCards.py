@@ -906,6 +906,16 @@ class SpecificCardsCog(commands.Cog):
             ctx,
         )
 
+    # https://scryfall.com/random?q=is%3Atoken+type%3Acreature+power%3C%3D2&unique=cards&as=grid&order=name
+    # That one guy at your LGS + Hero of High Rollers
+    @commands.command()
+    async def tokenGuy(self, ctx: commands.Context, count: int = 1):
+        for i in range(count):
+            token_json = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=is%3Atoken+type%3Acreature+power%3C%3D2&unique=cards&as=grid&order=name"
+            )
+            await sendImage(await getImageFromJson(token_json), ctx)
+
     # Obscure Commander
     @commands.command()
     async def obscureCommander(self, ctx: commands.Context):

@@ -93,11 +93,12 @@ class QuotesCog(commands.Cog):
         for i in range(len(quoteList)):
             quoteList[i] = quoteList[i].split(authorSplit)
         if user:
-            user = " ".join(user)
+            user = user[0] if user.__len__() == 1 else ""
             tempList = []
             for i in quoteList:
-                if i[1].lower() == user.lower():
-                    tempList.append(i)
+                if i.__len__() == 2:
+                    if i[1].lower() == user.lower():
+                        tempList.append(i)
             quoteList = tempList
             if quoteList == []:
                 await ctx.send("No quotes by " + user + " found. :(")

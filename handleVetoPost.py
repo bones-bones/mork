@@ -49,8 +49,8 @@ async def handleVetoPost(
     copy_for_discussion = await message.attachments[0].to_file()
 
     mentions = [role.mention, judgeRole.mention]
-
-    author_s = message.content.split(" by ")[1]
+    splitted = message.content.split(" by ")
+    author_s = splitted[1] if splitted.__len__() > 1 else "NO AUTHOR"
     creator_mentions = author_s.split("; ")
 
     for ref in creator_mentions:

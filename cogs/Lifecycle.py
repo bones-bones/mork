@@ -428,27 +428,45 @@ class LifecycleCog(commands.Cog):
                 async for user in up.users():
                     if user.id == ctx.author.id:
                         hasReacted = True
+
             if errata and not hasReacted:
                 async for user in errata.users():
-
                     if user.id == ctx.author.id:
                         hasReacted = True
+
             if down and not hasReacted:
                 async for user in down.users():
                     if user.id == ctx.author.id:
                         hasReacted = True
+
             if think:
                 async for user in think.users():
                     if user.id == ctx.author.id:
                         hasReacted = False
 
+            emoji_toSend = (
+                hc_constants.CLOCK
+                if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
+                else hc_constants.WOLF
+            )
             if not hasReacted:
-                links.append(f"{messageEntry.content}: {messageEntry.jump_url}")
+                links.append(
+                    f"{emoji_toSend} - {messageEntry.content}: {messageEntry.jump_url}"
+                )
+
+            is_clock_vc = (
+                hc_constants.CLOCK
+                if cast(Member, ctx.author).get_role(hc_constants.VETO_COUNCIL) != None
+                else hc_constants.WOLF
+            )
+
+            links.sort(key=lambda x: not x.__contains__(is_clock_vc))
 
         if len(links) > 0:
 
             await ctx.send(content="got some work to do:")
             textToSend = "\n".join(links)
+
             for i in range(0, textToSend.__len__(), hc_constants.LITERALLY_1984):
                 await ctx.send(content=textToSend[i : i + hc_constants.LITERALLY_1984])
         else:
@@ -506,7 +524,7 @@ class LifecycleCog(commands.Cog):
 
             acceptedCards.append(cardMessage)
 
-            set_to_add_to = "HC7.0"
+            set_to_add_to = "HC7.1"
 
             channel_to_add_to = hc_constants.SEVEN_CARD_LIST
 

@@ -19,18 +19,67 @@ cardList: list[CardSearch] = []
 
 databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
 
-cardSheetSearch = databaseSheets.worksheet("Database")
-
-cardsDataSearch = cardSheetSearch.get_all_values()[2:]
-
 
 notMagicCardSheet = databaseSheets.worksheet("NotMagic")
 
-usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
-
-usernameMappings = usernameMappingSheet.get_all_values()[1:]
-
 client = discord.Client(intents=intents)
+
+
+def build_database():
+    global cardList
+    cardList = []
+
+    usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
+    usernameMappings = usernameMappingSheet.get_all_values()[1:]
+
+    cardSheetSearch = databaseSheets.worksheet("Database")
+    cardsDataSearch = cardSheetSearch.get_all_values()[2:]
+
+    for entry in cardsDataSearch:
+        creator_alias = next(
+            (
+                usernameEntry
+                for usernameEntry in usernameMappings
+                if entry[2] in usernameEntry[1]
+            ),
+            None,
+        )
+        try:
+            name = entry[0]
+            img = entry[1]
+            creator = creator_alias[0] if creator_alias else entry[2]
+            cardset = entry[3]
+            legality = entry[4]
+            rulings = entry[6]
+            cmc = entry[7] if entry[7] else 0
+            colors = entry[8].split(";")
+            tags = entry[19].split(";") if entry[19] != "" else []
+
+            # 9
+            sides = []
+            sides.append(create_side(entry[9:18]))
+            if entry[22] != "" and entry[22] != " ":
+                sides.append(create_side(entry[20:29]))
+            if entry[32] != "" and entry[32] != " ":
+                sides.append(create_side(entry[30:39]))
+            if entry[42] != "" and entry[42] != " ":
+                sides.append(create_side(entry[40:49]))
+            cardList.append(
+                CardSearch(
+                    name=name,
+                    img=img,
+                    creator=creator,
+                    cmc=cmc,
+                    colors=colors,
+                    sides=sides,
+                    cardset=cardset,
+                    legality=legality,
+                    rulings=rulings,
+                    tags=tags,
+                )
+            )
+        except Exception as e:
+            print(f"couldn't parse {entry}", e)
 
 
 def create_side(stats: list[str]):
@@ -62,53 +111,6 @@ def create_side(stats: list[str]):
     )
 
 
-for entry in cardsDataSearch:
-    creator_alias = next(
-        (
-            usernameEntry
-            for usernameEntry in usernameMappings
-            if entry[2] in usernameEntry[1]
-        ),
-        None,
-    )
-    try:
-        name = entry[0]
-        img = entry[1]
-        creator = creator_alias[0] if creator_alias else entry[2]
-        cardset = entry[3]
-        legality = entry[4]
-        rulings = entry[6]
-        cmc = entry[7] if entry[7] else 0
-        colors = entry[8].split(";")
-        tags = entry[18].split(";") if entry[18] != "" else []
-
-        # 9
-        sides = []
-        sides.append(create_side(entry[9:18]))
-        if entry[22] != "" and entry[22] != " ":
-            sides.append(create_side(entry[20:29]))
-        if entry[32] != "" and entry[32] != " ":
-            sides.append(create_side(entry[30:39]))
-        if entry[42] != "" and entry[42] != " ":
-            sides.append(create_side(entry[40:49]))
-        cardList.append(
-            CardSearch(
-                name=name,
-                img=img,
-                creator=creator,
-                cmc=cmc,
-                colors=colors,
-                sides=sides,
-                cardset=cardset,
-                legality=legality,
-                rulings=rulings,
-                tags=tags,
-            )
-        )
-    except Exception as e:
-        print(f"couldn't parse {entry}", e)
-
-
 class HellscubeDatabaseCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -116,11 +118,12 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         # global log
+        build_database()
         nameList = cast(list[str], cardSheet.col_values(1)[2:])
         imgList = cardSheet.col_values(2)[2:]
-        creatorList = cardSheet.col_values(2)[2:]
-        global allCards  # Need to modify shared allCards object
+        creatorList = cardSheet.col_values(3)[2:]
 
+        global allCards  # Need to modify shared allCards object
         for i in range(len(nameList)):
             allCards[nameList[i].lower()] = Card(
                 nameList[i], imgList[i], creatorList[i]
@@ -179,6 +182,12 @@ class HellscubeDatabaseCog(commands.Cog):
         await channel.send(
             allCards[name].getName() + " created by: " + allCards[name].getCreator()
         )
+
+    @commands.command()
+    async def syncDb(self, ctx: commands.Context):
+        if ctx.author.id == hc_constants.LLLLLL:
+            build_database()
+            await ctx.send("done")
 
     @commands.command()
     async def rulings(self, channel, *cardName):
@@ -557,7 +566,7 @@ def checkForColor(condition, data):
     return allowed
 
 
-def printCardNames(cards):
+def printCardNames(cards: list[CardSearch]):
     returnString = "Results: "
     returnString += str(len(cards)) + "\n"
     for i in cards:
