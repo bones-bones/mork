@@ -64,6 +64,7 @@ def build_database():
                 sides.append(create_side(entry[30:39]))
             if entry[42] != "" and entry[42] != " ":
                 sides.append(create_side(entry[40:49]))
+
             cardList.append(
                 CardSearch(
                     name=name,
@@ -280,6 +281,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
+            20,
             (f"{currentTags};" if currentTags != "" else "") + f"{tag}",
         )
 
