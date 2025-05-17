@@ -280,7 +280,6 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
-            18,
             (f"{currentTags};" if currentTags != "" else "") + f"{tag}",
         )
 

@@ -36,6 +36,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
 
         if (
             "@everyone" in messageEntry.content
+            or "@here" in messageEntry.content
             or len(messageEntry.attachments) == 0
             or not is_mork(messageEntry.author.id)
         ):

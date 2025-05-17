@@ -21,7 +21,7 @@ async def checkErrataSubmissions(bot: commands.Bot):
         return
     messages = [message async for message in messages]
     for i in range(len(messages)):
-        if "@everyone" in messages[i].content:
+        if "@everyone" in messages[i].content or "@here" in messages[i].content:
             continue
         if get(messages[i].reactions, emoji=hc_constants.ACCEPT):
             continue
