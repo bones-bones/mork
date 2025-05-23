@@ -10,5 +10,5 @@ psycopg2-binary
 pydrive2
 dpymenus
 google-api-python-client
-asyncpraw
+asyncpraw==7.7.1
 thefuzz

@@ -215,7 +215,7 @@ class HellscubeDatabaseCog(commands.Cog):
         ruling = ("\n".join(args.split("\n")[1:])).strip()
         cardName = args.split("\n")[0].strip()
 
-        if not isRealCard(cardName=cardName, ctx=ctx):
+        if not (await isRealCard(cardName=cardName, ctx=ctx)):
             return
 
         cardSheetUnapproved = googleClient.open_by_key(
@@ -263,7 +263,7 @@ class HellscubeDatabaseCog(commands.Cog):
         if tag.__contains__(" "):
             await ctx.send('no spaces allowed, use "-"')
 
-        if not isRealCard(cardName=cardName, ctx=ctx):
+        if not (await isRealCard(cardName=cardName, ctx=ctx)):
             return
 
         cardSheetUnapproved = googleClient.open_by_key(

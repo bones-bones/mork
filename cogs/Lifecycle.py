@@ -109,7 +109,8 @@ class LifecycleCog(commands.Cog):
         # The hellpit resubmit case
         if (
             str(reaction.emoji) == hc_constants.ACCEPT
-            and cast(discord.Thread, channel).parent
+            and type(channel) == TextChannel
+            and hasattr(channel, "parent")  # cast(discord.Thread, channel).parent
             and cast(discord.TextChannel, cast(discord.Thread, channel).parent).id
             == hc_constants.VETO_HELLPITS
         ):

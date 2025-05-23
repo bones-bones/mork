@@ -35,3 +35,4 @@ async def post_daily_submissions(bot):
     )
     for imageEntry in images:
         os.remove(list(imageEntry.values())[0])
+    return

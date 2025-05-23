@@ -11,7 +11,7 @@ from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 
 async def check_reddit(bot: commands.Bot):
     timeNow = datetime.now(timezone.utc)
-    oneDay = timeNow + timedelta(days=-2)
+    oneHour = timeNow + timedelta(hours=-2)
     reddit = asyncpraw.Reddit(
         client_id=ID,
         client_secret=SECRET,
@@ -24,9 +24,10 @@ async def check_reddit(bot: commands.Bot):
     )
 
     redditChannel = cast(TextChannel, bot.get_channel(hc_constants.REDDIT_CHANNEL))
-    messagesInLastDay = [mess async for mess in redditChannel.history(after=oneDay)]
+    messagesInLastDay = [mess async for mess in redditChannel.history(after=oneHour)]
 
-    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter="day"):  # type: ignore
+    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter="hour"):  # type: ignore
+        #  print(messagesInLastDay.__len__(), submission.permalink)
         alreadyPosted = False
         for discordMessage in messagesInLastDay:
             if submission.permalink in discordMessage.content:

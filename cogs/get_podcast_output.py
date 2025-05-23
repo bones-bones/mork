@@ -1,4 +1,4 @@
-from random import random
+from random import randint, random
 
 
 podSentence = [
@@ -382,10 +382,8 @@ podEncoding = [
 def get_podcast_output(val: int):
     output = ""
     for i in range(val):
-        output += podSentence[random.randint(0, len(podSentence) - 1)]
+        output += podSentence[randint(0, len(podSentence) - 1)]
         while "@" in output:
             for key in podEncoding:
-                output = output.replace(
-                    key[0], key[1][random.randint(0, len(key[1]) - 1)], 1
-                )
+                output = output.replace(key[0], key[1][randint(0, len(key[1]) - 1)], 1)
         output += "\n"
