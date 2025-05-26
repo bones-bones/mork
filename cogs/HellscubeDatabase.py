@@ -258,7 +258,12 @@ class HellscubeDatabaseCog(commands.Cog):
     async def tag(self, ctx: commands.Context, *, args: str):
 
         cardName = args.split("\n")[0].strip()
-        tag = args.split("\n")[1].strip()
+        splitLines = args.split("\n")
+        if splitLines.__len__() != 2:
+            await ctx.send("seems like you're missing a line break")
+            return
+
+        tag = splitLines[1].strip()
 
         if tag.__contains__(" "):
             await ctx.send('no spaces allowed, use "-"')

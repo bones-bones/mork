@@ -18,7 +18,7 @@ import discord
 from discord.ext import commands
 from discord.message import Message
 from discord.utils import get
-import random
+
 
 from typing import cast
 import asyncpraw
@@ -49,7 +49,7 @@ from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
-from reddit_functions import post_gallery_to_reddit, post_to_reddit
+from reddit_functions import post_to_reddit
 from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents, googleClient
 from submissions.checkMasterpieceSubmissions import checkMasterpieceSubmissions
@@ -109,11 +109,12 @@ class LifecycleCog(commands.Cog):
         # The hellpit resubmit case
         if (
             str(reaction.emoji) == hc_constants.ACCEPT
-            and type(channel) == TextChannel
+            # and type(channel) == TextChannel
             and hasattr(channel, "parent")  # cast(discord.Thread, channel).parent
             and cast(discord.TextChannel, cast(discord.Thread, channel).parent).id
             == hc_constants.VETO_HELLPITS
         ):
+            print("it is a :", type(channel))
             message = await channelAsText.fetch_message(reaction.message_id)
             thread_messages = [
                 message
@@ -400,6 +401,9 @@ class LifecycleCog(commands.Cog):
                         await sentMessage.add_reaction(hc_constants.DELETE)
                         await sentMessage.create_thread(name=message.content[0:99])
                     await message.delete()
+
+            case _:
+                pass
 
     @commands.command()
     async def personalhell(self, ctx: commands.Context):

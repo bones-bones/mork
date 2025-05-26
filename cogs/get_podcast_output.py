@@ -68,7 +68,7 @@ podSentence = [
     "Why is there so much porn of @a.",
     "The price of @c spiked after @p made a deck around it.",
     "@s sent me a booster box of @o and I got @c out of it!",
-    "I can't believe wizards is rereleasing @o as the summer expension.",
+    "I can't believe wizards is rereleasing @o as the summer expansion.",
     "I want a fanfiction between @a and @a",
 ]
 podCards = [
@@ -224,7 +224,7 @@ podFormat = [
     "horde",
     "prismatic",
 ]
-podColor = ["white", "black", "green", "red", "blue"]
+podColor = ["white", "black", "green", "red", "blue", "purple"]
 podPerson = [
     "EpicNessBrian",
     "MaRo",
@@ -387,3 +387,4 @@ def get_podcast_output(val: int):
             for key in podEncoding:
                 output = output.replace(key[0], key[1][randint(0, len(key[1]) - 1)], 1)
         output += "\n"
+    return output

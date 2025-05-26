@@ -1,7 +1,5 @@
 from shared_vars import allCards
 
-# from thefuzz import fuzz
-
 
 def cardNameRequest(requestName: str):
     print(f"cnr [{requestName}]")

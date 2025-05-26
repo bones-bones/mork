@@ -1,10 +1,9 @@
-from discord import TextChannel
 from cardNameRequest import cardNameRequest
 from discord.ext import commands
 
 
 # Shouldn't need to do this # cause of som esupertyping
-async def isRealCard(cardName: str, ctx: commands.Context | TextChannel):
+async def isRealCard(cardName: str, ctx: commands.Context[commands.Bot]):
     """Helps determine exact matches for cards in the database"""
     name = cardNameRequest(cardName.lower())
     isMatch = name == cardName.lower()

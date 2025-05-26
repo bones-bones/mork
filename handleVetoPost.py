@@ -1,5 +1,5 @@
 import random
-from typing import Optional, cast
+from typing import cast
 from discord import Emoji, Member, Message, Role
 import discord
 from discord.ext import commands

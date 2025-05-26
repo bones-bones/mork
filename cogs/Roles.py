@@ -10,7 +10,7 @@ class RolesCog(commands.Cog):
         self.bot: commands.Bot = bot
 
     @commands.command()
-    async def announcements(self, ctx: commands.Context):
+    async def announcements(self, ctx: commands.Context[commands.Bot]):
         role = get(ctx.message.author.guild.roles, id=int(862806291844300830))
         if role in ctx.author.roles:
             await ctx.author.remove_roles(role)

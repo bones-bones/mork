@@ -35,4 +35,4 @@ async def post_gallery_to_reddit(
     hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit("HellsCube")
 
     await hellscubeSubreddit.submit_gallery(title=title, images=images, flair_id=flair)
-    return reddit.close()
+    await reddit.close()
