@@ -8,6 +8,7 @@ from discord.ext import commands
 
 
 async def checkErrataSubmissions(bot: commands.Bot):
+    print("checking errata submissions")
     subChannel = cast(
         TextChannel, bot.get_channel(hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS)
     )

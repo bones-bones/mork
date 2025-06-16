@@ -99,4 +99,4 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                         f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
                     )
                     await messageEntry.add_reaction("🕛")
-    print("------done checking submissions-----")
+    print("------done checking masterpiece submissions-----")

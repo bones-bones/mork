@@ -280,7 +280,7 @@ class HellscubeDatabaseCog(commands.Cog):
         lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
         dbRowIndex = lowerList.index(cardName.lower()) + 1
 
-        tags = cardSheetUnapproved.col_values(18)
+        tags = cardSheetUnapproved.col_values(20)
 
         currentTags = tags[dbRowIndex - 1] if tags.__len__() >= dbRowIndex else ""
 

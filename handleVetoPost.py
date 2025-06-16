@@ -7,20 +7,25 @@ from discord.utils import get
 
 import hc_constants
 
+portal_time = True
+
 
 async def handleVetoPost(
     message: Message,
     bot: commands.Bot,
     veto_council: int | None,
 ):
-    if veto_council == None:
-        veto_council = random.choice(
-            [hc_constants.VETO_COUNCIL, hc_constants.VETO_COUNCIL_2]
-        )
-    if veto_council == hc_constants.VETO_COUNCIL:
-        await message.add_reaction(hc_constants.CLOCK)
+    if portal_time:
+        veto_council = hc_constants.VETO_COUNCIL_PORTAL
     else:
-        await message.add_reaction(hc_constants.WOLF)
+        if veto_council == None:
+            veto_council = random.choice(
+                [hc_constants.VETO_COUNCIL, hc_constants.VETO_COUNCIL_2]
+            )
+        if veto_council == hc_constants.VETO_COUNCIL:
+            await message.add_reaction(hc_constants.CLOCK)
+        else:
+            await message.add_reaction(hc_constants.WOLF)
 
     await message.add_reaction(hc_constants.VOTE_UP)
 

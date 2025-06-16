@@ -143,15 +143,16 @@ class LifecycleCog(commands.Cog):
                         file=copy_of_file_for_veto_channel,
                     )
 
-                    veto_council_to_notify = (
-                        hc_constants.VETO_COUNCIL
-                        if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
-                        else (
-                            hc_constants.VETO_COUNCIL_2
-                            if get(ogMessage.reactions, emoji=hc_constants.WOLF)
-                            else None
-                        )
-                    )
+                    veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
+                    # (
+                    #     hc_constants.VETO_COUNCIL
+                    #     if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
+                    #     else (
+                    #         hc_constants.VETO_COUNCIL_2
+                    #         if get(ogMessage.reactions, emoji=hc_constants.WOLF)
+                    #         else None
+                    #     )
+                    # )
                     await handleVetoPost(
                         message=vetoEntry,
                         bot=self.bot,
@@ -449,11 +450,13 @@ class LifecycleCog(commands.Cog):
                     if user.id == ctx.author.id:
                         hasReacted = False
 
-            emoji_toSend = (
-                hc_constants.CLOCK
-                if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
-                else hc_constants.WOLF
-            )
+            emoji_toSend = "PORTAL"
+
+            # (
+            #     hc_constants.CLOCK
+            #     if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
+            #     else hc_constants.WOLF
+            #  )
             if not hasReacted:
                 links.append(
                     f"{emoji_toSend} - {messageEntry.content}: {messageEntry.jump_url}"
@@ -529,9 +532,9 @@ class LifecycleCog(commands.Cog):
 
             acceptedCards.append(cardMessage)
 
-            set_to_add_to = "HC7.1"
+            set_to_add_to = "HCK"
 
-            channel_to_add_to = hc_constants.SEVEN_CARD_LIST
+            channel_to_add_to = hc_constants.PORTAL_LIST
 
             await acceptCard.acceptCard(
                 bot=self.bot,
@@ -612,11 +615,13 @@ class LifecycleCog(commands.Cog):
                         recentlyNotified = threadMessageAge < timedelta(days=1)
                         if not recentlyNotified:
 
-                            veto_council_to_notify = (
-                                hc_constants.VETO_COUNCIL
-                                if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
-                                else hc_constants.VETO_COUNCIL_2
-                            )
+                            veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
+
+                            # (
+                            #     hc_constants.VETO_COUNCIL
+                            #     if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
+                            #     else hc_constants.VETO_COUNCIL_2
+                            # )
 
                             role = cast(
                                 Role, get(guild.roles, id=veto_council_to_notify)
@@ -754,15 +759,18 @@ async def status_task(bot: commands.Bot):
 
     while True:
         status = random.choice(hc_constants.statusList)
-        await checkSubmissions(bot)
+        try:
+            await checkSubmissions(bot)
+        except Exception as e:
+            print(e)
         try:
             await checkMasterpieceSubmissions(bot)
         except Exception as e:
             print(e)
-        try:
-            await checkErrataSubmissions(bot)
-        except Exception as e:
-            print(e)
+        # try:
+        #     await checkErrataSubmissions(bot)
+        # except Exception as e:
+        #     print(e)
         try:
             await checkTokenSubmissions(bot)
         except Exception as e:

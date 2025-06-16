@@ -1,21 +1,20 @@
 from datetime import datetime, timedelta, timezone
-import io
-import json
-import os
-import random
-import re
+
 from typing import Dict, List, cast
-import aiohttp
-import discord
+
 from discord.ext import commands
 from discord.utils import get
 from cogs.HellscubeDatabase import searchFor
+
+authorSplit = "$#$#$"
+QUOTE_SPLIT = ";%;%;"
+from cogs.lifecycle import post_daily_submissions
 from getters import getBotTest, getSubmissionDiscussionChannel, getVetoChannel
 from handleVetoPost import handleVetoPost
 from isRealCard import isRealCard
 from printCardImages import send_image_reply
 from shared_vars import googleClient
-
+from shared_vars import drive
 
 from acceptCard import acceptCard
 from cardNameRequest import cardNameRequest
@@ -26,13 +25,31 @@ from is_mork import is_mork
 
 from shared_vars import intents, cardSheet, allCards
 
+from cogs.lifecycle.post_daily_submissions import post_daily_submissions
+
 
 class MiscCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    @commands.command()
+    async def test(
+        self,
+        ctx: commands.Context,
+    ):
+        if ctx.author.id == hc_constants.LLLLLL:
+            ...
+        else:
+            await ctx.send("no")
+
     # @commands.Cog.listener()
-    # async def on_ready(self):
+    # async def on_raw_reaction_add(self, reaction: discord.RawReactionActionEvent):
+    #     guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
+
+    #     channel = guild.get_channel_or_thread(reaction.channel_id)
+
+    #     print(type(channel), type(channel) == discord.TextChannel)
+
     #     print(
     #         f"{cast(discord.ClientUser,self.bot.user).name} has connected to Discord!"
     #     )
