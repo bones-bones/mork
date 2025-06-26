@@ -53,7 +53,6 @@ cardSet = [cell.value for cell in mainSheet.range(f"D{startIndex}:D{endIndex}")]
 def extend_card_borders(image_path: str) -> str:
     """
     Extends the borders of a card image with rounded corners.
-    If width < 750px, extends by 16px on each side; else by 64px.
     If the image already has white rounded corners, extends with white.
     Returns the path to the new image file.
     """
@@ -126,6 +125,81 @@ def extend_card_borders(image_path: str) -> str:
     return new_path
 
 
+def prepare_card_for_printing(image_path: str) -> str:
+    """
+    Prepares a Magic card image for printing:
+    1. Adds alpha channel if not present.
+    2. Removes background color (usually white/near-white corners).
+    3. Samples the border of the card and extends it outward to create a new border.
+    Returns the path to the new image file.
+    """
+    img = Image.open(image_path).convert("RGBA").copy()
+    width, height = img.size
+
+    width, height = img.size
+    if width <= 251:
+        border = 12
+    if width <= 300:  # don't talk to me or my son
+        border = 14
+    elif width <= 521:
+        border = 18
+    elif width <= 1000:
+        border = 32
+    else:
+        border = 64
+
+    # Detect background color by sampling corners
+    def is_bg(pixel, bg, tol=16):
+        return all(abs(c - b) <= tol for c, b in zip(pixel[:3], bg[:3])) and (
+            len(pixel) < 4 or pixel[3] > 200
+        )
+
+    corners = [
+        img.getpixel((0, 0)),
+        img.getpixel((width - 1, 0)),
+        img.getpixel((0, height - 1)),
+        img.getpixel((width - 1, height - 1)),
+    ]
+    # Use the most common color among corners as background
+    bg_color = max(set(corners), key=corners.count)
+
+    # Remove background (make transparent) using pixel access
+    px = img.load()
+    for y in range(height):
+        for x in range(width):
+            if is_bg(px[x, y], bg_color):
+                px[x, y] = (255, 255, 255, 0)  # transparent
+
+    # Create new image with extended border
+    new_width = width + border * 2
+    new_height = height + border * 2
+    new_img = Image.new("RGBA", (new_width, new_height), (255, 255, 255, 0))
+
+    # Paste original image in center
+    new_img.paste(img, (border, border), img)
+
+    # Sample border pixels and extend outward
+    for i in range(border):
+        # Top
+        row = img.crop((0, 0, width, 1))
+        new_img.paste(row, (border, i), row)
+        # Bottom
+        row = img.crop((0, height - 1, width, height))
+        new_img.paste(row, (border, new_height - i - 1), row)
+        # Left
+        col = img.crop((0, 0, 1, height))
+        new_img.paste(col, (i, border), col)
+        # Right
+        col = img.crop((width - 1, 0, width, height))
+        new_img.paste(col, (new_width - i - 1, border), col)
+
+    # Save to a new file
+    base, ext = os.path.splitext(image_path)
+    new_path = f"{base}_printready.png"
+    new_img.save(new_path)
+    return new_path
+
+
 # --- 2. Download images and upload to Drive ---
 results = []
 for name, primaryUrl in zip(cardNames, primaryUrls):
@@ -152,7 +226,7 @@ for name, primaryUrl in zip(cardNames, primaryUrls):
 
             image.save(parsedFileName, "png")
 
-        extend_card_borders(parsedFileName)
+        prepare_card_for_printing(parsedFileName)
 
         # oi put it back
         # uploaded = uploadToDrive(parsedFileName)
