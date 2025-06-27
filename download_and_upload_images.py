@@ -50,81 +50,6 @@ side4Urls = [cell.value for cell in mainSheet.range(f"AX{startIndex}:AX{endIndex
 cardSet = [cell.value for cell in mainSheet.range(f"D{startIndex}:D{endIndex}")]
 
 
-def extend_card_borders(image_path: str) -> str:
-    """
-    Extends the borders of a card image with rounded corners.
-    If the image already has white rounded corners, extends with white.
-    Returns the path to the new image file.
-    """
-    # 750, 16,64
-    img = Image.open(image_path).convert("RGBA")
-    width, height = img.size
-    if width <= 251:
-        border = 12
-    if width <= 300:  # don't talk to me or my son
-        border = 14
-    elif width <= 521:
-        border = 18
-    elif width <= 1000:
-        border = 32
-    else:
-        border = 64
-    new_width = width + border * 2
-    new_height = height + border * 2
-
-    # Detect if corners are white (tolerance for near-white)
-    def is_white(pixel, tol=16):
-        return all(c >= 255 - tol for c in pixel[:3]) and (
-            len(pixel) < 4 or pixel[3] > 200
-        )
-
-    corners = [
-        img.getpixel((0, 0)),
-        img.getpixel((width - 1, 0)),
-        img.getpixel((0, height - 1)),
-        img.getpixel((width - 1, height - 1)),
-    ]
-    corners_are_white = all(is_white(px) for px in corners)
-    border_color = (255, 255, 255, 255) if corners_are_white else (0, 0, 0, 0)
-
-    # Create new image with appropriate border color
-    new_img = Image.new("RGBA", (new_width, new_height), border_color)
-
-    # Create a rounded rectangle mask for the new image
-    mask = Image.new("L", (new_width, new_height), 0)
-    draw = ImageDraw.Draw(mask)
-    corner_radius = int(min(width, height) * 0.08)
-    draw.rounded_rectangle(
-        [(0, 0), (new_width - 1, new_height - 1)],
-        radius=corner_radius + border,
-        fill=255,
-    )
-
-    # Create a mask for the original image to trim its corners
-    orig_mask = Image.new("L", (width, height), 0)
-    orig_draw = ImageDraw.Draw(orig_mask)
-    orig_draw.rounded_rectangle(
-        [(0, 0), (width - 1, height - 1)],
-        radius=corner_radius,
-        fill=255,
-    )
-    # Apply the mask to the original image
-    trimmed_img = img.copy()
-    trimmed_img.putalpha(orig_mask)
-
-    # Paste the trimmed original image onto the center of the new image
-    new_img.paste(trimmed_img, (border, border), trimmed_img)
-    # Apply the rounded mask (only if not white corners)
-    if not corners_are_white:
-        new_img.putalpha(mask)
-
-    # Save to a new file
-    base, ext = os.path.splitext(image_path)
-    new_path = f"{base}.png"
-    new_img.save(new_path)
-    return new_path
-
-
 def prepare_card_for_printing(image_path: str) -> str:
     """
     Prepares a Magic card image for printing:
@@ -160,25 +85,29 @@ def prepare_card_for_printing(image_path: str) -> str:
         img.getpixel((0, height - 1)),
         img.getpixel((width - 1, height - 1)),
     ]
+
+    top_center_for_bg = img.getpixel((int(width / 2), 1))
     # Use the most common color among corners as background
-    bg_color = max(set(corners), key=corners.count)
+    corner_color = max(set(corners), key=corners.count)
 
     # Remove background (make transparent) using pixel access
-    px = img.load()
-    for y in range(height):
-        for x in range(width):
-            if is_bg(px[x, y], bg_color):
-                px[x, y] = (255, 255, 255, 0)  # transparent
+    print(corner_color)
+    if corner_color[0] != 0 and corner_color[1] != 0 and corner_color[2] != 0:
+        px = img.load()
+        for y in range(height):
+            for x in range(width):
+                if is_bg(px[x, y], corner_color):
+                    px[x, y] = (255, 255, 255, 0)  # transparent
 
     # Create new image with extended border
     new_width = width + border * 2
     new_height = height + border * 2
-    new_img = Image.new("RGBA", (new_width, new_height), (255, 255, 255, 0))
+    new_img = Image.new("RGBA", (new_width, new_height), top_center_for_bg)
 
     # Paste original image in center
     new_img.paste(img, (border, border), img)
 
-    # Sample border pixels and extend outward
+    # grab a pixel slice off the border pixels and extend
     for i in range(border):
         # Top
         row = img.crop((0, 0, width, 1))
@@ -195,7 +124,7 @@ def prepare_card_for_printing(image_path: str) -> str:
 
     # Save to a new file
     base, ext = os.path.splitext(image_path)
-    new_path = f"{base}_printready.png"
+    new_path = f"{base}.png"
     new_img.save(new_path)
     return new_path
 
