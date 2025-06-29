@@ -10,9 +10,7 @@ from shared_vars import drive
 from PIL import Image, ImageDraw
 
 
-DRIVE_FOLDER_ID = (
-    "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"  # TODO: Set this to your Drive folder ID
-)
+DRIVE_FOLDER_ID = "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"
 
 
 def uploadToDrive(path: str):
@@ -22,7 +20,6 @@ def uploadToDrive(path: str):
     return file["id"]
 
 
-# --- CONFIG ---
 SOURCE_SHEET_KEY = hc_constants.HELLSCUBE_DATABASE
 SOURCE_SHEET_NAME = "Database"
 
@@ -39,8 +36,8 @@ targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 
 targetSheet = targetDb.get_worksheet(0)
 
-startIndex = 2935  # 2925
-endIndex = 2940
+startIndex = 2925  # 2925
+endIndex = 3835  # 10
 cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
 side1Urls = [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
@@ -96,7 +93,10 @@ def prepare_card_for_printing(image_path: str) -> str:
         px = img.load()
         for y in range(height):
             for x in range(width):
-                if is_bg(px[x, y], corner_color):
+                if (y < border / 2 or y > height - border / 2) or (
+                    x < border / 2 or x > width - border / 2
+                ):
+                    # if is_bg(px[x, y], corner_color):
                     px[x, y] = (255, 255, 255, 0)  # transparent
 
     # Create new image with extended border
@@ -131,40 +131,49 @@ def prepare_card_for_printing(image_path: str) -> str:
 
 # --- 2. Download images and upload to Drive ---
 results = []
-for name, primaryUrl in zip(cardNames, primaryUrls):
-    if not primaryUrl:
+for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
+    cardNames, primaryUrls, side1Urls, side2Urls, side3Urls, side4Urls, cardSet
+):
+    if not (cardSet == "HC6" or cardSet == "HCC"):
         continue
+
+    sidesToPrint = (
+        [primaryUrl]
+        if side1Url == ""
+        else filter(lambda x: x != "", [side1Url, side2Url, side3Url, side4Url])
+    )
+
     try:
-        # Download image
-        response = requests.get(primaryUrl)
-        response.raise_for_status()
-        unparsedFileName = response.headers.get("Content-Disposition")
-        parsedFileName = cast(
-            str,
-            re.findall('inline;filename="(.*)"', str(unparsedFileName))[0],
-        )
+        for i, sideUrl in enumerate(sidesToPrint):
+            # Download image
+            response = requests.get(sideUrl)
+            response.raise_for_status()
+            unparsedFileName = response.headers.get("Content-Disposition")
+            parsedFileName = cast(
+                str,
+                re.findall('inline;filename="(.*)"', str(unparsedFileName))[0],
+            )
 
-        with open(parsedFileName, "wb") as file:
-            file.write(response.content)
+            with open(parsedFileName, "wb") as file:
+                file.write(response.content)
 
-        # convert to png if needed
-        if parsedFileName.endswith(".jpg"):
-            print("it di")
-            image = Image.open(parsedFileName)
-            parsedFileName = re.sub(r"\.jpg$", ".png", parsedFileName)
+            # convert to png if needed
+            if parsedFileName.endswith(".jpg"):
+                print("it di")
+                jpgnameToRemove = parsedFileName
+                image = Image.open(parsedFileName)
+                parsedFileName = re.sub(r"\.jpg$", ".png", parsedFileName)
 
-            image.save(parsedFileName, "png")
+                image.save(parsedFileName, "png")
+                os.remove(jpgnameToRemove)
 
-        prepare_card_for_printing(parsedFileName)
+            prepare_card_for_printing(parsedFileName)
 
-        # oi put it back
-        # uploaded = uploadToDrive(parsedFileName)
+            uploaded = uploadToDrive(parsedFileName)
 
-        # oi put it back
-        # targetSheet.append_row(list((name, getDriveUrl(uploaded))))
+            targetSheet.append_row(list((name, f"side {i+1}", getDriveUrl(uploaded))))
 
-        # oi put it back
-        # os.remove(parsedFileName)
+            # os.remove(parsedFileName)
 
     except Exception as e:
         print(f"Error processing {name}: {e}")
