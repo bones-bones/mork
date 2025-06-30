@@ -37,7 +37,7 @@ targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 targetSheet = targetDb.get_worksheet(0)
 
 startIndex = 2925  # 2925
-endIndex = 3835  # 10
+endIndex = 2925 + 10  # 3835  # 10
 cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
 side1Urls = [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
@@ -71,7 +71,7 @@ def prepare_card_for_printing(image_path: str) -> str:
         border = 64
 
     # Detect background color by sampling corners
-    def is_bg(pixel, bg, tol=16):
+    def is_bg(pixel, bg, tol=40):
         return all(abs(c - b) <= tol for c, b in zip(pixel[:3], bg[:3])) and (
             len(pixel) < 4 or pixel[3] > 200
         )
@@ -83,21 +83,23 @@ def prepare_card_for_printing(image_path: str) -> str:
         img.getpixel((width - 1, height - 1)),
     ]
 
-    top_center_for_bg = img.getpixel((int(width / 2), 1))
+    top_center_for_bg = img.getpixel((int(width / 2), 4))
     # Use the most common color among corners as background
     corner_color = max(set(corners), key=corners.count)
 
     # Remove background (make transparent) using pixel access
     print(corner_color)
-    if corner_color[0] != 0 and corner_color[1] != 0 and corner_color[2] != 0:
+    dimen = height * 0.0375
+    # if corner_color[0] != 0 or corner_color[1] != 0 or corner_color[2] != 0:
+    if corner_color[3] != 0:
         px = img.load()
         for y in range(height):
             for x in range(width):
-                if (y < border / 2 or y > height - border / 2) or (
-                    x < border / 2 or x > width - border / 2
+                if (y < dimen or y > height - dimen) and (
+                    x < dimen or x > width - dimen
                 ):
-                    # if is_bg(px[x, y], corner_color):
-                    px[x, y] = (255, 255, 255, 0)  # transparent
+                    if is_bg(px[x, y], corner_color):
+                        px[x, y] = (255, 255, 255, 0)  # transparent
 
     # Create new image with extended border
     new_width = width + border * 2
@@ -122,6 +124,14 @@ def prepare_card_for_printing(image_path: str) -> str:
         col = img.crop((width - 1, 0, width, height))
         new_img.paste(col, (new_width - i - 1, border), col)
 
+    draw = ImageDraw.Draw(new_img)
+    newBorderSize = border * 2.25
+    draw.circle(xy=(0, 0), radius=newBorderSize, fill=top_center_for_bg)
+    draw.circle(xy=(new_img.width, 0), radius=newBorderSize, fill=top_center_for_bg)
+    draw.circle(
+        xy=(new_img.width, new_img.height), radius=newBorderSize, fill=top_center_for_bg
+    )
+    draw.circle(xy=(0, new_img.height), radius=newBorderSize, fill=top_center_for_bg)
     # Save to a new file
     base, ext = os.path.splitext(image_path)
     new_path = f"{base}.png"
@@ -169,11 +179,12 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
 
             prepare_card_for_printing(parsedFileName)
 
-            uploaded = uploadToDrive(parsedFileName)
+    # add back
+    # uploaded = uploadToDrive(parsedFileName)
 
-            targetSheet.append_row(list((name, f"side {i+1}", getDriveUrl(uploaded))))
+    # targetSheet.append_row(list((name, f"side {i+1}", getDriveUrl(uploaded))))
 
-            # os.remove(parsedFileName)
+    # os.remove(parsedFileName)
 
     except Exception as e:
         print(f"Error processing {name}: {e}")
