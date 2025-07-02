@@ -509,6 +509,7 @@ class LifecycleCog(commands.Cog):
         acceptedCards: list[str] = []
 
         for messageEntry in acceptedCardMessages:
+            print(f"cvA processing {messageEntry.content}")
             file = await messageEntry.attachments[0].to_file()
             acceptanceMessage = messageEntry.content
             # consider putting most of this into acceptCard
@@ -554,6 +555,8 @@ class LifecycleCog(commands.Cog):
         for messageEntry in vetoCardMessages:
             file = await messageEntry.attachments[0].to_file()
 
+            print(f"cvV processing {messageEntry.content}")
+
             acceptanceMessage = messageEntry.content
             dbname = ""
             card_author = ""
@@ -587,6 +590,8 @@ class LifecycleCog(commands.Cog):
         needsErrataCards: list[str] = []
 
         for messageEntry in errataCardMessages:
+            print(f"cvE processing {messageEntry.content}")
+
             thread = guild.get_channel_or_thread(messageEntry.id)
             needsErrataCards.append(getCardMessage(messageEntry.content))
             await messageEntry.add_reaction(hc_constants.ACCEPT)
@@ -594,6 +599,7 @@ class LifecycleCog(commands.Cog):
                 await cast(Thread, thread).edit(archived=True)
 
         for messageEntry in purgatoryCardMessages:
+            print(f"cvP processing {messageEntry.content}")
             try:
                 messageAge = timeNow - messageEntry.created_at
                 if messageAge > timedelta(days=6):

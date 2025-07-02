@@ -1,3 +1,4 @@
+from functools import reduce
 import os
 import re
 from typing import cast
@@ -12,9 +13,33 @@ from PIL import Image, ImageDraw
 
 DRIVE_FOLDER_ID = "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"
 
+listing = drive.ListFile(
+    {"q": f"'{DRIVE_FOLDER_ID}' in parents and trashed=false"}
+).GetList()
 
-def uploadToDrive(path: str):
-    file = drive.CreateFile({"parents": [{"id": "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"}]})
+
+def mergeObject(curr, next):
+    curr[next["title"]] = next["id"]
+    return curr
+
+
+existingCardMappingObject = reduce(mergeObject, listing)
+
+
+def uploadToDrive(path: str, filename: str):
+    existingId = existingCardMappingObject[filename]
+    print(existingId)
+
+    if existingId:
+        file = drive.CreateFile(
+            {"id": existingId, "parents": [{"id": "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"}]}
+        )
+
+    else:
+        file = drive.CreateFile(
+            {"parents": [{"id": "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"}]}
+        )
+
     file.SetContentFile(path)
     file.Upload()
     return file["id"]
@@ -31,13 +56,12 @@ TARGET_SHEET_KEY = "1FdnGhkjxnOAbjBEeLGC_QDMVcmEjoOLiuEkM9MeiPFs"
 databaseSheets = googleClient.open_by_key(SOURCE_SHEET_KEY)
 mainSheet = databaseSheets.worksheet(SOURCE_SHEET_NAME)
 
-
 targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 
 targetSheet = targetDb.get_worksheet(0)
 
 startIndex = 2925  # 2925
-endIndex = 2925 + 10  # 3835  # 10
+endIndex = 3835  # 10
 cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
 side1Urls = [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
@@ -68,7 +92,7 @@ def prepare_card_for_printing(image_path: str) -> str:
     elif width <= 1000:
         border = 32
     else:
-        border = 64
+        border = 72
 
     # Detect background color by sampling corners
     def is_bg(pixel, bg, tol=40):
@@ -83,23 +107,49 @@ def prepare_card_for_printing(image_path: str) -> str:
         img.getpixel((width - 1, height - 1)),
     ]
 
-    top_center_for_bg = img.getpixel((int(width / 2), 4))
+    top_center_for_bg = img.getpixel((int(width / 2), 5))
     # Use the most common color among corners as background
     corner_color = max(set(corners), key=corners.count)
 
     # Remove background (make transparent) using pixel access
-    print(corner_color)
-    dimen = height * 0.0375
-    # if corner_color[0] != 0 or corner_color[1] != 0 or corner_color[2] != 0:
+
+    # dimen = height * 0.0375
+
+    # put back afte magic wand test
     if corner_color[3] != 0:
-        px = img.load()
-        for y in range(height):
-            for x in range(width):
-                if (y < dimen or y > height - dimen) and (
-                    x < dimen or x > width - dimen
-                ):
-                    if is_bg(px[x, y], corner_color):
-                        px[x, y] = (255, 255, 255, 0)  # transparent
+        #     px = img.load()
+        #     for y in range(height):
+        #         for x in range(width):
+        #             if (y < dimen or y > height - dimen) and (
+        #                 x < dimen or x > width - dimen
+        #             ):
+        #                 if is_bg(px[x, y], corner_color):
+        #                     px[x, y] = (255, 255, 255, 0)  # transparent
+
+        ImageDraw.floodfill(
+            img, (1, 1), (255, 255, 255, 0), border=top_center_for_bg, thresh=200
+        )
+        ImageDraw.floodfill(
+            img,
+            (1, height - 1),
+            (255, 255, 255, 0),
+            border=top_center_for_bg,
+            thresh=200,
+        )
+        ImageDraw.floodfill(
+            img,
+            (width - 1, height - 1),
+            (255, 255, 255, 0),
+            border=top_center_for_bg,
+            thresh=200,
+        )
+        ImageDraw.floodfill(
+            img,
+            (width - 1, 0),
+            (255, 255, 255, 0),
+            border=top_center_for_bg,
+            thresh=200,
+        )
 
     # Create new image with extended border
     new_width = width + border * 2
@@ -124,14 +174,14 @@ def prepare_card_for_printing(image_path: str) -> str:
         col = img.crop((width - 1, 0, width, height))
         new_img.paste(col, (new_width - i - 1, border), col)
 
-    draw = ImageDraw.Draw(new_img)
-    newBorderSize = border * 2.25
-    draw.circle(xy=(0, 0), radius=newBorderSize, fill=top_center_for_bg)
-    draw.circle(xy=(new_img.width, 0), radius=newBorderSize, fill=top_center_for_bg)
-    draw.circle(
-        xy=(new_img.width, new_img.height), radius=newBorderSize, fill=top_center_for_bg
-    )
-    draw.circle(xy=(0, new_img.height), radius=newBorderSize, fill=top_center_for_bg)
+    # draw = ImageDraw.Draw(new_img)
+    # newBorderSize = border * 2.1
+    # draw.circle(xy=(0, 0), radius=newBorderSize, fill=top_center_for_bg)
+    # draw.circle(xy=(new_img.width, 0), radius=newBorderSize, fill=top_center_for_bg)
+    # draw.circle(
+    #     xy=(new_img.width, new_img.height), radius=newBorderSize, fill=top_center_for_bg
+    # )
+    # draw.circle(xy=(0, new_img.height), radius=newBorderSize, fill=top_center_for_bg)
     # Save to a new file
     base, ext = os.path.splitext(image_path)
     new_path = f"{base}.png"
@@ -179,10 +229,12 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
 
             prepare_card_for_printing(parsedFileName)
 
-    # add back
-    # uploaded = uploadToDrive(parsedFileName)
-
-    # targetSheet.append_row(list((name, f"side {i+1}", getDriveUrl(uploaded))))
+            # add back
+            uploaded = uploadToDrive(parsedFileName, parsedFileName)
+            if not existingCardMappingObject[parsedFileName]:
+                targetSheet.append_row(
+                    list((name, f"side {i+1}", getDriveUrl(uploaded)))
+                )
 
     # os.remove(parsedFileName)
 

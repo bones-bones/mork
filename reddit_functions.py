@@ -18,7 +18,7 @@ async def post_to_reddit(image_path: str, title: str, flair: str = ""):
     await hellscubeSubreddit.submit_image(
         title=title, image_path=image_path, flair_id=flair
     )
-    return reddit.close()
+    return await reddit.close()
 
 
 async def post_gallery_to_reddit(
