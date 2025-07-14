@@ -12,3 +12,4 @@ dpymenus
 google-api-python-client
 asyncpraw==7.7.1
 thefuzz
+pillow

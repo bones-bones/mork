@@ -191,6 +191,7 @@ class LifecycleCog(commands.Cog):
             ):
                 await message.add_reaction(hc_constants.VOTE_UP)
                 await message.add_reaction(hc_constants.VOTE_DOWN)
+
             case hc_constants.REDDIT_CHANNEL:
                 lastTwo = [mess async for mess in message.channel.history(limit=2)]
                 if (
@@ -270,65 +271,98 @@ class LifecycleCog(commands.Cog):
                 await message.delete()
 
             case hc_constants.SUBMISSIONS_CHANNEL:
-                if len(message.attachments) > 0:
-                    if message.content == "":
-                        discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                        await discussionChannel.send(
-                            f"<@{message.author.id}>, make sure to include the name of your card"
-                        )
-                        await message.delete()
-                        return
-                    splitString = message.content.split("\n")
-                    cardName = splitString[0]
-                    if "@" in cardName:
-                        # No ping case
-                        user = await self.bot.fetch_user(message.author.id)
-                        await user.send(
-                            'No "@" are allowed in card title submissions to prevent me from spamming'
-                        )
-                        return  # no pings allowed
-                    author = message.author.mention
-                    print(f"{cardName} submitted by {message.author.mention}")
+                if len(message.attachments) == 0:
+                    return
 
-                    if splitString.__len__() > 1:
-                        author = "; ".join(
-                            [f"<@{str(raw)}>" for raw in message.raw_mentions]
-                        )
-
-                    file = await message.attachments[0].to_file()
-                    if reasonableCard():
-                        vetoChannel = getVetoChannel(bot=self.bot)
-                        acceptedChannel = getSubmissionDiscussionChannel(self.bot)
-                        logChannel = getMorkSubmissionsLoggingChannel(self.bot)
-                        acceptContent = cardName + " by " + author + " was accepted"
-                        accepted_message_no_mentions = acceptContent
-                        for index, mentionEntry in enumerate(message.raw_mentions):
-                            accepted_message_no_mentions = (
-                                accepted_message_no_mentions.replace(
-                                    f"<@{str(mentionEntry)}>",
-                                    message.mentions[index].name,
-                                )
-                            )
-                        copy = await message.attachments[0].to_file()
-                        await vetoChannel.send(
-                            content=cardName + " by " + message.author.name, file=copy
-                        )
-                        copy2 = await message.attachments[0].to_file()
-                        logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
-                        await acceptedChannel.send(content=f"✨✨ {acceptContent} ✨✨")
-                        await acceptedChannel.send(content="", file=file)
-                        await logChannel.send(content=logContent, file=copy2)
-                    else:
-                        contentMessage = f"{cardName} by {author}"
-                        sentMessage = await message.channel.send(
-                            content=contentMessage, file=file
-                        )
-                        await sentMessage.add_reaction(hc_constants.VOTE_UP)
-                        await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
-                        await sentMessage.add_reaction(hc_constants.DELETE)
-
-                        await sentMessage.create_thread(name=cardName[0:99])
+                if message.content == "":
+                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, make sure to include the name of your card"
+                    )
                     await message.delete()
+                    return
+
+                splitString = message.content.split("\n")
+                cardName = splitString[0]
+                if "@" in cardName:
+                    # No ping case
+                    user = await self.bot.fetch_user(message.author.id)
+                    await user.send(
+                        'No "@" are allowed in card title submissions to prevent me from spamming'
+                    )
+                    return  # no pings allowed
+                author = message.author.mention
+
+                print(f"{cardName} submitted by {message.author.mention}")
+
+                if splitString.__len__() > 1:
+                    author = "; ".join(
+                        [f"<@{str(raw)}>" for raw in message.raw_mentions]
+                    )
+
+                with open("../mork-state", "r") as file:
+                    lines = file.readlines()
+                    for line in lines:
+                        if line.startswith(f"{message.author.id}—"):
+                            tempDate = datetime.strptime(
+                                line.split("—")[1].replace("\n", ""),
+                                "%Y-%m-%dT%H:%M:%S%z",
+                            )
+
+                            timeSinceLast = (
+                                (
+                                    datetime.now(tz=timezone.utc) - tempDate
+                                ).total_seconds()
+                            ) / (60 * 60)
+
+                            if timeSinceLast < 24:
+                                discussionChannel = getSubmissionDiscussionChannel(
+                                    self.bot
+                                )
+                                await discussionChannel.send(
+                                    f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait 24 hours between submitting cards"
+                                )
+                                await message.delete()
+                                return
+                with open("../mork-state", "a") as file:
+                    file.write(
+                        f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
+                    )
+
+                file = await message.attachments[0].to_file()
+                if reasonableCard():
+                    vetoChannel = getVetoChannel(bot=self.bot)
+                    acceptedChannel = getSubmissionDiscussionChannel(self.bot)
+                    logChannel = getMorkSubmissionsLoggingChannel(self.bot)
+                    acceptContent = cardName + " by " + author + " was accepted"
+                    accepted_message_no_mentions = acceptContent
+                    for index, mentionEntry in enumerate(message.raw_mentions):
+                        accepted_message_no_mentions = (
+                            accepted_message_no_mentions.replace(
+                                f"<@{str(mentionEntry)}>",
+                                message.mentions[index].name,
+                            )
+                        )
+                    copy = await message.attachments[0].to_file()
+                    await vetoChannel.send(
+                        content=cardName + " by " + message.author.name, file=copy
+                    )
+                    copy2 = await message.attachments[0].to_file()
+                    logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
+                    await acceptedChannel.send(content=f"✨✨ {acceptContent} ✨✨")
+                    await acceptedChannel.send(content="", file=file)
+                    await logChannel.send(content=logContent, file=copy2)
+                else:
+                    contentMessage = f"{cardName} by {author}"
+                    sentMessage = await message.channel.send(
+                        content=contentMessage, file=file
+                    )
+                    await sentMessage.add_reaction(hc_constants.VOTE_UP)
+                    await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
+                    await sentMessage.add_reaction(hc_constants.DELETE)
+
+                    await sentMessage.create_thread(name=cardName[0:99])
+                await message.delete()
 
             case hc_constants.MASTERPIECE_CHANNEL:
                 if len(message.attachments) > 0:
@@ -403,6 +437,38 @@ class LifecycleCog(commands.Cog):
                         await sentMessage.create_thread(name=message.content[0:99])
                     await message.delete()
 
+            case hc_constants.BOT_TEST_CHANNEL:
+                with open("../mork-state", "r") as file:
+                    lines = file.readlines()
+                    for line in lines:
+                        if line.startswith(f"{message.author.id}—"):
+                            tempDate = datetime.strptime(
+                                line.split("—")[1].replace("\n", ""),
+                                "%Y-%m-%dT%H:%M:%S%z",
+                            )
+
+                            timeSinceLast = (
+                                (
+                                    datetime.now(tz=timezone.utc) - tempDate
+                                ).total_seconds()
+                            ) / (60 * 60)
+
+                            if timeSinceLast < 24:
+                                # discussionChannel = getSubmissionDiscussionChannel(
+                                #     self.bot
+                                # )
+                                # await discussionChannel.send(
+                                #     f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait 24 hours between submitting cards"
+                                # )
+                                # await message.delete()
+                                print(
+                                    f"{message.author.name} posted again within 24 hours"
+                                )
+                                return
+                with open("../mork-state", "a") as file:
+                    file.write(
+                        f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
+                    )
             case _:
                 pass
 
@@ -735,6 +801,28 @@ async def setup(bot: commands.Bot):
 FIVE_MINUTES = 300
 
 
+def reset_countdowns():
+    linesToWrite = ""
+    with open("../mork-state", "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            print(line)
+            tempDate = datetime.strptime(
+                line.split("—")[1].replace("\n", ""),
+                "%Y-%m-%dT%H:%M:%S%z",
+            )
+
+            timeSinceLast = (
+                (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
+            ) / (60 * 60)
+            print(timeSinceLast)
+
+            if timeSinceLast <= 24:
+                linesToWrite += f"{line}"
+    with open("../mork-state", "w") as file:
+        file.write(linesToWrite)
+
+
 async def status_task(bot: commands.Bot):
     async def post_reddit_card_of_the_day():
         nowtime = datetime.now().date()
@@ -766,6 +854,10 @@ async def status_task(bot: commands.Bot):
     while True:
         status = random.choice(hc_constants.statusList)
         try:
+            reset_countdowns()
+        except Exception as e:
+            print(e)
+        try:
             await checkSubmissions(bot)
         except Exception as e:
             print(e)
@@ -791,7 +883,10 @@ async def status_task(bot: commands.Bot):
         now = datetime.now()
         print(f"time is {now}")
         if now.hour == 10 and now.minute <= 4:
-            await post_reddit_card_of_the_day()
+            try:
+                await post_reddit_card_of_the_day()
+            except Exception as e:
+                print(e)
         if now.hour == 4 and now.minute <= 4:
             try:
                 await post_daily_submissions(bot)

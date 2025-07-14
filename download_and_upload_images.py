@@ -23,17 +23,18 @@ def mergeObject(curr, next):
     return curr
 
 
-existingCardMappingObject = reduce(mergeObject, listing)
+existingCardMappingObject = reduce(mergeObject, listing, {})
 
 
 def uploadToDrive(path: str, filename: str):
-    existingId = existingCardMappingObject[filename]
-    print(existingId)
+    existingId = (
+        existingCardMappingObject[filename]
+        if filename in existingCardMappingObject
+        else None
+    )
 
     if existingId:
-        file = drive.CreateFile(
-            {"id": existingId, "parents": [{"id": "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"}]}
-        )
+        file = drive.CreateFile({"id": existingId})
 
     else:
         file = drive.CreateFile(
@@ -73,7 +74,7 @@ cardSet = [cell.value for cell in mainSheet.range(f"D{startIndex}:D{endIndex}")]
 
 def prepare_card_for_printing(image_path: str) -> str:
     """
-    Prepares a Magic card image for printing:
+    Prepares a scube card image for printing:
     1. Adds alpha channel if not present.
     2. Removes background color (usually white/near-white corners).
     3. Samples the border of the card and extends it outward to create a new border.
@@ -85,14 +86,16 @@ def prepare_card_for_printing(image_path: str) -> str:
     width, height = img.size
     if width <= 251:
         border = 12
-    if width <= 300:  # don't talk to me or my son
-        border = 14
+    if width <= 320:  # don't talk to me or my son
+        border = 16
     elif width <= 521:
-        border = 18
+        border = 24
     elif width <= 1000:
         border = 32
+    elif width <= 1100:
+        border = 48
     else:
-        border = 72
+        border = 64
 
     # Detect background color by sampling corners
     def is_bg(pixel, bg, tol=40):
@@ -108,48 +111,82 @@ def prepare_card_for_printing(image_path: str) -> str:
     ]
 
     top_center_for_bg = img.getpixel((int(width / 2), 5))
-    # Use the most common color among corners as background
     corner_color = max(set(corners), key=corners.count)
 
     # Remove background (make transparent) using pixel access
-
-    # dimen = height * 0.0375
-
+    print(
+        corners,
+        corner_color,
+        corner_color[3] != 0,
+        corners[0] == corners[1],
+        corners[1] == corners[2],
+        corners[2] == corners[3],
+    )
     # put back afte magic wand test
-    if corner_color[3] != 0:
-        #     px = img.load()
-        #     for y in range(height):
-        #         for x in range(width):
-        #             if (y < dimen or y > height - dimen) and (
-        #                 x < dimen or x > width - dimen
-        #             ):
-        #                 if is_bg(px[x, y], corner_color):
-        #                     px[x, y] = (255, 255, 255, 0)  # transparent
+    # if (
+    #     corner_color[3] != 0
+    #     and corners[0] == corners[1]
+    #     and corners[1] == corners[2]
+    #     and corners[2] == corners[3]
+    # ):
+    #     #     px = img.load()
+    #     #     for y in range(height):
+    #     #         for x in range(width):
+    #     #             if (y < dimen or y > height - dimen) and (
+    #     #                 x < dimen or x > width - dimen
+    #     #             ):
+    #     #                 if is_bg(px[x, y], corner_color):
+    #     #                     px[x, y] = (255, 255, 255, 0)  # transparent
 
-        ImageDraw.floodfill(
-            img, (1, 1), (255, 255, 255, 0), border=top_center_for_bg, thresh=200
-        )
-        ImageDraw.floodfill(
-            img,
-            (1, height - 1),
-            (255, 255, 255, 0),
-            border=top_center_for_bg,
-            thresh=200,
-        )
-        ImageDraw.floodfill(
-            img,
-            (width - 1, height - 1),
-            (255, 255, 255, 0),
-            border=top_center_for_bg,
-            thresh=200,
-        )
-        ImageDraw.floodfill(
-            img,
-            (width - 1, 0),
-            (255, 255, 255, 0),
-            border=top_center_for_bg,
-            thresh=200,
-        )
+    #     ImageDraw.floodfill(
+    #         img, (1, 1), (0, 0, 0, 0), border=top_center_for_bg, thresh=250
+    #     )
+    #     ImageDraw.floodfill(
+    #         img,
+    #         (1, height - 1),
+    #         (0, 0, 0, 0),
+    #         border=top_center_for_bg,
+    #         thresh=250,
+    #     )
+    #     ImageDraw.floodfill(
+    #         img,
+    #         (width - 1, height - 1),
+    #         (0, 0, 0, 0),
+    #         border=top_center_for_bg,
+    #         thresh=250,
+    #     )
+    #     ImageDraw.floodfill(
+    #         img,
+    #         (width - 1, 1),
+    #         (0, 0, 0, 0),
+    #         border=top_center_for_bg,
+    #         thresh=250,
+    #     )
+
+    # Draw equilateral triangles in each corner
+    draw = ImageDraw.Draw(img)
+    # Top-left
+    draw.polygon(
+        [(0, 0), (border, 0), (0, border)],
+        fill=top_center_for_bg,  # img.getpixel((int(border / 3), int(border / 3))),
+    )
+
+    # tr
+    draw.polygon(
+        [(width, 0), (width, border), (width - border, 0)],
+        fill=top_center_for_bg,  # img.getpixel((width - int(border / 3), int(border / 3))),
+    )
+
+    # bottom left
+    draw.polygon(
+        [(0, height), (border, height), (0, height - border)],
+        fill=top_center_for_bg,  # img.getpixel((int(border / 3), height - int(border / 3))),
+    )
+    # bottom right
+    draw.polygon(
+        [(width, height), (width - border, height), (width, height - border)],
+        fill=top_center_for_bg,  # img.getpixel((width - int(border / 3), height - int(border / 3))),
+    )
 
     # Create new image with extended border
     new_width = width + border * 2
@@ -174,14 +211,30 @@ def prepare_card_for_printing(image_path: str) -> str:
         col = img.crop((width - 1, 0, width, height))
         new_img.paste(col, (new_width - i - 1, border), col)
 
-    # draw = ImageDraw.Draw(new_img)
-    # newBorderSize = border * 2.1
-    # draw.circle(xy=(0, 0), radius=newBorderSize, fill=top_center_for_bg)
-    # draw.circle(xy=(new_img.width, 0), radius=newBorderSize, fill=top_center_for_bg)
-    # draw.circle(
-    #     xy=(new_img.width, new_img.height), radius=newBorderSize, fill=top_center_for_bg
-    # )
-    # draw.circle(xy=(0, new_img.height), radius=newBorderSize, fill=top_center_for_bg)
+    # Draw equilateral triangles in each corner
+    draw = ImageDraw.Draw(new_img)
+    # Top-left
+    draw.polygon([(0, 0), (border, 0), (0, border)], fill=top_center_for_bg)
+    # Top-right
+    draw.polygon(
+        [(new_width, 0), (new_width - border, 0), (new_width, border)],
+        fill=top_center_for_bg,
+    )
+    # Bottom-left
+    draw.polygon(
+        [(0, new_height), (border, new_height), (0, new_height - border)],
+        fill=top_center_for_bg,
+    )
+    # Bottom-right
+    draw.polygon(
+        [
+            (new_width, new_height),
+            (new_width - border, new_height),
+            (new_width, new_height - border),
+        ],
+        fill=top_center_for_bg,
+    )
+
     # Save to a new file
     base, ext = os.path.splitext(image_path)
     new_path = f"{base}.png"
@@ -227,14 +280,15 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
                 image.save(parsedFileName, "png")
                 os.remove(jpgnameToRemove)
 
+            print(parsedFileName)
             prepare_card_for_printing(parsedFileName)
 
             # add back
-            uploaded = uploadToDrive(parsedFileName, parsedFileName)
-            if not existingCardMappingObject[parsedFileName]:
-                targetSheet.append_row(
-                    list((name, f"side {i+1}", getDriveUrl(uploaded)))
-                )
+            # uploaded = uploadToDrive(parsedFileName, parsedFileName)
+            # if not parsedFileName in existingCardMappingObject:
+            #     targetSheet.append_row(
+            #         list((name, f"side {i+1}", getDriveUrl(uploaded)))
+            #     )
 
     # os.remove(parsedFileName)
 
