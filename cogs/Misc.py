@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from typing import Dict, List, cast
 
 from discord import TextChannel
+import discord
 from discord.ext import commands
 from discord.utils import get
 from cogs.HellscubeDatabase import searchFor
@@ -32,6 +33,27 @@ from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 class MiscCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    # @commands.Cog.listener()
+    # async def on_message(self, message: discord.Message):
+
+    # if message.channel.id == hc_constants.BOT_TEST_CHANNEL:
+    #     with open("../mork-state", "r") as file:
+    #         lines = file.readlines()
+    #         for line in lines:
+    #             if line.startswith(f"{message.author.id}—"):
+    #                 print("NOPE", line.split("—")[1])
+    #                 tempDate = datetime.strptime(
+    #                     line.split("—")[1].replace("\n", ""), "%Y-%m-%dT%H:%M:%S%z"
+    #                 )
+
+    #                 timeSinceLast = (datetime.now(tz=timezone.utc) - tempDate).days
+    #                 if timeSinceLast == 0:
+    #                     return False
+    #     with open("../mork-state", "a") as file:
+    #         file.write(
+    #             f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
+    #         )
 
 
 #     @commands.Cog.listener()
@@ -97,9 +119,7 @@ class MiscCog(commands.Cog):
 #         url=result.img(), cardname=result.name(), text=None, message=ctx.message
 #     )
 
-# @commands.Cog.listener()
-# async def on_message(self, message: discord.Message):
-#     if message.channel.id == hc_constants.BOT_TEST_CHANNEL:
+
 #         wholeMessage = message.content.split("\n")
 #         submissionDiscussion = getSubmissionDiscussionChannel(self.bot)
 #         if wholeMessage.__len__() != 2:

@@ -61,8 +61,8 @@ targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 
 targetSheet = targetDb.get_worksheet(0)
 
-startIndex = 2925  # 2925
-endIndex = 3835  # 10
+startIndex = 5025  # 2925
+endIndex = 5025  # 10
 cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
 side1Urls = [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
@@ -104,9 +104,9 @@ def prepare_card_for_printing(image_path: str) -> str:
         )
 
     corners = [
-        img.getpixel((0, 0)),
-        img.getpixel((width - 1, 0)),
-        img.getpixel((0, height - 1)),
+        img.getpixel((1, 1)),
+        img.getpixel((width - 1, 1)),
+        img.getpixel((1, height - 1)),
         img.getpixel((width - 1, height - 1)),
     ]
 
@@ -115,20 +115,78 @@ def prepare_card_for_printing(image_path: str) -> str:
 
     # Remove background (make transparent) using pixel access
     print(
-        corners,
-        corner_color,
-        corner_color[3] != 0,
-        corners[0] == corners[1],
-        corners[1] == corners[2],
-        corners[2] == corners[3],
+        corner_color[3],
+        corners[0],
+        min(
+            color_diff(corners[0], (255, 255, 255, 255)),
+            color_diff(corners[0], (0, 0, 0, 0)),
+        ),
+        min(
+            color_diff(corners[1], (255, 255, 255, 255)),
+            color_diff(corners[1], (0, 0, 0, 0)),
+        ),
+        min(
+            color_diff(corners[2], (255, 255, 255, 255)),
+            color_diff(corners[2], (0, 0, 0, 0)),
+        ),
+        min(
+            color_diff(corners[3], (255, 255, 255, 255)),
+            color_diff(corners[3], (0, 0, 0, 0)),
+        ),
+        color_diff(corners[0], top_center_for_bg),
     )
-    # put back afte magic wand test
-    # if (
-    #     corner_color[3] != 0
-    #     and corners[0] == corners[1]
-    #     and corners[1] == corners[2]
-    #     and corners[2] == corners[3]
-    # ):
+    # put back after magic wand test
+    if (
+        corner_color[3] != 0
+        and min(
+            color_diff(corners[0], (255, 255, 255, 255)),
+            color_diff(corners[0], (0, 0, 0, 0)),
+        )
+        < 35
+        and min(
+            color_diff(corners[1], (255, 255, 255, 255)),
+            color_diff(corners[1], (0, 0, 0, 0)),
+        )
+        < 35
+        and min(
+            color_diff(corners[2], (255, 255, 255, 255)),
+            color_diff(corners[2], (0, 0, 0, 0)),
+        )
+        < 35
+        and min(
+            color_diff(corners[3], (255, 255, 255, 255)),
+            color_diff(corners[3], (0, 0, 0, 0)),
+        )
+        < 35
+        # and color_diff(corners[1], corners[2]) < 10
+        # and color_diff(corners[2], corners[3]) < 10
+        and color_diff(corners[0], top_center_for_bg) > 200
+    ):
+
+        # Draw equilateral triangles in each corner
+        draw = ImageDraw.Draw(img)
+        # Top-left
+        draw.polygon(
+            [(0, 0), (border, 0), (0, border)],
+            fill=top_center_for_bg,  # img.getpixel((int(border / 3), int(border / 3))),
+        )
+
+        # tr
+        draw.polygon(
+            [(width, 0), (width, border), (width - border, 0)],
+            fill=top_center_for_bg,  # img.getpixel((width - int(border / 3), int(border / 3))),
+        )
+
+        # bottom left
+        draw.polygon(
+            [(0, height), (border, height), (0, height - border)],
+            fill=top_center_for_bg,  # img.getpixel((int(border / 3), height - int(border / 3))),
+        )
+        # bottom right
+        draw.polygon(
+            [(width, height), (width - border, height), (width, height - border)],
+            fill=top_center_for_bg,  # img.getpixel((width - int(border / 3), height - int(border / 3))),
+        )
     #     #     px = img.load()
     #     #     for y in range(height):
     #     #         for x in range(width):
@@ -163,35 +221,10 @@ def prepare_card_for_printing(image_path: str) -> str:
     #         thresh=250,
     #     )
 
-    # Draw equilateral triangles in each corner
-    draw = ImageDraw.Draw(img)
-    # Top-left
-    draw.polygon(
-        [(0, 0), (border, 0), (0, border)],
-        fill=top_center_for_bg,  # img.getpixel((int(border / 3), int(border / 3))),
-    )
-
-    # tr
-    draw.polygon(
-        [(width, 0), (width, border), (width - border, 0)],
-        fill=top_center_for_bg,  # img.getpixel((width - int(border / 3), int(border / 3))),
-    )
-
-    # bottom left
-    draw.polygon(
-        [(0, height), (border, height), (0, height - border)],
-        fill=top_center_for_bg,  # img.getpixel((int(border / 3), height - int(border / 3))),
-    )
-    # bottom right
-    draw.polygon(
-        [(width, height), (width - border, height), (width, height - border)],
-        fill=top_center_for_bg,  # img.getpixel((width - int(border / 3), height - int(border / 3))),
-    )
-
     # Create new image with extended border
     new_width = width + border * 2
     new_height = height + border * 2
-    new_img = Image.new("RGBA", (new_width, new_height), top_center_for_bg)
+    new_img = Image.new("RGB", (new_width, new_height), top_center_for_bg)
 
     # Paste original image in center
     new_img.paste(img, (border, border), img)
@@ -242,6 +275,15 @@ def prepare_card_for_printing(image_path: str) -> str:
     return new_path
 
 
+def color_diff(
+    c1: tuple[float, float, float, float], c2: tuple[float, float, float, float]
+) -> float:
+    """
+    Returns the sum of absolute differences between two RGBA color tuples.
+    """
+    return sum(abs(a - b) for a, b in zip(c1, c2))
+
+
 # --- 2. Download images and upload to Drive ---
 results = []
 for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
@@ -284,13 +326,15 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
             prepare_card_for_printing(parsedFileName)
 
             # add back
-            # uploaded = uploadToDrive(parsedFileName, parsedFileName)
-            # if not parsedFileName in existingCardMappingObject:
-            #     targetSheet.append_row(
-            #         list((name, f"side {i+1}", getDriveUrl(uploaded)))
-            #     )
+            uploaded = uploadToDrive(parsedFileName, parsedFileName)
 
-    # os.remove(parsedFileName)
+            if not parsedFileName in existingCardMappingObject:
+                print(parsedFileName, existingCardMappingObject, "!!!")
+                targetSheet.append_row(
+                    list((name, f"side {i+1}", getDriveUrl(uploaded)))
+                )
+
+            os.remove(parsedFileName)
 
     except Exception as e:
         print(f"Error processing {name}: {e}")
