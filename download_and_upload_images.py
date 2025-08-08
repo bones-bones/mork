@@ -3,7 +3,6 @@ import os
 import re
 from typing import cast
 import requests
-import tempfile
 from is_mork import getDriveUrl
 from shared_vars import googleClient
 import hc_constants
@@ -47,7 +46,7 @@ def uploadToDrive(path: str, filename: str):
 
 
 SOURCE_SHEET_KEY = hc_constants.HELLSCUBE_DATABASE
-SOURCE_SHEET_NAME = "Database"
+SOURCE_SHEET_NAME = "Tokens Database"  # "Database"
 
 
 TARGET_SHEET_NAME = "PrintableDb"
@@ -61,15 +60,26 @@ targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 
 targetSheet = targetDb.get_worksheet(0)
 
-startIndex = 5025  # 2925
-endIndex = 5025  # 10
+startIndex = 970  # 2925
+endIndex = 1149  # 10
 cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
-side1Urls = [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
-side2Urls = [cell.value for cell in mainSheet.range(f"AD{startIndex}:AD{endIndex}")]
-side3Urls = [cell.value for cell in mainSheet.range(f"AN{startIndex}:AN{endIndex}")]
-side4Urls = [cell.value for cell in mainSheet.range(f"AX{startIndex}:AX{endIndex}")]
-cardSet = [cell.value for cell in mainSheet.range(f"D{startIndex}:D{endIndex}")]
+
+side1Urls = [
+    ""
+] * 1150  # [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
+side2Urls = [
+    ""
+] * 1150  # [cell.value for cell in mainSheet.range(f"AD{startIndex}:AD{endIndex}")]
+side3Urls = [
+    ""
+] * 1150  # [cell.value for cell in mainSheet.range(f"AN{startIndex}:AN{endIndex}")]
+side4Urls = [
+    ""
+] * 1150  # [cell.value for cell in mainSheet.range(f"AX{startIndex}:AX{endIndex}")]
+cardSet = [
+    ""
+] * 1150  # [cell.value for cell in mainSheet.range(f"D{startIndex}:D{endIndex}")]
 
 
 def prepare_card_for_printing(image_path: str) -> str:
@@ -289,8 +299,10 @@ results = []
 for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
     cardNames, primaryUrls, side1Urls, side2Urls, side3Urls, side4Urls, cardSet
 ):
-    if not (cardSet == "HC6" or cardSet == "HCC"):
-        continue
+    print(name)
+    # TODO put back
+    # if not (cardSet == "HC6" or cardSet == "HCC"):
+    #     continue
 
     sidesToPrint = (
         [primaryUrl]
