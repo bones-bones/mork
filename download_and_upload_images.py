@@ -59,9 +59,9 @@ mainSheet = databaseSheets.worksheet(SOURCE_SHEET_NAME)
 targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 
 targetSheet = targetDb.get_worksheet(0)
-
-startIndex = 970  # 2925
-endIndex = 1149  # 10
+# do 176
+startIndex = 600  # 2925
+endIndex = 600  # 1149  # 10
 cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
 
@@ -299,7 +299,7 @@ results = []
 for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
     cardNames, primaryUrls, side1Urls, side2Urls, side3Urls, side4Urls, cardSet
 ):
-    print(name)
+    print("name", name)
     # TODO put back
     # if not (cardSet == "HC6" or cardSet == "HCC"):
     #     continue
@@ -320,13 +320,23 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
                 str,
                 re.findall('inline;filename="(.*)"', str(unparsedFileName))[0],
             )
+            print(parsedFileName)
+            parsedFileName = (
+                cast(str, name).replace("/", "|") + ".png"
+                if ".png" in parsedFileName
+                else cast(str, name).replace("/", "|") + ".jpg"
+            )
+            #     name + parsedFileName
+            #     if (parsedFileName == ".png" or parsedFileName == ".jpg")
+            #     else parsedFileName
+            # )
 
             with open(parsedFileName, "wb") as file:
                 file.write(response.content)
 
             # convert to png if needed
             if parsedFileName.endswith(".jpg"):
-                print("it di")
+                print("jpg conversion path")
                 jpgnameToRemove = parsedFileName
                 image = Image.open(parsedFileName)
                 parsedFileName = re.sub(r"\.jpg$", ".png", parsedFileName)
@@ -341,7 +351,7 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
             uploaded = uploadToDrive(parsedFileName, parsedFileName)
 
             if not parsedFileName in existingCardMappingObject:
-                print(parsedFileName, existingCardMappingObject, "!!!")
+                # print(parsedFileName, existingCardMappingObject, "!!!")
                 targetSheet.append_row(
                     list((name, f"side {i+1}", getDriveUrl(uploaded)))
                 )

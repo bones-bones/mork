@@ -75,7 +75,7 @@ class LifecycleCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
         await member.send(
-            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC6, a commander cube, and have moved to HC7, a cube. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC7, a purple cube, and have moved to HC8, a Legacy Cube with archetypes. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
         )
 
     @commands.Cog.listener()
@@ -143,7 +143,7 @@ class LifecycleCog(commands.Cog):
                         file=copy_of_file_for_veto_channel,
                     )
 
-                    veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
+                    veto_council_to_notify = hc_constants.VETO_COUNCIL
                     # (
                     #     hc_constants.VETO_COUNCIL
                     #     if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
@@ -315,12 +315,12 @@ class LifecycleCog(commands.Cog):
                                 ).total_seconds()
                             ) / (60 * 60)
 
-                            if timeSinceLast < 24:
+                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN:
                                 discussionChannel = getSubmissionDiscussionChannel(
                                     self.bot
                                 )
                                 await discussionChannel.send(
-                                    f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait 24 hours between submitting cards"
+                                    f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards"
                                 )
                                 await message.delete()
                                 return
@@ -437,38 +437,6 @@ class LifecycleCog(commands.Cog):
                         await sentMessage.create_thread(name=message.content[0:99])
                     await message.delete()
 
-            case hc_constants.BOT_TEST_CHANNEL:
-                with open("../mork-state", "r") as file:
-                    lines = file.readlines()
-                    for line in lines:
-                        if line.startswith(f"{message.author.id}—"):
-                            tempDate = datetime.strptime(
-                                line.split("—")[1].replace("\n", ""),
-                                "%Y-%m-%dT%H:%M:%S%z",
-                            )
-
-                            timeSinceLast = (
-                                (
-                                    datetime.now(tz=timezone.utc) - tempDate
-                                ).total_seconds()
-                            ) / (60 * 60)
-
-                            if timeSinceLast < 24:
-                                # discussionChannel = getSubmissionDiscussionChannel(
-                                #     self.bot
-                                # )
-                                # await discussionChannel.send(
-                                #     f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait 24 hours between submitting cards"
-                                # )
-                                # await message.delete()
-                                print(
-                                    f"{message.author.name} posted again within 24 hours"
-                                )
-                                return
-                with open("../mork-state", "a") as file:
-                    file.write(
-                        f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
-                    )
             case _:
                 pass
 
@@ -516,17 +484,13 @@ class LifecycleCog(commands.Cog):
                     if user.id == ctx.author.id:
                         hasReacted = False
 
-            emoji_toSend = "PORTAL"
-
-            # (
+            # emoji_toSend = (
             #     hc_constants.CLOCK
             #     if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
             #     else hc_constants.WOLF
-            #  )
+            # )
             if not hasReacted:
-                links.append(
-                    f"{emoji_toSend} - {messageEntry.content}: {messageEntry.jump_url}"
-                )
+                links.append(f"{messageEntry.content}: {messageEntry.jump_url}")
 
             is_clock_vc = (
                 hc_constants.CLOCK
@@ -599,9 +563,9 @@ class LifecycleCog(commands.Cog):
 
             acceptedCards.append(cardMessage)
 
-            set_to_add_to = "HCK"
+            set_to_add_to = "HC8.0"
 
-            channel_to_add_to = hc_constants.PORTAL_LIST
+            channel_to_add_to = hc_constants.HC_EIGHT_LIST
 
             await acceptCard.acceptCard(
                 bot=self.bot,
@@ -687,7 +651,7 @@ class LifecycleCog(commands.Cog):
                         recentlyNotified = threadMessageAge < timedelta(days=1)
                         if not recentlyNotified:
 
-                            veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
+                            veto_council_to_notify = hc_constants.VETO_COUNCIL
 
                             # (
                             #     hc_constants.VETO_COUNCIL
@@ -802,25 +766,29 @@ FIVE_MINUTES = 300
 
 
 def reset_countdowns():
+    print("reset")
     linesToWrite = ""
     with open("../mork-state", "r") as file:
         lines = file.readlines()
         for line in lines:
-            print(line)
-            tempDate = datetime.strptime(
-                line.split("—")[1].replace("\n", ""),
-                "%Y-%m-%dT%H:%M:%S%z",
-            )
+            # print(line)
+            split_line = line.split("—")
+            if split_line.__len__() > 1:
+                tempDate = datetime.strptime(
+                    line.split("—")[1].replace("\n", ""),
+                    "%Y-%m-%dT%H:%M:%S%z",
+                )
 
-            timeSinceLast = (
-                (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
-            ) / (60 * 60)
-            print(timeSinceLast)
+                timeSinceLast = (
+                    (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
+                ) / (60 * 60)
+                # print(timeSinceLast)
 
-            if timeSinceLast <= 24:
-                linesToWrite += f"{line}"
+                if timeSinceLast <= hc_constants.SUBMISSION_COOLDOWN:
+                    linesToWrite += f"{line}"
     with open("../mork-state", "w") as file:
         file.write(linesToWrite)
+    print("end reset")
 
 
 async def status_task(bot: commands.Bot):

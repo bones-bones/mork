@@ -306,25 +306,29 @@ class HellscubeDatabaseCog(commands.Cog):
         for card in cardList:
             # print(card.name())
             if card.name().lower() == name:
-                creator = card.creator()
-                cardset = card.cardset()
-                legality = card.legality()
-                rulings = card.rulings()
-                tags = card.tags()
-                toSend = [
-                    card.name(),
-                    f"creator: {creator}",
-                    f"set: {cardset}",
-                    f"legality: {legality}",
-                ]
-                if tags.__len__() > 0:
-                    toSend.append("tags: " + ", ".join(tags))
 
-                if rulings and rulings.__len__() > 0:
-                    toSend.append("rulings: \n" + rulings)
+                if name == "gas lights":
+                    await channel.send("no card found")
+                else:
+                    creator = card.creator()
+                    cardset = card.cardset()
+                    legality = card.legality()
+                    rulings = card.rulings()
+                    tags = card.tags()
+                    toSend = [
+                        card.name(),
+                        f"creator: {creator}",
+                        f"set: {cardset}",
+                        f"legality: {legality}",
+                    ]
+                    if tags.__len__() > 0:
+                        toSend.append("tags: " + ", ".join(tags))
 
-                message = "\n".join(toSend)
-                break
+                    if rulings and rulings.__len__() > 0:
+                        toSend.append("rulings: \n" + rulings)
+
+                    message = "\n".join(toSend)
+                    break
         await channel.send(message)
 
     @commands.command()
