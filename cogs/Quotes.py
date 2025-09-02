@@ -17,6 +17,32 @@ class QuotesCog(commands.Cog):
 
     @commands.command()
     async def quote(self, ctx: commands.Context, lookback=1):
+        if ctx.message.reference:
+            try:
+                replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+
+                if "@" in replied_message.content:
+                    await ctx.send(YOU_THINK_YOURE_FUNNY)
+                    return
+
+                user = replied_message.author.name
+                if is_mork(replied_message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
+                    await ctx.send("The bot can't quote itself")
+                    return
+
+                fileID = hc_constants.QUOTES_FILE
+                await addToDrive(replied_message.content, user, fileID)
+                await ctx.send('"' + replied_message.content + '"\n-' + user)
+                return
+            except discord.NotFound:
+                await ctx.send("Could not find the message you're replying to.")
+                return
+            except discord.Forbidden:
+                await ctx.send("Don't have permission to access that message.")
+                return
+            except discord.HTTPException:
+                await ctx.send("Failed to fetch the message.")
+                return
         if lookback == 0:
             await ctx.send("^\nfucker")
             return
@@ -41,6 +67,57 @@ class QuotesCog(commands.Cog):
 
     @commands.command()
     async def rquote(self, ctx: commands.Context, lookback=1):
+        if ctx.message.reference:
+            try:
+                replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+
+                if "@" in replied_message.content:
+                    await ctx.send(YOU_THINK_YOURE_FUNNY)
+                    return
+
+                user = replied_message.author.name
+                if is_mork(replied_message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
+                    await ctx.send("The bot can't quote itself")
+                    return
+
+                fileID = hc_constants.QUOTES_FILE
+
+                # Check if the replied message is itself a reply
+                if replied_message.reference:
+                    original_message = await replied_message.channel.fetch_message(
+                        cast(int, replied_message.reference.message_id)
+                    )
+                    if "@" in original_message.content:
+                        await ctx.send(YOU_THINK_YOURE_FUNNY)
+                        return
+                    if (
+                            is_mork(original_message.author.id)
+                            and ctx.channel.id != hc_constants.CUBE_CHANNEL
+                    ):
+                        await ctx.send("The bot can't quote itself")
+                        return
+                    await addToDrive(
+                        f"{original_message.author}: {original_message.content}\n⤷{replied_message.content}",
+                        user,
+                        fileID,
+                    )
+                    await ctx.send(
+                        f'"{original_message.author}: {original_message.content}\n\n⤷{replied_message.content}"\n-{user}'
+                    )
+                else:
+                    await addToDrive(replied_message.content, user, fileID)
+                    await ctx.send('"' + replied_message.content + '"\n-' + user)
+                return
+
+            except discord.NotFound:
+                await ctx.send("Could not find the message you're replying to.")
+                return
+            except discord.Forbidden:
+                await ctx.send("Don't have permission to access that message.")
+                return
+            except discord.HTTPException:
+                await ctx.send("Failed to fetch the message.")
+                return
         if lookback == 0:
             await ctx.send("^\nfucker")
             return
