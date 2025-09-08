@@ -58,13 +58,15 @@ mainSheet = databaseSheets.worksheet(SOURCE_SHEET_NAME)
 
 targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 
+
 targetSheet = targetDb.get_worksheet(0)
+
+current_printable_cards = targetSheet.col_values(1)
 # do 176
-startIndex = 600  # 2925
-endIndex = 600  # 1149  # 10
+startIndex = 500
+endIndex = 510  # 1149  # 10
 cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
-
 side1Urls = [
     ""
 ] * 1150  # [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
@@ -80,6 +82,10 @@ side4Urls = [
 cardSet = [
     ""
 ] * 1150  # [cell.value for cell in mainSheet.range(f"D{startIndex}:D{endIndex}")]
+
+# [
+#     ""
+# ] * 1150
 
 
 def prepare_card_for_printing(image_path: str) -> str:
@@ -168,8 +174,6 @@ def prepare_card_for_printing(image_path: str) -> str:
             color_diff(corners[3], (0, 0, 0, 0)),
         )
         < 35
-        # and color_diff(corners[1], corners[2]) < 10
-        # and color_diff(corners[2], corners[3]) < 10
         and color_diff(corners[0], top_center_for_bg) > 200
     ):
 
@@ -197,39 +201,6 @@ def prepare_card_for_printing(image_path: str) -> str:
             [(width, height), (width - border, height), (width, height - border)],
             fill=top_center_for_bg,  # img.getpixel((width - int(border / 3), height - int(border / 3))),
         )
-    #     #     px = img.load()
-    #     #     for y in range(height):
-    #     #         for x in range(width):
-    #     #             if (y < dimen or y > height - dimen) and (
-    #     #                 x < dimen or x > width - dimen
-    #     #             ):
-    #     #                 if is_bg(px[x, y], corner_color):
-    #     #                     px[x, y] = (255, 255, 255, 0)  # transparent
-
-    #     ImageDraw.floodfill(
-    #         img, (1, 1), (0, 0, 0, 0), border=top_center_for_bg, thresh=250
-    #     )
-    #     ImageDraw.floodfill(
-    #         img,
-    #         (1, height - 1),
-    #         (0, 0, 0, 0),
-    #         border=top_center_for_bg,
-    #         thresh=250,
-    #     )
-    #     ImageDraw.floodfill(
-    #         img,
-    #         (width - 1, height - 1),
-    #         (0, 0, 0, 0),
-    #         border=top_center_for_bg,
-    #         thresh=250,
-    #     )
-    #     ImageDraw.floodfill(
-    #         img,
-    #         (width - 1, 1),
-    #         (0, 0, 0, 0),
-    #         border=top_center_for_bg,
-    #         thresh=250,
-    #     )
 
     # Create new image with extended border
     new_width = width + border * 2
@@ -301,7 +272,7 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
 ):
     print("name", name)
     # TODO put back
-    # if not (cardSet == "HC6" or cardSet == "HCC"):
+    # if not (cardSet == "HCC" or cardSet == "HCP"):
     #     continue
 
     sidesToPrint = (
@@ -312,10 +283,12 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
 
     try:
         for i, sideUrl in enumerate(sidesToPrint):
+            print(i, sideUrl)
             # Download image
             response = requests.get(sideUrl)
             response.raise_for_status()
             unparsedFileName = response.headers.get("Content-Disposition")
+
             parsedFileName = cast(
                 str,
                 re.findall('inline;filename="(.*)"', str(unparsedFileName))[0],
@@ -326,10 +299,6 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
                 if ".png" in parsedFileName
                 else cast(str, name).replace("/", "|") + ".jpg"
             )
-            #     name + parsedFileName
-            #     if (parsedFileName == ".png" or parsedFileName == ".jpg")
-            #     else parsedFileName
-            # )
 
             with open(parsedFileName, "wb") as file:
                 file.write(response.content)
@@ -350,10 +319,21 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
             # add back
             uploaded = uploadToDrive(parsedFileName, parsedFileName)
 
-            if not parsedFileName in existingCardMappingObject:
-                # print(parsedFileName, existingCardMappingObject, "!!!")
+            current_entry_in_sheet = (
+                current_printable_cards.index(name)
+                if name in current_printable_cards
+                else None
+            )
+
+            if current_entry_in_sheet == None:
+                print(f"appending to sheet: {parsedFileName}")
                 targetSheet.append_row(
                     list((name, f"side {i+1}", getDriveUrl(uploaded)))
+                )
+            else:
+                print(f"updating sheet entry: {parsedFileName}")
+                targetSheet.update_cell(
+                    current_entry_in_sheet + 1, 3, getDriveUrl(uploaded)
                 )
 
             os.remove(parsedFileName)

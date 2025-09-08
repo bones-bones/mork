@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 
+import random
 from typing import Dict, List, cast
 
 from discord import TextChannel
@@ -34,26 +35,14 @@ class MiscCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # @commands.Cog.listener()
-    # async def on_message(self, message: discord.Message):
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
 
-    # if message.channel.id == hc_constants.BOT_TEST_CHANNEL:
-    #     with open("../mork-state", "r") as file:
-    #         lines = file.readlines()
-    #         for line in lines:
-    #             if line.startswith(f"{message.author.id}—"):
-    #                 print("NOPE", line.split("—")[1])
-    #                 tempDate = datetime.strptime(
-    #                     line.split("—")[1].replace("\n", ""), "%Y-%m-%dT%H:%M:%S%z"
-    #                 )
-
-    #                 timeSinceLast = (datetime.now(tz=timezone.utc) - tempDate).days
-    #                 if timeSinceLast == 0:
-    #                     return False
-    #     with open("../mork-state", "a") as file:
-    #         file.write(
-    #             f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
-    #         )
+        if (
+            message.channel.id == hc_constants.BOT_TEST_CHANNEL
+            and message.author.id == hc_constants.LLLLLL
+        ):
+            await message.channel.send("astigmatism")
 
 
 #     @commands.Cog.listener()

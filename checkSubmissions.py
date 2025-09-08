@@ -138,7 +138,7 @@ async def checkSubmissions(bot: commands.Bot):
                 await handleVetoPost(message=vetoEntry, bot=bot, veto_council=None)
 
                 copy2 = await messageEntry.attachments[0].to_file()
-                logContent = f"{acceptContent}, datetime: {f"<t:{int(test_message.created_at.timestamp())}:f>"}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
+                logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
                 await acceptedChannel.send(content=acceptContent, file=file)
                 await logChannel.send(content=logContent, file=copy2)
 
