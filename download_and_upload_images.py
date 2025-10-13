@@ -63,8 +63,8 @@ targetSheet = targetDb.get_worksheet(0)
 
 current_printable_cards = targetSheet.col_values(1)
 # do 176
-startIndex = 500
-endIndex = 510  # 1149  # 10
+startIndex = 1070
+endIndex = 1080  # 1149  # 10
 cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
 side1Urls = [
@@ -319,6 +319,7 @@ for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
             # add back
             uploaded = uploadToDrive(parsedFileName, parsedFileName)
 
+            ## TODO add a check here fore side 1 side 2
             current_entry_in_sheet = (
                 current_printable_cards.index(name)
                 if name in current_printable_cards

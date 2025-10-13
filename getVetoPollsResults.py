@@ -89,8 +89,9 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         elif downvote > 4 and downvote >= upvote and downvote >= errata:
             vetoCardMessages.append(messageEntry)
 
+        # temp dropped for jumpstart
         # Accepted case
-        elif upvote > 4 and upvote >= downvote and upvote >= errata:
+        elif upvote > 2 and upvote >= downvote and upvote >= errata:
             acceptedCardMessages.append(messageEntry)
 
         # Purgatorio Hell

@@ -183,8 +183,10 @@ class LifecycleCog(commands.Cog):
         if "{{" in message.content:
             await print_card_images(message)
         if "cock" in message.content.lower():
-            if random.randint(1,10) == 1:
-                await message.channel.send('in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.')
+            if random.randint(1, 10) == 1:
+                await message.channel.send(
+                    'in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.'
+                )
 
         # Hello single coolest thing about python
         match message.channel.id:
@@ -568,7 +570,7 @@ class LifecycleCog(commands.Cog):
 
             set_to_add_to = "HC8.0"
 
-            channel_to_add_to = hc_constants.HC_EIGHT_LIST
+            channel_to_add_to = hc_constants.HC_JUMPSTART_LIST
 
             await acceptCard.acceptCard(
                 bot=self.bot,
