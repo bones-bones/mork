@@ -23,7 +23,7 @@ async def acceptCard(
     cardName: str,
     authorName: str,
     channelIdForCard: int = hc_constants.HC_POSSE_CARD_LIST,
-    setId: str = "HC8.0",
+    setId: str = "HCJ",
     errata: bool = False,
 ):
     extension = re.search("\.([^.]*)$", file.filename)

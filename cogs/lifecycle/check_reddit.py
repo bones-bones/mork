@@ -10,6 +10,7 @@ from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 
 
 async def check_reddit(bot: commands.Bot):
+    print("checking reddit")
     timeNow = datetime.now(timezone.utc)
     oneHour = timeNow + timedelta(hours=-2)
     reddit = asyncpraw.Reddit(

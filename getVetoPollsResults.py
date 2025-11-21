@@ -91,7 +91,11 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
 
         # temp dropped for jumpstart
         # Accepted case
-        elif upvote > 2 and upvote >= downvote and upvote >= errata:
+        elif (
+            upvote > hc_constants.VC_THRESHOLD  # TODO: move the others over to this
+            and upvote >= downvote
+            and upvote >= errata
+        ):
             acceptedCardMessages.append(messageEntry)
 
         # Purgatorio Hell

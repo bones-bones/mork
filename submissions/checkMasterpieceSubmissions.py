@@ -19,6 +19,7 @@ from is_mork import is_mork
 
 
 async def checkMasterpieceSubmissions(bot: commands.Bot):
+    print("checking masterpiece submissions")
     subChannel = cast(TextChannel, bot.get_channel(hc_constants.MASTERPIECE_CHANNEL))
     vetoChannel = getVetoChannel(bot)
     acceptedChannel = getSubmissionDiscussionChannel(bot)
@@ -73,7 +74,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
 
                 copy = await messageEntry.attachments[0].to_file()
                 vetoEntry = await vetoChannel.send(
-                    content="HC8: " + accepted_message_no_mentions, file=copy
+                    content="HCJ: " + accepted_message_no_mentions, file=copy
                 )
 
                 await handleVetoPost(vetoEntry, bot, None)

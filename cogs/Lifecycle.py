@@ -75,7 +75,7 @@ class LifecycleCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
         await member.send(
-            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\n We just wrapped up HC7, a purple cube, and have moved to HC8, a Legacy Cube with archetypes. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe're halfway through HC8 and are taking a quick break to do some jumpstart packs. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
         )
 
     @commands.Cog.listener()
@@ -233,7 +233,11 @@ class LifecycleCog(commands.Cog):
                 forCards = re.split(r"; ?", wholeMessage[1])
                 weGood = True
                 for card in forCards:
-                    if not (await isRealCard(cardName=card, ctx=submissionDiscussion)):
+                    if not (
+                        await isRealCard(
+                            cardName=card, ctx=submissionDiscussion  # type: ignore
+                        )
+                    ):
                         weGood = False
 
                 if not weGood:
@@ -568,7 +572,7 @@ class LifecycleCog(commands.Cog):
 
             acceptedCards.append(cardMessage)
 
-            set_to_add_to = "HC8.0"
+            set_to_add_to = "HCJ"
 
             channel_to_add_to = hc_constants.HC_JUMPSTART_LIST
 
