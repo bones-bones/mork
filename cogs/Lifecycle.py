@@ -165,6 +165,51 @@ class LifecycleCog(commands.Cog):
                 )
                 await errata_submission_message.add_reaction("☑️")
 
+        # The sneaky errata case for HC8
+        if (
+            reaction.emoji.id == hc_constants.SYMBOL_UNTAP
+            and reaction.user_id == hc_constants.TRUSTED_USER
+        ):
+            file = await message.attachments[0].to_file()
+            acceptanceMessage = message.content
+            # consider putting most of this into acceptCard
+            # this is pretty much the same as getCardMessage but teasing out the db logic too was gonna suck
+            dbname = ""
+            card_author = ""
+            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
+                ...  # This is really the case of setting both to "", but due to scoping i got lazy
+            elif acceptanceMessage[0:3] == "by ":
+                card_author = str((acceptanceMessage.split("by "))[1])
+            else:
+                messageChunks = acceptanceMessage.split(" by ")
+                firstPart = messageChunks[0]
+                secondPart = "".join(messageChunks[1:])
+
+                dbname = str(firstPart)
+                card_author = str(secondPart)
+            resolvedName = dbname if dbname != "" else "Crazy card with no name"
+            resolvedAuthor = card_author if card_author != "" else "no author"
+            cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
+
+            set_to_add_to = "HCJ"
+
+            channel_to_add_to = hc_constants.HC_EIGHT_LIST
+
+            await acceptCard.acceptCard(
+                bot=self.bot,
+                file=file,
+                cardMessage=cardMessage,
+                cardName=dbname,
+                authorName=card_author,
+                setId=set_to_add_to,
+                channelIdForCard=channel_to_add_to,
+            )
+
+            await message.add_reaction(hc_constants.ACCEPT)
+            thread = cast(Thread, guild.get_channel_or_thread(message.id))
+            if thread:
+                await thread.edit(archived=True)
+
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
         try:
@@ -803,11 +848,11 @@ def reset_countdowns():
 async def status_task(bot: commands.Bot):
     async def post_reddit_card_of_the_day():
         nowtime = datetime.now().date()
-        start = date(2024, 3, 13)
+        start = date(2025, 11, 26)
         days_since_starting = (nowtime - start).days
-        cardOffset = 608 - days_since_starting
+        cardOffset = 726 - days_since_starting
         if cardOffset >= 0:
-            cards = searchFor({"cardset": "hc4"})
+            cards = searchFor({"cardset": "hc6"})
             card = cards[cardOffset]
             name = card.name()
             url = card.img()
@@ -819,7 +864,7 @@ async def status_task(bot: commands.Bot):
                             out.write(await resp.read())
                         try:
                             await post_to_reddit(
-                                title=f"HC4 Card of the ~day: {name}",
+                                title=f"HC6 Card of the day: {name}",
                                 image_path=image_path,
                                 flair=hc_constants.OFFICIAL_FLAIR,
                             )
