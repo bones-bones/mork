@@ -963,7 +963,34 @@ class SpecificCardsCog(commands.Cog):
         await send_image_reply(
             url=result.img(), cardname=result.name(), text=None, message=ctx.message
         )
-
+    # for the card Mystery Inc on Duskmourn
+    @commands.command()
+    async def randomRoom(self, ctx: commands.Context):
+        roomDoors = [
+            (
+                "https://lh3.googleusercontent.com/d/1EsgQVM7jEAy3Yy_KvaVAUpifaEK_GtQh",
+                "Mavren Fein, Dusk post",
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1rcJhs0VO41VHvTY2Y80TjCQldi_3LYDN",
+                "seachrome post",
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1RCnsxsollhx1xmF58bt35DXVUi9NleAw",
+                "shitpost",
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1Chv8ICvXMQIuRg_eAvXEUQR4_-cQTdxR",
+                "Omnath, Locus of the Locus",
+            ),
+        ]
+        rroom = random.randint(0, len(roomDoors) - 1)
+        await send_image_reply(
+            url=roomDoors[rroom][0],
+            cardname=roomDoors[rroom][1],
+            message=ctx.message,
+            text=None,
+        )    
     # for the card Grunch
     # Original: https://zaxer2.github.io/howtogrunch
     @commands.command()
