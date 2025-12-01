@@ -1,9 +1,9 @@
 from datetime import date, datetime, timedelta, timezone
-
+from acceptCard import acceptCard
 import random
 from typing import Dict, List, cast
 
-from discord import TextChannel
+from discord import RawReactionActionEvent, TextChannel, Thread
 import discord
 from discord.ext import commands
 from discord.utils import get
@@ -11,8 +11,6 @@ from cogs.HellscubeDatabase import searchFor
 
 authorSplit = "$#$#$"
 QUOTE_SPLIT = ";%;%;"
-from cogs.lifecycle import post_daily_submissions
-from getters import getBotTest, getSubmissionDiscussionChannel, getVetoChannel
 from handleVetoPost import handleVetoPost
 from isRealCard import isRealCard
 from printCardImages import send_image_reply
@@ -43,6 +41,74 @@ class MiscCog(commands.Cog):
             and message.author.id == hc_constants.LLLLLL
         ):
             await message.channel.send("astigmatism")
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, reaction: RawReactionActionEvent):
+        if is_mork(reaction.user_id):
+            return
+        guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
+        channel = guild.get_channel_or_thread(reaction.channel_id)
+
+        if channel == None:
+            return
+
+        channelAsText = cast(discord.TextChannel, channel)
+        message = await channelAsText.fetch_message(reaction.message_id)
+        # The sneaky errata case for HC8
+        if (
+            reaction.emoji.id == hc_constants.SYMBOL_UNTAP
+            and reaction.user_id == hc_constants.LLLLLL
+        ):
+            # <MessageReference message_id=1438689619209097308 channel_id=798690672512335932 guild_id=631288872814247966>
+            og_message = message
+            reference = message.reference
+
+            if reference != None:
+                original_channel = cast(
+                    TextChannel,
+                    guild.get_channel_or_thread(message.reference.channel_id),
+                )
+                message = await original_channel.fetch_message(
+                    message.reference.message_id
+                )
+
+            file = await message.attachments[0].to_file()
+            acceptanceMessage = message.content
+
+            print(acceptanceMessage)
+
+            dbname = ""
+            card_author = ""
+            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
+                ...  # This is really the case of setting both to "", but due to scoping i got lazy
+            elif acceptanceMessage[0:3] == "by ":
+                card_author = str((acceptanceMessage.split("by "))[1])
+            else:
+                messageChunks = acceptanceMessage.split(" by ")
+                firstPart = messageChunks[0]
+                secondPart = "".join(messageChunks[1:])
+
+                dbname = str(firstPart)
+                card_author = str(secondPart)
+            resolvedName = dbname if dbname != "" else "Crazy card with no name"
+            resolvedAuthor = card_author if card_author != "" else "no author"
+            cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
+
+            set_to_add_to = "HCJ"
+
+            channel_to_add_to = hc_constants.HC_JUMPSTART_LIST
+
+            await acceptCard(
+                bot=self.bot,
+                file=file,
+                cardMessage=cardMessage,
+                cardName=dbname,
+                authorName=card_author,
+                setId=set_to_add_to,
+                channelIdForCard=channel_to_add_to,
+            )
+
+            await og_message.delete()
 
 
 #     @commands.Cog.listener()
