@@ -576,7 +576,7 @@ class SpecificCardsCog(commands.Cog):
 
     # mirror of !death because why not
     @commands.command()
-    async def death(self, ctx: commands.Context):
+    async def life(self, ctx: commands.Context):
         for i in range(2):
             deathseekerJson = await getScryfallJson(
                 "https://api.scryfall.com/cards/random?q=o%3A%22When+~+enters%22+t%3Acreature"
