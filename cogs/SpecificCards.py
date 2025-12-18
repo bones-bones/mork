@@ -576,6 +576,18 @@ class SpecificCardsCog(commands.Cog):
             except:
                 pp.pprint(deathseekerJson)
 
+    # mirror of !death because why not
+    @commands.command()
+    async def life(self, ctx: commands.Context):
+        for i in range(2):
+            deathseekerJson = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+enters%22+t%3Acreature"
+            )
+            try:
+                await sendImage(await getImageFromJson(deathseekerJson), ctx)
+            except:
+                pp.pprint(deathseekerJson)
+
     # for the card multiverse broadcasting station
     @commands.command()
     async def broadcast(self, ctx: commands.Context):
@@ -953,7 +965,65 @@ class SpecificCardsCog(commands.Cog):
         await send_image_reply(
             url=result.img(), cardname=result.name(), text=None, message=ctx.message
         )
-
+        
+    # for the card Mystery Inc on Duskmourn
+    @commands.command()
+    async def randomRoom(self, ctx: commands.Context):
+        roomDoors = [
+            "https://lh3.googleusercontent.com/d/1vp9mKBQB4R-Jk4cxaZYWm1qz4K43MXt9/view",
+            "https://lh3.googleusercontent.com/d/1CbalIi_IZTg5njwwc2LH7YdwtEdbvhw2/view",
+            "https://lh3.googleusercontent.com/d/1a5mRw_yTxBQBmJQ5Ie0ppdJnPK2vF7Vs/view",
+            "https://lh3.googleusercontent.com/d/1x-JUhJs7i7EzQmU3R-K3zMf4NhXVgzc_/view",
+            "https://lh3.googleusercontent.com/d/1bgNOHggRJFY7l1sVQ1sR132CYc_9Px4y/view",
+            "https://lh3.googleusercontent.com/d/14QmdXxckUwDGqAuRIIRaHn_6pnvT-4va/view",
+            "https://lh3.googleusercontent.com/d/1l8B3MLTS4l_Qf3v6PpDvvvqGZ6ktm4D3/view",
+            "https://lh3.googleusercontent.com/d/1cHfy34p0fQMreBBQuwDozngixvNhdq-y/view",
+            "https://lh3.googleusercontent.com/d/1xtmi50HQ9vG0JjQP8SbB4bOt8DMPj6jw/view",
+            "https://lh3.googleusercontent.com/d/1HzjPQO2tevQxZ1oJURpm-8t6K0EuXiu3/view",
+            "https://lh3.googleusercontent.com/d/1Kf4HSEaaiTtjEBLD53FCG6j-1u0Q1UPx/view",
+            "https://lh3.googleusercontent.com/d/1H_S9zJkltcIzwWcEHfQXSECdqRftAZ20/view",
+            "https://lh3.googleusercontent.com/d/13xhTOvmTb0MKXmmIwyCYD-1btGIb4pHo/view",
+            "https://lh3.googleusercontent.com/d/1ZKJw50o329Xlsn0MJZWwk-ng7RPlbHNL/view",
+            "https://lh3.googleusercontent.com/d/1OQtoB5GNWvSvFZIWQNZoQEB9-TK7GiLj/view",
+            "https://lh3.googleusercontent.com/d/1-LLw8dkyiEe5rGLR4b4Sq2XJnc6w1Qtf/view",
+            "https://lh3.googleusercontent.com/d/17WBoHl2Ddd_STGGOlRGT3cbKt9XeHlFW/view",
+            "https://lh3.googleusercontent.com/d/1heaMz5FPpE9Nw4oUMXoLoJpeTup83Lnd/view",
+            "https://lh3.googleusercontent.com/d/1ikaRaXAhrOIBG9GVxh1v4HhomEJ43PEo/view",
+            "https://lh3.googleusercontent.com/d/1XiCnkhxAF5glf-3fVqi__Ti3mIcH5g8t/view",
+            "https://lh3.googleusercontent.com/d/1eMfd47dCDBD4fjCfXswum8cFlyB1_WG9/view",
+            "https://lh3.googleusercontent.com/d/10ID4g__4FxtXsv26w8aiPHScJ7CWCHAz/view",
+            "https://lh3.googleusercontent.com/d/1knhcoAsq_ks1XIeQ9ULU3TP2qA2zKKJF/view",
+            "https://lh3.googleusercontent.com/d/1nIChCVl4nBSZvQwE__L2BL8dmKL5kkjM/view",
+            "https://lh3.googleusercontent.com/d/1vsNdbHLGsgHRt-UopQGhN2yYJHFmZOKG/view",
+            "https://lh3.googleusercontent.com/d/1Pyuhd7TNTSoqyHUS7STLDyHGIkmtl4XW/view",
+            "https://lh3.googleusercontent.com/d/1sbBscdH-hBCTUhTkMR64vBv9ecgrrmmN/view",
+            "https://lh3.googleusercontent.com/d/1VbdPHeCxfMzoEwSkozuEz-pedEJ8uNTB/view",
+            "https://lh3.googleusercontent.com/d/1qLqNdsVSDNPHiM2c5La5yb9afVePrdZi/view",
+            "https://lh3.googleusercontent.com/d/1h47_N9S9EK1ue0yT0Py1gmw4Mzu4gZUa/view",
+            "https://lh3.googleusercontent.com/d/1WVkYn8JpRAb5xnO58CjRo-BWWebq6iaX/view",
+            "https://lh3.googleusercontent.com/d/1laYXfKUxyBWNOZhcY-Es6cOiuYnAPtI9/view",
+            "https://lh3.googleusercontent.com/d/1Os5oQxk_d6dbNOhe5EobC75-VG_bnqvq/view",
+            "https://lh3.googleusercontent.com/d/1L82lt_S43gMLgnk6ZdBzmd803laeDE8T/view",
+            "https://lh3.googleusercontent.com/d/1WCMAZ4I568oJ01vvc6WsyjnVDAEndbeb/view",
+            "https://lh3.googleusercontent.com/d/1XsF46DRispn1mup2Ev-gKCNIfEbMlOlW/view",
+            "https://lh3.googleusercontent.com/d/1tkdmvBdUACSCoF1rzrrAqu5ZOc7NdrXe/view",
+            "https://lh3.googleusercontent.com/d/1y2SWHu9YmC_zE4eMeok2err4ZbWVJmEG/view",
+            "https://lh3.googleusercontent.com/d/1P9bPds7ZDNVI1epvC84pPsN8C8Tr7eW3/view",
+            "https://lh3.googleusercontent.com/d/1qrFozzJ3UNiEVVTFh0bpAoBQ7FQmWy8t/view",
+            "https://lh3.googleusercontent.com/d/127tPQ5ggauSSfRWE53CUaGo1QOqmX9Ay/view",
+            "https://lh3.googleusercontent.com/d/1_W95bS5JaIbJQjckcMDMRlKjh8iDC13h/view",
+            "https://lh3.googleusercontent.com/d/1_cW7uC4eotBWDNezTUDiLvxtpsFBCKhp/view",
+            "https://lh3.googleusercontent.com/d/1mjgqh5urYC9vP_R0EdYumIRrC_kZDTcY/view",
+            "https://lh3.googleusercontent.com/d/1GvL9xpEQIyxubDysm9i3sxc8-HzJWOU7/view",
+            "https://lh3.googleusercontent.com/d/1oSVCV1NRpCIaRi80qCo90iyfA8CVldlK/view",
+            "https://lh3.googleusercontent.com/d/1PBECum1HzXQygl6Uk7nwbryDsM29oSoy/view",
+            "https://lh3.googleusercontent.com/d/1x1-NDykstTTkrcfrEI1M52i7k4ZQmAPc/view",
+            "https://lh3.googleusercontent.com/d/19IR_1iV2oK83lk3iv8GxemY7FCXDFz5d/view",
+            "https://lh3.googleusercontent.com/d/1E2K3gYHtSr34IB2btFC2QjRevQEyuyBy/view",
+        ]
+        rroom = random.randint(0, len(roomDoors) - 1)
+        await sendImage(roomDoors[rroom], ctx)
+        
     # for the card Grunch
     # Original: https://zaxer2.github.io/howtogrunch
     @commands.command()
