@@ -3,6 +3,7 @@ import os
 import re
 from typing import cast
 import discord
+from gspread import Cell
 import hc_constants
 from is_mork import getDriveUrl, uploadToDrive
 from shared_vars import googleClient
@@ -44,39 +45,53 @@ async def acceptCard(
     with open(image_path, "wb") as out:
         out.write(file_data)
     if not errata:
-        try:
-            await post_to_reddit(
-                image_path=image_path,
-                title=f"{cardMessage.replace('**', '')} was accepted!",
-                flair=hc_constants.ACCEPTED_FLAIR,
-            )
-        except Exception as e:
-            print("tried to post to reddit", e)
+        ...
+        # try:
+        #     await post_to_reddit(
+        #         image_path=image_path,
+        #         title=f"{cardMessage.replace('**', '')} was accepted!",
+        #         flair=hc_constants.ACCEPTED_FLAIR,
+        #     )
+        # except Exception as e:
+        #     print("tried to post to reddit", e)
 
-    google_drive_file_id = uploadToDrive(image_path)
+    allCards = cardSheetUnapproved.get("A:D")
+    index = [
+        i
+        for i in range(len(allCards))
+        if allCards[i][0] == cardName and allCards[i][3] == setId
+    ]
+
+    newCard = True
+    image_id_to_update = None
+    # At least on match was found, and the name isn't blank. There really shouldn't be any nameless cards though cause it breaks
+    if cardName != "" and index.__len__() > 0:
+        dbRowIndex = index[0] + 1
+        newCard = False
+        image_id_to_update = allCards[index[0]][1].removeprefix(
+            "https://lh3.googleusercontent.com/d/"
+        )
+    else:
+        dbRowIndex = len(allCards) + 1
+        if cardName == "":
+            cardName = "NO NAME"
+
+    google_drive_file_id = uploadToDrive(image_path, image_id_to_update)
 
     os.remove(image_path)
 
     imageUrl = getDriveUrl(google_drive_file_id)
 
-    allCardNames = cardSheetUnapproved.col_values(1)
-
-    newCard = True
-    if cardName != "" and cardName in allCardNames:
-        dbRowIndex = allCardNames.index(cardName) + 1
-        newCard = False
-    else:
-        dbRowIndex = len(allCardNames) + 1
-        if cardName == "":
-            cardName = "NO NAME"
-
     cardSheetUnapproved.update_cell(dbRowIndex, 2, imageUrl)
 
     if newCard:
-        cardSheetUnapproved.update_cell(dbRowIndex, 1, cardName)
-        cardSheetUnapproved.update_cell(dbRowIndex, 3, authorName)
-        cardSheetUnapproved.update_cell(dbRowIndex, 4, setId)
-    return
+        cardSheetUnapproved.update_cells(
+            [
+                Cell(row=dbRowIndex, col=1, value=cardName),
+                Cell(row=dbRowIndex, col=3, value=authorName),
+                Cell(row=dbRowIndex, col=4, value=setId),
+            ]
+        )
 
 
 async def acceptVetoCard(
@@ -107,29 +122,47 @@ async def acceptVetoCard(
     with open(image_path, "wb") as out:
         out.write(file_data)
 
-    google_drive_file_id = uploadToDrive(image_path)
+    allCards = cardSheetUnapproved.get("A:D")
+    index = [
+        i
+        for i in range(len(allCards))
+        if allCards[i][0] == cardName and allCards[i][3] == "HCV"
+    ]
+
+    newCard = True
+    image_id_to_update = None
+    # At least on match was found, and the name isn't blank
+    if cardName != "" and index.__len__() > 0:
+        dbRowIndex = index[0] + 1
+        newCard = False
+        image_id_to_update = allCards[index[0]][1].removeprefix(
+            "https://lh3.googleusercontent.com/d/"
+        )
+    else:
+        dbRowIndex = len(allCards) + 1
+        if cardName == "":
+            cardName = "NO NAME"
+
+    google_drive_file_id = uploadToDrive(image_path, image_id_to_update)
 
     os.remove(image_path)
 
     imageUrl = getDriveUrl(google_drive_file_id)
 
-    allCardNames = cardSheetUnapproved.col_values(1)
-
-    newCard = True
-    if cardName in allCardNames and cardName != "":
-        dbRowIndex = allCardNames.index(cardName) + 1
-        newCard = False
-    else:
-        dbRowIndex = len(allCardNames) + 1
-        if cardName == "":
-            cardName = "NO NAME"
-
-    cardSheetUnapproved.update_cell(dbRowIndex, 2, imageUrl)
-    cardSheetUnapproved.update_cell(dbRowIndex, 4, "HCV")
+    cardSheetUnapproved.update_cells(
+        [
+            Cell(row=dbRowIndex, col=2, value=imageUrl),
+            Cell(row=dbRowIndex, col=4, value="HCV"),
+        ]
+    )
 
     if newCard:
-        cardSheetUnapproved.update_cell(dbRowIndex, 1, cardName)
-        cardSheetUnapproved.update_cell(dbRowIndex, 3, authorName)
+        cardSheetUnapproved.update_cells(
+            [
+                Cell(row=dbRowIndex, col=1, value=cardName),
+                Cell(row=dbRowIndex, col=3, value=authorName),
+            ]
+        )
 
     async for message in vetoCardListChannel.history(limit=None):
         if message.content == cardMessage:

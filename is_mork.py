@@ -1,4 +1,5 @@
 import random
+from typing import Optional, Any
 import hc_constants
 from shared_vars import drive
 
@@ -17,8 +18,12 @@ def reasonableCard():
     return random.randint(0, 4000) == 69
 
 
-def uploadToDrive(path: str):
-    file = drive.CreateFile({"parents": [{"id": hc_constants.IMAGES_FOLDER}]})
+def uploadToDrive(path: str, id: Optional[str] = None):
+    file_to_upload: dict[str, Any] = {"parents": [{"id": hc_constants.IMAGES_FOLDER}]}
+    if id:
+        file_to_upload["id"] = id
+
+    file = drive.CreateFile(file_to_upload)
     file.SetContentFile(path)
     file.Upload()
     return file["id"]
