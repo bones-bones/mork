@@ -5,6 +5,8 @@ import os
 import re
 from typing import cast
 
+from gspread import Cell
+
 from shared_vars import googleClient
 
 from getters import (
@@ -111,9 +113,27 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
 
     allCardNames = tokenUnapproved.col_values(1)
 
+    matching_cards = [
+        name
+        for name in allCardNames
+        if isinstance(name, str) and name.startswith(cardName)
+    ]
+    max_number = 0
+    for card in matching_cards:
+        # TODO: Use regex instead
+        suffix = card[len(cardName) :]
+        if suffix and suffix.isdigit():
+            max_number = max(max_number, int(suffix))
+
+    final_card_name = f"{cardName}{max_number + 1}"
+
     dbRowIndex = allCardNames.__len__() + 1
 
-    tokenUnapproved.update_cell(dbRowIndex, 2, imageUrl)
-    tokenUnapproved.update_cell(dbRowIndex, 8, creator)
-    tokenUnapproved.update_cell(dbRowIndex, 1, cardName)
-    tokenUnapproved.update_cell(dbRowIndex, 6, relatedCards)
+    tokenUnapproved.update_cells(
+        [
+            Cell(row=dbRowIndex, col=1, value=final_card_name),
+            Cell(row=dbRowIndex, col=2, value=imageUrl),
+            Cell(row=dbRowIndex, col=6, value=relatedCards),
+            Cell(row=dbRowIndex, col=8, value=creator),
+        ]
+    )
