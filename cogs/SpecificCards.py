@@ -369,9 +369,9 @@ class SpecificCardsCog(commands.Cog):
             "Dance until the beginning of your next upkeep. If you do, you may tap up to three target permanents.",
             "Wild Magic Surge deals 4 damage to any target.",
             "Scry 2d4.",
-            "Choose one:
+            """Choose one:
             Add Zoomer Blue // Boomer White to your hand
-            Add Ok Boomer to your hand",
+            Add Ok Boomer to your hand""",
             "Each player loses 3 life.",
             "Create 1d4 1/2 Horror creature tokens named Flumph with lifelink, defender and flying.",
             "Create two 1/1 green Frog creature tokens. Target opponent creates a 1/1 green Frog creature token.",
