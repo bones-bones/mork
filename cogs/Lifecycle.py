@@ -218,7 +218,7 @@ class LifecycleCog(commands.Cog):
             str(reaction.emoji) == hc_constants.DELETE
             and reaction.message.author.id == hc_constants.SCRYFALL
         ):
-            if reaction.count >= 4:
+            if reaction.count >= 2:
                 await reaction.message.delete()
                 return
 
