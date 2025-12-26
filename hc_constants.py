@@ -116,7 +116,7 @@ macroList = {
     "own": "Cards should do something on their as this cube is too large to consistently draft an archetype, archetype support cards should be playable on their own and great with support.",
     "would": "If your effect doesn't have 'instead', don't use 'would', and if it does, don't use 'whenever'.",
     "cass": "Cass fix your capitals in the name.",
-    "cardsmith": "Don't use mtgcardsmith please, the formatting sucks. Use MagicSetEditor ( https://discord.com/channels/631288872814247966/803384271766683668/1344017056491900950 ), or if you don't want to download something use https://cardconjurer.app/.",
+    "cardsmith": "Don't use mtgcardsmith please, the formatting sucks. Use MagicSetEditor ( https://discord.com/channels/631288872814247966/803384271766683668/1452007717840490606 ), or if you don't want to download something use https://cardconjurer.app/.",
     "dreadmaw": "We already have too many green 6 drop creatures, green needs more non-creature spells, not more dreadmaws.",
     "token": "Anything that is not the image of a token will be deleted from here. Discuss tokens in #general",
     "off-topic": "Don't ask about #off-topic-1, you don't want to know.",
