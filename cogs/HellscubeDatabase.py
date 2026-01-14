@@ -262,7 +262,7 @@ class HellscubeDatabaseCog(commands.Cog):
         cardName = args.split("\n")[0].strip()
         splitLines = args.split("\n")
         if splitLines.__len__() != 2:
-            await ctx.send("seems like you're missing a line break")
+            await ctx.send("seems like you're missing a line break or have an extra one")
             return
 
         tag = splitLines[1].strip()
@@ -285,6 +285,10 @@ class HellscubeDatabaseCog(commands.Cog):
         tags = cardSheetUnapproved.col_values(21)
 
         currentTags = tags[dbRowIndex - 1] if tags.__len__() >= dbRowIndex else ""
+
+        if tag in str(currentTags).split(";"):
+            await ctx.send("card already has that tag")
+            return
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
