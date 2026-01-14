@@ -1,7 +1,7 @@
 import io
 import os
 import re
-from typing import cast
+from typing import Optional, cast
 import discord
 from gspread import Cell
 import hc_constants
@@ -24,8 +24,9 @@ async def acceptCard(
     cardName: str,
     authorName: str,
     channelIdForCard: int = hc_constants.HC_POSSE_CARD_LIST,
-    setId: str = "HCJ",
+    setId: str = "HC8.1",
     errata: bool = False,
+    errataId: Optional[str] = None,
 ):
     extension = re.search("\.([^.]*)$", file.filename)
     fileType = (
@@ -44,22 +45,22 @@ async def acceptCard(
 
     with open(image_path, "wb") as out:
         out.write(file_data)
-    if not errata:
-        ...
-        # try:
-        #     await post_to_reddit(
-        #         image_path=image_path,
-        #         title=f"{cardMessage.replace('**', '')} was accepted!",
-        #         flair=hc_constants.ACCEPTED_FLAIR,
-        #     )
-        # except Exception as e:
-        #     print("tried to post to reddit", e)
 
-    allCards = cardSheetUnapproved.get("A:D")
+    if not errata and not errataId:
+        try:
+            await post_to_reddit(
+                image_path=image_path,
+                title=f"{cardMessage.replace('**', '')} was accepted!",
+                flair=hc_constants.ACCEPTED_FLAIR,
+            )
+        except Exception as e:
+            print("tried to post to reddit", e)
+
+    allCards = cardSheetUnapproved.get("A:E")
     index = [
         i
         for i in range(len(allCards))
-        if allCards[i][0] == cardName and allCards[i][3] == setId
+        if allCards[i][1] == cardName and allCards[i][4] == setId  # TODO ERRATA
     ]
 
     newCard = True
@@ -68,7 +69,7 @@ async def acceptCard(
     if cardName != "" and index.__len__() > 0:
         dbRowIndex = index[0] + 1
         newCard = False
-        image_id_to_update = allCards[index[0]][1].removeprefix(
+        image_id_to_update = allCards[index[0]][2].removeprefix(
             "https://lh3.googleusercontent.com/d/"
         )
     else:
@@ -82,14 +83,14 @@ async def acceptCard(
 
     imageUrl = getDriveUrl(google_drive_file_id)
 
-    cardSheetUnapproved.update_cell(dbRowIndex, 2, imageUrl)
+    cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)
 
     if newCard:
         cardSheetUnapproved.update_cells(
             [
-                Cell(row=dbRowIndex, col=1, value=cardName),
-                Cell(row=dbRowIndex, col=3, value=authorName),
-                Cell(row=dbRowIndex, col=4, value=setId),
+                Cell(row=dbRowIndex, col=2, value=cardName),
+                Cell(row=dbRowIndex, col=4, value=authorName),
+                Cell(row=dbRowIndex, col=5, value=setId),
             ]
         )
 
@@ -122,11 +123,11 @@ async def acceptVetoCard(
     with open(image_path, "wb") as out:
         out.write(file_data)
 
-    allCards = cardSheetUnapproved.get("A:D")
+    allCards = cardSheetUnapproved.get("A:E")
     index = [
         i
         for i in range(len(allCards))
-        if allCards[i][0] == cardName and allCards[i][3] == "HCV"
+        if allCards[i][1] == cardName and allCards[i][4] == "HCV"
     ]
 
     newCard = True
@@ -151,16 +152,16 @@ async def acceptVetoCard(
 
     cardSheetUnapproved.update_cells(
         [
-            Cell(row=dbRowIndex, col=2, value=imageUrl),
-            Cell(row=dbRowIndex, col=4, value="HCV"),
+            Cell(row=dbRowIndex, col=3, value=imageUrl),
+            Cell(row=dbRowIndex, col=5, value="HCV"),
         ]
     )
 
     if newCard:
         cardSheetUnapproved.update_cells(
             [
-                Cell(row=dbRowIndex, col=1, value=cardName),
-                Cell(row=dbRowIndex, col=3, value=authorName),
+                Cell(row=dbRowIndex, col=2, value=cardName),
+                Cell(row=dbRowIndex, col=4, value=authorName),
             ]
         )
 
@@ -169,8 +170,6 @@ async def acceptVetoCard(
             try:
                 await message.delete()  # Delete message if it matches
                 print(f"Deleted message: {message.content}")
-            except discord.Forbidden:
-                print("Bot lacks permissions to delete messages.")
             except discord.HTTPException as e:
                 print(f"Failed to delete message: {e}")
 
@@ -179,8 +178,6 @@ async def acceptVetoCard(
             try:
                 await message.delete()  # Delete message if it matches
                 print(f"Deleted message: {message.content}")
-            except discord.Forbidden:
-                print("Bot lacks permissions to delete messages.")
             except discord.HTTPException as e:
                 print(f"Failed to delete message: {e}")
 

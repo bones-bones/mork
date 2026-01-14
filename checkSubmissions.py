@@ -128,6 +128,7 @@ async def checkSubmissions(bot: commands.Bot):
                             cardMessage=cardMessage,
                             authorName=card_author,
                             cardName=dbname,
+                            errata=False,
                         )
                         await messageEntry.delete()
                         continue  # and then stop processing the card

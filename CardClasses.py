@@ -75,7 +75,9 @@ class CardSearch:
         legality: str,
         rulings: str,
         tags: list[str],
+        id: str,
     ):
+        self._id = id
         self._name = name
         self._img = img
         self._creator = creator
@@ -119,6 +121,9 @@ class CardSearch:
 
     def addTag(self, tag):
         self._tags.append(tag)
+
+    def id(self):
+        return self._id
 
     def types(self):
         returnList: list[str] = []
