@@ -57,11 +57,7 @@ async def acceptCard(
             print("tried to post to reddit", e)
 
     allCards = cardSheetUnapproved.get("A:E")
-    index = [
-        i
-        for i in range(len(allCards))
-        if allCards[i][1] == cardName and allCards[i][4] == setId  # TODO ERRATA
-    ]
+    index = [i for i in range(len(allCards)) if str(allCards[i][0]) == str(errataId)]
 
     newCard = True
     image_id_to_update = None
@@ -86,8 +82,10 @@ async def acceptCard(
     cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)
 
     if newCard:
+        nextId = int(allCards[allCards.__len__() - 1][0]) + 1
         cardSheetUnapproved.update_cells(
             [
+                Cell(row=dbRowIndex, col=1, value=str(nextId)),
                 Cell(row=dbRowIndex, col=2, value=cardName),
                 Cell(row=dbRowIndex, col=4, value=authorName),
                 Cell(row=dbRowIndex, col=5, value=setId),
