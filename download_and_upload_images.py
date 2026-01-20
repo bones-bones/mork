@@ -65,8 +65,8 @@ current_printable_cards = targetSheet.col_values(1)
 # do 176
 startIndex = 1070
 endIndex = 1080  # 1149  # 10
-cardNames = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
-primaryUrls = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
+cardNames = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
+primaryUrls = [cell.value for cell in mainSheet.range(f"C{startIndex}:C{endIndex}")]
 side1Urls = [
     ""
 ] * 1150  # [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
