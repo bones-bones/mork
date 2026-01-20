@@ -210,6 +210,18 @@ class LifecycleCog(commands.Cog):
                 await thread.edit(archived=True)
 
     @commands.Cog.listener()
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
+        if user.bot:
+            return
+        if (
+            str(reaction.emoji) == hc_constants.DELETE
+            and reaction.message.author.id == hc_constants.SCRYFALL
+        ):
+            if reaction.count >= 2:
+                await reaction.message.delete()
+                return
+
+    @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
         try:
             await thread.join()
