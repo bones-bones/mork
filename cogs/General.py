@@ -93,7 +93,7 @@ class GeneralCog(commands.Cog):
             messages = [message async for message in messages]
             card = ""
             for i in range(1, len(messages)):
-                if messages[i].content.lower().startswith("start"):
+                if messages[i].content.lower().startswith("start") or messages[i].content.lower().startswith("!start"):
                     break
                 if messages[i].content != "":
                     if messages[i].content[0] != "(":
