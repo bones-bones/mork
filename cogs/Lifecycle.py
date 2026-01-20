@@ -841,28 +841,15 @@ class LifecycleCog(commands.Cog):
         """
         async def join_thread_logic(ctx, thread):
             """Helper to join a thread with proper checks"""
-            if thread.locked:
-                await ctx.send("🔒 Thread is locked!", delete_after=5)
-                return
-
-            # Check if already in thread
-            members = await thread.fetch_members()
-            if any(member.id == ctx.author.id for member in members):
-                await ctx.send("ℹ️ You're already in this thread!", delete_after=5)
-                return
-
             try:
                 await thread.add_user(ctx.author)
                 await ctx.send(f"✅ Added you to **{thread.name}**!\n{thread.mention}", delete_after=15)
-            except discord.Forbidden:
-                await ctx.send("❌ I don't have permission to add you!", delete_after=5)
+            except Exception as e:
+                print(e)
 
         REQUIRED_ROLE_ID = hc_constants.SKELETONS
 
         required_role = ctx.guild.get_role(REQUIRED_ROLE_ID)
-        if not required_role:
-            await ctx.send("❌ Required role not found on server!", delete_after=5)
-            return
 
         if required_role not in ctx.author.roles:
             await ctx.send(f"❌ You don't have access to this command!",
@@ -874,19 +861,11 @@ class LifecycleCog(commands.Cog):
         # Get active threads (last 7 days)
         threads = target_channel.threads
 
-        if not threads:
-            await ctx.send(f"❌ No threads found in {target_channel.mention}!", delete_after=5)
-            return
-
         # Search for threads containing the phrase
         matching_threads = []
         for thread in threads:
             if thread.is_private() and search_phrase.lower() in thread.name.lower():
                 matching_threads.append(thread)
-
-        if not matching_threads:
-            await ctx.send(f"❌ No private threads with `{search_phrase}` in {target_channel.mention}!", delete_after=5)
-            return
 
         # If only one match, join it
         if len(matching_threads) == 1:
@@ -894,13 +873,15 @@ class LifecycleCog(commands.Cog):
             await join_thread_logic(ctx, thread)
             return
 
-        # Sort by creation date (thread.id contains timestamp)
-        matching_threads.sort(key=lambda x: x.id, reverse=True)  # Higher ID = newer
-
-        # Automatically join the newest thread
-        newest_thread = matching_threads[0]
-        await join_thread_logic(ctx, newest_thread)
-
+        try:
+            # Sort by creation date (thread.id contains timestamp)
+            matching_threads.sort(key=lambda x: x.id, reverse=True)  # Higher ID = newer
+    
+            # Automatically join the newest thread
+            newest_thread = matching_threads[0]
+            await join_thread_logic(ctx, newest_thread)
+        except Exception as e:
+            print(e)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
