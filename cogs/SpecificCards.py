@@ -965,7 +965,7 @@ class SpecificCardsCog(commands.Cog):
         await send_image_reply(
             url=result.img(), cardname=result.name(), text=None, message=ctx.message
         )
-
+        
     # for the card Mystery Inc on Duskmourn
     @commands.command()
     async def randomRoom(self, ctx: commands.Context):
@@ -1022,7 +1022,156 @@ class SpecificCardsCog(commands.Cog):
             "https://lh3.googleusercontent.com/d/1E2K3gYHtSr34IB2btFC2QjRevQEyuyBy",
         ]
         rroom = random.randint(0, len(roomDoors) - 1)
-        await sendDriveImage(roomDoors[rroom], ctx)
+        await sendImage(roomDoors[rroom], ctx)
+    
+    # for the card Hearth Magicbrew (subject to change)
+    @commands.command()
+    async def history(self, ctx: commands.Context):
+        iconicHands = [ #modern jund
+            [ "https://cards.scryfall.io/large/front/b/6/b6876d9e-0908-43ac-8542-09c7aa02b5ba.jpg",
+             "https://cards.scryfall.io/large/front/9/4/94f7a441-bf2d-46fb-a7b6-9bd6137f86d9.jpg",
+             "https://cards.scryfall.io/large/front/a/c/ac506c17-adc8-49c6-9d8d-43db7cb1ec9d.jpg",
+             "https://cards.scryfall.io/large/front/3/d/3df8c148-e87d-4043-9d8b-ec72bf8b6d5d.jpg",
+             "https://cards.scryfall.io/large/front/7/e/7ef67487-c8e5-49bb-b0f7-e073ff2e31f1.jpg",
+             "https://cards.scryfall.io/large/front/f/c/fce07335-cc78-4683-b2f0-9c98a06ea1d8.jpg",
+             "https://cards.scryfall.io/large/front/f/2/f281e16f-0fe1-4095-bd63-0a4479f75c11.jpg" ],
+            [ #1996 world champ
+             "https://cards.scryfall.io/large/front/f/8/f8ac5006-91bd-4803-93da-f87cf196dd2f.jpg",
+             "https://cards.scryfall.io/large/front/2/7/2722d7e2-61c6-4934-9c21-875ee78fd06c.jpg",
+             "https://cards.scryfall.io/large/front/9/2/92e55b10-375f-4b4f-b676-3b9b8085fdd2.jpg",
+             "https://cards.scryfall.io/large/front/f/b/fb4da609-6c08-4a18-b7d9-fb2f9b11bab2.jpg",
+             "https://cards.scryfall.io/large/front/e/7/e7880157-7f27-4f1b-9cdc-ab36a6252376.jpg",
+             "https://cards.scryfall.io/large/front/b/1/b1623d57-4729-4796-b3f7-f1837a05c6ed.jpg",
+             "https://cards.scryfall.io/large/front/b/1/b1623d57-4729-4796-b3f7-f1837a05c6ed.jpg", ],
+            [ #caw blade
+             "https://cards.scryfall.io/large/front/b/e/beddd409-0154-45a5-a20d-833cf1b5e1f4.jpg",
+             "https://cards.scryfall.io/large/front/b/e/beddd409-0154-45a5-a20d-833cf1b5e1f4.jpg",
+             "https://cards.scryfall.io/large/front/b/e/beddd409-0154-45a5-a20d-833cf1b5e1f4.jpg",
+             "https://cards.scryfall.io/large/front/0/e/0e606072-a3aa-4300-ba90-ec92a721fa76.jpg",
+             "https://cards.scryfall.io/large/front/0/3/03cc5caf-b2d7-4211-a1a4-f0ad6e70e3f4.jpg",
+             "https://cards.scryfall.io/large/front/9/9/99939b90-e88c-4c2f-ba78-56d455611703.jpg",
+             "https://cards.scryfall.io/large/front/4/d/4dc3a90f-23c4-4c54-8825-32cb17977b48.jpg",],
+             [ #many rats
+             "https://cards.scryfall.io/large/front/1/c/1c9caf97-75c6-4e12-8724-1abe32212bef.jpg",
+             "https://cards.scryfall.io/large/front/1/c/1c9caf97-75c6-4e12-8724-1abe32212bef.jpg",
+             "https://cards.scryfall.io/large/front/1/c/1c9caf97-75c6-4e12-8724-1abe32212bef.jpg",
+             "https://cards.scryfall.io/large/front/1/c/1c9caf97-75c6-4e12-8724-1abe32212bef.jpg",
+             "https://cards.scryfall.io/large/front/1/c/1c9caf97-75c6-4e12-8724-1abe32212bef.jpg",
+             "https://cards.scryfall.io/large/front/6/b/6bae27d4-9de5-4f95-8c56-79afc6cbeb0c.jpg",
+             "https://cards.scryfall.io/large/front/6/b/6bae27d4-9de5-4f95-8c56-79afc6cbeb0c.jpg"],
+             [ #eldrazi winter
+             "https://cards.scryfall.io/large/front/3/9/3906b61a-3865-4dfd-ae06-a7d2a608851a.jpg",
+             "https://cards.scryfall.io/large/front/b/f/bffc360e-db41-48f3-9365-680d55046e04.jpg",
+             "https://cards.scryfall.io/large/front/3/1/311a05b1-042d-47e7-9fd7-6e8abe8fc578.jpg",
+             "https://cards.scryfall.io/large/front/6/4/64820f4f-1f78-4338-beb8-5ed5a447cfe4.jpg",
+             "https://cards.scryfall.io/large/front/5/2/52d4b652-a830-4fd4-94bb-c17c227f2928.jpg",
+             "https://cards.scryfall.io/large/front/c/3/c3b21941-1b7d-4fde-8b1d-7edbd5e5b796.jpg",
+             "https://cards.scryfall.io/large/front/3/1/315924c9-77e3-405b-9bbf-852ed563c6e3.jpg"],
+             [ #early red deck wins
+             "https://cards.scryfall.io/large/front/3/7/3707ab74-9aec-4d30-86e0-ffa5f72d5b4f.jpg",
+             "https://cards.scryfall.io/large/front/c/a/ca2ecfd4-c874-4468-8601-87aa110d5a00.jpg",
+             "https://cards.scryfall.io/large/front/3/1/31415b9b-fb30-4132-a9a3-795b4573a901.jpg",
+             "https://cards.scryfall.io/large/front/f/9/f9b2ff2a-6dfe-4635-8da2-22d525e82b94.jpg",
+             "https://cards.scryfall.io/large/front/9/9/99ff731b-8399-40c8-b539-ba6ba5783771.jpg",
+             "https://cards.scryfall.io/large/front/2/3/23e043bf-a6d7-4778-8460-13bdf38b7d39.jpg",
+             "https://cards.scryfall.io/large/front/9/5/9515ced4-b679-48f0-bf62-8b7baef5e1c2.jpg"],
+             [ #faeries
+             "https://cards.scryfall.io/large/front/4/e/4e5ba4a9-a282-4d4b-b25a-179e05e458f4.jpg",
+             "https://cards.scryfall.io/large/front/f/5/f53d8540-fb6d-4d4c-b467-ebfbfa53c880.jpg",
+             "https://cards.scryfall.io/large/front/8/1/8145fed6-6b51-420a-84cf-4ea5e0aa1883.jpg",
+             "https://cards.scryfall.io/large/front/3/d/3df8c148-e87d-4043-9d8b-ec72bf8b6d5d.jpg",
+             "https://cards.scryfall.io/large/front/8/c/8ca3c48b-f104-4292-9a4e-2ce87a65893c.jpg",
+             "https://cards.scryfall.io/large/front/9/e/9e4afa65-7933-4a64-b50f-a9a9f832b112.jpg",
+             "https://cards.scryfall.io/large/front/9/d/9d91a31c-b70a-45bd-a8dd-48d49b277f24.jpg"],
+             [ #tron
+             "https://cards.scryfall.io/large/front/7/a/7a235785-b720-483b-bb28-6de440be2129.jpg",
+             "https://cards.scryfall.io/large/front/4/4/4499c80b-72af-485c-9106-22967b5252cd.jpg",
+             "https://cards.scryfall.io/large/front/8/6/86c6dc88-ef09-4b37-b9e8-c483cccd0e0e.jpg",
+             "https://cards.scryfall.io/large/front/f/9/f9287151-95df-4f5a-b32a-4b0aea825452.jpg",
+             "https://cards.scryfall.io/large/front/c/5/c55bee97-593f-441f-b96c-a998d5212a55.jpg",
+             "https://cards.scryfall.io/large/front/3/3/33672990-4860-4aa6-ac1b-f9da66f5da59.jpg",
+             "https://cards.scryfall.io/large/front/1/d/1d7a1357-debd-49b0-9fd5-560d5b3f589e.jpg"],
+             [ #UW delver
+             "https://cards.scryfall.io/large/front/1/1/11bf83bb-c95b-4b4f-9a56-ce7a1816307a.jpg",
+             "https://cards.scryfall.io/large/front/9/e/9e5b279e-4670-4a1e-87d0-3cab7e4f9e58.jpg",
+             "https://cards.scryfall.io/large/front/3/5/35b57113-b39a-460b-b4aa-02606b40bbd0.jpg",
+             "https://cards.scryfall.io/large/front/7/0/70305148-23bd-41dd-9de5-13cf5ae591ae.jpg",
+             "https://cards.scryfall.io/large/front/a/7/a7c7757d-8036-4b33-a1cb-07795d392588.jpg",
+             "https://cards.scryfall.io/large/front/b/9/b9d18532-2247-4e33-a760-bc42a727e9f5.jpg",
+             "https://cards.scryfall.io/large/front/c/f/cf258641-b73c-4813-8a23-da47cf79eca5.jpg"],
+             [ #degenerate urzas saga
+             "https://cards.scryfall.io/large/front/6/c/6c877da3-68fa-41d0-8a24-8c79fcd8ecc1.jpg",
+             "https://cards.scryfall.io/large/front/0/5/05e9fec4-1e0a-4206-ab2b-cc2543cba667.jpg",
+             "https://cards.scryfall.io/large/front/2/8/28028830-83ed-45e2-b495-3b9ad9d3e988.jpg",
+             "https://cards.scryfall.io/large/front/a/d/ad7ac9a5-340f-4509-826c-7b9416d47887.jpg",
+             "https://cards.scryfall.io/large/front/6/e/6e091dd6-149f-46ea-bae0-224e79e3aacb.jpg",
+             "https://cards.scryfall.io/large/front/5/e/5e977755-8ea4-4a8b-90c4-dd175321e05d.jpg",
+             "https://cards.scryfall.io/large/front/f/3/f3d62dbd-63db-4ac9-950f-9852627f23f2.jpg"],
+             [ #hogaak summer
+             "https://cards.scryfall.io/large/front/0/0/0049e68d-0caf-474f-9523-dad343f1250a.jpg",
+             "https://cards.scryfall.io/large/front/5/1/51eb9f05-9d5a-4196-9329-626ce4793c42.jpg",
+             "https://cards.scryfall.io/large/front/5/2/52c44610-6d4b-4c14-839f-2c085badec90.jpg",
+             "https://cards.scryfall.io/large/front/8/1/813104f6-e6e4-4709-8626-12fe4262a11f.jpg",
+             "https://cards.scryfall.io/large/front/0/a/0a19da90-880e-4eca-8cf7-6d7baf090d53.jpg",
+             "https://cards.scryfall.io/large/front/4/8/48d73cb5-22ac-43df-9c4b-0c860bb80b3e.jpg",
+             "https://cards.scryfall.io/large/front/5/f/5faba6c8-3463-47c1-ba01-09eb87fcb2d5.jpg"],
+             [ #affinity
+             "https://cards.scryfall.io/large/front/9/6/969ebd20-de69-44ba-a0c2-9e2a89480370.jpg",
+             "https://cards.scryfall.io/large/front/f/f/ff504dcb-2eb8-4b3c-a8b9-29697739b649.jpg",
+             "https://cards.scryfall.io/large/front/e/f/efb965a7-877a-4302-b507-25b0a9e32d9b.jpg",
+             "https://cards.scryfall.io/large/front/9/0/90ea95d0-9f95-462b-a080-22a5da7b2e97.jpg",
+             "https://cards.scryfall.io/large/front/0/5/056affab-4e2a-4b68-b864-d879becd3c45.jpg",
+             "https://cards.scryfall.io/large/front/e/2/e2ab98a1-664c-4775-a3dd-22a15e2f836b.jpg",
+             "https://cards.scryfall.io/large/front/7/3/73866487-33f4-4f64-b100-2c4ddadcd74e.jpg"],
+             [ #abzan control siege rhino
+             "https://cards.scryfall.io/large/front/9/0/9011126a-20bd-4c86-a63b-1691f79ac247.jpg",
+             "https://cards.scryfall.io/large/front/8/f/8f7b7598-35b0-4bb5-8347-8c868500f846.jpg",
+             "https://cards.scryfall.io/large/front/6/5/65b7275a-5305-42e6-b5c3-8b88568b4e28.jpg",
+             "https://cards.scryfall.io/large/front/5/9/596822f6-dbd4-4cc8-aa50-9331ff42544e.jpg",
+             "https://cards.scryfall.io/large/front/d/7/d75b4559-8946-45bb-a580-318a13d1e89e.jpg",
+             "https://cards.scryfall.io/large/front/2/d/2dd40d90-c939-458a-9a98-27d10da6ff2f.jpg",
+             "https://cards.scryfall.io/large/front/0/f/0f14b6b3-5f40-4328-a3be-28fe32dd7cb1.jpg"],
+             [ #broko oko
+             "https://cards.scryfall.io/large/front/3/4/3462a3d0-5552-49fa-9eb7-100960c55891.jpg",
+             "https://cards.scryfall.io/large/front/4/0/4034e5ba-9974-43e3-bde7-8d9b4586c3a4.jpg",
+             "https://cards.scryfall.io/large/front/3/0/30377bf0-d9b1-4c14-8dde-f74b1e02d604.jpg",
+             "https://cards.scryfall.io/large/front/8/0/801dd9c6-b159-4e1c-af2c-214c1f573633.jpg",
+             "https://cards.scryfall.io/large/front/a/a/aa686c34-1c11-469f-93c2-f9891aea521f.jpg",
+             "https://cards.scryfall.io/large/front/c/c/cc46739c-290c-4a2d-9301-5ab89727ce37.jpg",
+             "https://cards.scryfall.io/large/front/b/b/bb54233c-0844-4965-9cde-e8a4ef3e11b8.jpg"],
+             [ #posts
+             "https://cards.scryfall.io/large/front/2/f/2f28ecdc-a4f0-4327-a78c-340be41555ee.jpg",
+             "https://cards.scryfall.io/large/front/8/b/8b63efb6-249c-4f57-9af1-baffe938520c.jpg",
+             "https://cards.scryfall.io/large/front/8/2/82fc9498-7397-4857-87fe-7c9010944ed8.jpg",
+             "https://cards.scryfall.io/large/front/6/7/67600383-bbb8-411c-b8e6-2296650bc747.jpg",
+             "https://cards.scryfall.io/large/front/e/0/e0b4d4b1-6e25-4c4b-a21a-1b7b1c1d6452.jpg",
+             "https://cards.scryfall.io/large/front/f/2/f2e3d197-e978-4ec6-ab69-3c5fd8ac3fc1.jpg",
+             "https://cards.scryfall.io/large/front/9/5/95862196-1805-498e-84ee-3c6bbee1a673.jpg"],
+             [ # monored aggro standard
+             "https://cards.scryfall.io/large/front/4/8/48ace959-66b2-40c8-9bff-fd7ed9c99a82.jpg",
+             "https://cards.scryfall.io/large/front/e/e/eef5a0ae-5907-42c9-a097-3f973737e392.jpg",
+             "https://cards.scryfall.io/large/front/0/0/0035082e-bb86-4f95-be48-ffc87fe5286d.jpg",
+             "https://cards.scryfall.io/large/front/9/2/92c5f0e3-345a-40a8-9cda-565a62156692.jpg",
+             "https://cards.scryfall.io/large/front/7/0/7054012b-4f9d-44a0-aaf9-7fd3bddc7b2d.jpg",
+             "https://cards.scryfall.io/large/front/0/b/0b384d24-8771-4860-8fc1-1b74217f1c4c.jpg",
+             "https://cards.scryfall.io/large/front/0/b/0b384d24-8771-4860-8fc1-1b74217f1c4c.jpg"]
+                 ]
+        
+        #random 1/1001 chance to get channel fireball hand
+        selectedHand = random.choice(iconicHands)
+        if random.randint(1, 1001) == 1:
+            for card in ["https://cards.scryfall.io/large/front/e/a/eace2c85-976c-425e-9800-5a6ccbd91b56.jpg",
+                         "https://cards.scryfall.io/large/front/b/0/b0faa7f2-b547-42c4-a810-839da50dadfe.jpg",
+                         "https://cards.scryfall.io/large/front/c/1/c1862c47-71cc-45a3-8805-a5ddc62e55ea.jpg",
+                         "https://cards.scryfall.io/large/front/b/7/b7623c00-144b-4a8f-9c6c-f5e9e4f65ece.jpg",
+                         "https://cards.scryfall.io/large/front/7/8/78a9088f-8755-47cb-aa93-51d992ccab90.jpg",
+                         "https://cards.scryfall.io/large/front/7/8/78a9088f-8755-47cb-aa93-51d992ccab90.jpg",
+                         "https://cards.scryfall.io/large/front/7/8/78a9088f-8755-47cb-aa93-51d992ccab90.jpg"]:
+                await sendImage(card, ctx)
+        else:
+            for card in selectedHand:
+                await sendImage(card, ctx)
+ 
 
     # for the card Grunch
     # Original: https://zaxer2.github.io/howtogrunch
