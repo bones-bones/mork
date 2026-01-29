@@ -45,28 +45,30 @@ def build_database():
             None,
         )
         try:
-            name = entry[0]
-            img = entry[1]
-            creator = creator_alias[0] if creator_alias else entry[2]
-            cardset = entry[3]
-            legality = entry[4]
-            rulings = entry[6]
-            cmc = entry[7] if entry[7] else 0
-            colors = entry[8].split(";")
-            tags = entry[19].split(";") if entry[19] != "" else []
-
+            id = entry[0]
+            name = entry[1]
+            img = entry[2]
+            creator = creator_alias[0] if creator_alias else entry[3]
+            cardset = entry[4]
+            legality = entry[5]
+            rulings = entry[7]
+            cmc = entry[8] if entry[8] else 0
+            colors = entry[9].split(";")
+            tags = entry[20].split(";") if entry[20] != "" else []
+            # hererere
             # 9
             sides = []
-            sides.append(create_side(entry[9:18]))
-            if entry[22] != "" and entry[22] != " ":
-                sides.append(create_side(entry[20:29]))
-            if entry[32] != "" and entry[32] != " ":
+            sides.append(create_side(entry[10:19]))
+            if entry[23] != "" and entry[23] != " ":
+                sides.append(create_side(entry[21:30]))
+            if entry[33] != "" and entry[33] != " ":
                 sides.append(create_side(entry[30:39]))
-            if entry[42] != "" and entry[42] != " ":
-                sides.append(create_side(entry[40:49]))
+            if entry[43] != "" and entry[43] != " ":
+                sides.append(create_side(entry[41:50]))
 
             cardList.append(
                 CardSearch(
+                    id=id,
                     name=name,
                     img=img,
                     creator=creator,
@@ -120,9 +122,9 @@ class HellscubeDatabaseCog(commands.Cog):
     async def on_ready(self):
         # global log
         build_database()
-        nameList = cast(list[str], cardSheet.col_values(1)[2:])
-        imgList = cardSheet.col_values(2)[2:]
-        creatorList = cardSheet.col_values(3)[2:]
+        nameList = cast(list[str], cardSheet.col_values(2)[2:])
+        imgList = cardSheet.col_values(3)[2:]
+        creatorList = cardSheet.col_values(4)[2:]
 
         global allCards  # Need to modify shared allCards object
         for i in range(len(nameList)):
@@ -222,9 +224,9 @@ class HellscubeDatabaseCog(commands.Cog):
             hc_constants.HELLSCUBE_DATABASE
         ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
-        allCardNames = cardSheetUnapproved.col_values(1)
+        allCardNames = cardSheetUnapproved.col_values(2)
 
-        rulings = cardSheetUnapproved.col_values(7)
+        rulings = cardSheetUnapproved.col_values(8)
         lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
         if not cardName.lower() in lowerList:
             await ctx.send("Unable to find the card... this shouldn't happen")
@@ -248,7 +250,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
-            7,
+            8,
             newRuling,
         )
 
@@ -275,12 +277,12 @@ class HellscubeDatabaseCog(commands.Cog):
             hc_constants.HELLSCUBE_DATABASE
         ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
-        allCardNames = cardSheetUnapproved.col_values(1)
+        allCardNames = cardSheetUnapproved.col_values(2)
 
         lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
         dbRowIndex = lowerList.index(cardName.lower()) + 1
 
-        tags = cardSheetUnapproved.col_values(20)
+        tags = cardSheetUnapproved.col_values(21)
 
         currentTags = tags[dbRowIndex - 1] if tags.__len__() >= dbRowIndex else ""
 
@@ -290,7 +292,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
-            20,
+            21,
             (f"{currentTags};" if currentTags != "" else "") + f"{tag}",
         )
 

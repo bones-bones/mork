@@ -14,7 +14,6 @@ QUOTE_SPLIT = ";%;%;"
 from handleVetoPost import handleVetoPost
 from isRealCard import isRealCard
 from printCardImages import send_image_reply
-from shared_vars import googleClient
 from shared_vars import drive
 
 from acceptCard import acceptCard
@@ -32,15 +31,6 @@ from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 class MiscCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
-    @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-
-        if (
-            message.channel.id == hc_constants.BOT_TEST_CHANNEL
-            and message.author.id == hc_constants.LLLLLL
-        ):
-            await message.channel.send("astigmatism")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, reaction: RawReactionActionEvent):
@@ -94,7 +84,7 @@ class MiscCog(commands.Cog):
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
 
-            set_to_add_to = "HCJ"
+            set_to_add_to = "HC8.1"
 
             channel_to_add_to = hc_constants.HC_JUMPSTART_LIST
 

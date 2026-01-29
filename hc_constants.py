@@ -3,6 +3,8 @@
 # Discord Ids
 SUBMISSIONS_CHANNEL = 842126227203817513
 VETO_CHANNEL = 798690672512335932
+
+# card list
 HELLS_UNO_CHANNEL = 1176543554869415997
 FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL = 1124083495984181258
 FOUR_ONE_ERRATA_SUBMISSIONS = 1231402873469009930
@@ -13,6 +15,13 @@ SIX_ONE_CARD_LIST = 1260724438241116170
 SEVEN_CARD_LIST = 1334216276565819524
 GRAVEYARD_CARD_LIST = 1289285006061080658
 VETO_CARD_LIST = 1289285006061080658
+HC_POSSE_CARD_LIST = 1323092680938487820
+PORTAL_LIST = 1380085534050877460
+HC_EIGHT_LIST = 1387642483395006484
+HC_JUMPSTART_LIST = 1426269974762094643
+TOKEN_LIST = 692914661191974912
+
+
 SUBMISSIONS_DISCUSSION_CHANNEL = 842605813238464542
 MORK_SUBMISSIONS_LOGGING_CHANNEL = 1053602170177589278
 HELLS_BASICS_SUBMISSIONS = 1233249408414519427
@@ -23,17 +32,14 @@ ERRATA_SUBMISSIONS = 862023130716438549
 THIS_IS_NOT_MAGIC = 1258527797820002304
 DESIGN_HELL_SUBMISSION_CHANNEL = 1273085587964035183
 TOKEN_SUBMISSIONS = 1284365375475023884
-TOKEN_LIST = 692914661191974912
-SIX_ERRATA = 1319885014992949268
-HC_POSSE_CARD_LIST = 1323092680938487820
-PORTAL_LIST = 1380085534050877460
-HC_EIGHT_LIST = 1387642483395006484
-HC_JUMPSTART_LIST = 1426269974762094643
 
-SUBMISSIONS_THRESHOLD = 30
-SUBMISSION_COOLDOWN = 6
+SIX_ERRATA = 1319885014992949268
+
+
+SUBMISSIONS_THRESHOLD = 45
+SUBMISSION_COOLDOWN = 22
 MASTERPIECE_THRESHOLD = 50
-VC_THRESHOLD = 4
+VC_THRESHOLD = 5
 
 VETO_DISCUSSION_CHANNEL = 798690594029305856
 RESOURCES_CHANNEL = 803384271766683668
@@ -116,7 +122,7 @@ macroList = {
     "own": "Cards should do something on their as this cube is too large to consistently draft an archetype, archetype support cards should be playable on their own and great with support.",
     "would": "If your effect doesn't have 'instead', don't use 'would', and if it does, don't use 'whenever'.",
     "cass": "Cass fix your capitals in the name.",
-    "cardsmith": "Don't use mtgcardsmith please, the formatting sucks. Use MagicSetEditor ( https://discord.com/channels/631288872814247966/803384271766683668/1344017056491900950 ), or if you don't want to download something use https://cardconjurer.app/.",
+    "cardsmith": "Don't use mtgcardsmith please, the formatting sucks. Use [MagicSetEditor](https://discord.com/channels/631288872814247966/803384271766683668/1452007717840490606), or if you don't want to download something use https://cardconjurer.app/.",
     "dreadmaw": "We already have too many green 6 drop creatures, green needs more non-creature spells, not more dreadmaws.",
     "token": "Anything that is not the image of a token will be deleted from here. Discuss tokens in #general",
     "off-topic": "Don't ask about #off-topic-1, you don't want to know.",
