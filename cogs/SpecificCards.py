@@ -580,13 +580,25 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def life(self, ctx: commands.Context):
         for i in range(2):
-            deathseekerJson = await getScryfallJson(
+            lifeJson = await getScryfallJson(
                 "https://api.scryfall.com/cards/random?q=o%3A%22When+~+enters%22+t%3Acreature"
             )
             try:
-                await sendImage(await getImageFromJson(deathseekerJson), ctx)
+                await sendImage(await getImageFromJson(lifeJson), ctx)
             except:
-                pp.pprint(deathseekerJson)
+                pp.pprint(lifeJson)
+
+    # another one (this time for attack triggers)
+    @commands.command()
+    async def attack(self, ctx: commands.Context):
+        for i in range(2):
+            attackJson = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=o%3A%22Whenever+~+attacks%22+t%3Acreature"
+            )
+            try:
+                await sendImage(await getImageFromJson(attackJson), ctx)
+            except:
+                pp.pprint(attackJson)
 
     # for the card multiverse broadcasting station
     @commands.command()
@@ -965,6 +977,31 @@ class SpecificCardsCog(commands.Cog):
         await send_image_reply(
             url=result.img(), cardname=result.name(), text=None, message=ctx.message
         )
+
+    # get a random invoker for the card voke enjoyer
+    @commands.command()
+    async def invoke(self, ctx: commands.Context):
+        for i in range(2):
+            invokeJson = await getScryfallJson(
+                "https://api.scryfall.com/cards/random?q=invoker+t%3Acreature+-name%3Adynaheir+-name%3Aherbology"
+            )
+            try:
+                await sendImage(await getImageFromJson(invokeJson), ctx)
+            except:
+                pp.pprint(invokeJson)
+
+    # roll the planar die
+    @commands.command()
+    async def planarDie(self, ctx: commands.Context):
+        rresult = random.randint(0, 5)
+        await ctx.send("You rolled a ")
+        if rresult < 4:
+            await ctx.send("blank side. No effect.")
+        if rresult == 4:
+            await ctx.send("Planeswalk!")
+        else:
+            if rresult == 5:
+                await ctx.send("<:chaos:1323372133501505637>")
         
     # for the card Mystery Inc on Duskmourn
     @commands.command()
