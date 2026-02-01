@@ -25,7 +25,7 @@ import asyncpraw
 
 from datetime import datetime, timezone, timedelta
 
-import acceptCard
+from acceptCard import acceptCard
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from submissions.checkErrataSubmissions import checkErrataSubmissions
 from checkSubmissions import (
@@ -114,7 +114,6 @@ class LifecycleCog(commands.Cog):
             and cast(discord.TextChannel, cast(discord.Thread, channel).parent).id
             == hc_constants.VETO_HELLPITS
         ):
-            print("it is a :", type(channel))
             message = await channelAsText.fetch_message(reaction.message_id)
             thread_messages = [
                 message
@@ -191,11 +190,11 @@ class LifecycleCog(commands.Cog):
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
 
-            set_to_add_to = "HCJ"
+            set_to_add_to = "HC8.1"
 
             channel_to_add_to = hc_constants.HC_EIGHT_LIST
 
-            await acceptCard.acceptCard(
+            await acceptCard(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
@@ -209,6 +208,18 @@ class LifecycleCog(commands.Cog):
             thread = cast(Thread, guild.get_channel_or_thread(message.id))
             if thread:
                 await thread.edit(archived=True)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
+        if user.bot:
+            return
+        if (
+            str(reaction.emoji) == hc_constants.DELETE
+            and reaction.message.author.id == hc_constants.SCRYFALL
+        ):
+            if reaction.count >= 2:
+                await reaction.message.delete()
+                return
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
@@ -232,7 +243,8 @@ class LifecycleCog(commands.Cog):
                 await message.channel.send(
                     'in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.'
                 )
-        for word in [
+
+       for word in [
             "?si=",
             "?utm_source=",
             "?utm_medium=",
@@ -259,6 +271,7 @@ class LifecycleCog(commands.Cog):
             await message.channel.send(
                 "pls don't"
             )
+
         # Hello single coolest thing about python
         match message.channel.id:
             case (
@@ -626,6 +639,12 @@ class LifecycleCog(commands.Cog):
             # this is pretty much the same as getCardMessage but teasing out the db logic too was gonna suck
             dbname = ""
             card_author = ""
+            errataLinens = acceptanceMessage.splitlines()
+            errata_id = (
+                errataLinens[1].removeprefix("Errata: ")
+                if errataLinens.__len__() > 1
+                else None
+            )
             if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
                 ...  # This is really the case of setting both to "", but due to scoping i got lazy
             elif acceptanceMessage[0:3] == "by ":
@@ -643,11 +662,11 @@ class LifecycleCog(commands.Cog):
 
             acceptedCards.append(cardMessage)
 
-            set_to_add_to = "HCJ"
+            set_to_add_to = "HC8.1"
 
-            channel_to_add_to = hc_constants.HC_JUMPSTART_LIST
+            channel_to_add_to = hc_constants.HC_EIGHT_LIST
 
-            await acceptCard.acceptCard(
+            await acceptCard(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
@@ -655,6 +674,8 @@ class LifecycleCog(commands.Cog):
                 authorName=card_author,
                 setId=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
+                errata=errata_id != None,
+                errataId=errata_id,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)
@@ -687,7 +708,7 @@ class LifecycleCog(commands.Cog):
 
             vetoedCards.append(getCardMessage(messageEntry.content))
 
-            await acceptCard.acceptVetoCard(
+            await acceptCard(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
@@ -800,12 +821,27 @@ class LifecycleCog(commands.Cog):
                 )
 
     @commands.command()
-    async def instaerrata(self, ctx: commands.Context, *, cardMessage: str = ""):
+    async def instaerrata(self, ctx: commands.Context, *, incomingMessage: str = ""):
+        """
+        Cardname by Author
+        Errata:
+        """
+        splitLines = incomingMessage.splitlines()
+        cardMessage = splitLines[0]
+        errataId = splitLines[1] if splitLines.__len__() > 1 else None
         if not is_admin(cast(Member, ctx.author)):
             return
 
         if not ctx.message.attachments:
             await ctx.send("Please attach an image file.")
+            return
+
+        if not errataId:
+            await ctx.send(
+                """please include the errata id in the format:
+                           Cardname by Author
+                           Errata: <id goes here>"""
+            )
             return
 
         file = ctx.message.attachments[0]
@@ -827,14 +863,15 @@ class LifecycleCog(commands.Cog):
 
             dbname = str(firstPart)
             card_author = str(secondPart)
-            # TODO: do a set lookup
-        await acceptCard.acceptCard(
+
+        await acceptCard(
             bot=self.bot,
             file=await file.to_file(),
             cardMessage=cardMessage,
             cardName=dbname,
             authorName=card_author,
             errata=True,
+            errataId=errataId.removeprefix("Errata: "),
         )
 
 
