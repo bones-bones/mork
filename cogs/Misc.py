@@ -84,9 +84,9 @@ class MiscCog(commands.Cog):
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
 
-            set_to_add_to = "HC8.1"
+            set_to_add_to = "HCV"
 
-            channel_to_add_to = hc_constants.HC_JUMPSTART_LIST
+            channel_to_add_to = hc_constants.VETO_CARD_LIST
 
             await acceptCard(
                 bot=self.bot,

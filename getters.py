@@ -6,7 +6,7 @@ import hc_constants
 
 
 def getVetoChannel(bot: commands.Bot):
-    return cast(TextChannel, bot.get_channel(hc_constants.VETO_CHANNEL))
+    return cast(TextChannel, bot.get_channel(hc_constants.VETO_POLLS_CHANNEL))
 
 
 def getSubmissionDiscussionChannel(bot: commands.Bot):

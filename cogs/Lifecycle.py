@@ -314,7 +314,7 @@ class LifecycleCog(commands.Cog):
                 await morkMessage.add_reaction(hc_constants.DELETE)
                 await message.delete()
 
-            case hc_constants.VETO_CHANNEL:
+            case hc_constants.VETO_POLLS_CHANNEL:
                 await handleVetoPost(message=message, bot=self.bot, veto_council=None)
 
             case (
@@ -685,6 +685,7 @@ class LifecycleCog(commands.Cog):
                 file=file,
                 cardMessage=cardMessage,
                 cardName=dbname,
+                channelIdForCard=hc_constants.VETO_CARD_LIST,
                 authorName=card_author,
             )
 
@@ -934,9 +935,12 @@ async def status_task(bot: commands.Bot):
             await check_reddit(bot)
         except Exception as e:
             print(e)
-        await bot.change_presence(
-            status=discord.Status.online, activity=discord.Game(status)
-        )
+        try:
+            await bot.change_presence(
+                status=discord.Status.online, activity=discord.Game(status)
+            )
+        except Exception as e:
+            print("tried to change status", e)
         now = datetime.now()
         print(f"time is {now}")
         if now.hour == 10 and now.minute <= 4:

@@ -792,7 +792,7 @@ class SpecificCardsCog(commands.Cog):
         for sheet in selected:
             await sendDriveImage(sheet, ctx)
 
-    # for the card ballsjr's druidic vow
+    # for the card will, willful scheme
     @commands.command()
     async def willsSchemes(self, ctx: commands.Context):
         # https://scryfall.com/random?q=will+type=scheme
@@ -801,6 +801,20 @@ class SpecificCardsCog(commands.Cog):
             "https://api.scryfall.com/cards/random?q=will+type=scheme"
         )
         await sendImage(await getImageFromJson(json), ctx)
+
+    # for the _______ Balls
+    @commands.command()
+    async def _______Balls(self, ctx: commands.Context):
+        # https://scryfall.com/random?q=will+type=scheme
+
+        stickers = (
+            await getScryfallJson("https://api.scryfall.com/cards/search?q=t:sticker")
+        ).data
+        selected = random.sample(stickers, k=3)
+
+        await sendImage(await getImageFromJson(selected[0]), ctx)
+        await sendImage(await getImageFromJson(selected[1]), ctx)
+        await sendImage(await getImageFromJson(selected[2]), ctx)
 
     @commands.command()
     async def locus(self, ctx: commands.Context):

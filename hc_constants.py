@@ -2,7 +2,7 @@
 
 # Discord Ids
 SUBMISSIONS_CHANNEL = 842126227203817513
-VETO_CHANNEL = 798690672512335932
+VETO_POLLS_CHANNEL = 798690672512335932
 
 # card list
 HELLS_UNO_CHANNEL = 1176543554869415997
@@ -13,8 +13,8 @@ FOUR_ONE_ERRATA_ACCEPTED = 1231402715855192085
 SIX_ZERO_CARD_LIST = 1240503040721813545
 SIX_ONE_CARD_LIST = 1260724438241116170
 SEVEN_CARD_LIST = 1334216276565819524
-GRAVEYARD_CARD_LIST = 1289285006061080658
 VETO_CARD_LIST = 1289285006061080658
+GRAVEYARD_CARD_LIST = VETO_CARD_LIST
 HC_POSSE_CARD_LIST = 1323092680938487820
 PORTAL_LIST = 1380085534050877460
 HC_EIGHT_LIST = 1387642483395006484
@@ -146,7 +146,7 @@ macroList = {
     "bad2": "If the joke is that the the design is bad then the design is bad.",
     "long": "Cards with too much text tend to slow down draft and are overall bad for the cube, in general try to keep to 6 lines or less. Although this isn't a strict limit it's good to try not to make cards too long.",
     "pregnancy": 'If a card involves "pregnancy counters", it should be scrapped',
-	"brainstorming": 'most good cards should be funny to the average magic player, not just the average hellscube discord user',
+    "brainstorming": "most good cards should be funny to the average magic player, not just the average hellscube discord user",
     "dward": "https://cdn.discordapp.com/attachments/652255914220584984/829380779498668092/unknown.png",
     "downvote": "I just downvoted your comment.\n\nFAQ\nWhat does this mean?\nThe amount of karma (points) on your comment and Reddit account has decreased by one.\n\nWhy did you do this?\nThere are several reasons I may deem a comment to be unworthy of positive or neutral karma. These include, but are not limited to:\n\nRudeness towards other Redditors,\n\nSpreading incorrect information,\n\nSarcasm not correctly flagged with a /s.\n\nAm I banned from the Reddit?\nNo - not yet. But you should refrain from making comments like this in the future. Otherwise I will be forced to issue an additional downvote, which may put your commenting and posting privileges in jeopardy.\n\nI don't believe my comment deserved a downvote. Can you un-downvote it?\nSure, mistakes happen. But only in exceedingly rare circumstances will I undo a downvote. If you would like to issue an appeal, shoot me a private message explaining what I got wrong. I tend to respond to Reddit PMs within several minutes. Do note, however, that over 99.9% of downvote appeals are rejected, and yours is likely no exception.\n\nHow can I prevent this from happening in the future?\nAccept the downvote and move on. But learn from this mistake: your behavior will not be tolerated on Reddit.com. I will continue to issue downvotes until you improve your conduct. Remember: Reddit is privilege, not a right.",
     "rng": "Too make a good random card there are a couple rules/guidelines you should keep in mind:\n1. Good random effects follow a bell curve, most of time the effect should be around balanced, and only a low percentage of the time should it be very weak or very good.\nSo 50/50 to no nothing or be broken is bad.\n2. Good randomness feels exiting when it does hit those low-odds high-/lowrolls, it should feel great for at least one of the players (preferably both but that's way harder) when something unlikely occurs.\n3. Random cards should be slightly better than normal cards on avarage, as randomness is a downside because you can't plan about it.",
