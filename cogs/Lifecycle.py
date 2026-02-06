@@ -239,7 +239,7 @@ class LifecycleCog(commands.Cog):
         if "{{" in message.content:
             await print_card_images(message)
         if "cock" in message.content.lower():
-            if random.randint(1, 10) == 1:
+            if random.randint(1, 100).isin([67,69]:
                 await message.channel.send(
                     'in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.'
                 )
