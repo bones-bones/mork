@@ -846,7 +846,55 @@ class LifecycleCog(commands.Cog):
             errata=True,
             errataId=errataId.removeprefix("Errata: "),
         )
+    @commands.command(name="join_card_thread", aliases=["jct"])
+    async def join_card_thread(self, ctx: commands.Context, *, search_phrase: str):
+        """
+        Join a card thread fromveto-polls-hellpit by searching for phrase in thread name
+        Usage: !jct thread-phrase
+        """
+        async def join_thread_logic(ctx, thread):
+            """Helper to join a thread with proper checks"""
+            try:
+                await thread.add_user(ctx.author)
+                await ctx.send(f"✅ Added you to **{thread.name}**!\n{thread.mention}", delete_after=15)
+            except Exception as e:
+                print(e)
 
+        REQUIRED_ROLE_ID = hc_constants.SKELETONS
+
+        required_role = ctx.guild.get_role(REQUIRED_ROLE_ID)
+
+        if required_role not in ctx.author.roles:
+            await ctx.send(f"❌ You don't have access to this command!",
+                           delete_after=10)
+            return
+            
+        target_channel = ctx.guild.get_channel(hc_constants.VETO_HELLPITS)
+
+        # Get active threads (last 7 days)
+        threads = target_channel.threads
+
+        # Search for threads containing the phrase
+        matching_threads = []
+        for thread in threads:
+            if thread.is_private() and search_phrase.lower() in thread.name.lower():
+                matching_threads.append(thread)
+
+        # If only one match, join it
+        if len(matching_threads) == 1:
+            thread = matching_threads[0]
+            await join_thread_logic(ctx, thread)
+            return
+
+        try:
+            # Sort by creation date (thread.id contains timestamp)
+            matching_threads.sort(key=lambda x: x.id, reverse=True)  # Higher ID = newer
+    
+            # Automatically join the newest thread
+            newest_thread = matching_threads[0]
+            await join_thread_logic(ctx, newest_thread)
+        except Exception as e:
+            print(e)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
