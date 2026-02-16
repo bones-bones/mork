@@ -160,7 +160,7 @@ class LifecycleCog(commands.Cog):
                     await ogMessage.add_reaction(hc_constants.DELETE)
                 errata_submissions_channel = getErrataSubmissionChannel(bot=self.bot)
                 errata_submission_message = await errata_submissions_channel.send(
-                    file=copy2
+                    content=first_message.content, file=copy2
                 )
                 await errata_submission_message.add_reaction("☑️")
 
@@ -846,17 +846,22 @@ class LifecycleCog(commands.Cog):
             errata=True,
             errataId=errataId.removeprefix("Errata: "),
         )
+
     @commands.command(name="join_card_thread", aliases=["jct"])
     async def join_card_thread(self, ctx: commands.Context, *, search_phrase: str):
         """
         Join a card thread fromveto-polls-hellpit by searching for phrase in thread name
         Usage: !jct thread-phrase
         """
+
         async def join_thread_logic(ctx, thread):
             """Helper to join a thread with proper checks"""
             try:
                 await thread.add_user(ctx.author)
-                await ctx.send(f"✅ Added you to **{thread.name}**!\n{thread.mention}", delete_after=15)
+                await ctx.send(
+                    f"✅ Added you to **{thread.name}**!\n{thread.mention}",
+                    delete_after=15,
+                )
             except Exception as e:
                 print(e)
 
@@ -865,10 +870,11 @@ class LifecycleCog(commands.Cog):
         required_role = ctx.guild.get_role(REQUIRED_ROLE_ID)
 
         if required_role not in ctx.author.roles:
-            await ctx.send(f"❌ You don't have access to this command!",
-                           delete_after=10)
+            await ctx.send(
+                f"❌ You don't have access to this command!", delete_after=10
+            )
             return
-            
+
         target_channel = ctx.guild.get_channel(hc_constants.VETO_HELLPITS)
 
         # Get active threads (last 7 days)
@@ -889,12 +895,13 @@ class LifecycleCog(commands.Cog):
         try:
             # Sort by creation date (thread.id contains timestamp)
             matching_threads.sort(key=lambda x: x.id, reverse=True)  # Higher ID = newer
-    
+
             # Automatically join the newest thread
             newest_thread = matching_threads[0]
             await join_thread_logic(ctx, newest_thread)
         except Exception as e:
             print(e)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
@@ -983,12 +990,11 @@ async def status_task(bot: commands.Bot):
             await check_reddit(bot)
         except Exception as e:
             print(e)
-        try:
-            await bot.change_presence(
-                status=discord.Status.online, activity=discord.Game(status)
-            )
-        except Exception as e:
-            print("tried to change status", e)
+
+        await bot.change_presence(
+            status=discord.Status.online, activity=discord.Game(status)
+        )
+
         now = datetime.now()
         print(f"time is {now}")
         if now.hour == 10 and now.minute <= 4:
