@@ -27,6 +27,7 @@ async def acceptCard(
     setId: str = "HC8.1",
     errata: bool = False,
     errataId: Optional[str] = None,
+    wasVetoed: bool = False,
 ):
     extension = re.search("\.([^.]*)$", file.filename)
     fileType = (
@@ -50,7 +51,7 @@ async def acceptCard(
         try:
             await post_to_reddit(
                 image_path=image_path,
-                title=f"{cardMessage.replace('**', '')} was accepted!",
+                title=f"{cardMessage.replace('**', '')} {'was accepted!' if not wasVetoed else 'was vetoed!'}",
                 flair=hc_constants.ACCEPTED_FLAIR,
             )
         except Exception as e:
