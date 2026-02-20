@@ -160,7 +160,7 @@ class LifecycleCog(commands.Cog):
                     await ogMessage.add_reaction(hc_constants.DELETE)
                 errata_submissions_channel = getErrataSubmissionChannel(bot=self.bot)
                 errata_submission_message = await errata_submissions_channel.send(
-                    file=copy2
+                    content=first_message.content, file=copy2
                 )
                 await errata_submission_message.add_reaction("☑️")
 
@@ -990,12 +990,11 @@ async def status_task(bot: commands.Bot):
             await check_reddit(bot)
         except Exception as e:
             print(e)
-        try:
-            await bot.change_presence(
-                status=discord.Status.online, activity=discord.Game(status)
-            )
-        except Exception as e:
-            print("tried to change status", e)
+
+        await bot.change_presence(
+            status=discord.Status.online, activity=discord.Game(status)
+        )
+
         now = datetime.now()
         print(f"time is {now}")
         if now.hour == 10 and now.minute <= 4:
