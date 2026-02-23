@@ -244,6 +244,34 @@ class LifecycleCog(commands.Cog):
                     'in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.'
                 )
 
+       for word in [
+            "?si=",
+            "?utm_source=",
+            "?utm_medium=",
+            "?utm_campaign=",
+            "?utm_term=",
+            "?utm_content=",
+            "?fbclid=",
+            "?gclid=",
+            "?msclkid=",
+            "?ttclid=",
+            "?igshid=",
+            "?ref=",
+            "?campaign_id=",
+            "?cid=",
+            "?source=",
+            "?medium=",
+            "?campaign=",
+        ]:
+            if word in message.content.lower():
+                await message.channel.send(
+                    "Hey there! It looks like you are sharing a link with tracking information."
+                )
+        if "mork i will" in message.content.lower():
+            await message.channel.send(
+                "pls don't"
+            )
+
         # Hello single coolest thing about python
         match message.channel.id:
             case (
