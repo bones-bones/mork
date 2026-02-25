@@ -158,11 +158,13 @@ class LifecycleCog(commands.Cog):
                         veto_council=veto_council_to_notify,
                     )
                     await ogMessage.add_reaction(hc_constants.DELETE)
-                errata_submissions_channel = getErrataSubmissionChannel(bot=self.bot)
-                errata_submission_message = await errata_submissions_channel.send(
-                    content=first_message.content, file=copy2
-                )
-                await errata_submission_message.add_reaction("☑️")
+                    errata_submissions_channel = getErrataSubmissionChannel(
+                        bot=self.bot
+                    )
+                    errata_submission_message = await errata_submissions_channel.send(
+                        content=first_message.content, file=copy2
+                    )
+                    await errata_submission_message.add_reaction("☑️")
 
         # The sneaky errata case for HC8
         if (
@@ -244,7 +246,7 @@ class LifecycleCog(commands.Cog):
                     'in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.'
                 )
 
-       for word in [
+        for word in [
             "?si=",
             "?utm_source=",
             "?utm_medium=",
@@ -268,9 +270,7 @@ class LifecycleCog(commands.Cog):
                     "Hey there! It looks like you are sharing a link with tracking information."
                 )
         if "mork i will" in message.content.lower():
-            await message.channel.send(
-                "pls don't"
-            )
+            await message.channel.send("pls don't")
 
         # Hello single coolest thing about python
         match message.channel.id:
@@ -962,77 +962,3 @@ def reset_countdowns():
     with open("../mork-state", "w") as file:
         file.write(linesToWrite)
     print("end reset")
-
-
-async def status_task(bot: commands.Bot):
-    async def post_reddit_card_of_the_day():
-        nowtime = datetime.now().date()
-        start = date(2025, 11, 26)
-        days_since_starting = (nowtime - start).days
-        cardOffset = 726 - days_since_starting
-        if cardOffset >= 0:
-            cards = searchFor({"cardset": "hc6"})
-            card = cards[cardOffset]
-            name = card.name()
-            url = card.img()
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        image_path = f'tempImages/{name.replace("/", "|")}'
-                        with open(image_path, "wb") as out:
-                            out.write(await resp.read())
-                        try:
-                            await post_to_reddit(
-                                title=f"HC6 Card of the day: {name}",
-                                image_path=image_path,
-                                flair=hc_constants.OFFICIAL_FLAIR,
-                            )
-                        except:
-                            pass
-                        os.remove(image_path)
-                    await session.close()
-
-    while True:
-        status = random.choice(hc_constants.statusList)
-        try:
-            reset_countdowns()
-        except Exception as e:
-            print(e)
-        try:
-            await checkSubmissions(bot)
-        except Exception as e:
-            print(e)
-        try:
-            await checkMasterpieceSubmissions(bot)
-        except Exception as e:
-            print(e)
-        # try:
-        #     await checkErrataSubmissions(bot)
-        # except Exception as e:
-        #     print(e)
-        try:
-            await checkTokenSubmissions(bot)
-        except Exception as e:
-            print(e)
-        try:
-            await check_reddit(bot)
-        except Exception as e:
-            print(e)
-
-        await bot.change_presence(
-            status=discord.Status.online, activity=discord.Game(status)
-        )
-
-        now = datetime.now()
-        print(f"time is {now}")
-        if now.hour == 10 and now.minute <= 4:
-            try:
-                await post_reddit_card_of_the_day()
-            except Exception as e:
-                print(e)
-        if now.hour == 4 and now.minute <= 4:
-            try:
-                await post_daily_submissions(bot)
-            except Exception as e:
-                print(e)
-        await asyncio.sleep(FIVE_MINUTES)
