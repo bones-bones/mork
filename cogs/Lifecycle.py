@@ -1,4 +1,3 @@
-import asyncio
 from datetime import date, datetime
 import os
 import random
@@ -15,7 +14,7 @@ from discord import (
     Thread,
 )
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.message import Message
 from discord.utils import get
 
@@ -62,15 +61,96 @@ tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).work
     hc_constants.TOKEN_UNAPPROVED
 )
 
+FIVE_MINUTES = 300
+
 
 class LifecycleCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.lifecycle_loop.start()
+
+    def cog_unload(self):
+        self.lifecycle_loop.cancel()
+
+    @tasks.loop(seconds=FIVE_MINUTES)
+    async def lifecycle_loop(self):
+        async def post_reddit_card_of_the_day():
+            nowtime = datetime.now().date()
+            start = date(2025, 11, 26)
+            days_since_starting = (nowtime - start).days
+            cardOffset = 726 - days_since_starting
+            if cardOffset >= 0:
+                cards = searchFor({"cardset": "hc6"})
+                card = cards[cardOffset]
+                name = card.name()
+                url = card.img()
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url) as resp:
+                        if resp.status == 200:
+                            image_path = f'tempImages/{name.replace("/", "|")}'
+                            with open(image_path, "wb") as out:
+                                out.write(await resp.read())
+                            try:
+                                await post_to_reddit(
+                                    title=f"HC6 Card of the day: {name}",
+                                    image_path=image_path,
+                                    flair=hc_constants.OFFICIAL_FLAIR,
+                                )
+                            except:
+                                pass
+                            os.remove(image_path)
+                        await session.close()
+
+        status = random.choice(hc_constants.statusList)
+        try:
+            reset_countdowns()
+        except Exception as e:
+            print(e)
+        try:
+            await checkSubmissions(self.bot)
+        except Exception as e:
+            print(e)
+        try:
+            await checkMasterpieceSubmissions(self.bot)
+        except Exception as e:
+            print(e)
+        # try:
+        #     await checkErrataSubmissions(bot)
+        # except Exception as e:
+        #     print(e)
+        try:
+            await checkTokenSubmissions(self.bot)
+        except Exception as e:
+            print(e)
+        try:
+            await check_reddit(self.bot)
+        except Exception as e:
+            print(e)
+
+        await self.bot.change_presence(
+            status=discord.Status.online, activity=discord.Game(status)
+        )
+
+        now = datetime.now()
+        print(f"time is {now}")
+        if now.hour == 10 and now.minute <= 4:
+            try:
+                await post_reddit_card_of_the_day()
+            except Exception as e:
+                print(e)
+        if now.hour == 4 and now.minute <= 4:
+            try:
+                await post_daily_submissions(self.bot)
+            except Exception as e:
+                print(e)
+
+    @lifecycle_loop.before_loop
+    async def before_lifecycle_loop(self):
+        await self.bot.wait_until_ready()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{cast(ClientUser,self.bot.user).name} has connected to Discord!")
-        self.bot.loop.create_task(status_task(self.bot))
 
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
@@ -933,9 +1013,6 @@ class LifecycleCog(commands.Cog):
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
-
-
-FIVE_MINUTES = 300
 
 
 def reset_countdowns():
