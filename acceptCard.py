@@ -33,7 +33,7 @@ async def acceptCard(
     fileType = (
         extension.group() if extension else ".png"
     )  # just guess that the file is a png
-    new_file_name = f'{cardName.replace("/", "|")}{fileType}'
+    new_file_name = f'{cardName.replace("/", "|")[:250]}{fileType}'
     image_path = f"tempImages/{new_file_name}"
 
     file_data = file.fp.read()

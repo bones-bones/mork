@@ -795,6 +795,7 @@ class LifecycleCog(commands.Cog):
                 cardName=dbname,
                 channelIdForCard=hc_constants.VETO_CARD_LIST,
                 authorName=card_author,
+                wasVetoed=True,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md
@@ -978,9 +979,7 @@ class LifecycleCog(commands.Cog):
         required_role = ctx.guild.get_role(REQUIRED_ROLE_ID)
 
         if required_role not in ctx.author.roles:
-            await ctx.send(
-                f"❌ You don't have access to this command!", delete_after=10
-            )
+            await ctx.send("❌ You don't have access to this command!", delete_after=10)
             return
 
         target_channel = ctx.guild.get_channel(hc_constants.VETO_HELLPITS)
