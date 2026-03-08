@@ -988,6 +988,21 @@ class SpecificCardsCog(commands.Cog):
             if rresult == 5:
                 await ctx.send("<:chaos:1323372133501505637>")
 
+    # get a random Hero card from Hero's Path
+    @commands.command()
+    async def therosHero(self, ctx: commands.Context):
+        await self.fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=t%3AHero+-t%3ACreature+include%3Aextras", ctx
+        )
+
+    # get three random Dragon card from the set Dragibs of Tarkir, for the card Dragon Age
+    @commands.command()
+    async def dragonAge(self, ctx: commands.Context):
+        for i in range(3):
+            await self.fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=t%3ADragon+set%3Adtk", ctx
+            )
+
     # for the card Mystery Inc on Duskmourn
     @commands.command()
     async def randomRoom(self, ctx: commands.Context):
