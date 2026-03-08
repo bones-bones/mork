@@ -93,7 +93,9 @@ class GeneralCog(commands.Cog):
             messages = [message async for message in messages]
             card = ""
             for i in range(1, len(messages)):
-                if messages[i].content.lower().startswith("start") or messages[i].content.lower().startswith("!start"):
+                if messages[i].content.lower().startswith("start") or messages[
+                    i
+                ].content.lower().startswith("!start"):
                     break
                 if messages[i].content != "":
                     if messages[i].content[0] != "(":
@@ -294,6 +296,9 @@ class GeneralCog(commands.Cog):
 
     @commands.command()
     async def wait(self, ctx: commands.Context):
+        if ctx.channel.id == hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL:
+            await ctx.send("it doesn't work here anymore, got to #bot-test")
+            return
         # From https://www.resiliencelab.us/thought-lab/self-care-ideas
         possibleActivities = [
             "start a gratitude journal and write down three things you’re thankful for every day.",

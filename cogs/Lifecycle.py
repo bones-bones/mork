@@ -1,4 +1,3 @@
-import asyncio
 from datetime import date, datetime
 import os
 import random
@@ -15,7 +14,7 @@ from discord import (
     Thread,
 )
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord.message import Message
 from discord.utils import get
 
@@ -62,15 +61,96 @@ tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).work
     hc_constants.TOKEN_UNAPPROVED
 )
 
+FIVE_MINUTES = 300
+
 
 class LifecycleCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.lifecycle_loop.start()
+
+    def cog_unload(self):
+        self.lifecycle_loop.cancel()
+
+    @tasks.loop(seconds=FIVE_MINUTES)
+    async def lifecycle_loop(self):
+        async def post_reddit_card_of_the_day():
+            nowtime = datetime.now().date()
+            start = date(2025, 11, 26)
+            days_since_starting = (nowtime - start).days
+            cardOffset = 726 - days_since_starting
+            if cardOffset >= 0:
+                cards = searchFor({"cardset": "hc6"})
+                card = cards[cardOffset]
+                name = card.name()
+                url = card.img()
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url) as resp:
+                        if resp.status == 200:
+                            image_path = f'tempImages/{name.replace("/", "|")}'
+                            with open(image_path, "wb") as out:
+                                out.write(await resp.read())
+                            try:
+                                await post_to_reddit(
+                                    title=f"HC6 Card of the day: {name}",
+                                    image_path=image_path,
+                                    flair=hc_constants.OFFICIAL_FLAIR,
+                                )
+                            except:
+                                pass
+                            os.remove(image_path)
+                        await session.close()
+
+        status = random.choice(hc_constants.statusList)
+        try:
+            reset_countdowns()
+        except Exception as e:
+            print(e)
+        try:
+            await checkSubmissions(self.bot)
+        except Exception as e:
+            print(e)
+        try:
+            await checkMasterpieceSubmissions(self.bot)
+        except Exception as e:
+            print(e)
+        # try:
+        #     await checkErrataSubmissions(bot)
+        # except Exception as e:
+        #     print(e)
+        try:
+            await checkTokenSubmissions(self.bot)
+        except Exception as e:
+            print(e)
+        try:
+            await check_reddit(self.bot)
+        except Exception as e:
+            print(e)
+
+        await self.bot.change_presence(
+            status=discord.Status.online, activity=discord.Game(status)
+        )
+
+        now = datetime.now()
+        print(f"time is {now}")
+        if now.hour == 10 and now.minute <= 4:
+            try:
+                await post_reddit_card_of_the_day()
+            except Exception as e:
+                print(e)
+        if now.hour == 4 and now.minute <= 4:
+            try:
+                await post_daily_submissions(self.bot)
+            except Exception as e:
+                print(e)
+
+    @lifecycle_loop.before_loop
+    async def before_lifecycle_loop(self):
+        await self.bot.wait_until_ready()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{cast(ClientUser,self.bot.user).name} has connected to Discord!")
-        self.bot.loop.create_task(status_task(self.bot))
 
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
@@ -158,11 +238,13 @@ class LifecycleCog(commands.Cog):
                         veto_council=veto_council_to_notify,
                     )
                     await ogMessage.add_reaction(hc_constants.DELETE)
-                errata_submissions_channel = getErrataSubmissionChannel(bot=self.bot)
-                errata_submission_message = await errata_submissions_channel.send(
-                    file=copy2
-                )
-                await errata_submission_message.add_reaction("☑️")
+                    errata_submissions_channel = getErrataSubmissionChannel(
+                        bot=self.bot
+                    )
+                    errata_submission_message = await errata_submissions_channel.send(
+                        content=first_message.content, file=copy2
+                    )
+                    await errata_submission_message.add_reaction("☑️")
 
         # The sneaky errata case for HC8
         if (
@@ -239,10 +321,36 @@ class LifecycleCog(commands.Cog):
         if "{{" in message.content:
             await print_card_images(message)
         if "cock" in message.content.lower():
-            if random.randint(1, 10) == 1:
+            if random.randint(1, 100) in [67, 69]:
                 await message.channel.send(
                     'in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.'
                 )
+
+        for word in [
+            "?si=",
+            "?utm_source=",
+            "?utm_medium=",
+            "?utm_campaign=",
+            "?utm_term=",
+            "?utm_content=",
+            "?fbclid=",
+            "?gclid=",
+            "?msclkid=",
+            "?ttclid=",
+            "?igshid=",
+            "?ref=",
+            "?campaign_id=",
+            "?cid=",
+            "?source=",
+            "?medium=",
+            "?campaign=",
+        ]:
+            if word in message.content.lower():
+                await message.channel.send(
+                    "Hey there! It looks like you are sharing a link with tracking information."
+                )
+        if "mork i will" in message.content.lower():
+            await message.channel.send("pls don't")
 
         # Hello single coolest thing about python
         match message.channel.id:
@@ -314,7 +422,7 @@ class LifecycleCog(commands.Cog):
                 await morkMessage.add_reaction(hc_constants.DELETE)
                 await message.delete()
 
-            case hc_constants.VETO_CHANNEL:
+            case hc_constants.VETO_POLLS_CHANNEL:
                 await handleVetoPost(message=message, bot=self.bot, veto_council=None)
 
             case (
@@ -685,7 +793,9 @@ class LifecycleCog(commands.Cog):
                 file=file,
                 cardMessage=cardMessage,
                 cardName=dbname,
+                channelIdForCard=hc_constants.VETO_CARD_LIST,
                 authorName=card_author,
+                wasVetoed=True,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md
@@ -846,12 +956,62 @@ class LifecycleCog(commands.Cog):
             errataId=errataId.removeprefix("Errata: "),
         )
 
+    @commands.command(name="join_card_thread", aliases=["jct"])
+    async def join_card_thread(self, ctx: commands.Context, *, search_phrase: str):
+        """
+        Join a card thread fromveto-polls-hellpit by searching for phrase in thread name
+        Usage: !jct thread-phrase
+        """
+
+        async def join_thread_logic(ctx, thread):
+            """Helper to join a thread with proper checks"""
+            try:
+                await thread.add_user(ctx.author)
+                await ctx.send(
+                    f"✅ Added you to **{thread.name}**!\n{thread.mention}",
+                    delete_after=15,
+                )
+            except Exception as e:
+                print(e)
+
+        REQUIRED_ROLE_ID = hc_constants.SKELETONS
+
+        required_role = ctx.guild.get_role(REQUIRED_ROLE_ID)
+
+        if required_role not in ctx.author.roles:
+            await ctx.send("❌ You don't have access to this command!", delete_after=10)
+            return
+
+        target_channel = ctx.guild.get_channel(hc_constants.VETO_HELLPITS)
+
+        # Get active threads (last 7 days)
+        threads = target_channel.threads
+
+        # Search for threads containing the phrase
+        matching_threads = []
+        for thread in threads:
+            if thread.is_private() and search_phrase.lower() in thread.name.lower():
+                matching_threads.append(thread)
+
+        # If only one match, join it
+        if len(matching_threads) == 1:
+            thread = matching_threads[0]
+            await join_thread_logic(ctx, thread)
+            return
+
+        try:
+            # Sort by creation date (thread.id contains timestamp)
+            matching_threads.sort(key=lambda x: x.id, reverse=True)  # Higher ID = newer
+
+            # Automatically join the newest thread
+            newest_thread = matching_threads[0]
+            await join_thread_logic(ctx, newest_thread)
+        except Exception as e:
+            print(e)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
-
-
-FIVE_MINUTES = 300
 
 
 def reset_countdowns():
@@ -878,75 +1038,3 @@ def reset_countdowns():
     with open("../mork-state", "w") as file:
         file.write(linesToWrite)
     print("end reset")
-
-
-async def status_task(bot: commands.Bot):
-    async def post_reddit_card_of_the_day():
-        nowtime = datetime.now().date()
-        start = date(2025, 11, 26)
-        days_since_starting = (nowtime - start).days
-        cardOffset = 726 - days_since_starting
-        if cardOffset >= 0:
-            cards = searchFor({"cardset": "hc6"})
-            card = cards[cardOffset]
-            name = card.name()
-            url = card.img()
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        image_path = f'tempImages/{name.replace("/", "|")}'
-                        with open(image_path, "wb") as out:
-                            out.write(await resp.read())
-                        try:
-                            await post_to_reddit(
-                                title=f"HC6 Card of the day: {name}",
-                                image_path=image_path,
-                                flair=hc_constants.OFFICIAL_FLAIR,
-                            )
-                        except:
-                            pass
-                        os.remove(image_path)
-                    await session.close()
-
-    while True:
-        status = random.choice(hc_constants.statusList)
-        try:
-            reset_countdowns()
-        except Exception as e:
-            print(e)
-        try:
-            await checkSubmissions(bot)
-        except Exception as e:
-            print(e)
-        try:
-            await checkMasterpieceSubmissions(bot)
-        except Exception as e:
-            print(e)
-        # try:
-        #     await checkErrataSubmissions(bot)
-        # except Exception as e:
-        #     print(e)
-        try:
-            await checkTokenSubmissions(bot)
-        except Exception as e:
-            print(e)
-        try:
-            await check_reddit(bot)
-        except Exception as e:
-            print(e)
-        await bot.change_presence(
-            status=discord.Status.online, activity=discord.Game(status)
-        )
-        now = datetime.now()
-        print(f"time is {now}")
-        if now.hour == 10 and now.minute <= 4:
-            try:
-                await post_reddit_card_of_the_day()
-            except Exception as e:
-                print(e)
-        if now.hour == 4 and now.minute <= 4:
-            try:
-                await post_daily_submissions(bot)
-            except Exception as e:
-                print(e)
-        await asyncio.sleep(FIVE_MINUTES)

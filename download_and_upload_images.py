@@ -1,3 +1,4 @@
+from time import sleep
 from functools import reduce
 import os
 import re
@@ -46,7 +47,7 @@ def uploadToDrive(path: str, filename: str):
 
 
 SOURCE_SHEET_KEY = hc_constants.HELLSCUBE_DATABASE
-SOURCE_SHEET_NAME = "Tokens Database"  # "Database"
+SOURCE_SHEET_NAME = "Database"  # "Database"
 
 
 TARGET_SHEET_NAME = "PrintableDb"
@@ -61,31 +62,18 @@ targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 
 targetSheet = targetDb.get_worksheet(0)
 
-current_printable_cards = targetSheet.col_values(1)
+current_printable_cards = targetSheet.col_values(1)  # aka card ids
 # do 176
-startIndex = 1070
-endIndex = 1080  # 1149  # 10
+startIndex = 1500  # 2 index, shitass
+endIndex = 3500  # 1149  # 10
+cardIds = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 cardNames = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"C{startIndex}:C{endIndex}")]
-side1Urls = [
-    ""
-] * 1150  # [cell.value for cell in mainSheet.range(f"S{startIndex}:S{endIndex}")]
-side2Urls = [
-    ""
-] * 1150  # [cell.value for cell in mainSheet.range(f"AD{startIndex}:AD{endIndex}")]
-side3Urls = [
-    ""
-] * 1150  # [cell.value for cell in mainSheet.range(f"AN{startIndex}:AN{endIndex}")]
-side4Urls = [
-    ""
-] * 1150  # [cell.value for cell in mainSheet.range(f"AX{startIndex}:AX{endIndex}")]
-cardSet = [
-    ""
-] * 1150  # [cell.value for cell in mainSheet.range(f"D{startIndex}:D{endIndex}")]
-
-# [
-#     ""
-# ] * 1150
+side1Urls = [cell.value for cell in mainSheet.range(f"T{startIndex}:T{endIndex}")]
+side2Urls = [cell.value for cell in mainSheet.range(f"AE{startIndex}:AE{endIndex}")]
+side3Urls = [cell.value for cell in mainSheet.range(f"AO{startIndex}:AO{endIndex}")]
+side4Urls = [cell.value for cell in mainSheet.range(f"AY{startIndex}:AY{endIndex}")]
+cardSet = [cell.value for cell in mainSheet.range(f"E{startIndex}:E{endIndex}")]
 
 
 def prepare_card_for_printing(image_path: str) -> str:
@@ -267,77 +255,83 @@ def color_diff(
 
 # --- 2. Download images and upload to Drive ---
 results = []
-for name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
-    cardNames, primaryUrls, side1Urls, side2Urls, side3Urls, side4Urls, cardSet
+for id, name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip(
+    cardIds, cardNames, primaryUrls, side1Urls, side2Urls, side3Urls, side4Urls, cardSet
 ):
     print("name", name)
-    # TODO put back
-    # if not (cardSet == "HCC" or cardSet == "HCP"):
-    #     continue
+
+    if cardSet == "HCV":
+        continue
 
     sidesToPrint = (
         [primaryUrl]
         if side1Url == ""
-        else filter(lambda x: x != "", [side1Url, side2Url, side3Url, side4Url])
+        else list(filter(lambda x: x != "", [side1Url, side2Url, side3Url, side4Url]))
     )
 
-    try:
-        for i, sideUrl in enumerate(sidesToPrint):
-            print(i, sideUrl)
-            # Download image
-            response = requests.get(sideUrl)
-            response.raise_for_status()
-            unparsedFileName = response.headers.get("Content-Disposition")
+    ## TODO add a check here fore side 1 side 2
+    current_entry_in_sheet = (
+        current_printable_cards.index(id) if id in current_printable_cards else None
+    )
 
-            parsedFileName = cast(
-                str,
-                re.findall('inline;filename="(.*)"', str(unparsedFileName))[0],
-            )
-            print(parsedFileName)
-            parsedFileName = (
-                cast(str, name).replace("/", "|") + ".png"
-                if ".png" in parsedFileName
-                else cast(str, name).replace("/", "|") + ".jpg"
-            )
+    already_entered = current_printable_cards.count(id) == (sidesToPrint).__len__()
 
-            with open(parsedFileName, "wb") as file:
-                file.write(response.content)
+    if not already_entered:
 
-            # convert to png if needed
-            if parsedFileName.endswith(".jpg"):
-                print("jpg conversion path")
-                jpgnameToRemove = parsedFileName
-                image = Image.open(parsedFileName)
-                parsedFileName = re.sub(r"\.jpg$", ".png", parsedFileName)
+        sleep(15)
+        try:
+            for i, sideUrl in enumerate(sidesToPrint):
+                print(i, sideUrl)
+                # Download image
+                response = requests.get(sideUrl)
+                response.raise_for_status()
+                unparsedFileName = response.headers.get("Content-Disposition")
 
-                image.save(parsedFileName, "png")
-                os.remove(jpgnameToRemove)
-
-            print(parsedFileName)
-            prepare_card_for_printing(parsedFileName)
-
-            # add back
-            uploaded = uploadToDrive(parsedFileName, parsedFileName)
-
-            ## TODO add a check here fore side 1 side 2
-            current_entry_in_sheet = (
-                current_printable_cards.index(name)
-                if name in current_printable_cards
-                else None
-            )
-
-            if current_entry_in_sheet == None:
-                print(f"appending to sheet: {parsedFileName}")
-                targetSheet.append_row(
-                    list((name, f"side {i+1}", getDriveUrl(uploaded)))
+                parsedFileName = cast(
+                    str,
+                    re.findall('inline;filename="(.*)"', str(unparsedFileName))[0],
                 )
-            else:
-                print(f"updating sheet entry: {parsedFileName}")
-                targetSheet.update_cell(
-                    current_entry_in_sheet + 1, 3, getDriveUrl(uploaded)
+                print(parsedFileName)
+                parsedFileName = (
+                    cast(str, name).replace("/", "|") + ".png"
+                    if ".png" in parsedFileName
+                    else cast(str, name).replace("/", "|") + ".jpg"
                 )
+                try:
+                    with open(parsedFileName, "wb") as file:
+                        file.write(response.content)
 
-            os.remove(parsedFileName)
+                    # convert to png if needed
+                    if parsedFileName.endswith(".jpg"):
+                        print("jpg conversion path")
+                        jpgnameToRemove = parsedFileName
+                        image = Image.open(parsedFileName)
+                        parsedFileName = re.sub(r"\.jpg$", ".png", parsedFileName)
 
-    except Exception as e:
-        print(f"Error processing {name}: {e}")
+                        image.save(parsedFileName, "png")
+                        os.remove(jpgnameToRemove)
+
+                    print(parsedFileName)
+                    prepare_card_for_printing(parsedFileName)
+
+                    # add back
+                    uploaded = uploadToDrive(parsedFileName, parsedFileName)
+
+                    if not already_entered:
+                        print(f"appending to sheet: {parsedFileName}")
+                        targetSheet.append_row(
+                            list((id, name, f"side {i+1}", getDriveUrl(uploaded)))
+                        )
+                    else:
+                        ...
+                        # this was commented out because if a card was fixed we want to keep it
+                        # print(f"updating sheet entry: {parsedFileName}")
+                        # targetSheet.update_cell(
+                        #     current_entry_in_sheet + 1, 4, getDriveUrl(uploaded)
+                        # )
+                except Exception as e:
+                    ...
+                os.remove(parsedFileName)
+
+        except Exception as e:
+            print(f"Error processing {name}: {e}")
