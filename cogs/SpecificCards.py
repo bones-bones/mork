@@ -1230,82 +1230,29 @@ class SpecificCardsCog(commands.Cog):
 
     # for the card The Big Bang Theory 
     @commands.command()
-    async def fuse(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "kw%3Afuse+%28game%3Apaper%29+legal%3Alegacy", ctx
-        )
-
-    @commands.command()
-    async def fog(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "%28game%3Apaper%29+legal%3Alegacy+otag%3Afog", ctx
-        )
-
-    @commands.command()
-    async def lands(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "game%3Apaper+legal%3Alegacy+type%3A%2F%5E%5B%5E%5C%2F%5D*land%2F", ctx
-        )
-
-    @commands.command()
-    async def plant(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "%28game%3Apaper%29+legal%3Alegacy+type%3Aplant+-boseiju", ctx
-        )
-
-    @commands.command()
-    async def equipment(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "game%3Apaper+legal%3Alegacy+type%3A%2F%5E%5B%5E%5C%2F%5D*equipment%2F", ctx
-        )
-
-    @commands.command()
-    async def wall(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "%28game%3Apaper%29+legal%3Alegacy+type%3Awall", ctx
-        )
-
-    @commands.command()
-    async def embalm(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "kw%3Aembalm+%28game%3Apaper%29+legal%3Alegacy", ctx
-        )
-
-    @commands.command()
-    async def math(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "%28game%3Apaper%29+legal%3Alegacy+mana%3E%3DX", ctx
-        )
-
-    @commands.command()
-    async def scientist(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "%28game%3Apaper%29+legal%3Alegacy+type%3Ascientist", ctx
-        )
-
-    @commands.command()
-    async def historic(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "game%3Apaper+legal%3Alegacy+((type%3A%2F%5E%5B%5E%5C%2F%5D*artifact%2F)+or+(type%3A%2F%5E%5B%5E%5C%2F%5D*legendary%2F)+or+(type%3A%2F%5E%5B%5E%5C%2F%5D*saga%2F))", ctx
-        )
-
-    @commands.command()
-    async def clue(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "kw%3Ainvestigate+%28game%3Apaper%29+legal%3Alegacy", ctx
-        )
-
-    @commands.command()
-    async def sweeper(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "%28game%3Apaper%29+legal%3Alegacy+otag%3Asweeper", ctx
-        )
-
-    @commands.command()
-    async def nights(self, ctx: commands.Context):
-        await self.fetchAndSendCardByQuery(
-            "%28game%3Apaper%29+legal%3Alegacy+set%3Aarn", ctx
-        )
+    async def bigbang(self, ctx: commands.Context, quality: str):
+        quality_queries = {
+            "fuse": "kw%3Afuse+%28game%3Apaper%29+legal%3Alegacy",
+            "fog": "%28game%3Apaper%29+legal%3Alegacy+otag%3Afog",
+            "lands": "game%3Apaper+legal%3Alegacy+type%3A%2F%5E%5B%5E%5C%2F%5D*land%2F",
+            "plant": "%28game%3Apaper%29+legal%3Alegacy+type%3Aplant+-boseiju",
+            "equipment": "game%3Apaper+legal%3Alegacy+type%3A%2F%5E%5B%5E%5C%2F%5D*equipment%2F",
+            "wall": "%28game%3Apaper%29+legal%3Alegacy+type%3Awall",
+            "embalm": "kw%3Aembalm+%28game%3Apaper%29+legal%3Alegacy",
+            "math": "%28game%3Apaper%29+legal%3Alegacy+mana%3E%3DX",
+            "scientist": "%28game%3Apaper%29+legal%3Alegacy+type%3Ascientist",
+            "historic": "game%3Apaper+legal%3Alegacy+((type%3A%2F%5E%5B%5E%5C%2F%5D*artifact%2F)+or+(type%3A%2F%5E%5B%5E%5C%2F%5D*legendary%2F)+or+(type%3A%2F%5E%5B%5E%5C%2F%5D*saga%2F))",
+            "clue": "kw%3Ainvestigate+%28game%3Apaper%29+legal%3Alegacy",
+            "sweeper": "%28game%3Apaper%29+legal%3Alegacy+otag%3Asweeper",
+            "nights": "%28game%3Apaper%29+legal%3Alegacy+set%3Aarn",
+        }
+        
+        quality = quality.lower()
+        if quality not in quality_queries:
+            await ctx.send(f"Unknown quality: {quality}. Available qualities: {', '.join(quality_queries.keys())}")
+            return
+        
+        await self.fetchAndSendCardByQuery(quality_queries[quality], ctx)
 
     # for the card Grunch
     # Original: https://zaxer2.github.io/howtogrunch
