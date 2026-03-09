@@ -974,7 +974,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def invoke(self, ctx: commands.Context):
         for i in range(2):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=invoker+t%3Acreature+-name%3Adynaheir+-name%3Aherbology",
                 ctx,
             )
@@ -995,7 +995,7 @@ class SpecificCardsCog(commands.Cog):
     # get a random Hero card from Hero's Path
     @commands.command()
     async def therosHero(self, ctx: commands.Context):
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=t%3AHero+-t%3ACreature+include%3Aextras", ctx
         )
 
@@ -1003,7 +1003,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def dragonAge(self, ctx: commands.Context):
         for i in range(3):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=t%3ADragon+set%3Adtk", ctx
             )
 
@@ -1256,7 +1256,7 @@ class SpecificCardsCog(commands.Cog):
             await ctx.send(f"Unknown quality: {quality}. Available qualities: {', '.join(quality_queries.keys())}")
             return
         
-        await self.fetchAndSendCardByQuery(quality_queries[quality], ctx)
+        await fetchAndSendCardByQuery(quality_queries[quality], ctx)
 
     # for the card Grunch
     # Original: https://zaxer2.github.io/howtogrunch
