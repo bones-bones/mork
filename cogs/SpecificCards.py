@@ -48,6 +48,8 @@ async def sendImage(url, ctx: commands.Context):
             await session.close()
 
 
+
+
 async def sendDriveImage(url, ctx: commands.Context):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
@@ -65,22 +67,24 @@ async def sendDriveImage(url, ctx: commands.Context):
             await session.close()
 
 
+# helper function for fetching and sending scryfall cards from a URL
+async def fetchAndSendCard(url: str, ctx: commands.Context):
+    cardJson = await getScryfallJson(url)
+    try:
+        await sendImage(await get_image_from_json(cardJson), ctx)
+    except:
+        pp.pprint(cardJson)
+
+
+# helper function to fetch and send card by query string
+async def fetchAndSendCardByQuery(query: str, ctx: commands.Context):
+    url = f"https://api.scryfall.com/cards/random?q={query}"
+    await fetchAndSendCard(url, ctx)
+
+
 class SpecificCardsCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
-    # helper function for fetching and sending scryfall cards from a URL
-    async def fetchAndSendCard(self, url: str, ctx: commands.Context):
-        cardJson = await getScryfallJson(url)
-        try:
-            await sendImage(await get_image_from_json(cardJson), ctx)
-        except:
-            pp.pprint(cardJson)
-
-    # helper function to fetch and send card by query string
-    async def fetchAndSendCardByQuery(self, query: str, ctx: commands.Context):
-        url = f"https://api.scryfall.com/cards/random?q={query}"
-        await self.fetchAndSendCard(url, ctx)
 
     # for the card item block
     @commands.command()
@@ -152,7 +156,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def vow(self, ctx: commands.Context, cost):
         try:
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=mana%3D" + cost, ctx
             )
         except:
@@ -335,7 +339,7 @@ class SpecificCardsCog(commands.Cog):
             "https://api.scryfall.com/cards/fec6b189-97e7-4627-9785-a9ce2f1ad89f?format=json",
             "https://api.scryfall.com/cards/7e41765e-43fe-461d-baeb-ee30d13d2d93?format=json",
         ]
-        await self.fetchAndSendCard(blueCards[random.randint(0, len(blueCards) - 1)], ctx)
+        await fetchAndSendCard(blueCards[random.randint(0, len(blueCards) - 1)], ctx)
 
     # for the card wild magic
     @commands.command()
@@ -564,7 +568,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command(aliases=["puzzle", "box", "pbox", "yogg", "yoggsaron", "pb"])
     async def puzzlebox(self, ctx: commands.Context):
         for i in range(10):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=t%3Ainstant+or+t%3Asorcery", ctx
             )
 
@@ -572,7 +576,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def death(self, ctx: commands.Context):
         for i in range(2):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=o%3A%22When+~+dies%22+t%3Acreature",
                 ctx,
             )
@@ -581,7 +585,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def life(self, ctx: commands.Context):
         for i in range(2):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=o%3A%22When+~+enters%22+t%3Acreature",
                 ctx,
             )
@@ -590,7 +594,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def attack(self, ctx: commands.Context):
         for i in range(2):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=o%3A%22Whenever+~+attacks%22+t%3Acreature",
                 ctx,
             )
@@ -599,7 +603,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def broadcast(self, ctx: commands.Context):
         for i in range(2):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=-type%3Anarset+type%3Aplaneswalker+rarity%3Au",
                 ctx,
             )
@@ -607,7 +611,7 @@ class SpecificCardsCog(commands.Cog):
     # for the card illusionary GF
     @commands.command(aliases=["gf", "chandra"])
     async def girlfriend(self, ctx: commands.Context):
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=t%3Achandra+t%3Aplaneswalker", ctx
         )
 
@@ -618,7 +622,7 @@ class SpecificCardsCog(commands.Cog):
             await ctx.send("max is 10")
             return
         for i in range(int(amount)):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=mana%3E%3DX", ctx
             )
 
@@ -661,7 +665,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def cryptic(self, ctx: commands.Context):
         for i in range(4):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=c%21u+t%3Ainstant", ctx
             )
 
@@ -669,49 +673,49 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def whitecards(self, ctx: commands.Context):
         for i in range(3):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=c=w", ctx
             )
 
     # for the card hugh man, human
     @commands.command(aliases=["hugh", "human"])
     async def hughman(self, ctx: commands.Context):
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=t%3Ahuman", ctx
         )
 
     # for the card random growth
     @commands.command()
     async def growth(self, ctx: commands.Context):
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=t%3Aland", ctx
         )
 
     # for the card ultimate ultimatum
     @commands.command()
     async def ultimatum(self, ctx: commands.Context):
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=name%3Dultimatum+-c%3Awug", ctx
         )
 
     # for the card regal karakas
     @commands.command()
     async def karakas(self, ctx: commands.Context):
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=t%3Dcreature+t%3Dlegendary", ctx
         )
 
     # for the card pregnant sliver
     @commands.command()
     async def sliver(self, ctx: commands.Context):
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=t%3Asliver", ctx
         )
 
     # for the card a black six drop
     @commands.command()
     async def black6(self, ctx: commands.Context):
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=t%3Acreature+c%21b+cmc%3A6", ctx
         )
 
@@ -772,7 +776,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def willsSchemes(self, ctx: commands.Context):
         # https://scryfall.com/random?q=will+type=scheme
-        await self.fetchAndSendCard(
+        await fetchAndSendCard(
             "https://api.scryfall.com/cards/random?q=will+type=scheme", ctx
         )
 
@@ -904,7 +908,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def homelands(self, ctx: commands.Context, cost):
         try:
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=%28type%3Aartifact+OR+type%3Acreature+OR+type%3Aenchantment%29+set%3Ahml+cmc%3D"
                 + cost,
                 ctx,
@@ -925,7 +929,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def tokenGuy(self, ctx: commands.Context, count: int = 1):
         for i in range(count):
-            await self.fetchAndSendCard(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=is%3Atoken+type%3Acreature+power%3C%3D2&unique=cards&as=grid&order=name",
                 ctx,
             )
