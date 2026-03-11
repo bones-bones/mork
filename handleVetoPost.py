@@ -18,7 +18,7 @@ async def handleVetoPost(
     if portal_time:
         veto_council = hc_constants.VETO_COUNCIL
     else:
-        if veto_council == None:
+        if veto_council is None:
             veto_council = random.choice(
                 [hc_constants.VETO_COUNCIL, hc_constants.VETO_COUNCIL_2]
             )
