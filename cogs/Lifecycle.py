@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import io
 import os
 import random
 import re
@@ -31,7 +32,7 @@ from checkSubmissions import (
     checkSubmissions,
 )
 
-from cogs.HellscubeDatabase import searchFor
+from cogs.HellscubeDatabase import searchFor, get_card_by_id
 from cogs.lifecycle.check_reddit import check_reddit
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
@@ -62,6 +63,64 @@ tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).work
 )
 
 FIVE_MINUTES = 300
+
+
+async def _check_errata_veto_threshold(bot: commands.Bot):
+    """If a message in the errata channel has upvotes - downvotes >= ERRATA_VETO_THRESHOLD,
+    add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handleVetoPost.
+    """
+
+    channel = cast(TextChannel, bot.get_channel(hc_constants.HC8_ERRATA_SUBMISSIONS))
+    if not channel:
+        return
+    time_now = datetime.now(timezone.utc)
+    two_weeks_ago = time_now - timedelta(days=14)
+    messages = [m async for m in channel.history(after=two_weeks_ago, limit=200)]
+    veto_channel = cast(TextChannel, bot.get_channel(hc_constants.VETO_POLLS_CHANNEL))
+
+    for msg in messages:
+        if not msg.content or get(msg.reactions, emoji=hc_constants.ACCEPT):
+            continue
+        up = get(msg.reactions, emoji=hc_constants.VOTE_UP)
+        down = get(msg.reactions, emoji=hc_constants.VOTE_DOWN)
+        up_count = up.count if up else 0
+        down_count = down.count if down else 0
+        if (up_count - down_count) > hc_constants.ERRATA_VETO_THRESHOLD:
+            await msg.add_reaction(hc_constants.ACCEPT)
+            parts = msg.content.split("\n", 1)
+            card_id = (parts[0].strip() if parts else "") or ""
+            if not card_id:
+                continue
+            card = get_card_by_id(card_id)
+            if not card:
+                continue
+            img_url = card.img()
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(img_url) as resp:
+                        if resp.status != 200:
+                            continue
+                        extra_filename = resp.headers.get("Content-Disposition")
+                        parsed = re.findall(
+                            'inline;filename="(.*)"', str(extra_filename)
+                        )
+                        filename = parsed[0] if parsed else f"{card.name()}.png"
+                        data = io.BytesIO(await resp.read())
+                veto_content = (
+                    f"{card.name()} by {card.creator()}" + "\n" + "Errata: " + card_id
+                )
+                veto_message = await veto_channel.send(
+                    content=veto_content,
+                    file=discord.File(data, filename),
+                )
+                await handleVetoPost(message=veto_message, bot=bot, veto_council=None)
+                guild = cast(Guild, veto_message.guild)
+
+                thread = cast(Thread, guild.get_channel_or_thread(veto_message.id))
+                await thread.send("\n".join(parts[1:]))
+
+            except Exception as e:
+                print(f"errata veto threshold: {e}")
 
 
 class LifecycleCog(commands.Cog):
@@ -124,6 +183,10 @@ class LifecycleCog(commands.Cog):
             print(e)
         try:
             await check_reddit(self.bot)
+        except Exception as e:
+            print(e)
+        try:
+            await _check_errata_veto_threshold(self.bot)
         except Exception as e:
             print(e)
 
@@ -437,10 +500,10 @@ class LifecycleCog(commands.Cog):
                         'No "@" are allowed in card title submissions to prevent me from spamming'
                     )
                     return  # no pings allowed
-                sentMessage = await message.channel.send(content=message.content)
-                await sentMessage.create_thread(name=sentMessage.content[0:99])
-                await sentMessage.add_reaction(hc_constants.VOTE_UP)
-                await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
+                sent_message = await message.channel.send(content=message.content)
+                await sent_message.create_thread(name=sent_message.content[0:99])
+                await sent_message.add_reaction(hc_constants.VOTE_UP)
+                await sent_message.add_reaction(hc_constants.VOTE_DOWN)
                 await message.delete()
 
             case hc_constants.SUBMISSIONS_CHANNEL:
@@ -527,14 +590,14 @@ class LifecycleCog(commands.Cog):
                     await logChannel.send(content=logContent, file=copy2)
                 else:
                     contentMessage = f"{cardName} by {author}"
-                    sentMessage = await message.channel.send(
+                    sent_message = await message.channel.send(
                         content=contentMessage, file=file
                     )
-                    await sentMessage.add_reaction(hc_constants.VOTE_UP)
-                    await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
-                    await sentMessage.add_reaction(hc_constants.DELETE)
+                    await sent_message.add_reaction(hc_constants.VOTE_UP)
+                    await sent_message.add_reaction(hc_constants.VOTE_DOWN)
+                    await sent_message.add_reaction(hc_constants.DELETE)
 
-                    await sentMessage.create_thread(name=cardName[0:99])
+                    await sent_message.create_thread(name=cardName[0:99])
                 await message.delete()
 
             case hc_constants.MASTERPIECE_CHANNEL:
@@ -601,14 +664,56 @@ class LifecycleCog(commands.Cog):
                         await logChannel.send(content=logContent, file=copy2)
                     else:
                         contentMessage = f"{cardName} by {author}"
-                        sentMessage = await message.channel.send(
+                        sent_message = await message.channel.send(
                             content=contentMessage, file=file
                         )
-                        await sentMessage.add_reaction(hc_constants.VOTE_UP)
-                        await sentMessage.add_reaction(hc_constants.VOTE_DOWN)
-                        await sentMessage.add_reaction(hc_constants.DELETE)
-                        await sentMessage.create_thread(name=message.content[0:99])
+                        await sent_message.add_reaction(hc_constants.VOTE_UP)
+                        await sent_message.add_reaction(hc_constants.VOTE_DOWN)
+                        await sent_message.add_reaction(hc_constants.DELETE)
+                        await sent_message.create_thread(name=message.content[0:99])
                     await message.delete()
+
+            case hc_constants.HC8_ERRATA_SUBMISSIONS:
+                print(f"HC8 errata submission: {message.content}")
+                parts = message.content.split("\n", 1)
+                card_id_input = parts[0].strip() if parts else ""
+                body = "\n".join(parts[1:]).strip() if len(parts) > 1 else ""
+                if not card_id_input:
+                    await getSubmissionDiscussionChannel(bot=self.bot).send(
+                        f"<@{message.author.id}>, start your message with a card ID on the first line."
+                    )
+                    return
+                card = get_card_by_id(card_id_input)
+                if not card:
+                    await getSubmissionDiscussionChannel(bot=self.bot).send(
+                        f'<@{message.author.id}>, card ID "{card_id_input}" not found'
+                    )
+                    return
+                img_url = card.img()
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(img_url) as resp:
+                        if resp.status != 200:
+                            await message.channel.send(
+                                f"<@{message.author.id}>, couldn't fetch the card image."
+                            )
+                            return
+                        extra_filename = resp.headers.get("Content-Disposition")
+                        parsed = re.findall(
+                            'inline;filename="(.*)"', str(extra_filename)
+                        )
+                        filename = parsed[0] if parsed else f"{card.name()}.png"
+                        data = io.BytesIO(await resp.read())
+                        await message.delete()
+                        content = card.name()
+                        if body:
+                            content += "\n\n" + body
+                        sent_message = await message.channel.send(
+                            content=content,
+                            file=discord.File(data, filename),
+                        )
+                        await sent_message.add_reaction(hc_constants.VOTE_UP)
+                        await sent_message.add_reaction(hc_constants.VOTE_DOWN)
+                        await sent_message.create_thread(name=card.name()[:99])
 
             case _:
                 pass

@@ -455,6 +455,14 @@ async def setup(bot: commands.Bot):
     await bot.add_cog(HellscubeDatabaseCog(bot))
 
 
+def get_card_by_id(card_id: str) -> CardSearch | None:
+    """Return the CardSearch for the given card ID, or None if not found."""
+    for c in cardList:
+        if str(c.id()) == str(card_id):
+            return c
+    return None
+
+
 def searchFor(searchDict: dict):
     for i in [
         "types",
