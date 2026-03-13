@@ -48,6 +48,8 @@ async def sendImage(url, ctx: commands.Context):
             await session.close()
 
 
+
+
 async def sendDriveImage(url, ctx: commands.Context):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
@@ -63,6 +65,21 @@ async def sendDriveImage(url, ctx: commands.Context):
             data = io.BytesIO(await resp.read())
             await ctx.send(file=discord.File(data, parsedFilename))
             await session.close()
+
+
+# helper function for fetching and sending scryfall cards from a URL
+async def fetchAndSendCard(url: str, ctx: commands.Context):
+    cardJson = await getScryfallJson(url)
+    try:
+        await sendImage(await get_image_from_json(cardJson), ctx)
+    except:
+        pp.pprint(cardJson)
+
+
+# helper function to fetch and send card by query string
+async def fetchAndSendCardByQuery(query: str, ctx: commands.Context):
+    url = f"https://api.scryfall.com/cards/random?q={query}"
+    await fetchAndSendCard(url, ctx)
 
 
 class SpecificCardsCog(commands.Cog):
@@ -139,10 +156,9 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def vow(self, ctx: commands.Context, cost):
         try:
-            json = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=mana%3D" + cost
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=mana%3D" + cost, ctx
             )
-            await sendImage(await get_image_from_json(json), ctx)
         except:
             await ctx.send("Not a valid mana cost.")
 
@@ -323,10 +339,7 @@ class SpecificCardsCog(commands.Cog):
             "https://api.scryfall.com/cards/fec6b189-97e7-4627-9785-a9ce2f1ad89f?format=json",
             "https://api.scryfall.com/cards/7e41765e-43fe-461d-baeb-ee30d13d2d93?format=json",
         ]
-        bluecardJson = await getScryfallJson(
-            blueCards[random.randint(0, len(blueCards) - 1)]
-        )
-        await sendImage(await get_image_from_json(bluecardJson), ctx)
+        await fetchAndSendCard(blueCards[random.randint(0, len(blueCards) - 1)], ctx)
 
     # for the card wild magic
     @commands.command()
@@ -392,8 +405,8 @@ class SpecificCardsCog(commands.Cog):
             "All lands become forests in addition to their other types.",
             "Exile Wild Magic Surge, then cast it from exile without paying its mana cost. Replace its text with “Cascade, cascade”.",
             "Each player gains control of creatures controlled by the player to their left until the end of your next turn. They all gain haste.",
-            "Spells cast cost {1} more until end of turn.",
-            "Spells cast cost {1} less until end of turn.",
+            "Spells cast cost <:mana1:636012942655225876> more until end of turn.",
+            "Spells cast cost <:mana1:636012942655225876> less until end of turn.",
             "Until end of turn, you may play any number of land cards.",
             "Punch target creature. If you do, it’s destroyed.",
             "Note the number of cards in your hand. Shuffle your hand into your library, and draw cards equal to target creature you control’s power. That creature has power equal to the noted number.",
@@ -555,69 +568,52 @@ class SpecificCardsCog(commands.Cog):
     @commands.command(aliases=["puzzle", "box", "pbox", "yogg", "yoggsaron", "pb"])
     async def puzzlebox(self, ctx: commands.Context):
         for i in range(10):
-            json = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=t%3Ainstant+or+t%3Asorcery"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=t%3Ainstant+or+t%3Asorcery", ctx
             )
-            await sendImage(await get_image_from_json(json), ctx)
 
     # for the card deathseeker
     @commands.command()
     async def death(self, ctx: commands.Context):
         for i in range(2):
-            deathseekerJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+dies%22+t%3Acreature"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+dies%22+t%3Acreature",
+                ctx,
             )
-            try:
-                await sendImage(await get_image_from_json(deathseekerJson), ctx)
-            except:
-                pp.pprint(deathseekerJson)
 
     # mirror of !death because why not
     @commands.command()
     async def life(self, ctx: commands.Context):
         for i in range(2):
-            lifeJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+enters%22+t%3Acreature"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+enters%22+t%3Acreature",
+                ctx,
             )
-            try:
-                await sendImage(await get_image_from_json(lifeJson), ctx)
-            except:
-                pp.pprint(lifeJson)
 
     # another one (this time for attack triggers)
     @commands.command()
     async def attack(self, ctx: commands.Context):
         for i in range(2):
-            attackJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=o%3A%22Whenever+~+attacks%22+t%3Acreature"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=o%3A%22Whenever+~+attacks%22+t%3Acreature",
+                ctx,
             )
-            try:
-                await sendImage(await get_image_from_json(attackJson), ctx)
-            except:
-                pp.pprint(attackJson)
 
     # for the card multiverse broadcasting station
     @commands.command()
     async def broadcast(self, ctx: commands.Context):
         for i in range(2):
-            broadcastJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=-type%3Anarset+type%3Aplaneswalker+rarity%3Au"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=-type%3Anarset+type%3Aplaneswalker+rarity%3Au",
+                ctx,
             )
-            try:
-                await sendImage(await get_image_from_json(broadcastJson), ctx)
-            except:
-                pp.pprint(broadcastJson)
 
     # for the card illusionary GF
     @commands.command(aliases=["gf", "chandra"])
     async def girlfriend(self, ctx: commands.Context):
-        GFJson = await getScryfallJson(
-            "https://api.scryfall.com/cards/random?q=t%3Achandra+t%3Aplaneswalker"
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=t%3Achandra+t%3Aplaneswalker", ctx
         )
-        try:
-            await sendImage(await get_image_from_json(GFJson), ctx)
-        except:
-            pp.pprint(GFJson)
 
     # for the card ballsjrs ultimate curvetopper
     @commands.command()
@@ -626,13 +622,9 @@ class SpecificCardsCog(commands.Cog):
             await ctx.send("max is 10")
             return
         for i in range(int(amount)):
-            topperJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=mana%3E%3DX"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=mana%3E%3DX", ctx
             )
-            try:
-                await sendImage(await get_image_from_json(topperJson), ctx)
-            except:
-                pp.pprint(topperJson)
 
     # for the card obscure command
     @commands.command()
@@ -673,67 +665,59 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def cryptic(self, ctx: commands.Context):
         for i in range(4):
-            crypticJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=c%21u+t%3Ainstant"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=c%21u+t%3Ainstant", ctx
             )
-            await sendImage(await get_image_from_json(crypticJson), ctx)
 
     # for the card we need more white cards
     @commands.command()
     async def whitecards(self, ctx: commands.Context):
         for i in range(3):
-            whitecardsJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=c=w"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=c=w", ctx
             )
-            await sendImage(await get_image_from_json(whitecardsJson), ctx)
 
     # for the card hugh man, human
     @commands.command(aliases=["hugh", "human"])
     async def hughman(self, ctx: commands.Context):
-        hughmanJson = await getScryfallJson(
-            "https://api.scryfall.com/cards/random?q=t%3Ahuman"
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=t%3Ahuman", ctx
         )
-        await sendImage(await get_image_from_json(hughmanJson), ctx)
 
     # for the card random growth
     @commands.command()
     async def growth(self, ctx: commands.Context):
-        growthJson = await getScryfallJson(
-            "https://api.scryfall.com/cards/random?q=t%3Aland"
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=t%3Aland", ctx
         )
-        await sendImage(await get_image_from_json(growthJson), ctx)
 
     # for the card ultimate ultimatum
     @commands.command()
     async def ultimatum(self, ctx: commands.Context):
-        ultimatumJson = await getScryfallJson(
-            "https://api.scryfall.com/cards/random?q=name%3Dultimatum+-c%3Awug"
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=name%3Dultimatum+-c%3Awug", ctx
         )
-        await sendImage(await get_image_from_json(ultimatumJson), ctx)
 
     # for the card regal karakas
     @commands.command()
     async def karakas(self, ctx: commands.Context):
-        karakasJson = await getScryfallJson(
-            "https://api.scryfall.com/cards/random?q=t%3Dcreature+t%3Dlegendary"
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=t%3Dcreature+t%3Dlegendary", ctx
         )
-        await sendImage(await get_image_from_json(karakasJson), ctx)
 
     # for the card pregnant sliver
     @commands.command()
     async def sliver(self, ctx: commands.Context):
-        sliverJson = await getScryfallJson(
-            "https://api.scryfall.com/cards/random?q=t%3Asliver"
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=t%3Asliver", ctx
         )
-        await sendImage(await get_image_from_json(sliverJson), ctx)
 
     # for the card a black six drop
     @commands.command()
     async def black6(self, ctx: commands.Context):
-        black6Json = await getScryfallJson(
-            "https://api.scryfall.com/cards/random?q=t%3Acreature+c%21b+cmc%3A6"
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=t%3Acreature+c%21b+cmc%3A6", ctx
         )
-        await sendImage(await get_image_from_json(black6Json), ctx)
 
     # for the card kodama's reach but kodama has really long arms
     @commands.command()
@@ -792,11 +776,9 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def willsSchemes(self, ctx: commands.Context):
         # https://scryfall.com/random?q=will+type=scheme
-
-        json = await getScryfallJson(
-            "https://api.scryfall.com/cards/random?q=will+type=scheme"
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=will+type=scheme", ctx
         )
-        await sendImage(await get_image_from_json(json), ctx)
 
     # for the _______ Balls
     @commands.command()
@@ -926,11 +908,11 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def homelands(self, ctx: commands.Context, cost):
         try:
-            homelandsJson = await getScryfallJson(
+            await fetchAndSendCard(
                 "https://api.scryfall.com/cards/random?q=%28type%3Aartifact+OR+type%3Acreature+OR+type%3Aenchantment%29+set%3Ahml+cmc%3D"
-                + cost
+                + cost,
+                ctx,
             )
-            await sendImage(await get_image_from_json(homelandsJson), ctx)
         except:
             await ctx.send("Not a valid mana cost.")
 
@@ -942,15 +924,15 @@ class SpecificCardsCog(commands.Cog):
             ctx,
         )
 
-    # https://scryfall.com/random?q=is%3Atoken+type%3Acreature+power%3C%3D2&unique=cards&as=grid&order=name
+    # https://scryfall.com/random?is%3Atoken+type%3Acreature+power%3C%3D2&unique=cards&as=grid&order=name
     # That one guy at your LGS + Hero of High Rollers
     @commands.command()
     async def tokenGuy(self, ctx: commands.Context, count: int = 1):
         for i in range(count):
-            token_json = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=is%3Atoken+type%3Acreature+power%3C%3D2&unique=cards&as=grid&order=name"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=is%3Atoken+type%3Acreature+power%3C%3D2&unique=cards&as=grid&order=name",
+                ctx,
             )
-            await sendImage(await get_image_from_json(token_json), ctx)
 
     # Obscure Commander
     @commands.command()
@@ -992,13 +974,10 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def invoke(self, ctx: commands.Context):
         for i in range(2):
-            invokeJson = await getScryfallJson(
-                "https://api.scryfall.com/cards/random?q=invoker+t%3Acreature+-name%3Adynaheir+-name%3Aherbology"
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=invoker+t%3Acreature+-name%3Adynaheir+-name%3Aherbology",
+                ctx,
             )
-            try:
-                await sendImage(await get_image_from_json(invokeJson), ctx)
-            except:
-                pp.pprint(invokeJson)
 
     # roll the planar die
     @commands.command()
@@ -1012,6 +991,21 @@ class SpecificCardsCog(commands.Cog):
         else:
             if rresult == 5:
                 await ctx.send("<:chaos:1323372133501505637>")
+
+    # get a random Hero card from Hero's Path
+    @commands.command()
+    async def therosHero(self, ctx: commands.Context):
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=t%3AHero+-t%3ACreature+include%3Aextras", ctx
+        )
+
+    # get three random Dragon card from the set Dragibs of Tarkir, for the card Dragon Age
+    @commands.command()
+    async def dragonAge(self, ctx: commands.Context):
+        for i in range(3):
+            await fetchAndSendCard(
+                "https://api.scryfall.com/cards/random?q=t%3ADragon+set%3Adtk", ctx
+            )
 
     # for the card Mystery Inc on Duskmourn
     @commands.command()
@@ -1237,6 +1231,32 @@ class SpecificCardsCog(commands.Cog):
         else:
             for card in selectedHand:
                 await sendImage(card, ctx)
+
+    # for the card The Big Bang Theory 
+    @commands.command()
+    async def bigbang(self, ctx: commands.Context, quality: str):
+        quality_queries = {
+            "fuse": "kw%3Afuse+%28game%3Apaper%29+legal%3Alegacy",
+            "fog": "%28game%3Apaper%29+legal%3Alegacy+otag%3Afog",
+            "lands": "game%3Apaper+legal%3Alegacy+type%3A%2F%5E%5B%5E%5C%2F%5D*land%2F",
+            "plant": "%28game%3Apaper%29+legal%3Alegacy+type%3Aplant+-boseiju",
+            "equipment": "game%3Apaper+legal%3Alegacy+type%3A%2F%5E%5B%5E%5C%2F%5D*equipment%2F",
+            "wall": "%28game%3Apaper%29+legal%3Alegacy+type%3Awall",
+            "embalm": "kw%3Aembalm+%28game%3Apaper%29+legal%3Alegacy",
+            "math": "%28game%3Apaper%29+legal%3Alegacy+mana%3E%3DX",
+            "scientist": "%28game%3Apaper%29+legal%3Alegacy+type%3Ascientist",
+            "historic": "game%3Apaper+legal%3Alegacy+((type%3A%2F%5E%5B%5E%5C%2F%5D*artifact%2F)+or+(type%3A%2F%5E%5B%5E%5C%2F%5D*legendary%2F)+or+(type%3A%2F%5E%5B%5E%5C%2F%5D*saga%2F))",
+            "clue": "kw%3Ainvestigate+%28game%3Apaper%29+legal%3Alegacy",
+            "sweeper": "%28game%3Apaper%29+legal%3Alegacy+otag%3Asweeper",
+            "nights": "%28game%3Apaper%29+legal%3Alegacy+set%3Aarn",
+        }
+        
+        quality = quality.lower()
+        if quality not in quality_queries:
+            await ctx.send(f"Unknown quality: {quality}. Available qualities: {', '.join(quality_queries.keys())}")
+            return
+        
+        await fetchAndSendCardByQuery(quality_queries[quality], ctx)
 
     # for the card Grunch
     # Original: https://zaxer2.github.io/howtogrunch
