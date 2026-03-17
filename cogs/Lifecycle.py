@@ -32,7 +32,7 @@ from checkSubmissions import (
     checkSubmissions,
 )
 
-from cogs.HellscubeDatabase import get_card_by_name, searchFor, get_card_by_id
+from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
@@ -835,27 +835,34 @@ class LifecycleCog(commands.Cog):
             file = await messageEntry.attachments[0].to_file()
             acceptanceMessage = messageEntry.content
             # consider putting most of this into acceptCard
-            # this is pretty much the same as getCardMessage but teasing out the db logic too was gonna suck
+            # errata format: first line "cardname by author", second line "Errata: card_id"
             dbname = ""
             card_author = ""
             errataLinens = acceptanceMessage.splitlines()
             errata_id = (
-                errataLinens[1].removeprefix("Errata: ")
+                errataLinens[1].strip().removeprefix("Errata: ").strip()
                 if errataLinens.__len__() > 1
                 else None
             )
-            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
-                ...  # This is really the case of setting both to "", but due to scoping i got lazy
-            elif acceptanceMessage[0:3] == "by ":
-                card_author = str((acceptanceMessage.split("by "))[1])
+            first_line = errataLinens[0] if errataLinens else ""
+            if (len(first_line)) == 0 or " by " not in first_line:
+                ...
+            elif first_line[0:3] == "by ":
+                card_author = str((first_line.split(" by ", 1))[1])
             else:
-                messageChunks = acceptanceMessage.split(" by ")
-                firstPart = messageChunks[0]
-                secondPart = "".join(messageChunks[1:])
-
+                messageChunks = first_line.split(" by ", 1)
+                firstPart = messageChunks[0].strip()
+                secondPart = messageChunks[1] if len(messageChunks) > 1 else ""
                 dbname = str(firstPart)
                 card_author = str(secondPart)
-            resolvedName = dbname if dbname != "" else "Crazy card with no name"
+            card_author = card_author.strip()
+            # Resolve display name from card id (errata messages use id on first line)
+            errata_card = get_card_by_id(errata_id) if errata_id else None
+            resolvedName = (
+                errata_card.name()
+                if errata_card
+                else (dbname or "Crazy card with no name")
+            )
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
 
@@ -869,11 +876,11 @@ class LifecycleCog(commands.Cog):
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
-                cardName=dbname,
+                cardName=resolvedName,
                 authorName=card_author,
                 setId=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
-                errata=errata_id != None,
+                errata=errata_id is not None,
                 errataId=errata_id,
             )
 
@@ -1025,7 +1032,7 @@ class LifecycleCog(commands.Cog):
     async def instaerrata(self, ctx: commands.Context, *, incomingMessage: str = ""):
         """
         Cardname by Author
-        Errata:
+        Errata: <card id>
         """
         splitLines = incomingMessage.splitlines()
         cardMessage = splitLines[0]
@@ -1041,7 +1048,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send(
                 """please include the errata id in the format:
                            Cardname by Author
-                           Errata: <id goes here>"""
+                           Errata: <card id>"""
             )
             return
 
@@ -1051,11 +1058,11 @@ class LifecycleCog(commands.Cog):
             await ctx.send("The attached file must be an image.")
             return
 
-        if (len(cardMessage)) == 0 or "by " not in cardMessage:
-            await ctx.send("Please attach a card message.")
+        if (len(cardMessage)) == 0 or " by " not in cardMessage:
+            await ctx.send("Please attach a card message (Cardname by Author).")
             return
         elif cardMessage[0:3] == "by ":
-            await ctx.send("Please include a card name")
+            await ctx.send("Please include a card ID on the first line.")
             return
         else:
             messageChunks = cardMessage.split(" by ")
@@ -1135,7 +1142,7 @@ async def setup(bot: commands.Bot):
 
 def reset_countdowns():
     print("reset")
-    linesToWrite = ""
+    lines_to_write = ""
     with open("../mork-state", "r") as file:
         lines = file.readlines()
         for line in lines:
@@ -1153,7 +1160,7 @@ def reset_countdowns():
                 # print(timeSinceLast)
 
                 if timeSinceLast <= hc_constants.SUBMISSION_COOLDOWN:
-                    linesToWrite += f"{line}"
+                    lines_to_write += f"{line}"
     with open("../mork-state", "w") as file:
-        file.write(linesToWrite)
+        file.write(lines_to_write)
     print("end reset")
