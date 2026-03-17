@@ -32,7 +32,7 @@ from checkSubmissions import (
     checkSubmissions,
 )
 
-from cogs.HellscubeDatabase import searchFor, get_card_by_id
+from cogs.HellscubeDatabase import get_card_by_name, searchFor, get_card_by_id
 from cogs.lifecycle.check_reddit import check_reddit
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
@@ -88,10 +88,14 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
         if (up_count - down_count) > hc_constants.ERRATA_VETO_THRESHOLD:
             await msg.add_reaction(hc_constants.ACCEPT)
             parts = msg.content.split("\n", 1)
+
             card_id = (parts[0].strip() if parts else "") or ""
             if not card_id:
                 continue
-            card = get_card_by_id(card_id)
+            card_by_id = get_card_by_id(card_id)
+            card = (
+                card_by_id if card_by_id else get_card_by_name(card_id)
+            )  # Hey this sucks, get rid of it in a bit
             if not card:
                 continue
             img_url = card.img()
@@ -674,20 +678,30 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
             case hc_constants.HC8_ERRATA_SUBMISSIONS:
-                print(f"HC8 errata submission: {message.content}")
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
+                print(f"HC8 errata submission: {card_id_input}")
                 body = "\n".join(parts[1:]).strip() if len(parts) > 1 else ""
                 if not card_id_input:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f"<@{message.author.id}>, start your message with a card ID on the first line."
                     )
+                    await message.delete()
+
                     return
                 card = get_card_by_id(card_id_input)
                 if not card:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f'<@{message.author.id}>, card ID "{card_id_input}" not found'
                     )
+                    await message.delete()
+
+                    return
+                if not (card.cardset() == "HC8.1" or card.cardset() == "HC8.0"):
+                    await getSubmissionDiscussionChannel(bot=self.bot).send(
+                        f"<@{message.author.id}>, only HC8 cards are allowed for errata."
+                    )
+                    await message.delete()
                     return
                 img_url = card.img()
                 async with aiohttp.ClientSession() as session:
@@ -704,7 +718,7 @@ class LifecycleCog(commands.Cog):
                         filename = parsed[0] if parsed else f"{card.name()}.png"
                         data = io.BytesIO(await resp.read())
                         await message.delete()
-                        content = card.name()
+                        content = card_id_input
                         if body:
                             content += "\n\n" + body
                         sent_message = await message.channel.send(

@@ -10,4 +10,6 @@
         "hellpit",
         "HELLPITS"
     ],
+    "cursorpyright.analysis.autoImportCompletions": true,
+    "cursorpyright.analysis.typeCheckingMode": "standard",
 }
