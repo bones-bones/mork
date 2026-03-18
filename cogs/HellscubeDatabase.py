@@ -316,6 +316,7 @@ class HellscubeDatabaseCog(commands.Cog):
                 if name == "gas lights":
                     await channel.send("no card found")
                 else:
+                    id = card.id()
                     creator = card.creator()
                     cardset = card.cardset()
                     legality = card.legality()
@@ -323,6 +324,7 @@ class HellscubeDatabaseCog(commands.Cog):
                     tags = card.tags()
                     toSend = [
                         card.name(),
+                        f"id: {id}",
                         f"creator: {creator}",
                         f"set: {cardset}",
                         f"legality: {legality}",
