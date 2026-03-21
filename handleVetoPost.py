@@ -16,13 +16,13 @@ async def handleVetoPost(
     veto_council: int | None,
 ):
     if portal_time:
-        veto_council = hc_constants.VETO_COUNCIL
+        veto_council = hc_constants.VETO_COUNCIL_PORTAL
     else:
         if veto_council is None:
             veto_council = random.choice(
-                [hc_constants.VETO_COUNCIL, hc_constants.VETO_COUNCIL_2]
+                [hc_constants.VETO_COUNCIL_PORTAL, hc_constants.VETO_COUNCIL_2]
             )
-        if veto_council == hc_constants.VETO_COUNCIL:
+        if veto_council == hc_constants.VETO_COUNCIL_PORTAL:
             await message.add_reaction(hc_constants.CLOCK)
         else:
             await message.add_reaction(hc_constants.WOLF)

@@ -65,6 +65,39 @@ tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).work
 FIVE_MINUTES = 300
 
 
+def card_list_channel_for_set(cardset: str) -> int:
+    """Discord channel for card-list image posts, keyed by database set (column E).
+
+    Set ids are compared case-insensitively (normalized to lowercase).
+    """
+    s = cardset.strip().lower()
+    match s:
+        case "hlc" | "hc2" | "hc3" | "hc4":
+            return hc_constants.SIX_ZERO_CARD_LIST
+        case "hcv":
+            return hc_constants.GRAVEYARD_CARD_LIST
+        case "hc6" | "hc6.0":
+            return hc_constants.SIX_ZERO_CARD_LIST
+        case "hc6.1":
+            return hc_constants.SIX_ONE_CARD_LIST
+        case "hcc":
+            return hc_constants.PORTAL_LIST
+        case "hcp":
+            return hc_constants.HC_POSSE_CARD_LIST
+        case "hc7" | "hc7.0" | "hc7.1":
+            return hc_constants.SEVEN_CARD_LIST
+        case "hck":
+            return hc_constants.HC_JUMPSTART_LIST
+        case "hcj":
+            return hc_constants.HKL_CARD_LIST
+        case "hc8" | "hc8.0" | "hc8.1":
+            return hc_constants.HC_EIGHT_LIST
+        case "hkl":
+            return hc_constants.HKL_CARD_LIST
+        case _:
+            return hc_constants.HKL_CARD_LIST
+
+
 async def _check_errata_veto_threshold(bot: commands.Bot):
     """If a message in the errata channel has upvotes - downvotes >= ERRATA_VETO_THRESHOLD,
     add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handleVetoPost.
@@ -111,13 +144,17 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                         filename = parsed[0] if parsed else f"{card.name()}.png"
                         data = io.BytesIO(await resp.read())
                 veto_content = (
-                    f"{card.name()} by {card.creator()}" + "\n" + "Errata: " + card_id
+                    f"{card.name()} by {card.creator()}" + "\n" + "Errata: " + card.id()
                 )
                 veto_message = await veto_channel.send(
                     content=veto_content,
                     file=discord.File(data, filename),
                 )
-                await handleVetoPost(message=veto_message, bot=bot, veto_council=None)
+                await handleVetoPost(
+                    message=veto_message,
+                    bot=bot,
+                    veto_council=hc_constants.VETO_COUNCIL,
+                )
                 guild = cast(Guild, veto_message.guild)
 
                 thread = cast(Thread, guild.get_channel_or_thread(veto_message.id))
@@ -289,9 +326,9 @@ class LifecycleCog(commands.Cog):
                         file=copy_of_file_for_veto_channel,
                     )
 
-                    veto_council_to_notify = hc_constants.VETO_COUNCIL
+                    veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
                     # (
-                    #     hc_constants.VETO_COUNCIL
+                    #     hc_constants.VETO_COUNCIL_PORTAL
                     #     if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
                     #     else (
                     #         hc_constants.VETO_COUNCIL_2
@@ -786,7 +823,8 @@ class LifecycleCog(commands.Cog):
 
             is_clock_vc = (
                 hc_constants.CLOCK
-                if cast(Member, ctx.author).get_role(hc_constants.VETO_COUNCIL) != None
+                if cast(Member, ctx.author).get_role(hc_constants.VETO_COUNCIL_PORTAL)
+                is not None
                 else hc_constants.WOLF
             )
 
@@ -868,9 +906,12 @@ class LifecycleCog(commands.Cog):
 
             acceptedCards.append(cardMessage)
 
-            set_to_add_to = "HC8.1"
-
-            channel_to_add_to = hc_constants.HC_EIGHT_LIST
+            if errata_card:
+                set_to_add_to = errata_card.cardset()
+                channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
+            else:
+                set_to_add_to = "HKL"
+                channel_to_add_to = hc_constants.HKL_CARD_LIST
 
             await acceptCard(
                 bot=self.bot,
@@ -960,10 +1001,10 @@ class LifecycleCog(commands.Cog):
                         recentlyNotified = threadMessageAge < timedelta(days=1)
                         if not recentlyNotified:
 
-                            veto_council_to_notify = hc_constants.VETO_COUNCIL
+                            veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
 
                             # (
-                            #     hc_constants.VETO_COUNCIL
+                            #     hc_constants.VETO_COUNCIL_PORTAL
                             #     if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
                             #     else hc_constants.VETO_COUNCIL_2
                             # )
@@ -1072,14 +1113,25 @@ class LifecycleCog(commands.Cog):
             dbname = str(firstPart)
             card_author = str(secondPart)
 
+        errata_id_clean = errataId.removeprefix("Errata: ").strip()
+        db_card = get_card_by_id(errata_id_clean)
+
+        if not db_card:
+            await ctx.send("Card not found")
+            return
+        set_id = db_card.cardset()
+        list_channel = card_list_channel_for_set(set_id)
+
         await acceptCard(
             bot=self.bot,
             file=await file.to_file(),
             cardMessage=cardMessage,
             cardName=dbname,
             authorName=card_author,
+            setId=set_id,
+            channelIdForCard=list_channel,
             errata=True,
-            errataId=errataId.removeprefix("Errata: "),
+            errataId=errata_id_clean,
         )
 
     @commands.command(name="join_card_thread", aliases=["jct"])
