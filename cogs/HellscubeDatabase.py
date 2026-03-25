@@ -463,6 +463,15 @@ def get_card_by_id(card_id: str) -> CardSearch | None:
     return None
 
 
+def get_card_by_name(card_name: str) -> CardSearch | None:
+    """Return the CardSearch for the given card name, or None if not found."""
+    name_lower = card_name.strip().lower()
+    for c in cardList:
+        if c.name().lower() == name_lower:
+            return c
+    return None
+
+
 def searchFor(searchDict: dict):
     for i in [
         "types",

@@ -32,7 +32,7 @@ from checkSubmissions import (
     checkSubmissions,
 )
 
-from cogs.HellscubeDatabase import searchFor, get_card_by_id
+from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
@@ -65,6 +65,39 @@ tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).work
 FIVE_MINUTES = 300
 
 
+def card_list_channel_for_set(cardset: str) -> int:
+    """Discord channel for card-list image posts, keyed by database set (column E).
+
+    Set ids are compared case-insensitively (normalized to lowercase).
+    """
+    s = cardset.strip().lower()
+    match s:
+        case "hlc" | "hc2" | "hc3" | "hc4":
+            return hc_constants.SIX_ZERO_CARD_LIST
+        case "hcv":
+            return hc_constants.GRAVEYARD_CARD_LIST
+        case "hc6" | "hc6.0":
+            return hc_constants.SIX_ZERO_CARD_LIST
+        case "hc6.1":
+            return hc_constants.SIX_ONE_CARD_LIST
+        case "hcc":
+            return hc_constants.PORTAL_LIST
+        case "hcp":
+            return hc_constants.HC_POSSE_CARD_LIST
+        case "hc7" | "hc7.0" | "hc7.1":
+            return hc_constants.SEVEN_CARD_LIST
+        case "hck":
+            return hc_constants.HC_JUMPSTART_LIST
+        case "hcj":
+            return hc_constants.HKL_CARD_LIST
+        case "hc8" | "hc8.0" | "hc8.1":
+            return hc_constants.HC_EIGHT_LIST
+        case "hkl":
+            return hc_constants.HKL_CARD_LIST
+        case _:
+            return hc_constants.HKL_CARD_LIST
+
+
 async def _check_errata_veto_threshold(bot: commands.Bot):
     """If a message in the errata channel has upvotes - downvotes >= ERRATA_VETO_THRESHOLD,
     add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handleVetoPost.
@@ -88,10 +121,14 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
         if (up_count - down_count) > hc_constants.ERRATA_VETO_THRESHOLD:
             await msg.add_reaction(hc_constants.ACCEPT)
             parts = msg.content.split("\n", 1)
+
             card_id = (parts[0].strip() if parts else "") or ""
             if not card_id:
                 continue
-            card = get_card_by_id(card_id)
+            card_by_id = get_card_by_id(card_id)
+            card = (
+                card_by_id if card_by_id else get_card_by_name(card_id)
+            )  # Hey this sucks, get rid of it in a bit
             if not card:
                 continue
             img_url = card.img()
@@ -107,13 +144,17 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                         filename = parsed[0] if parsed else f"{card.name()}.png"
                         data = io.BytesIO(await resp.read())
                 veto_content = (
-                    f"{card.name()} by {card.creator()}" + "\n" + "Errata: " + card_id
+                    f"{card.name()} by {card.creator()}" + "\n" + "Errata: " + card.id()
                 )
                 veto_message = await veto_channel.send(
                     content=veto_content,
                     file=discord.File(data, filename),
                 )
-                await handleVetoPost(message=veto_message, bot=bot, veto_council=None)
+                await handleVetoPost(
+                    message=veto_message,
+                    bot=bot,
+                    veto_council=hc_constants.VETO_COUNCIL,
+                )
                 guild = cast(Guild, veto_message.guild)
 
                 thread = cast(Thread, guild.get_channel_or_thread(veto_message.id))
@@ -285,9 +326,9 @@ class LifecycleCog(commands.Cog):
                         file=copy_of_file_for_veto_channel,
                     )
 
-                    veto_council_to_notify = hc_constants.VETO_COUNCIL
+                    veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
                     # (
-                    #     hc_constants.VETO_COUNCIL
+                    #     hc_constants.VETO_COUNCIL_PORTAL
                     #     if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
                     #     else (
                     #         hc_constants.VETO_COUNCIL_2
@@ -674,20 +715,30 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
             case hc_constants.HC8_ERRATA_SUBMISSIONS:
-                print(f"HC8 errata submission: {message.content}")
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
+                print(f"HC8 errata submission: {card_id_input}")
                 body = "\n".join(parts[1:]).strip() if len(parts) > 1 else ""
                 if not card_id_input:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f"<@{message.author.id}>, start your message with a card ID on the first line."
                     )
+                    await message.delete()
+
                     return
                 card = get_card_by_id(card_id_input)
                 if not card:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f'<@{message.author.id}>, card ID "{card_id_input}" not found'
                     )
+                    await message.delete()
+
+                    return
+                if not (card.cardset() == "HC8.1" or card.cardset() == "HC8.0"):
+                    await getSubmissionDiscussionChannel(bot=self.bot).send(
+                        f"<@{message.author.id}>, only HC8 cards are allowed for errata."
+                    )
+                    await message.delete()
                     return
                 img_url = card.img()
                 async with aiohttp.ClientSession() as session:
@@ -704,7 +755,7 @@ class LifecycleCog(commands.Cog):
                         filename = parsed[0] if parsed else f"{card.name()}.png"
                         data = io.BytesIO(await resp.read())
                         await message.delete()
-                        content = card.name()
+                        content = card_id_input
                         if body:
                             content += "\n\n" + body
                         sent_message = await message.channel.send(
@@ -772,7 +823,8 @@ class LifecycleCog(commands.Cog):
 
             is_clock_vc = (
                 hc_constants.CLOCK
-                if cast(Member, ctx.author).get_role(hc_constants.VETO_COUNCIL) != None
+                if cast(Member, ctx.author).get_role(hc_constants.VETO_COUNCIL_PORTAL)
+                is not None
                 else hc_constants.WOLF
             )
 
@@ -821,45 +873,55 @@ class LifecycleCog(commands.Cog):
             file = await messageEntry.attachments[0].to_file()
             acceptanceMessage = messageEntry.content
             # consider putting most of this into acceptCard
-            # this is pretty much the same as getCardMessage but teasing out the db logic too was gonna suck
+            # errata format: first line "cardname by author", second line "Errata: card_id"
             dbname = ""
             card_author = ""
             errataLinens = acceptanceMessage.splitlines()
             errata_id = (
-                errataLinens[1].removeprefix("Errata: ")
+                errataLinens[1].strip().removeprefix("Errata: ").strip()
                 if errataLinens.__len__() > 1
                 else None
             )
-            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
-                ...  # This is really the case of setting both to "", but due to scoping i got lazy
-            elif acceptanceMessage[0:3] == "by ":
-                card_author = str((acceptanceMessage.split("by "))[1])
+            first_line = errataLinens[0] if errataLinens else ""
+            if (len(first_line)) == 0 or " by " not in first_line:
+                ...
+            elif first_line[0:3] == "by ":
+                card_author = str((first_line.split(" by ", 1))[1])
             else:
-                messageChunks = acceptanceMessage.split(" by ")
-                firstPart = messageChunks[0]
-                secondPart = "".join(messageChunks[1:])
-
+                messageChunks = first_line.split(" by ", 1)
+                firstPart = messageChunks[0].strip()
+                secondPart = messageChunks[1] if len(messageChunks) > 1 else ""
                 dbname = str(firstPart)
                 card_author = str(secondPart)
-            resolvedName = dbname if dbname != "" else "Crazy card with no name"
+            card_author = card_author.strip()
+            # Resolve display name from card id (errata messages use id on first line)
+            errata_card = get_card_by_id(errata_id) if errata_id else None
+            resolvedName = (
+                errata_card.name()
+                if errata_card
+                else (dbname or "Crazy card with no name")
+            )
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
 
             acceptedCards.append(cardMessage)
 
-            set_to_add_to = "HC8.1"
-
-            channel_to_add_to = hc_constants.HC_EIGHT_LIST
+            if errata_card:
+                set_to_add_to = errata_card.cardset()
+                channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
+            else:
+                set_to_add_to = "HKL"
+                channel_to_add_to = hc_constants.HKL_CARD_LIST
 
             await acceptCard(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
-                cardName=dbname,
+                cardName=resolvedName,
                 authorName=card_author,
                 setId=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
-                errata=errata_id != None,
+                errata=errata_id is not None,
                 errataId=errata_id,
             )
 
@@ -939,10 +1001,10 @@ class LifecycleCog(commands.Cog):
                         recentlyNotified = threadMessageAge < timedelta(days=1)
                         if not recentlyNotified:
 
-                            veto_council_to_notify = hc_constants.VETO_COUNCIL
+                            veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
 
                             # (
-                            #     hc_constants.VETO_COUNCIL
+                            #     hc_constants.VETO_COUNCIL_PORTAL
                             #     if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
                             #     else hc_constants.VETO_COUNCIL_2
                             # )
@@ -1011,7 +1073,7 @@ class LifecycleCog(commands.Cog):
     async def instaerrata(self, ctx: commands.Context, *, incomingMessage: str = ""):
         """
         Cardname by Author
-        Errata:
+        Errata: <card id>
         """
         splitLines = incomingMessage.splitlines()
         cardMessage = splitLines[0]
@@ -1027,7 +1089,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send(
                 """please include the errata id in the format:
                            Cardname by Author
-                           Errata: <id goes here>"""
+                           Errata: <card id>"""
             )
             return
 
@@ -1037,11 +1099,11 @@ class LifecycleCog(commands.Cog):
             await ctx.send("The attached file must be an image.")
             return
 
-        if (len(cardMessage)) == 0 or "by " not in cardMessage:
-            await ctx.send("Please attach a card message.")
+        if (len(cardMessage)) == 0 or " by " not in cardMessage:
+            await ctx.send("Please attach a card message (Cardname by Author).")
             return
         elif cardMessage[0:3] == "by ":
-            await ctx.send("Please include a card name")
+            await ctx.send("Please include a card ID on the first line.")
             return
         else:
             messageChunks = cardMessage.split(" by ")
@@ -1051,14 +1113,25 @@ class LifecycleCog(commands.Cog):
             dbname = str(firstPart)
             card_author = str(secondPart)
 
+        errata_id_clean = errataId.removeprefix("Errata: ").strip()
+        db_card = get_card_by_id(errata_id_clean)
+
+        if not db_card:
+            await ctx.send("Card not found")
+            return
+        set_id = db_card.cardset()
+        list_channel = card_list_channel_for_set(set_id)
+
         await acceptCard(
             bot=self.bot,
             file=await file.to_file(),
             cardMessage=cardMessage,
             cardName=dbname,
             authorName=card_author,
+            setId=set_id,
+            channelIdForCard=list_channel,
             errata=True,
-            errataId=errataId.removeprefix("Errata: "),
+            errataId=errata_id_clean,
         )
 
     @commands.command(name="join_card_thread", aliases=["jct"])
@@ -1121,7 +1194,7 @@ async def setup(bot: commands.Bot):
 
 def reset_countdowns():
     print("reset")
-    linesToWrite = ""
+    lines_to_write = ""
     with open("../mork-state", "r") as file:
         lines = file.readlines()
         for line in lines:
@@ -1139,7 +1212,7 @@ def reset_countdowns():
                 # print(timeSinceLast)
 
                 if timeSinceLast <= hc_constants.SUBMISSION_COOLDOWN:
-                    linesToWrite += f"{line}"
+                    lines_to_write += f"{line}"
     with open("../mork-state", "w") as file:
-        file.write(linesToWrite)
+        file.write(lines_to_write)
     print("end reset")

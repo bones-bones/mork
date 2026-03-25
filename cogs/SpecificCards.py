@@ -48,9 +48,7 @@ async def sendImage(url, ctx: commands.Context):
             await session.close()
 
 
-
-
-async def sendDriveImage(url, ctx: commands.Context):
+async def send_drive_image(url, ctx: commands.Context):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
             if resp.status != 200:
@@ -730,7 +728,7 @@ class SpecificCardsCog(commands.Cog):
     # for the card colossal godmaw
     @commands.command()
     async def dreadmaw(self, ctx: commands.Context):
-        await sendDriveImage(
+        await send_drive_image(
             "https://lh3.googleusercontent.com/d/1uYdnTLOZw42yNGc3xgO0oxhBGwoReo-c", ctx
         )
 
@@ -770,7 +768,7 @@ class SpecificCardsCog(commands.Cog):
         ]
         selected = random.sample(stickersheets, k=3)
         for sheet in selected:
-            await sendDriveImage(sheet, ctx)
+            await send_drive_image(sheet, ctx)
 
     # for the card will, willful scheme
     @commands.command()

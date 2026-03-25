@@ -89,10 +89,9 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         elif downvote > 4 and downvote >= upvote and downvote >= errata:
             vetoCardMessages.append(messageEntry)
 
-        # temp dropped for jumpstart
-        # Accepted case
+        # Accepted case (HKL / jumpstart list threshold)
         elif (
-            upvote > hc_constants.VC_THRESHOLD  # TODO: move the others over to this
+            upvote > hc_constants.SUBMISSIONS_THRESHOLD
             and upvote >= downvote
             and upvote >= errata
         ):
