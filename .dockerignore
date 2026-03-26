@@ -1,0 +1,11 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+*.pyo
+.DS_Store
+bot_secrets/discord_token.py
+bot_secrets/client_secrets.json
+bot_secrets/reddit_secrets.py
+tempImages

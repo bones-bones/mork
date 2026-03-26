@@ -1,0 +1,3 @@
+[tool.ruff.lint]
+# Strict enough to catch broken imports / syntax issues; avoids style noise on legacy code.
+select = ["E9", "F821", "F822"]

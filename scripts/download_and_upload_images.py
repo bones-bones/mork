@@ -1,3 +1,5 @@
+import mork_repo_root  # noqa: E402
+
 from time import sleep
 from functools import reduce
 import os
@@ -9,6 +11,12 @@ from shared_vars import googleClient
 import hc_constants
 from shared_vars import drive
 from PIL import Image, ImageDraw
+from shared_vars import creds
+
+
+from googleapiclient.discovery import build
+
+service = build("drive", "v3", credentials=creds)
 
 
 DRIVE_FOLDER_ID = "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"
@@ -16,6 +24,27 @@ DRIVE_FOLDER_ID = "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"
 listing = drive.ListFile(
     {"q": f"'{DRIVE_FOLDER_ID}' in parents and trashed=false"}
 ).GetList()
+
+files = drive.ListFile({"q": f"'0AF2-ah4i2AWYUk9PVA' in parents"}).GetList()
+print(files[1])
+files_sorted = sorted(files, key=lambda f: int(f.get("fileSize", 0)))[0:300]
+
+print(f"\n{'Name':<40} {'Size (bytes)':<15} {'Location (ID)':<40} {'Date':<15}")
+print("-" * 110)
+for f in files_sorted:
+
+    name = f.get("title", "N/A")[:39]
+    size = f.get("fileSize", "0")
+    location = f.get("id", "N/A")[:39]
+    date = f.get("createdDate", "N/A")[:10] if f.get("createdDate") else "N/A"
+    print(f"{name:<40} {size:<15} {location:<40} {date:<15} {f.get('shared')}")
+
+    if f.get("shared", False) == False:
+        try:
+            response = service.files().delete(fileId=location).execute()
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
 
 def mergeObject(curr, next):
@@ -59,13 +88,15 @@ mainSheet = databaseSheets.worksheet(SOURCE_SHEET_NAME)
 
 targetDb = googleClient.open_by_key(TARGET_SHEET_KEY)
 
+print(drive.GetAbout())
+
 
 targetSheet = targetDb.get_worksheet(0)
 
 current_printable_cards = targetSheet.col_values(1)  # aka card ids
 # do 176
 startIndex = 1500  # 2 index, shitass
-endIndex = 3500  # 1149  # 10
+endIndex = 1500  # 1149  # 10
 cardIds = [cell.value for cell in mainSheet.range(f"A{startIndex}:A{endIndex}")]
 cardNames = [cell.value for cell in mainSheet.range(f"B{startIndex}:B{endIndex}")]
 primaryUrls = [cell.value for cell in mainSheet.range(f"C{startIndex}:C{endIndex}")]
@@ -330,7 +361,7 @@ for id, name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip
                         #     current_entry_in_sheet + 1, 4, getDriveUrl(uploaded)
                         # )
                 except Exception as e:
-                    ...
+                    print(e)
                 os.remove(parsedFileName)
 
         except Exception as e:

@@ -1,0 +1,13 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.9
+    hooks:
+      - id: ruff
+  - repo: local
+    hooks:
+      - id: python-compileall
+        name: python compileall (syntax check)
+        entry: python3 -m compileall -q -f .
+        language: system
+        pass_filenames: false
+        always_run: true
