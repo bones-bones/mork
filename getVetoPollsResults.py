@@ -91,7 +91,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
 
         # Accepted case (HKL / jumpstart list threshold)
         elif (
-            upvote > hc_constants.SUBMISSIONS_THRESHOLD
+            upvote > hc_constants.VC_THRESHOLD
             and upvote >= downvote
             and upvote >= errata
         ):

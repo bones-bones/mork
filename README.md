@@ -6,11 +6,26 @@ I have no idea what is going on, I think Exalted and Cirion built this. (and Zax
 1. Install VSCode and Python plugin
 1. Get Python >=3.9
 1. Install dependencies via `pip install -r requirements.txt`
+1. Optional: install dev hooks via `pip install -r requirements-dev.txt` and `pre-commit install` (runs Ruff + a Python syntax check on commit)
 1. Make a copy of `discord_token.template.py` called `discord_token.py`. Add the bot token.
 1. Make a copy of `reddit_secrets.template.py` called `reddit_secrets.py`. Add creds. https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki 
-1. Get a copy of `client_secrets.json`, put it in secrets
-1. `python Mork.py`
-1. Oh uh if stuff isn't working try python3
+1. Get a copy of `client_secrets.json`, put it in `bot_secrets/`
+1. From the repo root, run `python Mork.py` (or `python3 Mork.py` if that is what your machine uses)
+
+## Repository layout
+
+- **`Mork.py`** — bot entrypoint
+- **`cogs/`** — Discord extensions loaded by `Mork.py`
+- **`cogs/lifecycle/`** — helpers used by the lifecycle cog
+- **`submissions/`** — token / masterpiece / errata submission checks
+- **`scripts/`** — one-off maintenance (sheet → Drive/GCS image pipelines, border fixes). Run from the **repository root** so `./bot_secrets/...` paths work, e.g. `python scripts/download_and_upload_images_gcs.py --dry-run` — see [scripts/README.md](scripts/README.md)
+- **`docs/`** — deployment and ops notes; [docs/codebase-layout.md](docs/codebase-layout.md) explains why many `.py` files sit at the repo root
+- **`bot_secrets/`** — local credentials (gitignored); use the `*.template.py` files as a guide
+- **Top-level `*.py` modules** (e.g. `shared_vars.py`, `acceptCard.py`) — imported by cogs; kept at the root on purpose for `python Mork.py` without a package install
+
+## Deploying on Google Cloud (GitHub Actions)
+
+See [docs/github-actions-gcp-deploy.md](docs/github-actions-gcp-deploy.md) for Workload Identity Federation, Artifact Registry, Cloud Run, and a sample **Deploy Mork** workflow.
 
 
 
@@ -92,4 +107,4 @@ Essentially purgatory. A decision wasn't reached one way or another in time... b
 There's always the chance a process fails. Who knows what happens then.
 
 ## 5. It percolates out
-From time to time, a mod will take the entries in the unapproved sheet of the database, and transcribe them to the main sheet. Once the cards are in the main sheet, they'll start to show up in other places. Mork will search against them, hellfall will list them, cube XML files will be created that include them, and cube cobra will show them too. (The exact timings on when these will happen is fuzzy at best.)
+From time to time, a mod will take the entries in the unapproved sheet of the database, and transcribe them to the main sheet. Once the cards are in the main sheet, they'll start to show up in other places. Mork will search against them, hellfall will list them, cube XML files will be created that include them, and draftmancer wil show them. (The exact timings on when these will happen is fuzzy at best.)

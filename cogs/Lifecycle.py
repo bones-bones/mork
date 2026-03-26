@@ -27,7 +27,6 @@ from datetime import datetime, timezone, timedelta
 
 from acceptCard import acceptCard
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
-from submissions.checkErrataSubmissions import checkErrataSubmissions
 from checkSubmissions import (
     checkSubmissions,
 )
@@ -86,10 +85,8 @@ def card_list_channel_for_set(cardset: str) -> int:
             return hc_constants.HC_POSSE_CARD_LIST
         case "hc7" | "hc7.0" | "hc7.1":
             return hc_constants.SEVEN_CARD_LIST
-        case "hck":
-            return hc_constants.HC_JUMPSTART_LIST
         case "hcj":
-            return hc_constants.HKL_CARD_LIST
+            return hc_constants.HC_JUMPSTART_LIST
         case "hc8" | "hc8.0" | "hc8.1":
             return hc_constants.HC_EIGHT_LIST
         case "hkl":
@@ -169,7 +166,7 @@ class LifecycleCog(commands.Cog):
         self.bot = bot
         self.lifecycle_loop.start()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.lifecycle_loop.cancel()
 
     @tasks.loop(seconds=FIVE_MINUTES)
@@ -518,7 +515,7 @@ class LifecycleCog(commands.Cog):
                 morkMessage = await message.channel.send(
                     file=theFile,
                     content=f"{wholeMessage[0]} by <@{message.author.id}>\n"
-                    + "; ".join(forCards),
+                    + ";".join(forCards),
                 )
 
                 await morkMessage.add_reaction(hc_constants.VOTE_UP)
@@ -543,6 +540,17 @@ class LifecycleCog(commands.Cog):
                     return  # no pings allowed
                 sent_message = await message.channel.send(content=message.content)
                 await sent_message.create_thread(name=sent_message.content[0:99])
+                await sent_message.add_reaction(hc_constants.VOTE_UP)
+                await sent_message.add_reaction(hc_constants.VOTE_DOWN)
+                await message.delete()
+
+            case hc_constants.MODWORK_REQUEST_CHANNEL:
+                text = (message.content or "").strip()
+                if not text:
+                    return
+                sent_message = await message.channel.send(content=text)
+                thread_name = f"{message.author.name} - {text}"[:100]
+                await sent_message.create_thread(name=thread_name)
                 await sent_message.add_reaction(hc_constants.VOTE_UP)
                 await sent_message.add_reaction(hc_constants.VOTE_DOWN)
                 await message.delete()
@@ -962,6 +970,7 @@ class LifecycleCog(commands.Cog):
                 cardName=dbname,
                 channelIdForCard=hc_constants.VETO_CARD_LIST,
                 authorName=card_author,
+                setId="HCV",
                 wasVetoed=True,
             )
 
@@ -1031,7 +1040,7 @@ class LifecycleCog(commands.Cog):
 
         # had to use format because python doesn't like \n inside template brackets
         if len(acceptedCards) > 0:
-            acceptedMessage = "||​||\nACCEPTED CARDS: \n{0}".format(
+            acceptedMessage = "||\u200b||\nACCEPTED CARDS: \n{0}".format(
                 "\n".join(acceptedCards)
             )
             for i in range(0, acceptedMessage.__len__(), hc_constants.LITERALLY_1984):
@@ -1039,7 +1048,7 @@ class LifecycleCog(commands.Cog):
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
-            errataMessage = "||​||\nNEEDS ERRATA: \n{0}".format(
+            errataMessage = "||\u200b||\nNEEDS ERRATA: \n{0}".format(
                 "\n".join(needsErrataCards)
             )
             for i in range(0, errataMessage.__len__(), hc_constants.LITERALLY_1984):
@@ -1047,19 +1056,21 @@ class LifecycleCog(commands.Cog):
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
-            vetoMessage = "||​||\nVETOED: \n{0}".format("\n".join(vetoedCards))
+            vetoMessage = "||\u200b||\nVETOED: \n{0}".format("\n".join(vetoedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
-            hellMessage = "||​||\nVETO HELL: \n{0}".format("\n".join(vetoHellCards))
+            hellMessage = "||\u200b||\nVETO HELL: \n{0}".format(
+                "\n".join(vetoHellCards)
+            )
             for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
                 await vetoDiscussionChannel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
-            mysteryHellMessage = "||​||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format(
+            mysteryHellMessage = "||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format(
                 "\n".join(mysteryVetoHellCards)
             )
             for i in range(
@@ -1141,7 +1152,7 @@ class LifecycleCog(commands.Cog):
         Usage: !jct thread-phrase
         """
 
-        async def join_thread_logic(ctx, thread):
+        async def join_thread_logic(ctx: commands.Context, thread: Thread):
             """Helper to join a thread with proper checks"""
             try:
                 await thread.add_user(ctx.author)
@@ -1152,15 +1163,28 @@ class LifecycleCog(commands.Cog):
             except Exception as e:
                 print(e)
 
+        guild = ctx.guild
+        if guild is None:
+            await ctx.send("❌ This command only works in a server.", delete_after=10)
+            return
+
+        author = ctx.author
+        if not isinstance(author, Member):
+            await ctx.send("❌ This command only works in a server.", delete_after=10)
+            return
+
         REQUIRED_ROLE_ID = hc_constants.SKELETONS
 
-        required_role = ctx.guild.get_role(REQUIRED_ROLE_ID)
+        required_role = guild.get_role(REQUIRED_ROLE_ID)
 
-        if required_role not in ctx.author.roles:
+        if required_role not in author.roles:
             await ctx.send("❌ You don't have access to this command!", delete_after=10)
             return
 
-        target_channel = ctx.guild.get_channel(hc_constants.VETO_HELLPITS)
+        target_channel = guild.get_channel(hc_constants.VETO_HELLPITS)
+        if not isinstance(target_channel, TextChannel):
+            await ctx.send("❌ Target channel is unavailable.", delete_after=10)
+            return
 
         # Get active threads (last 7 days)
         threads = target_channel.threads
