@@ -36,9 +36,7 @@ jobs:
             git fetch --all
             git reset --hard origin/main
             
-            if [ -f requirements.txt ]; then
-              pip3 install -r requirements.txt --break-system-packages
-            fi
+
             
             sudo pkill -f Mork.py || echo "No existing process found."
             nohup python3 -u Mork.py > output.log
