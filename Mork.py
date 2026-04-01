@@ -1,7 +1,13 @@
+import os
+
 from discord.ext import commands
+from dotenv import load_dotenv
 
 from shared_vars import intents
-from bot_secrets.discord_token import DISCORD_ACCESS_TOKEN
+
+load_dotenv()
+
+DISCORD_ACCESS_TOKEN = os.environ["DISCORD_ACCESS_TOKEN"]
 
 
 class MyBot(commands.Bot):

@@ -1,10 +1,13 @@
-from datetime import date, datetime
 import io
 import os
 import random
 import re
+from datetime import date, datetime, timezone, timedelta
 from typing import cast
+
 import aiohttp
+import asyncpraw
+import discord
 from discord import (
     ClientUser,
     Guild,
@@ -14,25 +17,16 @@ from discord import (
     TextChannel,
     Thread,
 )
-import discord
 from discord.ext import commands, tasks
 from discord.message import Message
 from discord.utils import get
-
-
-from typing import cast
-import asyncpraw
-
-from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
 
 from acceptCard import acceptCard
-from cogs.lifecycle.post_daily_submissions import post_daily_submissions
-from checkSubmissions import (
-    checkSubmissions,
-)
-
+from checkSubmissions import checkSubmissions
 from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
+from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
 from getters import (
@@ -49,8 +43,15 @@ from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonableCard
 from printCardImages import print_card_images
 from reddit_functions import post_to_reddit
-from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
 from shared_vars import intents, googleClient
+
+load_dotenv()
+
+ID = os.environ["REDDIT_ID"]
+SECRET = os.environ["REDDIT_SECRET"]
+PASSWORD = os.environ["REDDIT_PASSWORD"]
+USER_AGENT = os.environ["REDDIT_USER_AGENT"]
+NAME = os.environ["REDDIT_NAME"]
 from submissions.checkMasterpieceSubmissions import checkMasterpieceSubmissions
 from submissions.tokenSubmissions import checkTokenSubmissions
 
@@ -548,9 +549,10 @@ class LifecycleCog(commands.Cog):
                 text = (message.content or "").strip()
                 if not text:
                     return
-                sent_message = await message.channel.send(content=text)
-                thread_name = f"{message.author.name} - {text}"[:100]
-                await sent_message.create_thread(name=thread_name)
+                sent_message = await message.channel.send(
+                    content=f"{text}\nby <@{message.author.id}>"
+                )
+                await sent_message.create_thread(name=text[:100])
                 await sent_message.add_reaction(hc_constants.VOTE_UP)
                 await sent_message.add_reaction(hc_constants.VOTE_DOWN)
                 await message.delete()

@@ -1,0 +1,31 @@
+jobs:
+  deploy:
+    if: github.actor == 'bones-bones'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Identity Check (The "Modern" Auth)
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: 'projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'deploy-mork@PROJECT_ID.iam.gserviceaccount.com'
+
+      # 2. The SSH Step (The "Machine" Auth)
+      - id: 'ssh'
+        uses: 'google-github-actions/ssh-compute@v1'
+        with:
+          instance_name: ${{ secrets.INSTANCE_NAME }}
+          zone: ${{ secrets.INSTANCE_ZONE }}
+          # No username/key secrets needed here!
+          command: |
+            cd /home/bones-bones/mork
+            git fetch --all
+            git reset --hard origin/main
+            pkill -f Mork.py || echo "No process found"
+            nohup python3 -u Mork.py > output.log 2>&1 & disown

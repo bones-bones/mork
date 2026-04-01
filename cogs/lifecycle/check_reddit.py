@@ -1,12 +1,21 @@
-from datetime import datetime
+import os
+from datetime import datetime, timezone, timedelta
 from typing import cast
+
+import asyncpraw
 from discord import TextChannel
 from discord.ext import commands
-import asyncpraw
-from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
+
 import hc_constants
 
-from bot_secrets.reddit_secrets import ID, NAME, PASSWORD, SECRET, USER_AGENT
+load_dotenv()
+
+ID = os.environ["REDDIT_ID"]
+SECRET = os.environ["REDDIT_SECRET"]
+PASSWORD = os.environ["REDDIT_PASSWORD"]
+USER_AGENT = os.environ["REDDIT_USER_AGENT"]
+NAME = os.environ["REDDIT_NAME"]
 
 
 async def check_reddit(bot: commands.Bot):

@@ -7,8 +7,7 @@ I have no idea what is going on, I think Exalted and Cirion built this. (and Zax
 1. Get Python >=3.9
 1. Install dependencies via `pip install -r requirements.txt`
 1. Optional: install dev hooks via `pip install -r requirements-dev.txt` and `pre-commit install` (runs Ruff + a Python syntax check on commit)
-1. Make a copy of `discord_token.template.py` called `discord_token.py`. Add the bot token.
-1. Make a copy of `reddit_secrets.template.py` called `reddit_secrets.py`. Add creds. https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki 
+1. Copy `.env.template` to `.env` and fill in your credentials (Discord token, Reddit API creds). See https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki for Reddit setup.
 1. Get a copy of `client_secrets.json`, put it in `bot_secrets/`
 1. From the repo root, run `python Mork.py` (or `python3 Mork.py` if that is what your machine uses)
 

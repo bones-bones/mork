@@ -1,7 +1,16 @@
+import os
 from typing import Dict, List
-import asyncpraw
 
-from bot_secrets.reddit_secrets import ID, SECRET, PASSWORD, USER_AGENT, NAME
+import asyncpraw
+from dotenv import load_dotenv
+
+load_dotenv()
+
+ID = os.environ["REDDIT_ID"]
+SECRET = os.environ["REDDIT_SECRET"]
+PASSWORD = os.environ["REDDIT_PASSWORD"]
+USER_AGENT = os.environ["REDDIT_USER_AGENT"]
+NAME = os.environ["REDDIT_NAME"]
 
 
 async def post_to_reddit(image_path: str, title: str, flair: str = ""):
