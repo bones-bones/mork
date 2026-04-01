@@ -23,13 +23,14 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-      # 2. Deploy via SSH
+    # 2. Deploy via SSH
       - id: 'ssh'
         uses: 'google-github-actions/ssh-compute@v1'
         with:
           instance_name: ${{ secrets.INSTANCE_NAME }}
           zone: ${{ secrets.INSTANCE_ZONE }}
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          user: bones-bones  # CRITICAL: Ensures it logs in as you, not the service account
           command: |
             cd ${{ secrets.DEPLOY_PATH }}
             
@@ -40,7 +41,8 @@ jobs:
               pip3 install -r requirements.txt --break-system-packages
             fi
             
-            sudo pkill -f Mork.py || echo "No existing process found."
-            nohup python3 -u Mork.py > output.log 2>&1 & disown
+            # FIX 1: Add "|| true" so the script doesn't crash if Mork isn't running
+            sudo pkill -f Mork.py || true
             
-            echo "Deployment complete. Mork is running in the background."
+            # FIX 2: Add "</dev/null" to sever the SSH input tie, allowing it to close cleanly
+            nohup python3 -u Mork.py </dev/null > output.log 2>&1 &
