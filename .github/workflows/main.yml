@@ -23,14 +23,14 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-    # 2. Deploy via SSH
+# 2. Deploy via SSH
       - id: 'ssh'
         uses: 'google-github-actions/ssh-compute@v1'
         with:
           instance_name: ${{ secrets.INSTANCE_NAME }}
           zone: ${{ secrets.INSTANCE_ZONE }}
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          user: bones-bones  # CRITICAL: Ensures it logs in as you, not the service account
+          user: bones-bones  
           command: |
             cd ${{ secrets.DEPLOY_PATH }}
             
@@ -41,8 +41,9 @@ jobs:
               pip3 install -r requirements.txt --break-system-packages
             fi
             
-            # FIX 1: Add "|| true" so the script doesn't crash if Mork isn't running
-            sudo pkill -f Mork.py || true
+            # FIX: The brackets prevent the script from killing itself!
+            sudo pkill -f "[M]ork.py" || true
             
-            # FIX 2: Add "</dev/null" to sever the SSH input tie, allowing it to close cleanly
+            # Start the bot, sever the SSH input, and sleep for 1 second to let SSH close cleanly
             nohup python3 -u Mork.py </dev/null > output.log 2>&1 &
+            sleep 1
