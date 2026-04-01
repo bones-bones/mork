@@ -41,4 +41,4 @@ jobs:
             fi
             
             sudo pkill -f Mork.py || echo "No existing process found."
-            nohup python3 -u Mork.py > output.log 2>&1 & disown
+            nohup python3 -u Mork.py > output.log
