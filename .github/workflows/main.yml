@@ -29,6 +29,7 @@ jobs:
         with:
           instance_name: ${{ secrets.INSTANCE_NAME }}
           zone: ${{ secrets.INSTANCE_ZONE }}
+          ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           command: |
             cd ${{ secrets.DEPLOY_PATH }}
             
