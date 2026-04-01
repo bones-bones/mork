@@ -1,31 +1,49 @@
+name: Deploy Mork to Google VM
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   deploy:
+    # Only allow the specific user bones-bones to trigger deployment
     if: github.actor == 'bones-bones'
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
-      id-token: 'write'
+      id-token: 'write' # Required for WIF authentication
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # 1. Identity Check (The "Modern" Auth)
+      # 1. Authenticate with Google Cloud using WIF
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
-          workload_identity_provider: 'projects/12345/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-          service_account: 'deploy-mork@PROJECT_ID.iam.gserviceaccount.com'
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-      # 2. The SSH Step (The "Machine" Auth)
+      # 2. Deploy via SSH
       - id: 'ssh'
         uses: 'google-github-actions/ssh-compute@v1'
         with:
           instance_name: ${{ secrets.INSTANCE_NAME }}
           zone: ${{ secrets.INSTANCE_ZONE }}
-          # No username/key secrets needed here!
           command: |
-            cd /home/bones-bones/mork
+            # We use the secret to change directories
+            cd ${{ secrets.DEPLOY_PATH }}
+            
+            # Pull the latest code
             git fetch --all
             git reset --hard origin/main
-            pkill -f Mork.py || echo "No process found"
+            
+            # Setup/Update dependencies
+            if [ -f requirements.txt ]; then
+              pip3 install -r requirements.txt
+            fi
+            
+            # Restart logic
+            pkill -f Mork.py || echo "No existing process found."
             nohup python3 -u Mork.py > output.log 2>&1 & disown
