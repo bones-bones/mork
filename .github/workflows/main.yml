@@ -1,9 +1,7 @@
 name: Deploy Mork to Google VM
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch: # This enables the manual "Run workflow" button
 
 jobs:
   deploy:
@@ -12,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
-      id-token: 'write' # Required for WIF authentication
+      id-token: 'write'
 
     steps:
       - name: Checkout code
@@ -30,20 +28,16 @@ jobs:
         uses: 'google-github-actions/ssh-compute@v1'
         with:
           instance_name: ${{ secrets.INSTANCE_NAME }}
-          zone: ${{ secrets.INSTANCE_ZONE }}
+          zone: ${{ secrets.GCP_ZONE }}
           command: |
-            # We use the secret to change directories
             cd ${{ secrets.DEPLOY_PATH }}
             
-            # Pull the latest code
             git fetch --all
             git reset --hard origin/main
             
-            # Setup/Update dependencies
             if [ -f requirements.txt ]; then
               pip3 install -r requirements.txt
             fi
             
-            # Restart logic
             pkill -f Mork.py || echo "No existing process found."
             nohup python3 -u Mork.py > output.log 2>&1 & disown
