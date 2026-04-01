@@ -28,7 +28,7 @@ jobs:
         uses: 'google-github-actions/ssh-compute@v1'
         with:
           instance_name: ${{ secrets.INSTANCE_NAME }}
-          zone: ${{ secrets.GCP_ZONE }}
+          zone: ${{ secrets.INSTANCE_ZONE }}
           command: |
             cd ${{ secrets.DEPLOY_PATH }}
             
