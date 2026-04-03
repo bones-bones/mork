@@ -61,7 +61,7 @@ class GeneralCog(commands.Cog):
     @commands.command()
     async def macro(self, ctx: commands.Context, thing: str, *args):
         # print(args)
-        if thing == "help":
+        if thing == "yelp":
             message = "Macros are:\nJoke [word]\n"
             for name in hc_constants.macroList.keys():
                 if type(hc_constants.macroList[name]) is str:
