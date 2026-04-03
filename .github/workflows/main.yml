@@ -42,8 +42,12 @@ jobs:
             echo "piped" >> log.txt
             
             # FIX: The brackets prevent the script from killing itself!
-            pkill -f "[M]ork.py" || true
-            echo "pkill" >> log.txt
+            PID=$(pgrep -f "[M]ork.py")
+            if [ -n "$PID" ]; then
+              echo "Found Mork.py at PID $PID. Attempting to kill..."
+              kill -9 $PID || echo "Could not kill $PID, moving on..."
+            fi
+            echo "kill" >> log.txt
             # Start the bot, sever the SSH input, and sleep for 1 second to let SSH close cleanly
             nohup python3 -u Mork.py </dev/null > output.log 2>&1 &
             sleep 1
