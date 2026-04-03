@@ -46,7 +46,7 @@ jobs:
             PID=$(pgrep -f "[M]ork.py")
             if [ -n "$PID" ]; then
               echo "Found Mork.py at PID $PID. Attempting to kill..."
-              sudo kill -9 $PID || echo "Could not kill $PID, moving on..."
+              sudo /usr/bin/kill -9 $PID || echo "Could not kill $PID, moving on..."
             fi
             echo "kill" >> log.txt
             # Start the bot, sever the SSH input, and sleep for 1 second to let SSH close cleanly
