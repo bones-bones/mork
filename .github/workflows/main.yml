@@ -30,7 +30,6 @@ jobs:
           instance_name: ${{ secrets.INSTANCE_NAME }}
           zone: ${{ secrets.INSTANCE_ZONE }}
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
-          user: bones-bones  
           command: |
             cd ${{ secrets.DEPLOY_PATH }}
             
