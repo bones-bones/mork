@@ -39,17 +39,4 @@ jobs:
             if [ -f requirements.txt ]; then
               pip3 install -r requirements.txt --break-system-packages
             fi
-            echo "piped" >> log.txt
-            echo "does it do anything"
-            whoami >> fush.txt
-            
-            # FIX: The brackets prevent the script from killing itself!
-            PID=$(pgrep -f "[M]ork.py")
-            if [ -n "$PID" ]; then
-              echo "Found Mork.py at PID $PID. Attempting to kill..."
-              sudo /usr/bin/kill -9 $PID || echo "Could not kill $PID, moving on..."
-            fi
-            echo "kill" >> log.txt
-            # Start the bot, sever the SSH input, and sleep for 1 second to let SSH close cleanly
-            nohup python3 -u Mork.py </dev/null > output.log 2>&1 &
-            sleep 1
+            sudo systemctl restart mork
