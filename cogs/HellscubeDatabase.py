@@ -307,6 +307,21 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.command()
     async def info(self, channel, *cardName):
+        raw = " ".join(cardName).strip()
+        parts = raw.split()
+        if parts and all(p.isdigit() for p in parts):
+            blocks: list[str] = []
+            for card_id in parts:
+                if card_id in _INFO_JOKE_MISSING_IDS:
+                    blocks.append("not found")
+                    continue
+                found = get_card_by_id(card_id)
+                blocks.append(
+                    "not found" if found is None else format_card_info(found)
+                )
+            await channel.send("\n\n".join(blocks))
+            return
+
         name = cardNameRequest(" ".join(cardName).lower())
         message = "something went wrong!"
         for card in cardList:
@@ -315,28 +330,9 @@ class HellscubeDatabaseCog(commands.Cog):
 
                 if name == "gas lights":
                     await channel.send("no card found")
-                else:
-                    id = card.id()
-                    creator = card.creator()
-                    cardset = card.cardset()
-                    legality = card.legality()
-                    rulings = card.rulings()
-                    tags = card.tags()
-                    toSend = [
-                        card.name(),
-                        f"id: {id}",
-                        f"creator: {creator}",
-                        f"set: {cardset}",
-                        f"legality: {legality}",
-                    ]
-                    if tags.__len__() > 0:
-                        toSend.append("tags: " + ", ".join(tags))
-
-                    if rulings and rulings.__len__() > 0:
-                        toSend.append("rulings: \n" + rulings)
-
-                    message = "\n".join(toSend)
-                    break
+                    return
+                message = format_card_info(card)
+                break
         await channel.send(message)
 
     @commands.command()
@@ -463,6 +459,31 @@ def get_card_by_id(card_id: str) -> CardSearch | None:
         if str(c.id()) == str(card_id):
             return c
     return None
+
+
+# IDs that resolve to "not found" on purpose
+_INFO_JOKE_MISSING_IDS = frozenset({"2142", "2972"})
+
+
+def format_card_info(card: CardSearch) -> str:
+    cid = card.id()
+    creator = card.creator()
+    cardset = card.cardset()
+    legality = card.legality()
+    rulings = card.rulings()
+    tags = card.tags()
+    to_send = [
+        card.name(),
+        f"id: {cid}",
+        f"creator: {creator}",
+        f"set: {cardset}",
+        f"legality: {legality}",
+    ]
+    if tags.__len__() > 0:
+        to_send.append("tags: " + ", ".join(tags))
+    if rulings and rulings.__len__() > 0:
+        to_send.append("rulings: \n" + rulings)
+    return "\n".join(to_send)
 
 
 def get_card_by_name(card_name: str) -> CardSearch | None:
