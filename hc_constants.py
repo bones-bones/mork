@@ -84,7 +84,7 @@ SKELETONS = 1314855328512348180
 
 # Reddit
 ACCEPTED_FLAIR = "9ba10bb4-df5b-11ee-afbd-62e54284d8d6"
-OFFICIAL_FLAIR = "5778f0e4-52c0-11eb-9a1d-0ebf18b4acab"
+OFFICIAL_FLAIR = "acff347c-4a3d-11ec-b164-5668d7169f0d"
 
 # Document Ids
 HELLSCUBE_DATABASE = "1qqGCedHmQ8bwi-YFjmv-pNKKMjubZQUAaF7ItJN5d1g"
@@ -97,6 +97,7 @@ TOKEN_UNAPPROVED = "Tokens Database (Unapproved)"
 DATABASE_UNAPPROVED = "Database (Unapproved)"
 
 
+
 # Emoji
 CIRION_SPELLING = 786296441143558164
 MANA_GREEN = 636012952734007300
@@ -105,6 +106,10 @@ JIMMY = 1009993523497541672
 WALL = 935277715668492308
 SYMBOL_UNTAP = 889925343346045008
 
+# Card images folder
+TOKEN_FOLDER = "13EN5vdtZ3c_FAeJ8F-Eu6vkMvUXbLKAo"
+CURRENT_SET_FOLDER = "1D-2A8L81RAuaAYIZzHySiJLVVDEv_TsZ"
+CURRENT_VETO_FOLDER = "1fS1yl6NILR_y8IyJfVvXGwhr9-Y6zFeU"
 
 # Veto council votes
 VOTE_UP = "👍"
@@ -159,6 +164,7 @@ macroList = {
     "long": "Cards with too much text tend to slow down draft and are overall bad for the cube, in general try to keep to 6 lines or less. Although this isn't a strict limit it's good to try not to make cards too long.",
     "pregnancy": 'If a card involves "pregnancy counters", it should be scrapped',
     "brainstorming": "most good cards should be funny to the average magic player, not just the average hellscube discord user",
+    "clockwolf": "You see, Hellsuser Zaxer2, the Hellscard called \"Clockwolf\", a wolf creature costing two white mana and two green mana with no abilities and power and toughness both equal to six, is a reference to the official card \"Watchwolf\", which casts for a white mana and a green mana, is a wolf creature with no abilities, and has power and toughness both equal to three (essentially, Clockwolf is a \"doubled\" Watchwolf). Watchwolf debuted in the 2005 Expert-Level expansion Ravnica: City of Guilds and saw extensive play in Type 2, as a 3/3 creature for only two mana was above rate at that time. The flavor text on the original printing of the card, which has remained unchanged throughout the card reprints as 2009 Friday Night Magic promotional card and as a Magic Online promotional card and in the expansions Archenemy and Masters 25 as well as in the Sylesnea Guild Kit for Guilds of Ravnica, reads, \"Only in Ravnica do the wolves watch the flock\". This is a reference to the common trope in fairy tales, folk tales, and other stories of wolves pursuing flocks of sheep. The flavor text of Watchwolf subverts this trope by asserting that, in the city of Ravnica, wolves do not hunt livestock but are trusted to guard them, though from what is not specified. (It was worth noting that the flavor text does not specify that Watchwolf guards sheep, however given the cultural context to which I alluded to earlier, this is likely). Compare the flavortext of Watchwolf to its Hellscounterpart, which reads simply, \"Who watches the watch wolf?\". Indeed, it is a valid question. The Watchwolf is likely more than capable of slaughtering the flock to which it is assigned, and while the people of Ravnica seem to trust it to perform its duties, what oversight is there actually over the Watchwolf's actions? Does the Watchwolf enjoy unchecked power over the flock, or is it just another brick in a larger pyramid of power?",
     "dward": "https://cdn.discordapp.com/attachments/652255914220584984/829380779498668092/unknown.png",
     "downvote": "I just downvoted your comment.\n\nFAQ\nWhat does this mean?\nThe amount of karma (points) on your comment and Reddit account has decreased by one.\n\nWhy did you do this?\nThere are several reasons I may deem a comment to be unworthy of positive or neutral karma. These include, but are not limited to:\n\nRudeness towards other Redditors,\n\nSpreading incorrect information,\n\nSarcasm not correctly flagged with a /s.\n\nAm I banned from the Reddit?\nNo - not yet. But you should refrain from making comments like this in the future. Otherwise I will be forced to issue an additional downvote, which may put your commenting and posting privileges in jeopardy.\n\nI don't believe my comment deserved a downvote. Can you un-downvote it?\nSure, mistakes happen. But only in exceedingly rare circumstances will I undo a downvote. If you would like to issue an appeal, shoot me a private message explaining what I got wrong. I tend to respond to Reddit PMs within several minutes. Do note, however, that over 99.9% of downvote appeals are rejected, and yours is likely no exception.\n\nHow can I prevent this from happening in the future?\nAccept the downvote and move on. But learn from this mistake: your behavior will not be tolerated on Reddit.com. I will continue to issue downvotes until you improve your conduct. Remember: Reddit is privilege, not a right.",
     "rng": "Too make a good random card there are a couple rules/guidelines you should keep in mind:\n1. Good random effects follow a bell curve, most of time the effect should be around balanced, and only a low percentage of the time should it be very weak or very good.\nSo 50/50 to no nothing or be broken is bad.\n2. Good randomness feels exiting when it does hit those low-odds high-/lowrolls, it should feel great for at least one of the players (preferably both but that's way harder) when something unlikely occurs.\n3. Random cards should be slightly better than normal cards on avarage, as randomness is a downside because you can't plan about it.",
