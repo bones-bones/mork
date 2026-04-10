@@ -27,10 +27,20 @@ class GeneralCog(commands.Cog):
                 file.write(log)
                 log = ""
                 print("log dumped")
-
+    
+    #to use as a ping command and check if bot is online
     @commands.command()
     async def ai(self, ctx: commands.Context):
         await ctx.send("¡ai caramba!")
+
+    #for the funnies
+    @commands.command(name="ch!ai")
+    async def chai(self, ctx: commands.Context):
+        await ctx.send("¡chai caramba!")
+    
+    @commands.command()
+    async def weight(self, ctx: commands.Context):
+        await ctx.send("You've been weighed. You weight around 104.3lbs.")
 
     @commands.command()
     async def help(self, ctx: commands.Context):
