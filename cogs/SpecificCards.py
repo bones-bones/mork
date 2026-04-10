@@ -792,7 +792,7 @@ class SpecificCardsCog(commands.Cog):
         await sendImage(await get_image_from_json(selected[1]), ctx)
         await sendImage(await get_image_from_json(selected[2]), ctx)
 
-        @commands.command()
+    @commands.command()
     async def locus(self, ctx: commands.Context):
         locusCards = [
             "https://cards.scryfall.io/large/front/2/f/2f28ecdc-a4f0-4327-a78c-340be41555ee.jpg",
