@@ -801,6 +801,7 @@ class SpecificCardsCog(commands.Cog):
             "https://cards.scryfall.io/large/front/2/8/28603c1c-f9b4-4001-bc56-d1453d5cacf5.jpg",
             "https://cards.scryfall.io/large/front/d/a/da785d1b-6b90-4b65-9efb-d7f329405318.jpg",
             "https://cards.scryfall.io/large/front/c/2/c2536a4f-9e73-482b-8c1b-71974ef8950c.jpg",
+            "https://cards.scryfall.io/large/front/e/c/eca23062-6014-4a0e-8210-2e86a6308aab.jpg"
             "https://cards.scryfall.io/large/front/e/c/eca23062-6014-4a0e-8210-2e86a6308aab.jpg",
             (
                 "https://lh3.googleusercontent.com/d/1EsgQVM7jEAy3Yy_KvaVAUpifaEK_GtQh",
@@ -818,10 +819,38 @@ class SpecificCardsCog(commands.Cog):
                 "https://lh3.googleusercontent.com/d/1Chv8ICvXMQIuRg_eAvXEUQR4_-cQTdxR",
                 "Omnath, Locus of the Locus",
             ),
+            (
+                "https://lh3.googleusercontent.com/d/1SqkDdUu-PzPoahb572ZgtOIUPI3RX4Pp",
+                "Borderpost (HCJ)"
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/12uTY_HrmzGwrTjaWUvITaSc7KvC1OB84",
+                "Locus Petal"
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1kTZcsBv_TvDY0y7BxgUoLMRienyC8Dl_"
+                "This Dumb Ass Has Delivered A Biblical Plague to Boston Massachusetts for Only One G"
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1bvdXBUQBrYnpdrbZ87Ru3u5pkCWHzgbo"
+                "The post Valley"
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1-FqPNjEE2p6IAnkL-jUVFLih6J201QYK",
+                "Urza, Locus High Poster", 
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1_KKr-rmC0wZ5zemFSmVKkKzFZKksr5I-"
+                "Omnath, Locus"
+            ),
+            (
+                "https://lh3.googleusercontent.com/d/1WFbkL1-KDyo0QcNCaAilLgnBVCgz0w1Y"
+                "Tarmopost"
+            ),
         ]
         rlocus = random.randint(0, len(locusCards) - 1)
         # This is not super future proofed against new black border locus, if one gets printed, add it to the list under the scryfall links and add 1 to the number
-        black_border_posts = 7
+        black_border_posts = 8
         if rlocus < black_border_posts:
             await sendImage(locusCards[rlocus], ctx)
         else:
