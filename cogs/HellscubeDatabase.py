@@ -513,6 +513,8 @@ def searchFor(searchDict: dict):
             searchDict[i] = [(None, None)]
     hits: list[CardSearch] = []
     for i in cardList:
+        if "no-fetch" in [t.lower() for t in i.tags()]:
+            continue
         if (
             checkForString(
                 searchDict["types"], list(map(lambda x: x.lower(), i.types()))
