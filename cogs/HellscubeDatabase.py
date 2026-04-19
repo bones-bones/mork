@@ -512,8 +512,6 @@ async def setup(bot: commands.Bot):
 def get_card_by_id(card_id: str) -> CardSearch | None:
     """Return the CardSearch for the given card ID, or None if not found."""
     for c in cardList:
-        if "no-fetch" in [t.lower() for t in i.tags()]:
-            continue
         if str(c.id()) == str(card_id):
             return c
     return None
@@ -571,6 +569,8 @@ def searchFor(searchDict: dict):
             searchDict[i] = [(None, None)]
     hits: list[CardSearch] = []
     for i in cardList:
+        if "no-fetch" in [t.lower() for t in i.tags()]:
+            continue
         if (
             checkForString(
                 searchDict["types"], list(map(lambda x: x.lower(), i.types()))
