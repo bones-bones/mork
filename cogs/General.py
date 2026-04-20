@@ -51,6 +51,14 @@ class GeneralCog(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command()
+    async def getMessage(self, ctx: commands.Context, id):
+        subChannel = cast(
+            discord.TextChannel, self.bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL)
+        )
+        message = await subChannel.fetch_message(id)
+        await ctx.send(message.jump_url)
+
+    @commands.command()
     async def macro(self, ctx: commands.Context, thing: str, *args):
         # print(args)
         if thing == "help":
