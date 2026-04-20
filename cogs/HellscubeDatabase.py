@@ -305,6 +305,62 @@ class HellscubeDatabaseCog(commands.Cog):
 
         await ctx.send("successfully tagged")
 
+    @commands.command(rest_is_raw=True)
+    async def removetag(self, ctx: commands.Context, *, args: str):
+        cardName = args.split("\n")[0].strip()
+        splitLines = args.split("\n")
+        if splitLines.__len__() != 2:
+            await ctx.send("seems like you're missing a line break or have an extra one")
+            return
+
+        tag = splitLines[1].strip()
+
+        if tag.__contains__(" "):
+            await ctx.send('no spaces allowed, use "-"')
+            return
+
+        if not (await isRealCard(cardName=cardName, ctx=ctx)):
+            return
+
+        cardSheetUnapproved = googleClient.open_by_key(
+            hc_constants.HELLSCUBE_DATABASE
+        ).worksheet(hc_constants.DATABASE_UNAPPROVED)
+
+        allCardNames = cardSheetUnapproved.col_values(2)
+        lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
+
+        if cardName.lower() not in lowerList:
+            await ctx.send("Unable to find the card... this shouldn't happen")
+            return
+
+        dbRowIndex = lowerList.index(cardName.lower()) + 1
+
+        tags = cardSheetUnapproved.col_values(21)
+        currentTags = tags[dbRowIndex - 1] if tags.__len__() >= dbRowIndex else ""
+
+        currentTagList = [t for t in str(currentTags).split(";") if t != ""]
+
+        if tag not in currentTagList:
+            await ctx.send("card does not have that tag")
+            return
+
+        newTagList = [t for t in currentTagList if t != tag]
+        newTags = ";".join(newTagList)
+
+        cardSheetUnapproved.update_cell(
+            dbRowIndex,
+            21,
+            newTags,
+        )
+
+        global cardList
+        for card in cardList:
+            if card.name().lower() == cardName.lower():
+                card._tags = newTagList
+                break
+
+        await ctx.send("successfully removed tag")
+        
     @commands.command()
     async def info(self, channel, *cardName):
         raw = " ".join(cardName).strip()
