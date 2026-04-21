@@ -40,7 +40,12 @@ class GeneralCog(commands.Cog):
     
     @commands.command()
     async def weight(self, ctx: commands.Context):
-        await ctx.send("You've been weighed. You weight around 104.3lbs.")
+        if random.random() < 0.2:  # 20% chance to get 104.3 mwahaha
+            weight = 104.3
+        else:
+            # Generate random weight
+            weight = round(random.uniform(70, 250), 1)
+        await ctx.send(f"You've been weighed. You weight exactly {weight}lbs.")
 
     @commands.command()
     async def help(self, ctx: commands.Context):
