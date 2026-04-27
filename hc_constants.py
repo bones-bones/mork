@@ -83,8 +83,10 @@ JUDGES = 1249771148674203728
 SKELETONS = 1314855328512348180
 
 # Reddit
-ACCEPTED_FLAIR = "9ba10bb4-df5b-11ee-afbd-62e54284d8d6"
-OFFICIAL_FLAIR = "acff347c-4a3d-11ec-b164-5668d7169f0d"
+ACCEPTED_CARD_REDDIT_FLAIR = "9ba10bb4-df5b-11ee-afbd-62e54284d8d6"
+OFFICIAL_HC_REDDIT_FLAIR = "5778f0e4-52c0-11eb-9a1d-0ebf18b4acab"
+BRAINSTORMING_REDDIT_FLAIR = "5acff347c-4a3d-11ec-b164-5668d7169f0d"
+HELLSCUBE_WOULD_LOVE_THIS_SHITPOST_REDDIT_FLAIR = "02f09b4c-28dc-11f1-a42e-7aec08d98bf2"
 
 # Document Ids
 HELLSCUBE_DATABASE = "1qqGCedHmQ8bwi-YFjmv-pNKKMjubZQUAaF7ItJN5d1g"
@@ -102,6 +104,8 @@ DATABASE_UNAPPROVED = "Database (Unapproved)"
 CIRION_SPELLING = 786296441143558164
 MANA_GREEN = 636012952734007300
 MANA_WHITE = 636012953535119373
+BUFF = 1379363704629498017
+NERF = 1379363712078446633
 JIMMY = 1009993523497541672
 WALL = 935277715668492308
 SYMBOL_UNTAP = 889925343346045008
@@ -161,7 +165,7 @@ macroList = {
     "capital": "Capitalize the beginning of sentences, proper nouns, card names, subtypes, and each part of the cost in an activated ability. Don't capitalize keywords unless they begin a line.",
     "skylions": "https://cdn.discordapp.com/attachments/636013910386016276/744772820550287411/sky_lions_meme.png",
     "bad2": "If the joke is that the the design is bad then the design is bad.",
-    "long": "Cards with too much text tend to slow down draft and are overall bad for the cube, in general try to keep to 6 lines or less. Although this isn't a strict limit it's good to try not to make cards too long.",
+    "long": "Cards with too much text tend to slow down draft and are overall bad for the cube, in general try to keep to 6 lines or less. Although this isn't a strict limit it's good to try not to make cards too long. A trick you can use is putting flavor text in locations other than the text box",
     "pregnancy": 'If a card involves "pregnancy counters", it should be scrapped',
     "brainstorming": "most good cards should be funny to the average magic player, not just the average hellscube discord user",
     "clockwolf": "You see, Hellsuser Zaxer2, the Hellscard called \"Clockwolf\", a wolf creature costing two white mana and two green mana with no abilities and power and toughness both equal to six, is a reference to the official card \"Watchwolf\", which casts for a white mana and a green mana, is a wolf creature with no abilities, and has power and toughness both equal to three (essentially, Clockwolf is a \"doubled\" Watchwolf). Watchwolf debuted in the 2005 Expert-Level expansion Ravnica: City of Guilds and saw extensive play in Type 2, as a 3/3 creature for only two mana was above rate at that time. The flavor text on the original printing of the card, which has remained unchanged throughout the card reprints as 2009 Friday Night Magic promotional card and as a Magic Online promotional card and in the expansions Archenemy and Masters 25 as well as in the Sylesnea Guild Kit for Guilds of Ravnica, reads, \"Only in Ravnica do the wolves watch the flock\". This is a reference to the common trope in fairy tales, folk tales, and other stories of wolves pursuing flocks of sheep. The flavor text of Watchwolf subverts this trope by asserting that, in the city of Ravnica, wolves do not hunt livestock but are trusted to guard them, though from what is not specified. (It was worth noting that the flavor text does not specify that Watchwolf guards sheep, however given the cultural context to which I alluded to earlier, this is likely). Compare the flavortext of Watchwolf to its Hellscounterpart, which reads simply, \"Who watches the watch wolf?\". Indeed, it is a valid question. The Watchwolf is likely more than capable of slaughtering the flock to which it is assigned, and while the people of Ravnica seem to trust it to perform its duties, what oversight is there actually over the Watchwolf's actions? Does the Watchwolf enjoy unchecked power over the flock, or is it just another brick in a larger pyramid of power?",
