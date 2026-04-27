@@ -567,7 +567,7 @@ class SpecificCardsCog(commands.Cog):
     async def puzzlebox(self, ctx: commands.Context):
         for i in range(10):
             await fetchAndSendCard(
-                "https://api.scryfall.com/cards/random?q=t%3Ainstant+or+t%3Asorcery", ctx
+                "https://api.scryfall.com/cards/random?q=t%3Ainstant+or+t%3Asorcery+game%3Apaper", ctx
             )
 
     # for the card deathseeker
@@ -584,7 +584,7 @@ class SpecificCardsCog(commands.Cog):
     async def life(self, ctx: commands.Context):
         for i in range(2):
             await fetchAndSendCard(
-                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+enters%22+t%3Acreature",
+                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+enters%22+t%3Acreature+game%3Apaper",
                 ctx,
             )
 
@@ -593,7 +593,7 @@ class SpecificCardsCog(commands.Cog):
     async def attack(self, ctx: commands.Context):
         for i in range(2):
             await fetchAndSendCard(
-                "https://api.scryfall.com/cards/random?q=o%3A%22Whenever+~+attacks%22+t%3Acreature",
+                "https://api.scryfall.com/cards/random?q=o%3A%22Whenever+~+attacks%22+t%3Acreature+game%3Apaper",
                 ctx,
             )
 
@@ -1034,6 +1034,20 @@ class SpecificCardsCog(commands.Cog):
                 "https://api.scryfall.com/cards/random?q=t%3ADragon+set%3Adtk", ctx
             )
 
+    # get a random card that starts with urza, aka urza's stuff
+    @commands.command(aliases=["urzas", "urza's", "urzastuff"])
+    async def urza(self, ctx: commands.Context):
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=+name%3A%2F^urza's%2F+legal%3Avintage", ctx
+        )
+
+    #get a random sword from the sword of x and y cycle, for Dr. Jankenstein, Swordsmith
+    @commands.command()
+    async def sword(self, ctx: commands.Context):
+        await fetchAndSendCard(
+            "https://api.scryfall.com/cards/random?q=otag%3Asword-of-x-and-y", ctx
+        )
+
     # for the card Mystery Inc on Duskmourn
     @commands.command()
     async def randomRoom(self, ctx: commands.Context):
@@ -1090,7 +1104,7 @@ class SpecificCardsCog(commands.Cog):
             "https://lh3.googleusercontent.com/d/1E2K3gYHtSr34IB2btFC2QjRevQEyuyBy",
         ]
         rroom = random.randint(0, len(roomDoors) - 1)
-        await sendImage(roomDoors[rroom], ctx)
+        await ctx.send(roomDoors[rroom])
 
     # for the card Hearth Magicbrew (subject to change)
     @commands.command()
