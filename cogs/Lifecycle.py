@@ -192,7 +192,7 @@ class LifecycleCog(commands.Cog):
                                 await post_to_reddit(
                                     title=f"HC6 Card of the day: {name}",
                                     image_path=image_path,
-                                    flair=hc_constants.OFFICIAL_FLAIR,
+                                    flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
                                 )
                             except:
                                 pass
