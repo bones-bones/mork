@@ -36,7 +36,7 @@ async def check_reddit(bot: commands.Bot):
     redditChannel = cast(TextChannel, bot.get_channel(hc_constants.REDDIT_CHANNEL))
     messagesInLastDay = [mess async for mess in redditChannel.history(after=oneHour)]
 
-    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission"', time_filter="hour"):  # type: ignore
+    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission" OR flair:"Brainstorming"', time_filter="hour"):  # type: ignore
         #  print(messagesInLastDay.__len__(), submission.permalink)
         alreadyPosted = False
         for discordMessage in messagesInLastDay:
