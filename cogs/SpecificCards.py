@@ -575,7 +575,7 @@ class SpecificCardsCog(commands.Cog):
     async def death(self, ctx: commands.Context):
         for i in range(2):
             await fetchAndSendCard(
-                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+dies%22+t%3Acreature",
+                "https://api.scryfall.com/cards/random?q=o%3A%22When+~+dies%22+t%3Acreature+game%3Apaper",
                 ctx,
             )
 
