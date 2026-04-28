@@ -35,7 +35,7 @@ async def post_daily_submissions(bot: commands.Bot):
     await post_gallery_to_reddit(
         title=f"Some of Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!",
         images=images,
-        flair=hc_constants.OFFICIAL_FLAIR,
+        flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
     )
     for imageEntry in images:
         os.remove(list(imageEntry.values())[0])
