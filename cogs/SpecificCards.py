@@ -664,13 +664,13 @@ class SpecificCardsCog(commands.Cog):
     # for the card absurdly cryptic command
     @commands.command()
     async def cryptic(self, ctx: commands.Context):
-        for i in range(4):
+        for _ in range(4):
             await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}c%21u+t%3Ainstant", ctx)
 
     # for the card we need more white cards
     @commands.command()
     async def whitecards(self, ctx: commands.Context):
-        for i in range(3):
+        for _ in range(3):
             await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}c=w", ctx)
 
     # for the card hugh man, human
@@ -784,7 +784,7 @@ class SpecificCardsCog(commands.Cog):
 
     @commands.command()
     async def locus(self, ctx: commands.Context):
-        locusCards = [
+        locus_cards = [
             "https://cards.scryfall.io/large/front/2/f/2f28ecdc-a4f0-4327-a78c-340be41555ee.jpg",
             "https://cards.scryfall.io/large/front/8/b/8b63efb6-249c-4f57-9af1-baffe938520c.jpg",
             "https://cards.scryfall.io/large/front/4/a/4afcabf8-8f84-489d-8496-5bec55b351bd.jpg",
@@ -838,15 +838,15 @@ class SpecificCardsCog(commands.Cog):
                 "Tarmopost"
             ),
         ]
-        rlocus = random.randint(0, len(locusCards) - 1)
+        rlocus = random.randint(0, len(locus_cards) - 1)
         # This is not super future proofed against new black border locus, if one gets printed, add it to the list under the scryfall links and add 1 to the number
         black_border_posts = 8
         if rlocus < black_border_posts:
-            await send_image(locusCards[rlocus], ctx)
+            await send_image(locus_cards[rlocus], ctx)
         else:
             await send_image_reply(
-                url=locusCards[rlocus][0],
-                cardname=locusCards[rlocus][1],
+                url=locus_cards[rlocus][0],
+                cardname=locus_cards[rlocus][1],
                 message=ctx.message,
                 text=None,
             )
@@ -872,7 +872,7 @@ class SpecificCardsCog(commands.Cog):
     # for the card tunak tunak tun
     @commands.command()
     async def tunak(self, ctx: commands.Context):
-        tunakTokens = [
+        tunak_tokens = [
             "https://cdn.discordapp.com/attachments/692914661191974912/714795268796579860/Tunak_Tunak_TunW.jpg",
             "https://cdn.discordapp.com/attachments/699985664992739409/711162972248080444/fjmquizxc6y41.jpg",
             "https://cdn.discordapp.com/attachments/692914661191974912/714795265197998090/Tunak_Tunak_TunG.jpg",
@@ -897,7 +897,9 @@ class SpecificCardsCog(commands.Cog):
                 tunakSecretTokens[random.randint(0, len(tunakSecretTokens) - 1)], ctx
             )
         else:
-            await send_image(tunakTokens[random.randint(0, len(tunakTokens) - 1)], ctx)
+            await send_image(
+                tunak_tokens[random.randint(0, len(tunak_tokens) - 1)], ctx
+            )
 
     # for cards with crystallize
     @commands.command()

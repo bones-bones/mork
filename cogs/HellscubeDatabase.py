@@ -58,13 +58,13 @@ def build_database():
             # hererere
             # 9
             sides = []
-            sides.append(create_side(entry[10:19]))
-            if entry[23] != "" and entry[23] != " ":
-                sides.append(create_side(entry[21:30]))
-            if entry[33] != "" and entry[33] != " ":
-                sides.append(create_side(entry[30:39]))
-            if entry[43] != "" and entry[43] != " ":
-                sides.append(create_side(entry[41:50]))
+            sides.append(create_side(entry[10:19]))  # Name to Image
+            if entry[24] != "" and entry[24] != " ":
+                sides.append(create_side(entry[22:31]))
+            if entry[34] != "" and entry[34] != " ":
+                sides.append(create_side(entry[32:41]))
+            if entry[44] != "" and entry[44] != " ":
+                sides.append(create_side(entry[42:51]))
 
             cardList.append(
                 CardSearch(
@@ -259,10 +259,12 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.command(rest_is_raw=True)
     async def tag(self, ctx: commands.Context, *, args: str):
 
-        cardName = args.split("\n")[0].strip()
+        card_name = args.split("\n")[0].strip()
         splitLines = args.split("\n")
         if splitLines.__len__() != 2:
-            await ctx.send("seems like you're missing a line break or have an extra one")
+            await ctx.send(
+                "seems like you're missing a line break or have an extra one"
+            )
             return
 
         tag = splitLines[1].strip()
@@ -270,7 +272,7 @@ class HellscubeDatabaseCog(commands.Cog):
         if tag.__contains__(" "):
             await ctx.send('no spaces allowed, use "-"')
 
-        if not (await isRealCard(cardName=cardName, ctx=ctx)):
+        if not (await isRealCard(cardName=card_name, ctx=ctx)):
             return
 
         cardSheetUnapproved = googleClient.open_by_key(
@@ -280,7 +282,7 @@ class HellscubeDatabaseCog(commands.Cog):
         allCardNames = cardSheetUnapproved.col_values(2)
 
         lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
-        dbRowIndex = lowerList.index(cardName.lower()) + 1
+        dbRowIndex = lowerList.index(card_name.lower()) + 1
 
         tags = cardSheetUnapproved.col_values(21)
 
@@ -292,14 +294,14 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
-            21,
+            22,
             (f"{currentTags};" if currentTags != "" else "") + f"{tag}",
         )
 
         global cardList
         for card in cardList:
             # print(card.name())
-            if card.name().lower() == cardName.lower():
+            if card.name().lower() == card_name.lower():
                 card.addTag(tag=tag)
                 break
 
@@ -310,7 +312,9 @@ class HellscubeDatabaseCog(commands.Cog):
         cardName = args.split("\n")[0].strip()
         splitLines = args.split("\n")
         if splitLines.__len__() != 2:
-            await ctx.send("seems like you're missing a line break or have an extra one")
+            await ctx.send(
+                "seems like you're missing a line break or have an extra one"
+            )
             return
 
         tag = splitLines[1].strip()
@@ -360,7 +364,7 @@ class HellscubeDatabaseCog(commands.Cog):
                 break
 
         await ctx.send("successfully removed tag")
-        
+
     @commands.command()
     async def info(self, channel, *cardName):
         raw = " ".join(cardName).strip()
@@ -372,9 +376,7 @@ class HellscubeDatabaseCog(commands.Cog):
                     blocks.append("not found")
                     continue
                 found = get_card_by_id(card_id)
-                blocks.append(
-                    "not found" if found is None else format_card_info(found)
-                )
+                blocks.append("not found" if found is None else format_card_info(found))
             await channel.send("\n\n".join(blocks))
             return
 
