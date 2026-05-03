@@ -147,7 +147,7 @@ macroList = {
     "cardbuilder": "Don't use mtgcardbuilder please, it has harmful monetization and will get ceased and disisted by WoTC. When this does, we would prefer to have least connection to it as possible to not risk getting scube shut down. Use MagicSetEditor ( https://discord.com/channels/631288872814247966/803384271766683668/1344017056491900950 ), or if you don't want to download something use https://cardconjurer.app/.",
     "dreadmaw": "We already have too many green 6 drop creatures, green needs more non-creature spells, not more dreadmaws.",
     "token": "Anything that is not the image of a token will be deleted from here. Discuss tokens in #general",
-    "nyx": "Since Foundations (2024), all enchantments use the nyx frame. This helps players tell at a glance the card types, like how artifacts have their own frame. So unless it doesn't make sense for the card, enchantments should probably use it."
+    "nyx": "Since Foundations (2024), all enchantments use the nyx frame. This helps players tell at a glance the card types, like how artifacts have their own frame. So unless it doesn't make sense for the card, enchantments should probably use it.",
     "off-topic": "Don't ask about #off-topic-1, you don't want to know.",
     "avatar": "Messeges that aren't Attack, Defence or Evasion (or something that's clearly one of the three) will be removed",
     "companion": "Unlike wizards we put some forethought into our companions, as such we will not be following the companion nerf. We will forever eternalize wizards mistake.\njk see rule: H0.1.8.1",
