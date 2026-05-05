@@ -284,7 +284,7 @@ class HellscubeDatabaseCog(commands.Cog):
         lowerList = list(map(lambda x: cast(str, x).lower(), allCardNames))
         dbRowIndex = lowerList.index(card_name.lower()) + 1
 
-        tags = cardSheetUnapproved.col_values(21)
+        tags = cardSheetUnapproved.col_values(22)
 
         currentTags = tags[dbRowIndex - 1] if tags.__len__() >= dbRowIndex else ""
 
@@ -339,7 +339,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         dbRowIndex = lowerList.index(cardName.lower()) + 1
 
-        tags = cardSheetUnapproved.col_values(21)
+        tags = cardSheetUnapproved.col_values(22)
         currentTags = tags[dbRowIndex - 1] if tags.__len__() >= dbRowIndex else ""
 
         currentTagList = [t for t in str(currentTags).split(";") if t != ""]
@@ -353,7 +353,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
-            21,
+            22,
             newTags,
         )
 
