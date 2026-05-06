@@ -352,7 +352,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         cardSheetUnapproved.update_cell(
             dbRowIndex,
-            21,
+            22,
             newTags,
         )
 
