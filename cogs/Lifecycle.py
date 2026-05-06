@@ -454,6 +454,9 @@ class LifecycleCog(commands.Cog):
         if "mork i will" in message.content.lower():
             await message.channel.send("pls don't")
 
+        if "mork bork" in message.content.lower():
+            await message.channel.send("no i ain't")
+
         # Hello single coolest thing about python
         match message.channel.id:
             case (
