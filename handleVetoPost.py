@@ -34,10 +34,10 @@ async def handleVetoPost(
     await message.add_reaction(hc_constants.VOTE_DOWN)
 
     # too strong
-    await message.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.MANA_GREEN)))
+    await message.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.NERF)))
 
     # too weak
-    await message.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.MANA_WHITE)))
+    await message.add_reaction(cast(Emoji, bot.get_emoji(hc_constants.BUFF)))
     await message.add_reaction(hc_constants.BAD)
     await message.add_reaction(hc_constants.UNSURE)
 
