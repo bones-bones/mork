@@ -105,7 +105,7 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     with open(image_path, "wb") as out:
         out.write(file_data)
 
-    google_drive_file_id = uploadToDrive(image_path)
+    google_drive_file_id = uploadToDrive(image_path, folder_id=hc_constants.TOKEN_FOLDER)
 
     os.remove(image_path)
 
