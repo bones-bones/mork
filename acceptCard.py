@@ -74,7 +74,7 @@ async def acceptCard(
         if cardName == "":
             cardName = "NO NAME"
 
-    google_drive_file_id = uploadToDrive(image_path, image_id_to_update)
+    google_drive_file_id = uploadToDrive(image_path, image_id_to_update, folder_id=hc_constants.CURRENT_SET_FOLDER)
 
     os.remove(image_path)
 
