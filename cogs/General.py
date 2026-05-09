@@ -48,6 +48,13 @@ class GeneralCog(commands.Cog):
         await ctx.send(f"You've been weighed. You weight exactly {weight}lbs.")
 
     @commands.command()
+    async def shrimp(self, ctx: commands.Context):
+        if random.random() < 0.01:
+            await ctx.message.add_reaction("🍤")
+        else:
+            await ctx.message.add_reaction("🦐")
+            
+    @commands.command()
     async def help(self, ctx: commands.Context):
         await ctx.send(
             "https://discord.com/channels/631288872814247966/803384271766683668/803389199503982632"
