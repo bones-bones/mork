@@ -18,8 +18,9 @@ def reasonableCard():
     return random.randint(0, 4000) == 69
 
 
-def uploadToDrive(path: str, id: Optional[str] = None):
-    file_to_upload: dict[str, Any] = {"parents": [{"id": hc_constants.IMAGES_FOLDER}]}
+def uploadToDrive(path: str, id: Optional[str] = None, folder_id: Optional[str] = None):
+    folder = folder_id if folder_id else hc_constants.IMAGES_FOLDER
+    file_to_upload: dict[str, Any] = {"parents": [{"id": folder}]}
     if id:
         file_to_upload["id"] = id
 
