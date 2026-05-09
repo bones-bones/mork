@@ -53,6 +53,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
     messages = [message async for message in messages]
 
     errataCardMessages: list[Message] = []
+    judgeCardMessages: list[Message] = []
     acceptedCardMessages: list[Message] = []
     vetoCardMessages: list[Message] = []
     purgatoryCardMessages: list[Message] = []
@@ -81,6 +82,10 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         )
         errata = erratas.count if erratas else -1
 
+        # Check for Judge react to pause the card
+        if get(messageEntry.reactions, emoji=bot.get_emoji(hc_constants.JUDGE_REACT)):
+            judgeCardMessages.append(messageEntry)
+
         # Errata needed case
         if errata > 4 and errata >= upvote and errata >= downvote:
             errataCardMessages.append(messageEntry)
@@ -103,6 +108,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
 
     return VetoPollResults(
         errataCardMessages=errataCardMessages,
+        judgeCardMessages=judgeCardMessages,
         acceptedCardMessages=acceptedCardMessages,
         vetoCardMessages=vetoCardMessages,
         purgatoryCardMessages=purgatoryCardMessages,
@@ -112,6 +118,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
 @dataclass
 class VetoPollResults:
     errataCardMessages: list[Message]
+    judgeCardMessages: list[Message]
     acceptedCardMessages: list[Message]
     vetoCardMessages: list[Message]
     purgatoryCardMessages: list[Message]
