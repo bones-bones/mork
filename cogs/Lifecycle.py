@@ -392,6 +392,18 @@ class LifecycleCog(commands.Cog):
             thread = cast(Thread, guild.get_channel_or_thread(message.id))
             if thread:
                 await thread.edit(archived=True)
+                        
+        # Pin art assets if it gets 10 pin reactions in the art requests channel
+        if (
+            str(reaction.emoji) == "📌"
+            and reaction.channel_id == hc_constants.ART_REQUESTS_CHANNEL
+        ):
+            message = await channelAsText.fetch_message(reaction.message_id)
+            if not message.pinned:
+                pin_reaction = get(message.reactions, emoji="📌")
+                if pin_reaction and pin_reaction.count >= 10:
+                    await message.pin(reason="Community pin threshold reached")
+
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
