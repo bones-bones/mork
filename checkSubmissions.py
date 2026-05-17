@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 
 from typing import cast
 
-from acceptCard import acceptCard
+from acceptCard import accept_card
 
 
 from getters import (
@@ -120,7 +120,7 @@ async def checkSubmissions(bot: commands.Bot):
                         )
                         cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
                         copy2 = await messageEntry.attachments[0].to_file()
-                        await acceptCard(
+                        await accept_card(
                             bot=bot,
                             channelIdForCard=hc_constants.GRAVEYARD_CARD_LIST,
                             setId="HCV",

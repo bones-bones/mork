@@ -22,7 +22,7 @@ from discord.message import Message
 from discord.utils import get
 from dotenv import load_dotenv
 
-from acceptCard import acceptCard
+from acceptCard import accept_card
 from checkSubmissions import checkSubmissions
 from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
@@ -92,6 +92,8 @@ def card_list_channel_for_set(cardset: str) -> int:
             return hc_constants.HC_EIGHT_LIST
         case "hkl":
             return hc_constants.HKL_CARD_LIST
+        case "hc9" | "hc9.0" | "hc9.1":
+            return hc_constants.NINE_CARD_LIST
         case _:
             return hc_constants.HKL_CARD_LIST
 
@@ -212,10 +214,6 @@ class LifecycleCog(commands.Cog):
             await checkMasterpieceSubmissions(self.bot)
         except Exception as e:
             print(e)
-        # try:
-        #     await checkErrataSubmissions(bot)
-        # except Exception as e:
-        #     print(e)
         try:
             await checkTokenSubmissions(self.bot)
         except Exception as e:
@@ -378,7 +376,7 @@ class LifecycleCog(commands.Cog):
 
             channel_to_add_to = hc_constants.HC_EIGHT_LIST
 
-            await acceptCard(
+            await accept_card(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
@@ -392,7 +390,7 @@ class LifecycleCog(commands.Cog):
             thread = cast(Thread, guild.get_channel_or_thread(message.id))
             if thread:
                 await thread.edit(archived=True)
-                        
+
         # Pin art assets if it gets 10 pin reactions in the art requests channel
         if (
             str(reaction.emoji) == "📌"
@@ -403,7 +401,6 @@ class LifecycleCog(commands.Cog):
                 pin_reaction = get(message.reactions, emoji="📌")
                 if pin_reaction and pin_reaction.count >= 10:
                     await message.pin(reason="Community pin threshold reached")
-
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: discord.Reaction, user: discord.User):
@@ -541,24 +538,6 @@ class LifecycleCog(commands.Cog):
 
             case hc_constants.VETO_POLLS_CHANNEL:
                 await handleVetoPost(message=message, bot=self.bot, veto_council=None)
-
-            case (
-                hc_constants.FOUR_ZERO_ERRATA_SUBMISSIONS_CHANNEL
-                | hc_constants.SIX_ERRATA
-                | hc_constants.FOUR_ONE_ERRATA_SUBMISSIONS
-            ):
-                if "@" in message.content:
-                    # No ping case
-                    user = await self.bot.fetch_user(message.author.id)
-                    await user.send(
-                        'No "@" are allowed in card title submissions to prevent me from spamming'
-                    )
-                    return  # no pings allowed
-                sent_message = await message.channel.send(content=message.content)
-                await sent_message.create_thread(name=sent_message.content[0:99])
-                await sent_message.add_reaction(hc_constants.VOTE_UP)
-                await sent_message.add_reaction(hc_constants.VOTE_DOWN)
-                await message.delete()
 
             case hc_constants.MODWORK_REQUEST_CHANNEL:
                 text = (message.content or "").strip()
@@ -935,10 +914,10 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.cardset()
                 channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
             else:
-                set_to_add_to = "HKL"
-                channel_to_add_to = hc_constants.HKL_CARD_LIST
+                set_to_add_to = "HC9.1"
+                channel_to_add_to = hc_constants.NINE_CARD_LIST
 
-            await acceptCard(
+            await accept_card(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
@@ -980,7 +959,7 @@ class LifecycleCog(commands.Cog):
 
             vetoedCards.append(getCardMessage(messageEntry.content))
 
-            await acceptCard(
+            await accept_card(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
@@ -1150,7 +1129,7 @@ class LifecycleCog(commands.Cog):
         set_id = db_card.cardset()
         list_channel = card_list_channel_for_set(set_id)
 
-        await acceptCard(
+        await accept_card(
             bot=self.bot,
             file=await file.to_file(),
             cardMessage=cardMessage,

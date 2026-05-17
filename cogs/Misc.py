@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta, timezone
-from acceptCard import acceptCard
+from acceptCard import accept_card
 import random
 from typing import Dict, List, cast
 
@@ -16,7 +16,7 @@ from isRealCard import isRealCard
 from printCardImages import send_image_reply
 from shared_vars import drive
 
-from acceptCard import acceptCard
+from acceptCard import accept_card
 from cardNameRequest import cardNameRequest
 import hc_constants
 from is_admin import is_veto, is_admin
@@ -88,7 +88,7 @@ class MiscCog(commands.Cog):
 
             channel_to_add_to = hc_constants.VETO_CARD_LIST
 
-            await acceptCard(
+            await accept_card(
                 bot=self.bot,
                 file=file,
                 cardMessage=cardMessage,
