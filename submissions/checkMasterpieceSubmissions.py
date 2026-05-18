@@ -74,7 +74,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
 
                 copy = await messageEntry.attachments[0].to_file()
                 vetoEntry = await vetoChannel.send(
-                    content="HKL: " + accepted_message_no_mentions, file=copy
+                    content="HC9: " + accepted_message_no_mentions, file=copy
                 )
 
                 await handleVetoPost(vetoEntry, bot, None)

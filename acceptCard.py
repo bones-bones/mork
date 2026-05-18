@@ -17,14 +17,14 @@ cardSheetUnapproved = googleClient.open_by_key(
 ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
 
-async def acceptCard(
+async def accept_card(
     bot: commands.Bot,
     cardMessage: str,
     file: discord.File,
     cardName: str,
     authorName: str,
-    channelIdForCard: int = hc_constants.HKL_CARD_LIST,
-    setId: str = "HKL",
+    channelIdForCard: int = hc_constants.NINE_CARD_LIST,
+    setId: str = "HC9.1",
     errata: bool = False,
     errataId: Optional[str] = None,
     wasVetoed: bool = False,
@@ -52,7 +52,7 @@ async def acceptCard(
             await post_to_reddit(
                 image_path=image_path,
                 title=f"{cardMessage.replace('**', '')} {'was accepted!' if not wasVetoed else 'was vetoed!'}",
-                flair=hc_constants.ACCEPTED_FLAIR,
+                flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
             )
         except Exception as e:
             print("tried to post to reddit", e)
@@ -74,7 +74,9 @@ async def acceptCard(
         if cardName == "":
             cardName = "NO NAME"
 
-    google_drive_file_id = uploadToDrive(image_path, image_id_to_update, folder_id=hc_constants.CURRENT_SET_FOLDER)
+    google_drive_file_id = uploadToDrive(
+        image_path, image_id_to_update, folder_id=hc_constants.CURRENT_SET_FOLDER
+    )
 
     os.remove(image_path)
 
@@ -94,7 +96,7 @@ async def acceptCard(
         )
 
 
-async def acceptVetoCard(
+async def accept_veto_card(
     bot: commands.Bot,
     cardMessage: str,
     file: discord.File,
