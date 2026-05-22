@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from encodings import aliases
 import re
 from typing import cast
 import discord
