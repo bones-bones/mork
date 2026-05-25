@@ -7,7 +7,7 @@ from discord.utils import get
 
 import hc_constants
 
-portal_time = True
+portal_time = False
 
 
 async def handleVetoPost(
@@ -20,7 +20,7 @@ async def handleVetoPost(
     else:
         if veto_council is None:
             veto_council = random.choice(
-                [hc_constants.VETO_COUNCIL_PORTAL, hc_constants.VETO_COUNCIL_2]
+                [hc_constants.VETO_COUNCIL, hc_constants.VETO_COUNCIL_2]
             )
         if veto_council == hc_constants.VETO_COUNCIL_PORTAL:
             await message.add_reaction(hc_constants.CLOCK)

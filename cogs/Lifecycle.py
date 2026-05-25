@@ -322,7 +322,7 @@ class LifecycleCog(commands.Cog):
                         file=copy_of_file_for_veto_channel,
                     )
 
-                    veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
+                    veto_council_to_notify = hc_constants.VETO_COUNCIL
                     # (
                     #     hc_constants.VETO_COUNCIL_PORTAL
                     #     if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
@@ -1006,7 +1006,7 @@ class LifecycleCog(commands.Cog):
                         recentlyNotified = threadMessageAge < timedelta(days=1)
                         if not recentlyNotified:
 
-                            veto_council_to_notify = hc_constants.VETO_COUNCIL_PORTAL
+                            veto_council_to_notify = hc_constants.VETO_COUNCIL
 
                             # (
                             #     hc_constants.VETO_COUNCIL_PORTAL
