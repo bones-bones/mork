@@ -96,7 +96,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                         if is_mork(user.id):
                             hasMork = True
                 if not hasMork:
-                    await acceptedChannel.send(
+                    await subChannel.send(
                         f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
                     )
                     await messageEntry.add_reaction("🕛")
