@@ -75,7 +75,10 @@ async def checkSubmissions(bot: commands.Bot):
                         await user.send("Verify " + messageEntry.jump_url)
                         continue
                 file = await messageEntry.attachments[0].to_file()
-                acceptContent = messageEntry.content + " was accepted"
+                if positiveMargin >= hc_constants.SUBMISSIONS_THRESHOLD * 2:
+                    acceptContent = messageEntry.content + " has won hellscube!"
+                else:
+                    acceptContent = messageEntry.content + " was accepted"
 
                 accepted_message_no_mentions = messageEntry.content
                 for index, mentionEntry in enumerate(messageEntry.raw_mentions):
