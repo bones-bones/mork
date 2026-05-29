@@ -181,6 +181,7 @@ macroList = {
     "shitpost": "Go to ~~brazil~~ #card-shitposts",
     "how": "Rules question: How the fuck does this work",
     "beer": "@arg? Is that a new name for a type of beer?",
+    "hate": "I hhate @arg.  it..s so brken  yyou caannt  maake ebtterr; @arg",
     "rat": "If you @arg a rat, it will be @arged",
     "joke": "If the joke is that the card @arg, then the card @arg",
     "jpeg": "https://cdn.discordapp.com/attachments/744779598503346278/1081655626322681871/671dfc99-c0ba-ed11-80fd-8e768415d29d.png",
