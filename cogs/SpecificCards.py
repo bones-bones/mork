@@ -1040,11 +1040,6 @@ class SpecificCardsCog(commands.Cog):
     async def sword(self, ctx: commands.Context):
         await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}otag%3Asword-of-x-and-y", ctx)
 
-    # get a random monowhite charm instant with charm in the name  
-    @commands.command()
-    async def charmArtist(self, ctx: commands.Context):
-        await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}c%3Dw+charm+t%3Ainstant+otag%3Acharm", ctx)
-
     # get a random legends commander from set:legends, for card League of Legends
     @commands.command(aliases=["league"])
     async def leagueOfLegends(self, ctx: commands.Context):
