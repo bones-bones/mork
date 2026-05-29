@@ -167,7 +167,7 @@ async def checkSubmissions(bot: commands.Bot):
                         if is_mork(user.id):
                             has_mork_marked_it = True
                 if not has_mork_marked_it:
-                    await acceptedChannel.send(
+                    await subChannel.send(
                         f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
                     )
                     await messageEntry.add_reaction("🕛")
