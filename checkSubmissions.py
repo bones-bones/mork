@@ -153,10 +153,7 @@ async def checkSubmissions(bot: commands.Bot):
                     yesUserArray.append(user.name)
                 yesUsers += ", ".join(yesUserArray)
 
-                for i in range(0, yesUsers.__len__(), hc_constants.LITERALLY_1984):
-                    await logChannel.send(
-                        content=yesUsers[i : i + hc_constants.LITERALLY_1984]
-                    )
+                await logChannel.send(content=yesUsers[: hc_constants.LITERALLY_1984])
 
                 await messageEntry.delete()
                 continue
