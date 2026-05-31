@@ -9,34 +9,47 @@ jobs:
     if: github.actor == 'bones-bones'
     runs-on: ubuntu-latest
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       # 1. Authenticate with Google Cloud using WIF
-      - id: 'auth'
-        uses: 'google-github-actions/auth@v2'
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-# 2. Deploy via SSH
-      - id: 'ssh'
-        uses: 'google-github-actions/ssh-compute@v1'
+      # 2. Deploy via SSH
+      - id: "ssh"
+        uses: "google-github-actions/ssh-compute@v1"
         with:
           instance_name: ${{ secrets.INSTANCE_NAME }}
           zone: ${{ secrets.INSTANCE_ZONE }}
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           command: |
+            set -euo pipefail
             cd ${{ secrets.DEPLOY_PATH }}
-            
-            git fetch --all
+
+            # Self-heal ownership. Manual runs as another user (e.g. nohup as
+            # "git fetch" fails and (previously, without set -e) the deploy
+            # silently reset to stale, already-fetched code. Reclaim ownership
+            # for whoever runs this deploy before touching git.
+            sudo chown -R "$(id -un):$(id -gn)" .
+
+            git fetch --all --prune
             git reset --hard origin/main
-            echo "fetched" >> log.txt
+            echo "Deploying commit:"
+            git log -1 --oneline
+
             if [ -f requirements.txt ]; then
               pip3 install -r requirements.txt --break-system-packages
             fi
+
+
             sudo systemctl restart mork
+            sleep 5
+            systemctl is-active mork

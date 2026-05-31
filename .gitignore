@@ -162,3 +162,4 @@ cython_debug/
 typings
 .notes
 .ruff_cache/
+LESSONS_LEARNED.md

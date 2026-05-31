@@ -27,7 +27,7 @@ async def handleVetoPost(
         #     await message.add_reaction(hc_constants.CLOCK)
         # else:
         #     await message.add_reaction(hc_constants.CLOCK)
-
+    veto_council = hc_constants.VETO_COUNCIL
     await message.add_reaction(hc_constants.VOTE_UP)
 
     # Errata

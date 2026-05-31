@@ -2,6 +2,7 @@ import io
 import os
 import random
 import re
+import traceback
 from datetime import date, datetime, timezone, timedelta
 from typing import cast
 
@@ -161,8 +162,9 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                 thread = cast(Thread, guild.get_channel_or_thread(veto_message.id))
                 await thread.send("\n".join(parts[1:]))
 
-            except Exception as e:
-                print(f"errata veto threshold: {e}")
+            except Exception:
+                print("errata veto threshold:")
+                traceback.print_exc()
 
 
 class LifecycleCog(commands.Cog):
@@ -205,32 +207,32 @@ class LifecycleCog(commands.Cog):
         status = random.choice(hc_constants.statusList)
         try:
             reset_countdowns()
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
         try:
             await ensure_submissions_day_marker(self.bot)
         except Exception as e:
             print(e)
         try:
             await checkSubmissions(self.bot)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
         try:
             await checkMasterpieceSubmissions(self.bot)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
         try:
             await checkTokenSubmissions(self.bot)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
         try:
             await check_reddit(self.bot)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
         try:
             await _check_errata_veto_threshold(self.bot)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
 
         await self.bot.change_presence(
             status=discord.Status.online, activity=discord.Game(status)
@@ -241,13 +243,13 @@ class LifecycleCog(commands.Cog):
         if now.hour == 10 and now.minute <= 4:
             try:
                 await post_reddit_card_of_the_day()
-            except Exception as e:
-                print(e)
+            except Exception:
+                traceback.print_exc()
         if now.hour == 4 and now.minute <= 4:
             try:
                 await post_daily_submissions(self.bot)
-            except Exception as e:
-                print(e)
+            except Exception:
+                traceback.print_exc()
 
     @lifecycle_loop.before_loop
     async def before_lifecycle_loop(self):
@@ -1160,8 +1162,8 @@ class LifecycleCog(commands.Cog):
                     f"✅ Added you to **{thread.name}**!\n{thread.mention}",
                     delete_after=15,
                 )
-            except Exception as e:
-                print(e)
+            except Exception:
+                traceback.print_exc()
 
         guild = ctx.guild
         if guild is None:
@@ -1208,8 +1210,8 @@ class LifecycleCog(commands.Cog):
             # Automatically join the newest thread
             newest_thread = matching_threads[0]
             await join_thread_logic(ctx, newest_thread)
-        except Exception as e:
-            print(e)
+        except Exception:
+            traceback.print_exc()
 
 
 async def setup(bot: commands.Bot):
