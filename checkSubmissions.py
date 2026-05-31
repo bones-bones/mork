@@ -75,10 +75,7 @@ async def checkSubmissions(bot: commands.Bot):
                         await user.send("Verify " + messageEntry.jump_url)
                         continue
                 file = await messageEntry.attachments[0].to_file()
-                if positiveMargin >= hc_constants.SUBMISSIONS_THRESHOLD * 2:
-                    acceptContent = messageEntry.content + " has won hellscube!"
-                else:
-                    acceptContent = messageEntry.content + " was accepted"
+                acceptContent = messageEntry.content + " was accepted"
 
                 accepted_message_no_mentions = messageEntry.content
                 for index, mentionEntry in enumerate(messageEntry.raw_mentions):
@@ -170,7 +167,7 @@ async def checkSubmissions(bot: commands.Bot):
                         if is_mork(user.id):
                             has_mork_marked_it = True
                 if not has_mork_marked_it:
-                    await subChannel.send(
+                    await acceptedChannel.send(
                         f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
                     )
                     await messageEntry.add_reaction("🕛")
