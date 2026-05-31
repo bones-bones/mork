@@ -829,7 +829,7 @@ class LifecycleCog(commands.Cog):
                 hc_constants.CLOCK
                 if cast(Member, ctx.author).get_role(hc_constants.VETO_COUNCIL_PORTAL)
                 is not None
-                else hc_constants.WOLF
+                else hc_constants.CLOCK
             )
 
             links.sort(key=lambda x: not x.__contains__(is_clock_vc))
