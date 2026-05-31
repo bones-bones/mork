@@ -22,35 +22,41 @@ async def check_reddit(bot: commands.Bot):
     print("checking reddit")
     timeNow = datetime.now(timezone.utc)
     oneHour = timeNow + timedelta(hours=-2)
-    reddit = asyncpraw.Reddit(
+    async with asyncpraw.Reddit(
         client_id=ID,
         client_secret=SECRET,
         password=PASSWORD,
         user_agent=USER_AGENT,
         username=NAME,
-    )
-    hellscubeSubreddit = cast(
-        asyncpraw.reddit.Subreddit, await reddit.subreddit("HellsCube")
-    )
+    ) as reddit:
+        hellscubeSubreddit = cast(
+            asyncpraw.reddit.Subreddit, await reddit.subreddit("HellsCube")
+        )
 
-    redditChannel = cast(TextChannel, bot.get_channel(hc_constants.REDDIT_CHANNEL))
-    messagesInLastDay = [mess async for mess in redditChannel.history(after=oneHour)]
+        redditChannel = cast(TextChannel, bot.get_channel(hc_constants.REDDIT_CHANNEL))
+        messagesInLastDay = [
+            mess async for mess in redditChannel.history(after=oneHour)
+        ]
 
-    async for submission in hellscubeSubreddit.search('flair:"Card Idea" OR flair:"HellsCube Submission" OR flair:"Brainstorming" OR "Hellscube Would Love This (Shitpost)"', time_filter="hour"):  # type: ignore
-        #  print(messagesInLastDay.__len__(), submission.permalink)
-        alreadyPosted = False
-        for discordMessage in messagesInLastDay:
-            if submission.permalink in discordMessage.content:
-                alreadyPosted = True
-                break
+        async for submission in hellscubeSubreddit.search(  # type: ignore
+            'flair:"Card Idea" OR flair:"HellsCube Submission" OR flair:"Brainstorming" OR "Hellscube Would Love This (Shitpost)"',
+            time_filter="hour",
+        ):
+            #  print(messagesInLastDay.__len__(), submission.permalink)
+            alreadyPosted = False
+            for discordMessage in messagesInLastDay:
+                if submission.permalink in discordMessage.content:
+                    alreadyPosted = True
+                    break
 
-        if not alreadyPosted:
-            if submission.link_flair_text == "Hellscube Would Love This (Shitpost)":
-                message_prefix = "Reddit thinks Hellscube would love this:"
-            else:
-                message_prefix = "reddit says:"
-            await redditChannel.send(
-                content=f"{message_prefix} https://reddit.com{submission.permalink}"
-            )
-    await reddit.close()
-    return
+            if not alreadyPosted:
+                if (
+                    submission.link_flair_text
+                    == "Hellscube Would Love This (Shitpost)"
+                ):
+                    message_prefix = "Reddit thinks Hellscube would love this:"
+                else:
+                    message_prefix = "reddit says:"
+                await redditChannel.send(
+                    content=f"{message_prefix} https://reddit.com{submission.permalink}"
+                )

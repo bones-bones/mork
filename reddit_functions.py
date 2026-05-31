@@ -14,34 +14,36 @@ NAME = os.environ["REDDIT_NAME"]
 
 
 async def post_to_reddit(image_path: str, title: str, flair: str = ""):
-    reddit = asyncpraw.Reddit(
+    async with asyncpraw.Reddit(
         client_id=ID,
         client_secret=SECRET,
         password=PASSWORD,
         user_agent=USER_AGENT,
         username=NAME,
-    )
-    # print(await reddit.user.me())
-    hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit("HellsCube")
-
-    await hellscubeSubreddit.submit_image(
-        title=title, image_path=image_path, flair_id=flair
-    )
-    return await reddit.close()
+    ) as reddit:
+        # print(await reddit.user.me())
+        hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit(
+            "HellsCube"
+        )
+        await hellscubeSubreddit.submit_image(
+            title=title, image_path=image_path, flair_id=flair
+        )
 
 
 async def post_gallery_to_reddit(
     images: List[Dict[str, str]], title: str, flair: str = ""
 ):
-    reddit = asyncpraw.Reddit(
+    async with asyncpraw.Reddit(
         client_id=ID,
         client_secret=SECRET,
         password=PASSWORD,
         user_agent=USER_AGENT,
         username=NAME,
-    )
-    # print(await reddit.user.me())
-    hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit("HellsCube")
-
-    await hellscubeSubreddit.submit_gallery(title=title, images=images, flair_id=flair)
-    await reddit.close()
+    ) as reddit:
+        # print(await reddit.user.me())
+        hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit(
+            "HellsCube"
+        )
+        await hellscubeSubreddit.submit_gallery(
+            title=title, images=images, flair_id=flair
+        )
