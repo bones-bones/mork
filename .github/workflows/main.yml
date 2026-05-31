@@ -49,10 +49,6 @@ jobs:
               pip3 install -r requirements.txt --break-system-packages
             fi
 
-            # Kill any manually-started (nohup) instance so we never double-run
-            # the bot. The systemd unit runs "/usr/bin/python3 Mork.py"; the
-            # manual one runs "python3 -u Mork.py", so this won't hit the service.
-            sudo pkill -f 'python3 -u Mork.py' || true
 
             sudo systemctl restart mork
             sleep 5
