@@ -65,7 +65,11 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                         await user.send("Verify " + messageEntry.jump_url)
                         continue
                 file = await messageEntry.attachments[0].to_file()
-                acceptContent = messageEntry.content + " was accepted"
+                if (upCount - downCount) >= hc_constants.MASTERPIECE_THRESHOLD * 2:
+                    acceptContent = messageEntry.content + " has won hellscube"
+                else:
+                    acceptContent = messageEntry.content + " was accepted"
+                
                 accepted_message_no_mentions = messageEntry.content
                 for index, mentionEntry in enumerate(messageEntry.raw_mentions):
                     accepted_message_no_mentions = accepted_message_no_mentions.replace(
@@ -96,7 +100,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                         if is_mork(user.id):
                             hasMork = True
                 if not hasMork:
-                    await acceptedChannel.send(
+                    await subChannel.send(
                         f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
                     )
                     await messageEntry.add_reaction("🕛")
