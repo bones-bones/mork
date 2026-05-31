@@ -24,7 +24,7 @@ from is_mork import is_mork
 
 
 async def checkSubmissions(bot: commands.Bot):
-    return
+
     print("checking submissions")
     subChannel = getSubmissionsChannel(bot)
     vetoChannel = getVetoChannel(bot)
