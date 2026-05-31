@@ -28,6 +28,7 @@ from checkSubmissions import checkSubmissions
 from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
+from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
 from getCardMessage import getCardMessage
 from getVetoPollsResults import VetoPollResults, getVetoPollsResults
 from getters import (
@@ -208,6 +209,10 @@ class LifecycleCog(commands.Cog):
             reset_countdowns()
         except Exception:
             traceback.print_exc()
+        try:
+            await ensure_submissions_day_marker(self.bot)
+        except Exception as e:
+            print(e)
         try:
             await checkSubmissions(self.bot)
         except Exception:
@@ -484,24 +489,23 @@ class LifecycleCog(commands.Cog):
                     and is_mork(lastTwo[1].author.id)
                     and "reddit says: " in lastTwo[1].content
                 ):
-                    reddit = asyncpraw.Reddit(
+                    async with asyncpraw.Reddit(
                         client_id=ID,
                         client_secret=SECRET,
                         password=PASSWORD,
                         user_agent=USER_AGENT,
                         username=NAME,
-                    )
-                    reddit_url = lastTwo[1].content.replace("reddit says: ", "")
+                    ) as reddit:
+                        reddit_url = lastTwo[1].content.replace("reddit says: ", "")
 
-                    # https://www.reddit.com/r/HellsCube/comments/1c2ii4s/sometitle/
-                    source_result = re.search("comments/([^/]*)", reddit_url)
-                    if source_result:
-                        post_id = source_result.group(1)
-                        post = await reddit.submission(post_id)
-                        await post.reply(
-                            f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}"
-                        )
-                    await reddit.close()
+                        # https://www.reddit.com/r/HellsCube/comments/1c2ii4s/sometitle/
+                        source_result = re.search("comments/([^/]*)", reddit_url)
+                        if source_result:
+                            post_id = source_result.group(1)
+                            post = await reddit.submission(id=post_id)
+                            await post.reply(
+                                body=f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}"
+                            )
 
             case hc_constants.TOKEN_SUBMISSIONS:
                 wholeMessage = message.content.split("\n")

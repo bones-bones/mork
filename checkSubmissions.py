@@ -1,4 +1,5 @@
 import asyncio
+import io
 from datetime import datetime, timezone, timedelta
 
 
@@ -12,10 +13,11 @@ from getters import (
     getSubmissionsChannel,
     getVetoChannel,
 )
+from getCardMessage import parseCardNameAndAuthor
 from handleVetoPost import handleVetoPost
 import hc_constants
 from discord.ext import commands
-from discord import Guild, Member, Message, TextChannel
+from discord import File, Guild, Member, Message, TextChannel
 
 from discord.utils import get
 
@@ -38,17 +40,21 @@ async def checkSubmissions(bot: commands.Bot):
         return
 
     messages = [message async for message in messages]
+
     for messageEntry in messages:
         # Drastic measure: throttle hard to avoid Discord 429 rate limits
         await asyncio.sleep(1)
         messageEntry = cast(Message, messageEntry)
+
+        # This block is to filter out non-card entiers in submissions
         if (
             "@everyone" in messageEntry.content
             or "@here" in messageEntry.content
             or len(messageEntry.attachments) == 0
             or not is_mork(messageEntry.author.id)
         ):
-            continue  # just ignore these
+            continue
+
         upvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
         downvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_DOWN)
 
@@ -72,6 +78,7 @@ async def checkSubmissions(bot: commands.Bot):
                             cast(Member, user)
                         ):
                             prettyValid = True
+                            break
 
                     if not prettyValid:
                         await asyncio.sleep(1)
@@ -81,8 +88,9 @@ async def checkSubmissions(bot: commands.Bot):
                         await asyncio.sleep(1)
                         await user.send("Verify " + messageEntry.jump_url)
                         continue
-                await asyncio.sleep(1)
-                file = await messageEntry.attachments[0].to_file()
+                attachment = messageEntry.attachments[0]
+                attachment_data = await attachment.read()
+                attachment_filename = attachment.filename
                 if positiveMargin >= hc_constants.SUBMISSIONS_THRESHOLD * 2:
                     acceptContent = messageEntry.content + " has won hellscube!"
                 else:
@@ -94,8 +102,11 @@ async def checkSubmissions(bot: commands.Bot):
                         f"<@{str(mentionEntry)}>", messageEntry.mentions[index].name
                     )
 
-                await asyncio.sleep(1)
-                copy = await messageEntry.attachments[0].to_file()
+                dbname, card_author = parseCardNameAndAuthor(
+                    accepted_message_no_mentions
+                )
+                resolvedName = dbname if dbname != "" else "Crazy card with no name"
+                print(f"Processing submission: {resolvedName}")
 
                 # The spooky block is to determine if cards should automatically go to the graveyard channel
                 tombstone = get(messageEntry.reactions, emoji=hc_constants.TOMBSTONE)
@@ -108,38 +119,19 @@ async def checkSubmissions(bot: commands.Bot):
                         ):
                             spooky = True
                     if spooky:
-                        dbname = ""
-                        card_author = ""
-                        if (
-                            len(accepted_message_no_mentions)
-                        ) == 0 or "by " not in accepted_message_no_mentions:
-                            ...  # This is really the case of setting both to "", but due to scoping i got lazy
-                        elif accepted_message_no_mentions[0:3] == "by ":
-                            card_author = str(
-                                (accepted_message_no_mentions.split("by "))[1]
-                            )
-                        else:
-                            messageChunks = accepted_message_no_mentions.split(" by ")
-                            firstPart = messageChunks[0]
-                            secondPart = "".join(messageChunks[1:])
-
-                            dbname = str(firstPart)
-                            card_author = str(secondPart)
-                        resolvedName = (
-                            dbname if dbname != "" else "Crazy card with no name"
-                        )
                         resolvedAuthor = (
                             card_author if card_author != "" else "no author"
                         )
                         cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
                         await asyncio.sleep(1)
-                        copy2 = await messageEntry.attachments[0].to_file()
-                        await asyncio.sleep(1)
                         await accept_card(
                             bot=bot,
                             channelIdForCard=hc_constants.GRAVEYARD_CARD_LIST,
                             setId="HCV",
-                            file=copy2,
+                            file=File(
+                                fp=io.BytesIO(attachment_data),
+                                filename=attachment_filename,
+                            ),
                             cardMessage=cardMessage,
                             authorName=card_author,
                             cardName=dbname,
@@ -151,19 +143,33 @@ async def checkSubmissions(bot: commands.Bot):
 
                 await asyncio.sleep(1)
                 vetoEntry = await vetoChannel.send(
-                    content=accepted_message_no_mentions, file=copy
+                    content=accepted_message_no_mentions,
+                    file=File(
+                        fp=io.BytesIO(attachment_data),
+                        filename=attachment_filename,
+                    ),
                 )
 
                 await asyncio.sleep(1)
                 await handleVetoPost(message=vetoEntry, bot=bot, veto_council=None)
 
-                await asyncio.sleep(1)
-                copy2 = await messageEntry.attachments[0].to_file()
                 logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
                 await asyncio.sleep(1)
-                await acceptedChannel.send(content=acceptContent, file=file)
+                await acceptedChannel.send(
+                    content=acceptContent,
+                    file=File(
+                        fp=io.BytesIO(attachment_data),
+                        filename=attachment_filename,
+                    ),
+                )
                 await asyncio.sleep(1)
-                await logChannel.send(content=logContent, file=copy2)
+                await logChannel.send(
+                    content=logContent,
+                    file=File(
+                        fp=io.BytesIO(attachment_data),
+                        filename=attachment_filename,
+                    ),
+                )
 
                 yesUsers = "voted yes:\n"
                 yesUserArray: list[str] = [user.name for user in upvoteUsers]

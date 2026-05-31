@@ -24,16 +24,17 @@ async def accept_card(
     cardName: str,
     authorName: str,
     channelIdForCard: int = hc_constants.NINE_CARD_LIST,
-    setId: str = "HC9.1",
+    setId: str = "HC9.0",
     errata: bool = False,
     errataId: Optional[str] = None,
     wasVetoed: bool = False,
 ):
+    """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
     extension = re.search("\.([^.]*)$", file.filename)
-    fileType = (
+    file_type = (
         extension.group() if extension else ".png"
     )  # just guess that the file is a png
-    new_file_name = f'{cardName.replace("/", "|")[:250]}{fileType}'
+    new_file_name = f'{cardName.replace("/", "|")[:250]}{file_type}'
     image_path = f"tempImages/{new_file_name}"
 
     file_data = file.fp.read()
@@ -41,8 +42,8 @@ async def accept_card(
         fp=io.BytesIO(file_data), filename=new_file_name
     )
 
-    cardListChannel = cast(discord.TextChannel, bot.get_channel(channelIdForCard))
-    await cardListChannel.send(file=file_copy_for_cardlist, content=cardMessage)
+    card_list_channel = cast(discord.TextChannel, bot.get_channel(channelIdForCard))
+    await card_list_channel.send(file=file_copy_for_cardlist, content=cardMessage)
 
     with open(image_path, "wb") as out:
         out.write(file_data)
