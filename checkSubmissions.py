@@ -149,9 +149,7 @@ async def checkSubmissions(bot: commands.Bot):
                 await logChannel.send(content=logContent, file=copy2)
 
                 yesUsers = "voted yes:\n"
-                yesUserArray: list[str] = []
-                async for user in upvote.users():
-                    yesUserArray.append(user.name)
+                yesUserArray: list[str] = [user.name for user in upvoteUsers]
                 yesUsers += ", ".join(yesUserArray)
 
                 await logChannel.send(content=yesUsers[: hc_constants.LITERALLY_1984])
