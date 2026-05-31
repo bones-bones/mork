@@ -59,10 +59,11 @@ async def checkSubmissions(bot: commands.Bot):
                 hc_constants.SUBMISSIONS_THRESHOLD
             ) and messageAge >= timedelta(days=1):
                 guild = cast(Guild, messageEntry.guild)
+                upvoteUsers = [user async for user in upvote.users()]
                 # This case here is to stop prevent spamming. If there is a single downvote, do a check to see if an admin has voted
                 if downCount == 1:
                     prettyValid = False
-                    async for user in upvote.users():
+                    for user in upvoteUsers:
                         if guild.get_member(user.id) is not None and is_admin(
                             cast(Member, user)
                         ):
