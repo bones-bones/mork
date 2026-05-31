@@ -9,23 +9,23 @@ jobs:
     if: github.actor == 'bones-bones'
     runs-on: ubuntu-latest
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       # 1. Authenticate with Google Cloud using WIF
-      - id: 'auth'
-        uses: 'google-github-actions/auth@v2'
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
         with:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-# 2. Deploy via SSH
-      - id: 'ssh'
-        uses: 'google-github-actions/ssh-compute@v1'
+      # 2. Deploy via SSH
+      - id: "ssh"
+        uses: "google-github-actions/ssh-compute@v1"
         with:
           instance_name: ${{ secrets.INSTANCE_NAME }}
           zone: ${{ secrets.INSTANCE_ZONE }}
@@ -43,10 +43,6 @@ jobs:
               pip3 install -r requirements.txt --break-system-packages
             fi
 
-            # Kill any manually-started (nohup) instance so we never double-run the
-            # bot. The systemd unit runs "/usr/bin/python3 Mork.py"; the manual one
-            # runs "python3 -u Mork.py", so this pattern won't hit the service copy.
-            sudo pkill -f 'python3 -u Mork.py' || true
 
             sudo systemctl restart mork
             sleep 5
