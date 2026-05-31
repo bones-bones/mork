@@ -4,6 +4,8 @@ import aiohttp
 import discord
 from cardNameRequest import cardNameRequest
 import hc_constants
+
+FISH_FROM_GO_FISH_SEARCH = "the fish from go fish"
 from shared_vars import allCards
 from discord.message import Message
 
@@ -20,7 +22,13 @@ async def print_card_images(message: Message):
         )
         return
     for cardName in message_text:
-        requestedCards.append(cardNameRequest(cardName))
+        search_text = cardName
+        if (
+            message.author.id == hc_constants.LLLLLL
+            and cardName.strip() == "fish"
+        ):
+            search_text = FISH_FROM_GO_FISH_SEARCH
+        requestedCards.append(cardNameRequest(search_text))
     for post in requestedCards:
         if post == "":
             await message.reply("No Match Found!", mention_author=False)
