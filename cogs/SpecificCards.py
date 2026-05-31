@@ -1040,6 +1040,11 @@ class SpecificCardsCog(commands.Cog):
     async def sword(self, ctx: commands.Context):
         await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}otag%3Asword-of-x-and-y", ctx)
 
+    # get a random legends commander from set:legends, for card League of Legends
+    @commands.command(aliases=["league"])
+    async def leagueOfLegends(self, ctx: commands.Context):
+        await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx)
+
     # for the card Mystery Inc on Duskmourn
     @commands.command()
     async def randomRoom(self, ctx: commands.Context):
