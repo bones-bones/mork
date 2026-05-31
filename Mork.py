@@ -1,9 +1,17 @@
 import os
+import sys
 
 from discord.ext import commands
 from dotenv import load_dotenv
 
 from shared_vars import intents
+
+# systemd redirects stdout to a file, which makes Python block-buffer it (~8KB),
+# so print()-based lifecycle logging never reaches /var/log/my_app.log in real time.
+# Force line buffering so each line flushes immediately.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(line_buffering=True)  # type: ignore[union-attr]
 
 load_dotenv()
 
