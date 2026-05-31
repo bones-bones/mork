@@ -31,12 +31,23 @@ jobs:
           zone: ${{ secrets.INSTANCE_ZONE }}
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
           command: |
+            set -euo pipefail
             cd ${{ secrets.DEPLOY_PATH }}
-            
-            git fetch --all
+
+            git fetch --all --prune
             git reset --hard origin/main
-            echo "fetched" >> log.txt
+            echo "Deploying commit:"
+            git log -1 --oneline
+
             if [ -f requirements.txt ]; then
               pip3 install -r requirements.txt --break-system-packages
             fi
+
+            # Kill any manually-started (nohup) instance so we never double-run the
+            # bot. The systemd unit runs "/usr/bin/python3 Mork.py"; the manual one
+            # runs "python3 -u Mork.py", so this pattern won't hit the service copy.
+            sudo pkill -f 'python3 -u Mork.py' || true
+
             sudo systemctl restart mork
+            sleep 5
+            systemctl is-active mork
