@@ -985,7 +985,6 @@ class LifecycleCog(commands.Cog):
 
             thread = guild.get_channel_or_thread(messageEntry.id)
             needsErrataCards.append(getCardMessage(messageEntry.content))
-            await messageEntry.add_reaction(hc_constants.ACCEPT)
             if thread:
                 await cast(Thread, thread).edit(archived=True)
 
