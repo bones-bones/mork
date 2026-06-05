@@ -266,4 +266,5 @@ statusList = [
     "Avatar of Discord, Please spam Evasion. Please",
     "Bears Repeating Playing Bears Repeating Playing Bears Repeating Playing Bears Repeating Playing Bears Repeating Playing Bears Repeating Playing Bears Repeating Playing Bears Repeating Playing Bears Repeating Playing...",
     "blue bears",
+    "with the delicious cards that i will not eat",
 ]
