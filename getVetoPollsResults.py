@@ -42,6 +42,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         "*nuzzles u*",
         "it begins",
         "more of that strange oil. it's probably nothing.",
+        "beep boop bop",
         "wanna hear a secret?",
         "i'm not actually processing, i'm just saying that to make you feel better.",
         "███████▒▒▒ 70%",
