@@ -37,10 +37,20 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         "who? oh yeah sure thing b0ss",
         "how about nyaaaa for a change?",
         "CAAAAAAAAAAAAAAN DO!",
-        "i mean like, if you say so, man",
+        "i mean like, if you say so",
         "WOOOOOOOOOOOOOOOOOOOOOOOOOOOO",
         "*nuzzles u*",
         "it begins",
+        "more of that strange oil. it's probably nothing.",
+        "wanna hear a secret?",
+        "i'm not actually processing, i'm just saying that to make you feel better.",
+        "███████▒▒▒ 70%",
+        "om nom nom. tasty cards.",
+        "bleh. these cards don't taste good.",
+        "at least ask me out to dinner first, geez.",
+        "fine... if you say so",
+        "just doin my job",
+        "lemmee grab my stabbing knife",
     ]
 
     await ctx.send(random.choice(epicCatchphrases))
