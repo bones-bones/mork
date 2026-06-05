@@ -48,7 +48,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         "om nom nom. tasty cards.",
         "bleh. these cards don't taste good.",
         "at least ask me out to dinner first, geez.",
-        "fine... if you say so",
+        "fine... if i must",
         "just doin my job",
         "lemmee grab my stabbing knife",
     ]
