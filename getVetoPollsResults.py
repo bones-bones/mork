@@ -50,7 +50,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         "at least ask me out to dinner first, geez.",
         "fine... if i must",
         "just doin my job",
-        "lemmee grab my stabbing knife",
+        "lemme grab my stabbing knife",
         "this guy again?",
         "its actually pronounced hell, not hell",
     ]
