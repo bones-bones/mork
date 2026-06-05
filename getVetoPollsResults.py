@@ -52,7 +52,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         "just doin my job",
         "lemmee grab my stabbing knife",
         "this guy again?",
-        "its actually pronounced heall",
+        "its actually pronounced hell, not hell",
     ]
 
     await ctx.send(random.choice(epicCatchphrases))
