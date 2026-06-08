@@ -8,6 +8,9 @@ import hc_constants
 from discord.utils import get
 import random
 from datetime import date, datetime, timezone, timedelta
+import aiohttp
+import io
+import re
 
 BlueRed = False
 log = ""
@@ -57,7 +60,7 @@ class GeneralCog(commands.Cog):
     @commands.command()
     async def waiy(self, ctx: commands.Context):
         await ctx.send(f"<@467941798321324034>")
-    # this command is temporary for a bit and will be deleted in a week or so 
+    # this command is temporary for maintaining a bit and will be deleted in a week or so 
 
     @commands.command()
     async def help(self, ctx: commands.Context):
@@ -84,6 +87,60 @@ class GeneralCog(commands.Cog):
         )
         message = await subChannel.fetch_message(id)
         await ctx.send(message.jump_url)
+
+    @commands.command()
+    async def emote(self, ctx: commands.Context, *, emote: str):
+        """Send an image version of a server/custom emoji.
+
+        Usage examples: `!emote :mana2:`, `!emote <a:party:123456789012345678>`
+        """
+        # Ported from esmBot's emote command:
+        # https://github.com/esmBot/esmBot/blob/master/commands/general/emote.js
+        # esmBot is MIT licensed. This implementation reproduces that behavior.
+        # See the original source and license for attribution requirements.
+        # Try matching a raw emoji mention like <a:name:id> or <:name:id>
+        m = re.match(r"^<(a?):([0-9A-Za-z_]+):(\d+)>$", emote)
+        url = None
+        name = None
+        if m:
+            animated_flag = bool(m.group(1))
+            name = m.group(2)
+            eid = m.group(3)
+            ext = "gif" if animated_flag else "png"
+            url = f"https://cdn.discordapp.com/emojis/{eid}.{ext}"
+        else:
+            # Strip surrounding colons if provided: :name:
+            name = emote.strip(":")
+            # Search available emojis the bot can see
+            emoji = get(self.bot.emojis, name=name)
+            if not emoji and ctx.guild:
+                emoji = get(ctx.guild.emojis, name=name)
+            if not emoji:
+                await ctx.send(f"Couldn't find emoji `{emote}`")
+                return
+            try:
+                url = str(emoji.url)
+            except Exception:
+                url = (
+                    f"https://cdn.discordapp.com/emojis/{emoji.id}."
+                    + ("gif" if getattr(emoji, "animated", False) else "png")
+                )
+
+        # Fetch image bytes and send as a file
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    if resp.status != 200:
+                        await ctx.send("Failed to fetch emoji image.")
+                        return
+                    data = await resp.read()
+        except Exception:
+            await ctx.send("Failed to download the emoji image.")
+            return
+
+        filename = name + (".gif" if url.endswith(".gif") else ".png")
+        file = discord.File(io.BytesIO(data), filename=filename)
+        await ctx.send(file=file)
 
     @commands.command()
     async def macro(self, ctx: commands.Context, thing: str, *args):
