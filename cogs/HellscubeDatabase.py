@@ -14,6 +14,7 @@ from printCardImages import send_image_reply
 
 
 from shared_vars import intents, allCards, googleClient, cardSheet
+from username_mappings import set_username_mappings, resolve_username
 
 cardList: list[CardSearch] = []
 
@@ -31,6 +32,7 @@ def build_database():
 
     usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
     usernameMappings = usernameMappingSheet.get_all_values()[1:]
+    set_username_mappings(usernameMappings)
 
     cardSheetSearch = databaseSheets.worksheet("Database")
     cardsDataSearch = cardSheetSearch.get_all_values()[2:]
@@ -553,6 +555,12 @@ def get_card_by_name(card_name: str) -> CardSearch | None:
 
 
 def searchFor(searchDict: dict):
+    if searchDict.get("creator"):
+        creators = searchDict["creator"]
+        if isinstance(creators, str):
+            creators = [creators]
+        searchDict["creator"] = [resolve_username(c) for c in creators]
+
     for i in [
         "types",
         "text",
