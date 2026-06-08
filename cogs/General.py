@@ -373,8 +373,6 @@ class GeneralCog(commands.Cog):
             else:
                 await ctx.send("This game doesn't exist.")
 
-    
-
     @commands.command()
     async def wait(self, ctx: commands.Context):
         if ctx.channel.id == hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL:
