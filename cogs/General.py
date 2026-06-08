@@ -7,7 +7,7 @@ from shared_vars import drive
 import hc_constants
 from discord.utils import get
 import random
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 
 BlueRed = False
 log = ""
@@ -53,7 +53,12 @@ class GeneralCog(commands.Cog):
             await ctx.message.add_reaction("🍤")
         else:
             await ctx.message.add_reaction("🦐")
-            
+
+    @commands.command()
+    async def waiy(self, ctx: commands.Context):
+        await ctx.send(f"<@467941798321324034>")
+    # this command is temporary for a bit and will be deleted in a week or so 
+
     @commands.command()
     async def help(self, ctx: commands.Context):
         await ctx.send(
@@ -128,6 +133,45 @@ class GeneralCog(commands.Cog):
             )
             await cubeChannel.send(card)
             await ctx.channel.send(card)
+
+    @commands.command(name="eventStart")
+    async def eventStart(self, ctx: commands.Context):
+
+        guild = cast(discord.Guild, ctx.guild)
+        if guild is None:
+            await ctx.send("Guild not found.")
+            return
+
+        now_utc = datetime.now(timezone.utc)
+        results: list[str] = []
+
+        for ev_id in (
+            hc_constants.SCUBEY_TUESDAYS,
+            hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
+        ):
+            try:
+                event = await guild.fetch_scheduled_event(ev_id)
+                if event.status is discord.EventStatus.scheduled:
+                    # allow starting if within one hour (before or after) of the scheduled start
+                    delta = event.start_time - now_utc
+                    if abs(delta.total_seconds()) <= 3600:
+                        await event.start()
+                        results.append(f"Started {event.name} ({event.id}).")
+                    else:
+                        results.append(
+                            f"{event.name} ({event.id}) is scheduled for {event.start_time.isoformat()} UTC.\nThis command can only be run within one hour of the event start time."
+                        )
+                else:
+                    results.append(
+                        f"{event.name} ({event.id}) is {event.status.name}."
+                    )
+            except discord.NotFound:
+                results.append(f"Scheduled event {ev_id} not found.")
+            except Exception as exc:
+                results.append(f"Error starting event {ev_id}: {exc}")
+
+        await ctx.send("\n".join(results) if results else "No events checked.")
+
 
     @commands.command()
     async def gameNight(self, ctx: commands.Context, mode, game: str):
