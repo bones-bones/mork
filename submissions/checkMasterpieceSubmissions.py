@@ -88,6 +88,17 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 await acceptedChannel.send(content=acceptContent)
                 await acceptedChannel.send(content="", file=file)
                 await logChannel.send(content=logContent, file=copy2)
+                # If this masterpiece was previously marked with a time reminder,
+                # delete the bot's reminder ping message in the submissions channel.
+                time_reacts = get(messageEntry.reactions, emoji="🕛")
+                if time_reacts:
+                    async for rem_msg in subChannel.history(limit=200):
+                        if rem_msg.author == bot.user and messageEntry.jump_url in rem_msg.content:
+                            try:
+                                await rem_msg.delete()
+                            except Exception:
+                                pass
+
                 await messageEntry.delete()
                 continue
             elif (upCount - downCount) >= (
@@ -101,7 +112,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                             hasMork = True
                 if not hasMork:
                     await subChannel.send(
-                        f"{messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
+                        f"## {messageEntry.content} is nearing the end... perhaps it deserves further consideration {messageEntry.jump_url}"
                     )
                     await messageEntry.add_reaction("🕛")
     print("------done checking masterpiece submissions-----")
