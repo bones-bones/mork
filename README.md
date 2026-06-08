@@ -107,3 +107,9 @@ There's always the chance a process fails. Who knows what happens then.
 
 ## 5. It percolates out
 From time to time, a mod will take the entries in the unapproved sheet of the database, and transcribe them to the main sheet. Once the cards are in the main sheet, they'll start to show up in other places. Mork will search against them, hellfall will list them, cube XML files will be created that include them, and draftmancer wil show them. (The exact timings on when these will happen is fuzzy at best.)
+
+
+## Attrib
+
+- This project includes a port of esmBot's `!emote` command. The original source is available at https://github.com/esmBot/esmBot/blob/master/commands/general/emote.js and is MIT licensed.
+
