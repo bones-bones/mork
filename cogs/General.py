@@ -56,7 +56,12 @@ class GeneralCog(commands.Cog):
             await ctx.message.add_reaction("🍤")
         else:
             await ctx.message.add_reaction("🦐")
-            
+
+    @commands.command()
+    async def waiy(self, ctx: commands.Context):
+        await ctx.send(f"<@467941798321324034>")
+    # this command is temporary for maintaining a bit and will be deleted in a week or so 
+
     @commands.command()
     async def help(self, ctx: commands.Context):
         await ctx.send(
