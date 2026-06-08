@@ -209,7 +209,7 @@ async def checkSubmissions(bot: commands.Bot):
                 continue
             elif positiveMargin >= (
                 hc_constants.SUBMISSIONS_THRESHOLD - 5
-            ) and messageAge >= timedelta(days=6):
+            ) and messageAge >= timedelta(days=5.5):
                 has_mork_marked_it = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")
                 if timeReacts:
