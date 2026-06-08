@@ -6,6 +6,7 @@ from is_mork import is_mork
 from shared_vars import drive
 from dpymenus import PaginatedMenu
 import hc_constants
+from username_mappings import resolve_username, usernames_equivalent
 
 authorSplit = "$#$#$"
 QUOTE_SPLIT = ";%;%;"
@@ -25,7 +26,7 @@ class QuotesCog(commands.Cog):
                     await ctx.send(YOU_THINK_YOURE_FUNNY)
                     return
 
-                user = replied_message.author.name
+                user = resolve_username(replied_message.author.name)
                 if is_mork(replied_message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
                     await ctx.send("The bot can't quote itself")
                     return
@@ -56,7 +57,7 @@ class QuotesCog(commands.Cog):
             await ctx.send(YOU_THINK_YOURE_FUNNY)
             return
 
-        user = message.author.name
+        user = resolve_username(message.author.name)
         if is_mork(message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
             await ctx.send("The bot can't quote itself")
             return
@@ -75,7 +76,7 @@ class QuotesCog(commands.Cog):
                     await ctx.send(YOU_THINK_YOURE_FUNNY)
                     return
 
-                user = replied_message.author.name
+                user = resolve_username(replied_message.author.name)
                 if is_mork(replied_message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
                     await ctx.send("The bot can't quote itself")
                     return
@@ -131,7 +132,7 @@ class QuotesCog(commands.Cog):
             await ctx.send(YOU_THINK_YOURE_FUNNY)
             return
 
-        user = message.author.name
+        user = resolve_username(message.author.name)
         if is_mork(message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
             await ctx.send("The bot can't quote itself")
             return
@@ -174,7 +175,7 @@ class QuotesCog(commands.Cog):
             tempList = []
             for i in quoteList:
                 if i.__len__() == 2:
-                    if i[1].lower() == user.lower():
+                    if usernames_equivalent(i[1], user):
                         tempList.append(i)
             quoteList = tempList
             if quoteList == []:
@@ -196,7 +197,7 @@ class QuotesCog(commands.Cog):
             user = " ".join(user)
             tempList = []
             for i in quoteList:
-                if i[1].lower() == user.lower():
+                if usernames_equivalent(i[1], user):
                     tempList.append(i)
             quoteList = tempList
             if quoteList == []:
