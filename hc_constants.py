@@ -42,6 +42,8 @@ SUBMISSION_COOLDOWN = 22
 SUBMISSIONS_DAY_MARKER_PREFIX = "SUBMISSIONS_DAY — "
 PREVIOUS_WEEK_PIN_PREFIX = "PREVIOUS WEEK"
 MASTERPIECE_THRESHOLD = 55
+SUBMISSIONS_STATE_FILE = "../mork-state"
+MASTERPIECE_STATE_FILE = "../mork-masterpiece-state"
 VC_THRESHOLD = 5
 
 # Errata channel: if upvotes - downvotes >= this, add checkmark and post to veto-polls.
