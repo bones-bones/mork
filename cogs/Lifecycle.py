@@ -587,7 +587,7 @@ class LifecycleCog(commands.Cog):
                         [f"<@{str(raw)}>" for raw in message.raw_mentions]
                     )
 
-                with open("../mork-state", "r") as file:
+                with open(hc_constants.SUBMISSIONS_STATE_FILE, "r") as file:
                     lines = file.readlines()
                     for line in lines:
                         if line.startswith(f"{message.author.id}—"):
@@ -611,7 +611,7 @@ class LifecycleCog(commands.Cog):
                                 )
                                 await message.delete()
                                 return
-                with open("../mork-state", "a") as file:
+                with open(hc_constants.SUBMISSIONS_STATE_FILE, "a") as file:
                     file.write(
                         f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                     )
@@ -679,6 +679,38 @@ class LifecycleCog(commands.Cog):
                     if splitString.__len__() > 1:
                         author = "; ".join(
                             [f"<@{str(raw)}>" for raw in message.raw_mentions]
+                        )
+                    if os.path.exists(hc_constants.MASTERPIECE_STATE_FILE):
+                        with open(hc_constants.MASTERPIECE_STATE_FILE, "r") as file:
+                            lines = file.readlines()
+                            for line in lines:
+                                if line.startswith(f"{message.author.id}—"):
+                                    tempDate = datetime.strptime(
+                                        line.split("—")[1].replace("\n", ""),
+                                        "%Y-%m-%dT%H:%M:%S%z",
+                                    )
+
+                                    timeSinceLast = (
+                                        (
+                                            datetime.now(tz=timezone.utc) - tempDate
+                                        ).total_seconds()
+                                    ) / (60 * 60)
+
+                                    if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN:
+                                        discussionChannel = cast(
+                                            TextChannel,
+                                            self.bot.get_channel(
+                                                hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                                            ),
+                                        )
+                                        await discussionChannel.send(
+                                            f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards"
+                                        )
+                                        await message.delete()
+                                        return
+                    with open(hc_constants.MASTERPIECE_STATE_FILE, "a") as file:
+                        file.write(
+                            f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                         )
                     file = await message.attachments[0].to_file()
                     if reasonableCard():
@@ -1217,13 +1249,13 @@ async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
 
 
-def reset_countdowns():
-    print("reset")
+def _reset_countdowns_for_file(state_file: str):
+    if not os.path.exists(state_file):
+        return
     lines_to_write = ""
-    with open("../mork-state", "r") as file:
+    with open(state_file, "r") as file:
         lines = file.readlines()
         for line in lines:
-            # print(line)
             split_line = line.split("—")
             if split_line.__len__() > 1:
                 tempDate = datetime.strptime(
@@ -1234,10 +1266,15 @@ def reset_countdowns():
                 timeSinceLast = (
                     (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
                 ) / (60 * 60)
-                # print(timeSinceLast)
 
                 if timeSinceLast <= hc_constants.SUBMISSION_COOLDOWN:
                     lines_to_write += f"{line}"
-    with open("../mork-state", "w") as file:
+    with open(state_file, "w") as file:
         file.write(lines_to_write)
+
+
+def reset_countdowns():
+    print("reset")
+    _reset_countdowns_for_file(hc_constants.SUBMISSIONS_STATE_FILE)
+    _reset_countdowns_for_file(hc_constants.MASTERPIECE_STATE_FILE)
     print("end reset")
