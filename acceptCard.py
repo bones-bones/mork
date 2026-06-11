@@ -28,6 +28,8 @@ async def accept_card(
     errata: bool = False,
     errataId: Optional[str] = None,
     wasVetoed: bool = False,
+    skip_reddit: bool = False,
+    deferred_reddit_dir: Optional[str] = None,
 ):
     """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
     extension = re.search("\.([^.]*)$", file.filename)
@@ -47,16 +49,6 @@ async def accept_card(
 
     with open(image_path, "wb") as out:
         out.write(file_data)
-
-    if not errata and not errataId:
-        try:
-            await post_to_reddit(
-                image_path=image_path,
-                title=f"{cardMessage.replace('**', '')} {'was accepted!' if not wasVetoed else 'was vetoed!'}",
-                flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
-            )
-        except Exception as e:
-            print("tried to post to reddit", e)
 
     allCards = cardSheetUnapproved.get("A:E")
     index = [i for i in range(len(allCards)) if str(allCards[i][0]) == str(errataId)]
@@ -79,7 +71,31 @@ async def accept_card(
         image_path, image_id_to_update, folder_id=hc_constants.CURRENT_SET_FOLDER
     )
 
-    os.remove(image_path)
+    if not errata and not errataId:
+        reddit_title = (
+            f"{cardMessage.replace('**', '')} "
+            f"{'was accepted!' if not wasVetoed else 'was vetoed!'}"
+        )
+        if skip_reddit and deferred_reddit_dir:
+            os.makedirs(deferred_reddit_dir, exist_ok=True)
+            deferred_path = os.path.join(deferred_reddit_dir, new_file_name)
+            os.rename(image_path, deferred_path)
+            manifest_path = os.path.join(deferred_reddit_dir, "manifest.txt")
+            with open(manifest_path, "a", encoding="utf-8") as manifest:
+                manifest.write(f"{new_file_name}\t{reddit_title}\n")
+        else:
+            try:
+                await post_to_reddit(
+                    image_path=image_path,
+                    title=reddit_title,
+                    flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+                )
+            except Exception as e:
+                print("tried to post to reddit", e)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+    elif os.path.exists(image_path):
+        os.remove(image_path)
 
     imageUrl = getDriveUrl(google_drive_file_id)
 

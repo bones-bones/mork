@@ -135,3 +135,30 @@ class VetoPollResults:
     acceptedCardMessages: list[Message]
     vetoCardMessages: list[Message]
     purgatoryCardMessages: list[Message]
+
+
+def limit_veto_poll_results(
+    results: VetoPollResults, count: int | None
+) -> VetoPollResults:
+    """Keep only the oldest `count` pending cards across all compile-veto categories."""
+    tagged = (
+        [(m, "accepted") for m in results.acceptedCardMessages]
+        + [(m, "veto") for m in results.vetoCardMessages]
+        + [(m, "errata") for m in results.errataCardMessages]
+        + [(m, "purgatory") for m in results.purgatoryCardMessages]
+    )
+    tagged.sort(key=lambda pair: pair[0].created_at)
+    if count is not None:
+        tagged = tagged[:count]
+    allowed = {m.id for m, _ in tagged}
+    return VetoPollResults(
+        errataCardMessages=[m for m in results.errataCardMessages if m.id in allowed],
+        judgeCardMessages=results.judgeCardMessages,
+        acceptedCardMessages=[
+            m for m in results.acceptedCardMessages if m.id in allowed
+        ],
+        vetoCardMessages=[m for m in results.vetoCardMessages if m.id in allowed],
+        purgatoryCardMessages=[
+            m for m in results.purgatoryCardMessages if m.id in allowed
+        ],
+    )
