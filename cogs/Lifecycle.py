@@ -36,13 +36,13 @@ from getters import (
     getMorkSubmissionsLoggingChannel,
     getSubmissionDiscussionChannel,
     getVetoChannel,
-    getVetoDiscussionChannel,
+    getVetoHellpitsChannel,
 )
 from handleVetoPost import handleVetoPost
 import hc_constants
 from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
-from is_mork import is_mork, reasonableCard
+from is_mork import is_mork, reasonable_card
 from printCardImages import print_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
@@ -617,7 +617,7 @@ class LifecycleCog(commands.Cog):
                     )
 
                 file = await message.attachments[0].to_file()
-                if reasonableCard():
+                if reasonable_card():
                     vetoChannel = getVetoChannel(bot=self.bot)
                     acceptedChannel = getSubmissionDiscussionChannel(self.bot)
                     logChannel = getMorkSubmissionsLoggingChannel(self.bot)
@@ -713,7 +713,7 @@ class LifecycleCog(commands.Cog):
                             f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                         )
                     file = await message.attachments[0].to_file()
-                    if reasonableCard():
+                    if reasonable_card():
                         vetoChannel = getVetoChannel(self.bot)
                         acceptedChannel = cast(
                             TextChannel,
@@ -1065,9 +1065,9 @@ class LifecycleCog(commands.Cog):
             except:
                 print(f"ERROR: unable to process: {messageEntry.content}")
 
-        vetoDiscussionChannel = getVetoDiscussionChannel(self.bot)
+        compileAnnouncementsChannel = getVetoHellpitsChannel(self.bot)
 
-        await vetoDiscussionChannel.send(
+        await compileAnnouncementsChannel.send(
             content=f"!! VETO POLLS HAVE BEEN PROCESSED !!"
         )
 
@@ -1077,7 +1077,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(acceptedCards)
             )
             for i in range(0, acceptedMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await compileAnnouncementsChannel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
@@ -1085,13 +1085,13 @@ class LifecycleCog(commands.Cog):
                 "\n".join(needsErrataCards)
             )
             for i in range(0, errataMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await compileAnnouncementsChannel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
             vetoMessage = "||\u200b||\nVETOED: \n{0}".format("\n".join(vetoedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await compileAnnouncementsChannel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
@@ -1099,7 +1099,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(vetoHellCards)
             )
             for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await compileAnnouncementsChannel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
@@ -1109,7 +1109,7 @@ class LifecycleCog(commands.Cog):
             for i in range(
                 0, mysteryHellMessage.__len__(), hc_constants.LITERALLY_1984
             ):
-                await vetoDiscussionChannel.send(
+                await compileAnnouncementsChannel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
 
