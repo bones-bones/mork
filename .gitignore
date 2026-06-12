@@ -4,6 +4,7 @@ bot_secrets/client_secrets.json
 bot_secrets/reddit_secrets.py
 
 tempImages/.*
+deferred_reddit/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

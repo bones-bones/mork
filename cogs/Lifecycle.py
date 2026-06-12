@@ -24,13 +24,18 @@ from discord.utils import get
 from dotenv import load_dotenv
 
 from acceptCard import accept_card
+from deferred_reddit import list_pending_deferred_posts, process_deferred_reddit_posts
 from checkSubmissions import checkSubmissions
 from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
 from getCardMessage import getCardMessage
-from getVetoPollsResults import VetoPollResults, getVetoPollsResults
+from getVetoPollsResults import (
+    VetoPollResults,
+    getVetoPollsResults,
+    limit_veto_poll_results,
+)
 from getters import (
     getErrataSubmissionChannel,
     getMorkSubmissionsLoggingChannel,
@@ -883,9 +888,35 @@ class LifecycleCog(commands.Cog):
             await ctx.send(content="all caught up!")
 
     @commands.command()
-    async def compileveto(self, ctx: commands.Context):
+    async def redditcatchup(self, ctx: commands.Context, count: int):
+        if ctx.author.id != hc_constants.LLLLLL:
+            return
+        if count < 1:
+            await ctx.send("Count must be a positive number")
+            return
+        pending = list_pending_deferred_posts()
+        if not pending:
+            await ctx.send("No deferred Reddit posts")
+            return
+        await ctx.send(
+            f"Posting up to {count} deferred Reddit submissions "
+            f"({len(pending)} pending)..."
+        )
+        posted, errors = await process_deferred_reddit_posts(count)
+        message = f"Posted {posted} to Reddit."
+        if errors:
+            message += f" {len(errors)} failed: " + "; ".join(errors[:5])
+            if len(errors) > 5:
+                message += f" (and {len(errors) - 5} more)"
+        await ctx.send(message)
+
+    @commands.command()
+    async def compileveto(self, ctx: commands.Context, count: int = None):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
+            return
+        if count is not None and count < 1:
+            await ctx.send("Count must be a positive number")
             return
         guild = cast(Guild, ctx.guild)
         timeNow = datetime.now(timezone.utc)
@@ -900,10 +931,23 @@ class LifecycleCog(commands.Cog):
         responseObject = cast(
             VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
         )
+        responseObject = limit_veto_poll_results(responseObject, count)
         errataCardMessages = responseObject.errataCardMessages
         acceptedCardMessages = responseObject.acceptedCardMessages
         vetoCardMessages = responseObject.vetoCardMessages
         purgatoryCardMessages = responseObject.purgatoryCardMessages
+
+        reddit_eligible_count = len(acceptedCardMessages) + len(vetoCardMessages)
+        skip_reddit = reddit_eligible_count > 20
+        deferred_reddit_dir = None
+        if skip_reddit:
+            deferred_reddit_dir = (
+                f"deferred_reddit/{timeNow.strftime('%Y-%m-%d_%H%M%S')}"
+            )
+            await ctx.send(
+                f"{reddit_eligible_count} cards exceed the Reddit batch limit; "
+                f"saving images and titles to `{deferred_reddit_dir}/`"
+            )
 
         vetoHellCards: list[str] = []
         mysteryVetoHellCards: list[str] = []
@@ -965,6 +1009,8 @@ class LifecycleCog(commands.Cog):
                 channelIdForCard=channel_to_add_to,
                 errata=errata_id is not None,
                 errataId=errata_id,
+                skip_reddit=skip_reddit,
+                deferred_reddit_dir=deferred_reddit_dir,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)
@@ -1006,6 +1052,8 @@ class LifecycleCog(commands.Cog):
                 authorName=card_author,
                 setId="HCV",
                 wasVetoed=True,
+                skip_reddit=skip_reddit,
+                deferred_reddit_dir=deferred_reddit_dir,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md
