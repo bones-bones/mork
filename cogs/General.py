@@ -1,5 +1,6 @@
 import pprint as pp
 from typing import cast
+import os
 import discord
 from discord.ext import commands
 from cardNameRequest import cardNameRequest
@@ -527,27 +528,33 @@ class GeneralCog(commands.Cog):
             "give yourself permission to rest when you feel tired.",
         ]
 
-        with open("../mork-state", "r") as file:
-            lines = file.readlines()
-            for line in lines:
-                if line.startswith(f"{ctx.author.id}—"):
-                    tempDate = datetime.strptime(
-                        line.split("—")[1].replace("\n", ""),
-                        "%Y-%m-%dT%H:%M:%S%z",
-                    )
+        state_file = (
+            hc_constants.MASTERPIECE_STATE_FILE
+            if ctx.channel.id == hc_constants.MASTERPIECE_CHANNEL
+            else hc_constants.SUBMISSIONS_STATE_FILE
+        )
+        if os.path.exists(state_file):
+            with open(state_file, "r") as file:
+                lines = file.readlines()
+                for line in lines:
+                    if line.startswith(f"{ctx.author.id}—"):
+                        tempDate = datetime.strptime(
+                            line.split("—")[1].replace("\n", ""),
+                            "%Y-%m-%dT%H:%M:%S%z",
+                        )
 
-                    timeSinceLast = (
-                        (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
-                    ) / (60 * 60)
+                        timeSinceLast = (
+                            (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
+                        ) / (60 * 60)
 
-                    text = ""
-                    if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN:
-                        text += f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards. While you wait, why don't you "
-                        randomActivity = random.choice(possibleActivities)
-                        text += randomActivity
+                        text = ""
+                        if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN:
+                            text += f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards. While you wait, why don't you "
+                            randomActivity = random.choice(possibleActivities)
+                            text += randomActivity
 
-                        await ctx.send(text)
-                        return
+                            await ctx.send(text)
+                            return
         await ctx.send(
             f"<@{ctx.author.id}>, you have no pending cards. You may submit a card"
         )
