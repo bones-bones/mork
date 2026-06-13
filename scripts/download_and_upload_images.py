@@ -314,7 +314,8 @@ for id, name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip
             for i, sideUrl in enumerate(sidesToPrint):
                 print(i, sideUrl)
                 # Download image
-                response = requests.get(sideUrl)
+                headers = {"User-Agent": hc_constants.USER_AGENT}
+                response = requests.get(sideUrl, headers=headers)
                 response.raise_for_status()
                 unparsedFileName = response.headers.get("Content-Disposition")
 
