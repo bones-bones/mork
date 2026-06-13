@@ -1,5 +1,8 @@
 """Just about every constant"""
 
+# API User Agent
+USER_AGENT = "hellscube/mork2/0.1.0"
+
 # Discord Ids
 SUBMISSIONS_CHANNEL = 842126227203817513
 VETO_POLLS_CHANNEL = 798690672512335932
@@ -184,6 +187,8 @@ macroList = {
     "dward": "https://cdn.discordapp.com/attachments/652255914220584984/829380779498668092/unknown.png",
     "downvote": "I just downvoted your comment.\n\nFAQ\nWhat does this mean?\nThe amount of karma (points) on your comment and Reddit account has decreased by one.\n\nWhy did you do this?\nThere are several reasons I may deem a comment to be unworthy of positive or neutral karma. These include, but are not limited to:\n\nRudeness towards other Redditors,\n\nSpreading incorrect information,\n\nSarcasm not correctly flagged with a /s.\n\nAm I banned from the Reddit?\nNo - not yet. But you should refrain from making comments like this in the future. Otherwise I will be forced to issue an additional downvote, which may put your commenting and posting privileges in jeopardy.\n\nI don't believe my comment deserved a downvote. Can you un-downvote it?\nSure, mistakes happen. But only in exceedingly rare circumstances will I undo a downvote. If you would like to issue an appeal, shoot me a private message explaining what I got wrong. I tend to respond to Reddit PMs within several minutes. Do note, however, that over 99.9% of downvote appeals are rejected, and yours is likely no exception.\n\nHow can I prevent this from happening in the future?\nAccept the downvote and move on. But learn from this mistake: your behavior will not be tolerated on Reddit.com. I will continue to issue downvotes until you improve your conduct. Remember: Reddit is privilege, not a right.",
     "rng": "Too make a good random card there are a couple rules/guidelines you should keep in mind:\n1. Good random effects follow a bell curve, most of time the effect should be around balanced, and only a low percentage of the time should it be very weak or very good.\nSo 50/50 to no nothing or be broken is bad.\n2. Good randomness feels exiting when it does hit those low-odds high-/lowrolls, it should feel great for at least one of the players (preferably both but that's way harder) when something unlikely occurs.\n3. Random cards should be slightly better than normal cards on avarage, as randomness is a downside because you can't plan about it.",
+    "flavor": "when using flavor with curly brackets in cardconjurer, the flavor text and previous line are all on the same line. flavor automatically adds a line break.",
+    "numbers": "written out numbers are used for quantities of cards, like draw three cards. Numerals are used for quantities of most other things.",
     "options": "Cards should in general not have too many unique options, just like long text boxes this slows down drafts because it takes a lot of time to find out whether the card is good or not.",
     "gorm": "Rymthm is in fuck not your personal property, if more than half the people in a voice-chat want you to stop playing some type of music, then stop.",
     "macro": 'people in the discord got tired of repeating the same shit all the time because it takes some time for people to get in. This isn\'t an insult, everybody had a phase where their cards had problems, type "{{five recalls painted green}}" for a good example that even the largest creator of the cube sucks at designing cards sometimes.',

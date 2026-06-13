@@ -140,7 +140,8 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                 continue
             img_url = card.img()
             try:
-                async with aiohttp.ClientSession() as session:
+                headers = {"User-Agent": hc_constants.USER_AGENT}
+                async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(img_url) as resp:
                         if resp.status != 200:
                             continue
@@ -192,7 +193,8 @@ class LifecycleCog(commands.Cog):
                 card = cards[cardOffset]
                 name = card.name()
                 url = card.img()
-                async with aiohttp.ClientSession() as session:
+                headers = {"User-Agent": hc_constants.USER_AGENT}
+                async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(url) as resp:
                         if resp.status == 200:
                             image_path = f'tempImages/{name.replace("/", "|")}'
@@ -788,7 +790,8 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
                     return
                 img_url = card.img()
-                async with aiohttp.ClientSession() as session:
+                headers = {"User-Agent": hc_constants.USER_AGENT}
+                async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(img_url) as resp:
                         if resp.status != 200:
                             await message.channel.send(
