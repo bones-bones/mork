@@ -43,7 +43,8 @@ async def print_card_images(message: Message):
 
 
 async def send_image_reply(url: str, cardname: str, text: str | None, message: Message):
-    async with aiohttp.ClientSession() as session:
+    headers = {"User-Agent": hc_constants.USER_AGENT}
+    async with aiohttp.ClientSession(headers=headers) as session:
         async with session.get(url) as resp:
             if resp.status != 200:
                 await message.reply(

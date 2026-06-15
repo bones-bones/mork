@@ -11,6 +11,7 @@ from operator import itemgetter
 import pprint as pp
 from discord.utils import get
 import requests
+import os
 
 
 from cogs.HellscubeDatabase import searchFor
@@ -24,7 +25,8 @@ SCRYFALL_RANDOM_API_URL = "https://api.scryfall.com/cards/random?q="
 
 # load json from scryfall
 async def get_scryfall_json(targetUrl):
-    return requests.get(targetUrl).json()
+    headers = {"User-Agent": hc_constants.USER_AGENT}
+    return requests.get(targetUrl, headers=headers).json()
 
 
 # get card image from scryfall json
@@ -38,7 +40,8 @@ async def get_image_from_json(json):
 
 # send card image to channel
 async def send_image(url, ctx: commands.Context):
-    async with aiohttp.ClientSession() as session:
+    headers = {"User-Agent": hc_constants.USER_AGENT}
+    async with aiohttp.ClientSession(headers=headers) as session:
         async with session.get(url) as resp:
             if resp.status != 200:
                 await ctx.send(
@@ -52,7 +55,8 @@ async def send_image(url, ctx: commands.Context):
 
 
 async def send_drive_image(url, ctx: commands.Context):
-    async with aiohttp.ClientSession() as session:
+    headers = {"User-Agent": hc_constants.USER_AGENT}
+    async with aiohttp.ClientSession(headers=headers) as session:
         async with session.get(url) as resp:
             if resp.status != 200:
                 await ctx.send(
@@ -956,7 +960,8 @@ class SpecificCardsCog(commands.Cog):
     # Obscure Commander
     @commands.command()
     async def obscureCommander(self, ctx: commands.Context):
-        async with aiohttp.ClientSession() as session:
+        headers = {"User-Agent": hc_constants.USER_AGENT}
+        async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(
                 "https://api.scryfall.com/cards/search?as=grid&order=name&q=command+oracle%3A•+%28game%3Apaper%29"
             ) as resp:
