@@ -568,14 +568,6 @@ class LifecycleCog(commands.Cog):
                 if len(message.attachments) == 0:
                     return
 
-                if message.content == "":
-                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                    await discussionChannel.send(
-                        f"<@{message.author.id}>, make sure to include the name of your card"
-                    )
-                    await message.delete()
-                    return
-
                 splitString = message.content.split("\n")
                 cardName = splitString[0]
                 if "@" in cardName:
@@ -623,6 +615,14 @@ class LifecycleCog(commands.Cog):
                         f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                     )
 
+                if message.content == "":
+                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, make sure to include the name of your card"
+                    )
+                    await message.delete()
+                    return
+                
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
                     vetoChannel = getVetoChannel(bot=self.bot)
