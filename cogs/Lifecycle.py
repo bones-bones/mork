@@ -892,7 +892,8 @@ class LifecycleCog(commands.Cog):
 
     @commands.command()
     async def redditcatchup(self, ctx: commands.Context, count: int):
-        if ctx.author.id != hc_constants.LLLLLL:
+        if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
+            await ctx.send("Veto Council Only")
             return
         if count < 1:
             await ctx.send("Count must be a positive number")
