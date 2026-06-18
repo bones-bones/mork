@@ -110,7 +110,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
     add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handleVetoPost.
     """
 
-    channel = cast(TextChannel, bot.get_channel(hc_constants.HC8_ERRATA_SUBMISSIONS))
+    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
     if not channel:
         return
     time_now = datetime.now(timezone.utc)
@@ -763,7 +763,7 @@ class LifecycleCog(commands.Cog):
                         await sent_message.create_thread(name=message.content[0:99])
                     await message.delete()
 
-            case hc_constants.HC8_ERRATA_SUBMISSIONS:
+            case hc_constants.ERRATA_SUBMISSIONS:
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
                 print(f"HC8 errata submission: {card_id_input}")
@@ -783,9 +783,9 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                if not (card.cardset() == "HC8.1" or card.cardset() == "HC8.0"):
+                if not (card.cardset() == hc_constants.CUBE_NAME + ".0" or card.cardset() == hc_constants.CUBE_NAME + ".1"):
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
-                        f"<@{message.author.id}>, only HC8 cards are allowed for errata."
+                        f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} cards are allowed for errata."
                     )
                     await message.delete()
                     return
