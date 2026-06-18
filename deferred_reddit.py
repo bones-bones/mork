@@ -43,6 +43,10 @@ def list_pending_deferred_posts() -> list[DeferredRedditPost]:
     return pending
 
 
+def _is_reddit_media_too_large(exc: BaseException) -> bool:
+    return "too large" in str(exc).lower()
+
+
 def _cleanup_deferred_batch(batch_dir: str) -> None:
     manifest_path = os.path.join(batch_dir, "manifest.txt")
     remaining_lines: list[str] = []
@@ -80,7 +84,12 @@ async def process_deferred_reddit_posts(count: int) -> tuple[int, list[str]]:
             posted += 1
             affected_batches.add(post.batch_dir)
         except Exception as e:
-            errors.append(f"{post.filename}: {e}")
+            if _is_reddit_media_too_large(e):
+                os.remove(post.image_path)
+                posted += 1
+                affected_batches.add(post.batch_dir)
+            else:
+                errors.append(f"{post.filename}: {e}")
     for batch_dir in affected_batches:
         _cleanup_deferred_batch(batch_dir)
     return posted, errors
