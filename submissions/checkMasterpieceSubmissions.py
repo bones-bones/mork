@@ -72,8 +72,12 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 
                 accepted_message_no_mentions = messageEntry.content
                 for index, mentionEntry in enumerate(messageEntry.raw_mentions):
+                    if index < len(messageEntry.mentions):
+                        mention_name = messageEntry.mentions[index].name
+                    else:
+                        mention_name = str(mentionEntry)
                     accepted_message_no_mentions = accepted_message_no_mentions.replace(
-                        f"<@{str(mentionEntry)}>", messageEntry.mentions[index].name
+                        f"<@{str(mentionEntry)}>", mention_name
                     )
 
                 copy = await messageEntry.attachments[0].to_file()
