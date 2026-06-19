@@ -1053,10 +1053,11 @@ class SpecificCardsCog(commands.Cog):
     # get a random artifact creature and/or vehicle for Mechtitan 
     @commands.command(aliases=["mechdietan"])
     async def mechtitan(self, ctx: commands.Context):
-        await fetchAndSendCard(
-            f"{SCRYFALL_RANDOM_API_URL}(t%3A%2Fartifact+creature%2F+or+t%3Aartifact+and+t%3Avehicle)+game%3Apaper+prefer%3Abest+-function%3Ayou_matter+-function%3Adexterity+-function%3Aart-matters+-function%3Aspeech-matters+-function%3Aun-set-mechanics&unique=cards",
-            ctx,
-        )
+        for _ in range(4):
+            await fetchAndSendCard(
+                f"{SCRYFALL_RANDOM_API_URL}(t%3A%2Fartifact+creature%2F+or+t%3Aartifact+and+t%3Avehicle)+game%3Apaper+prefer%3Abest+-function%3Ayou_matter+-function%3Adexterity+-function%3Aart-matters+-function%3Aspeech-matters+-function%3Aun-set-mechanics&unique=cards",
+                ctx,
+            )
     
     # ger a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
     @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell", "bigwizardspell"])
