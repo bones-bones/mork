@@ -30,7 +30,7 @@ from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
-from getCardMessage import getCardMessage
+from getCardMessage import getCardMessage, parseCardNameAndAuthor
 from getVetoPollsResults import (
     VetoPollResults,
     getVetoPollsResults,
@@ -368,20 +368,7 @@ class LifecycleCog(commands.Cog):
             file = await message.attachments[0].to_file()
             acceptanceMessage = message.content
             # consider putting most of this into acceptCard
-            # this is pretty much the same as getCardMessage but teasing out the db logic too was gonna suck
-            dbname = ""
-            card_author = ""
-            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
-                ...  # This is really the case of setting both to "", but due to scoping i got lazy
-            elif acceptanceMessage[0:3] == "by ":
-                card_author = str((acceptanceMessage.split("by "))[1])
-            else:
-                messageChunks = acceptanceMessage.split(" by ")
-                firstPart = messageChunks[0]
-                secondPart = "".join(messageChunks[1:])
-
-                dbname = str(firstPart)
-                card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
@@ -964,8 +951,6 @@ class LifecycleCog(commands.Cog):
             acceptanceMessage = messageEntry.content
             # consider putting most of this into acceptCard
             # errata format: first line "cardname by author", second line "Errata: card_id"
-            dbname = ""
-            card_author = ""
             errataLinens = acceptanceMessage.splitlines()
             errata_id = (
                 errataLinens[1].strip().removeprefix("Errata: ").strip()
@@ -973,16 +958,7 @@ class LifecycleCog(commands.Cog):
                 else None
             )
             first_line = errataLinens[0] if errataLinens else ""
-            if (len(first_line)) == 0 or " by " not in first_line:
-                ...
-            elif first_line[0:3] == "by ":
-                card_author = str((first_line.split(" by ", 1))[1])
-            else:
-                messageChunks = first_line.split(" by ", 1)
-                firstPart = messageChunks[0].strip()
-                secondPart = messageChunks[1] if len(messageChunks) > 1 else ""
-                dbname = str(firstPart)
-                card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(first_line)
             card_author = card_author.strip()
             # Resolve display name from card id (errata messages use id on first line)
             errata_card = get_card_by_id(errata_id) if errata_id else None
@@ -1028,19 +1004,7 @@ class LifecycleCog(commands.Cog):
             print(f"cvV processing {messageEntry.content}")
 
             acceptanceMessage = messageEntry.content
-            dbname = ""
-            card_author = ""
-            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
-                ...
-            elif acceptanceMessage[0:3] == "by ":
-                card_author = str((acceptanceMessage.split("by "))[1])
-            else:
-                messageChunks = acceptanceMessage.split(" by ")
-                firstPart = messageChunks[0]
-                secondPart = "".join(messageChunks[1:])
-
-                dbname = str(firstPart)
-                card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
@@ -1202,12 +1166,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send("Please include a card ID on the first line.")
             return
         else:
-            messageChunks = cardMessage.split(" by ")
-            firstPart = messageChunks[0]
-            secondPart = "".join(messageChunks[1:])
-
-            dbname = str(firstPart)
-            card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(cardMessage)
 
         errata_id_clean = errataId.removeprefix("Errata: ").strip()
         db_card = get_card_by_id(errata_id_clean)

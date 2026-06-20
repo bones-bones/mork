@@ -19,6 +19,7 @@ from discord import Message
 
 from discord.utils import get
 
+from getCardMessage import parseCardNameAndAuthor
 from is_mork import getDriveUrl, is_mork, uploadToDrive
 
 tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
@@ -79,8 +80,8 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
             f"<@{str(mentionEntry)}>", message.mentions[index].name
         )
 
-    cardName = accepted_message_no_mentions.split("\n")[0].split(" by ")[0]
-    creator = accepted_message_no_mentions.split("\n")[0].split(" by ")[1]
+    first_line = accepted_message_no_mentions.split("\n")[0]
+    cardName, creator = parseCardNameAndAuthor(first_line)
     relatedCards = accepted_message_no_mentions.split("\n")[1]
 
     await message.add_reaction(hc_constants.ACCEPT)
