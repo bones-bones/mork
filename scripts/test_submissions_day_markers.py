@@ -1,7 +1,7 @@
 """Smoke tests for submissions day marker helpers (no Discord)."""
 
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,12 +13,20 @@ from cogs.lifecycle.submissions_day_markers import (  # noqa: E402
     day_marker_content,
     day_marker_iso_date,
     format_previous_week_body,
+    is_submissions_card,
     is_submissions_day_marker,
+    submission_period_start,
+    utc_day_start,
 )
 
 
-def _msg(content: str, author_id: int = hc_constants.MORK_2):
-    return SimpleNamespace(content=content, author=SimpleNamespace(id=author_id), jump_url="https://example/jump")
+def _msg(content: str, author_id: int = hc_constants.MORK_2, attachments=None):
+    return SimpleNamespace(
+        content=content,
+        author=SimpleNamespace(id=author_id),
+        jump_url="https://example/jump",
+        attachments=attachments or [],
+    )
 
 
 def test_day_marker_content():
@@ -46,8 +54,26 @@ def test_previous_week_body():
     assert "May 31, 2026" in body
 
 
+def test_is_submissions_card():
+    card = _msg("Cool Card by @user", author_id=hc_constants.MORK_2, attachments=[object()])
+    assert is_submissions_card(card)
+    assert not is_submissions_card(_msg(day_marker_content(datetime(2026, 6, 1, tzinfo=timezone.utc))))
+    assert not is_submissions_card(_msg("no attachment", author_id=hc_constants.MORK_2))
+    assert not is_submissions_card(_msg("user card", author_id=123, attachments=[object()]))
+
+
+def test_submission_period_start():
+    now = datetime(2026, 6, 3, 1, 0, tzinfo=timezone.utc)
+    marker = _msg(day_marker_content(datetime(2026, 6, 1, 1, 0, tzinfo=timezone.utc)))
+    marker.created_at = datetime(2026, 6, 1, 1, 0, tzinfo=timezone.utc)
+    assert submission_period_start(now, None) == utc_day_start(now) - timedelta(days=1)
+    assert submission_period_start(now, marker) == datetime(2026, 6, 2, 0, 0, tzinfo=timezone.utc)
+
+
 if __name__ == "__main__":
     test_day_marker_content()
     test_is_and_parse_marker()
     test_previous_week_body()
+    test_is_submissions_card()
+    test_submission_period_start()
     print("ok")
