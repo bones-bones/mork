@@ -20,9 +20,9 @@ from discord import Message
 from discord.utils import get
 
 from is_mork import getDriveUrl, is_mork, uploadToDrive
-from firestore_sync import (
-    firestore_sync_enabled,
-    rollback_firestore_write,
+from hellfall_postcard import (
+    postcard_sync_enabled,
+    rollback_postcard_write,
     sync_accepted_card,
 )
 
@@ -129,10 +129,10 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
 
     dbRowIndex = allCardNames.__len__() + 1
 
-    firestore_write = None
+    postcard_write = None
     try:
-        if firestore_sync_enabled():
-            firestore_write = sync_accepted_card(
+        if postcard_sync_enabled():
+            postcard_write = await sync_accepted_card(
                 name=final_card_name,
                 image=imageUrl,
                 creators=creator,
@@ -150,8 +150,8 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
             ]
         )
     except Exception:
-        if firestore_write is not None:
-            rollback_firestore_write(firestore_write)
+        if postcard_write is not None:
+            await rollback_postcard_write(postcard_write)
         raise
 
     await tokenListChannel.send(

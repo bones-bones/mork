@@ -5,9 +5,9 @@ from typing import Optional, cast
 import discord
 from gspread import Cell
 import hc_constants
-from firestore_sync import (
-    firestore_sync_enabled,
-    rollback_firestore_write,
+from hellfall_postcard import (
+    postcard_sync_enabled,
+    rollback_postcard_write,
     sync_accepted_card,
 )
 from is_mork import getDriveUrl, uploadToDrive
@@ -22,7 +22,7 @@ cardSheetUnapproved = googleClient.open_by_key(
 ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
 
-def _sync_card_to_firestore(
+async def _sync_card_to_hellfall(
     *,
     card_name: str,
     image_url: str,
@@ -30,9 +30,9 @@ def _sync_card_to_firestore(
     set_id: str,
     hcid: Optional[str],
 ):
-    if not firestore_sync_enabled():
+    if not postcard_sync_enabled():
         return None
-    return sync_accepted_card(
+    return await sync_accepted_card(
         name=card_name,
         image=image_url,
         creators=author_name,
@@ -99,9 +99,9 @@ async def accept_card(
         next_id = str(int(allCards[allCards.__len__() - 1][0]) + 1)
 
     firestore_hcid = errataId or next_id
-    firestore_write = None
+    postcard_write = None
     try:
-        firestore_write = _sync_card_to_firestore(
+        postcard_write = await _sync_card_to_hellfall(
             card_name=cardName,
             image_url=imageUrl,
             author_name=authorName,
@@ -121,8 +121,8 @@ async def accept_card(
                 ]
             )
     except Exception:
-        if firestore_write is not None:
-            rollback_firestore_write(firestore_write)
+        if postcard_write is not None:
+            await rollback_postcard_write(postcard_write)
         if os.path.exists(image_path):
             os.remove(image_path)
         raise
@@ -214,9 +214,9 @@ async def accept_veto_card(
     if not newCard and len(allCards[index[0]]) > 0 and allCards[index[0]][0]:
         existing_hcid = str(allCards[index[0]][0])
 
-    firestore_write = None
+    postcard_write = None
     try:
-        firestore_write = _sync_card_to_firestore(
+        postcard_write = await _sync_card_to_hellfall(
             card_name=cardName,
             image_url=imageUrl,
             author_name=authorName,
@@ -239,8 +239,8 @@ async def accept_veto_card(
                 ]
             )
     except Exception:
-        if firestore_write is not None:
-            rollback_firestore_write(firestore_write)
+        if postcard_write is not None:
+            await rollback_postcard_write(postcard_write)
         if os.path.exists(image_path):
             os.remove(image_path)
         raise

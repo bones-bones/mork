@@ -16,4 +16,4 @@ thefuzz
 pillow
 google-auth
 google-cloud-storage
-google-cloud-firestore
+aiohttp
