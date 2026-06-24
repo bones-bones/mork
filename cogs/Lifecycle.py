@@ -42,6 +42,7 @@ from getters import (
     getSubmissionDiscussionChannel,
     getVetoChannel,
     getVetoDiscussionChannel,
+    getVetoHellpitsChannel,
 )
 from handleVetoPost import handleVetoPost
 import hc_constants
@@ -568,6 +569,14 @@ class LifecycleCog(commands.Cog):
                 if len(message.attachments) == 0:
                     return
 
+                if message.content == "":
+                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, make sure to include the name of your card"
+                    )
+                    await message.delete()
+                    return
+
                 splitString = message.content.split("\n")
                 cardName = splitString[0]
                 if "@" in cardName:
@@ -615,14 +624,6 @@ class LifecycleCog(commands.Cog):
                         f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                     )
 
-                if message.content == "":
-                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                    await discussionChannel.send(
-                        f"<@{message.author.id}>, make sure to include the name of your card"
-                    )
-                    await message.delete()
-                    return
-                
                 file = await message.attachments[0].to_file()
                 if reasonableCard():
                     vetoChannel = getVetoChannel(bot=self.bot)
@@ -1117,9 +1118,9 @@ class LifecycleCog(commands.Cog):
             except:
                 print(f"ERROR: unable to process: {messageEntry.content}")
 
-        vetoDiscussionChannel = getVetoDiscussionChannel(self.bot)
+        vetoAnnouncementChannel = getVetoHellpitsChannel(self.bot)
 
-        await vetoDiscussionChannel.send(
+        await vetoAnnouncementChannel.send(
             content=f"!! VETO POLLS HAVE BEEN PROCESSED !!"
         )
 
@@ -1129,7 +1130,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(acceptedCards)
             )
             for i in range(0, acceptedMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
@@ -1137,13 +1138,13 @@ class LifecycleCog(commands.Cog):
                 "\n".join(needsErrataCards)
             )
             for i in range(0, errataMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
             vetoMessage = "||\u200b||\nVETOED: \n{0}".format("\n".join(vetoedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
@@ -1151,7 +1152,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(vetoHellCards)
             )
             for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
@@ -1161,7 +1162,7 @@ class LifecycleCog(commands.Cog):
             for i in range(
                 0, mysteryHellMessage.__len__(), hc_constants.LITERALLY_1984
             ):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
 
