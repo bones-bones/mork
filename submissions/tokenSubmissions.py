@@ -20,6 +20,11 @@ from discord import Message
 from discord.utils import get
 
 from is_mork import getDriveUrl, is_mork, uploadToDrive
+from firestore_sync import (
+    firestore_sync_enabled,
+    rollback_firestore_write,
+    sync_accepted_card,
+)
 
 tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
     hc_constants.TOKEN_UNAPPROVED
@@ -88,11 +93,6 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     file = await message.attachments[0].to_file()
     copy = await message.attachments[0].to_file()
 
-    await tokenListChannel.send(
-        content=cardName + " by " + creator + "\n" + relatedCards,
-        file=copy,
-    )
-
     extension = re.search("\.([^.]*)$", file.filename)
     fileType = (
         extension.group() if extension else ".png"
@@ -129,11 +129,32 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
 
     dbRowIndex = allCardNames.__len__() + 1
 
-    tokenUnapproved.update_cells(
-        [
-            Cell(row=dbRowIndex, col=1, value=final_card_name),
-            Cell(row=dbRowIndex, col=2, value=imageUrl),
-            Cell(row=dbRowIndex, col=6, value=relatedCards),
-            Cell(row=dbRowIndex, col=8, value=creator),
-        ]
+    firestore_write = None
+    try:
+        if firestore_sync_enabled():
+            firestore_write = sync_accepted_card(
+                name=final_card_name,
+                image=imageUrl,
+                creators=creator,
+                set_id="HCT",
+                hcid=final_card_name,
+                kind="token",
+            )
+
+        tokenUnapproved.update_cells(
+            [
+                Cell(row=dbRowIndex, col=1, value=final_card_name),
+                Cell(row=dbRowIndex, col=2, value=imageUrl),
+                Cell(row=dbRowIndex, col=6, value=relatedCards),
+                Cell(row=dbRowIndex, col=8, value=creator),
+            ]
+        )
+    except Exception:
+        if firestore_write is not None:
+            rollback_firestore_write(firestore_write)
+        raise
+
+    await tokenListChannel.send(
+        content=cardName + " by " + creator + "\n" + relatedCards,
+        file=copy,
     )
