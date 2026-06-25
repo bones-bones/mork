@@ -5,9 +5,7 @@ from typing import Dict, List, cast
 import discord
 from discord.ext import commands
 
-import hc_constants
-
-from reddit_functions import post_gallery_to_reddit
+from cogs.lifecycle.submissions_day_markers import has_image_attachment
 
 
 async def post_daily_submissions(bot: commands.Bot):
@@ -21,7 +19,9 @@ async def post_daily_submissions(bot: commands.Bot):
 
     messages = [message async for message in messages]
 
-    filteredMessages = list(filter(lambda x: len(x.attachments) > 0, messages))
+    filteredMessages = [m for m in messages if has_image_attachment(m)]
+    if not filteredMessages:
+        return
 
     toPost = sample(filteredMessages, min(10, filteredMessages.__len__()))
     for messageEntry in toPost:
