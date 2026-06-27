@@ -13,6 +13,7 @@ from cogs.lifecycle.submissions_day_markers import (  # noqa: E402
     day_marker_content,
     day_marker_iso_date,
     format_previous_week_body,
+    has_image_attachment,
     is_submissions_card,
     is_submissions_day_marker,
     submission_period_start,
@@ -27,6 +28,10 @@ def _msg(content: str, author_id: int = hc_constants.MORK_2, attachments=None):
         jump_url="https://example/jump",
         attachments=attachments or [],
     )
+
+
+def _attachment(filename="card.png", content_type="image/png"):
+    return SimpleNamespace(filename=filename, content_type=content_type)
 
 
 def test_day_marker_content():
@@ -55,11 +60,21 @@ def test_previous_week_body():
 
 
 def test_is_submissions_card():
-    card = _msg("Cool Card by @user", author_id=hc_constants.MORK_2, attachments=[object()])
+    card = _msg("Cool Card by @user", author_id=hc_constants.MORK_2, attachments=[_attachment()])
     assert is_submissions_card(card)
     assert not is_submissions_card(_msg(day_marker_content(datetime(2026, 6, 1, tzinfo=timezone.utc))))
     assert not is_submissions_card(_msg("no attachment", author_id=hc_constants.MORK_2))
-    assert not is_submissions_card(_msg("user card", author_id=123, attachments=[object()]))
+    assert not is_submissions_card(
+        _msg("reminder", author_id=hc_constants.MORK_2, attachments=[_attachment("notes.txt", "text/plain")])
+    )
+    assert not is_submissions_card(_msg("user card", author_id=123, attachments=[_attachment()]))
+
+
+def test_has_image_attachment():
+    assert has_image_attachment(_msg("card", attachments=[_attachment()]))
+    assert has_image_attachment(_msg("card", attachments=[_attachment("card.jpg", None)]))
+    assert not has_image_attachment(_msg("text only"))
+    assert not has_image_attachment(_msg("file", attachments=[_attachment("doc.pdf", "application/pdf")]))
 
 
 def test_submission_period_start():
@@ -70,10 +85,18 @@ def test_submission_period_start():
     assert submission_period_start(now, marker) == datetime(2026, 6, 2, 0, 0, tzinfo=timezone.utc)
 
 
+def test_is_submissions_day_marker_any_mork_account():
+    day = datetime(2026, 6, 1, tzinfo=timezone.utc)
+    for author_id in (hc_constants.MORK, hc_constants.MORK_2, hc_constants.MORK_3):
+        assert is_submissions_day_marker(_msg(day_marker_content(day), author_id=author_id))
+
+
 if __name__ == "__main__":
     test_day_marker_content()
     test_is_and_parse_marker()
     test_previous_week_body()
     test_is_submissions_card()
+    test_has_image_attachment()
     test_submission_period_start()
+    test_is_submissions_day_marker_any_mork_account()
     print("ok")

@@ -26,11 +26,25 @@ def utc_day_start(day: datetime) -> datetime:
     )
 
 
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+
+
+def has_image_attachment(message: Message) -> bool:
+    """True when the first attachment looks like a card image."""
+    if not message.attachments:
+        return False
+    attachment = message.attachments[0]
+    if attachment.content_type and attachment.content_type.startswith("image/"):
+        return True
+    filename = (attachment.filename or "").lower()
+    return any(filename.endswith(ext) for ext in IMAGE_EXTENSIONS)
+
+
 def is_submissions_card(message: Message) -> bool:
-    """Mork-posted submission with an attachment (same filter as checkSubmissions)."""
+    """Mork-posted submission with an image attachment (same filter as checkSubmissions)."""
     if not is_mork(message.author.id):
         return False
-    if len(message.attachments) == 0:
+    if not has_image_attachment(message):
         return False
     if is_submissions_day_marker(message):
         return False
@@ -42,7 +56,7 @@ def is_submissions_card(message: Message) -> bool:
 
 
 def is_submissions_day_marker(message: Message) -> bool:
-    if message.author.id != hc_constants.MORK_2:
+    if not is_mork(message.author.id):
         return False
     return message.content.startswith(hc_constants.SUBMISSIONS_DAY_MARKER_PREFIX)
 
@@ -159,9 +173,8 @@ async def ensure_submissions_day_marker(bot: commands.Bot) -> None:
         await update_previous_week_pin(channel)
         return
 
-    last_marker = await find_most_recent_day_marker(channel)
-    period_start = submission_period_start(now, last_marker)
-    if not await has_card_submissions_between(channel, period_start, now):
+    today_start = utc_day_start(now)
+    if not await has_card_submissions_between(channel, today_start, now):
         return
 
     await channel.send(day_marker_content(now))

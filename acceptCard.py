@@ -16,6 +16,7 @@ from discord.ext import commands
 
 
 from reddit_functions import post_to_reddit
+from username_mappings import resolve_authors
 
 cardSheetUnapproved = googleClient.open_by_key(
     hc_constants.HELLSCUBE_DATABASE
@@ -57,6 +58,7 @@ async def accept_card(
     deferred_reddit_dir: Optional[str] = None,
 ):
     """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
+    authorName = resolve_authors(authorName)
     extension = re.search("\.([^.]*)$", file.filename)
     file_type = (
         extension.group() if extension else ".png"
@@ -164,6 +166,7 @@ async def accept_veto_card(
     cardName: str,
     authorName: str,
 ):
+    authorName = resolve_authors(authorName)
     extension = re.search("\\.([^.]*)$", file.filename)
     fileType = (
         extension.group() if extension else ".png"
