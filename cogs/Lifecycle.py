@@ -933,17 +933,17 @@ class LifecycleCog(commands.Cog):
 
         await ctx.send(random.choice(epicCatchphrases))
 
-        responseObject = cast(
+        response_object = cast(
             VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
         )
-        responseObject = limit_veto_poll_results(responseObject, count)
-        errataCardMessages = responseObject.errataCardMessages
-        acceptedCardMessages = responseObject.acceptedCardMessages
-        vetoCardMessages = responseObject.vetoCardMessages
-        purgatoryCardMessages = responseObject.purgatoryCardMessages
+        response_object = limit_veto_poll_results(response_object, count)
+        errataCardMessages = response_object.errataCardMessages
+        acceptedCardMessages = response_object.acceptedCardMessages
+        vetoCardMessages = response_object.vetoCardMessages
+        purgatoryCardMessages = response_object.purgatoryCardMessages
 
         reddit_eligible_count = len(acceptedCardMessages) + len(vetoCardMessages)
-        skip_reddit = reddit_eligible_count > 20
+        skip_reddit = reddit_eligible_count > 5
         deferred_reddit_dir = None
         if skip_reddit:
             deferred_reddit_dir = (
