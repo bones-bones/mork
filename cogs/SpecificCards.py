@@ -1048,7 +1048,9 @@ class SpecificCardsCog(commands.Cog):
     # get a random legends commander from set:legends, for card League of Legends
     @commands.command(aliases=["league"])
     async def leagueOfLegends(self, ctx: commands.Context):
-        await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx)
+        await fetchAndSendCard(
+            f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx
+        )
 
     # for the card Mystery Inc on Duskmourn
     @commands.command()
@@ -1435,6 +1437,15 @@ class SpecificCardsCog(commands.Cog):
         message_parts.append(f"-# [original](https://zaxer2.github.io/howtogrunch)")
 
         await ctx.send("\n".join(message_parts))
+
+        # for the Mechtitan
+        @commands.command()
+        async def mechtitan(_self, ctx: commands.Context):
+            for i in range(4):
+                await fetchAndSendCard(
+                    f"{SCRYFALL_RANDOM_API_URL}(t:/artifact+creature/+or+t:artifact+and+t:vehicle)+game:paper+prefer:best+-function:you_matter+-function:dexterity+-function:art-matters+-function:speech-matters+-function:un-set-mechanics&unique=cards&as=grid&order=name",
+                    ctx,
+                )
 
 
 async def setup(bot: commands.Bot):
