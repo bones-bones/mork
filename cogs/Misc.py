@@ -11,6 +11,7 @@ from cogs.HellscubeDatabase import searchFor
 
 authorSplit = "$#$#$"
 QUOTE_SPLIT = ";%;%;"
+from getCardMessage import parseCardNameAndAuthor
 from handleVetoPost import handleVetoPost
 from isRealCard import isRealCard
 from printCardImages import send_image_reply
@@ -67,19 +68,7 @@ class MiscCog(commands.Cog):
 
             print(acceptanceMessage)
 
-            dbname = ""
-            card_author = ""
-            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
-                ...  # This is really the case of setting both to "", but due to scoping i got lazy
-            elif acceptanceMessage[0:3] == "by ":
-                card_author = str((acceptanceMessage.split("by "))[1])
-            else:
-                messageChunks = acceptanceMessage.split(" by ")
-                firstPart = messageChunks[0]
-                secondPart = "".join(messageChunks[1:])
-
-                dbname = str(firstPart)
-                card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
