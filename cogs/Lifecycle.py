@@ -42,6 +42,7 @@ from getters import (
     getSubmissionDiscussionChannel,
     getVetoChannel,
     getVetoDiscussionChannel,
+    getVetoHellpitsChannel,
 )
 from handleVetoPost import handleVetoPost
 import hc_constants
@@ -919,17 +920,17 @@ class LifecycleCog(commands.Cog):
 
         await ctx.send(random.choice(epicCatchphrases))
 
-        responseObject = cast(
+        response_object = cast(
             VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
         )
-        responseObject = limit_veto_poll_results(responseObject, count)
-        errataCardMessages = responseObject.errataCardMessages
-        acceptedCardMessages = responseObject.acceptedCardMessages
-        vetoCardMessages = responseObject.vetoCardMessages
-        purgatoryCardMessages = responseObject.purgatoryCardMessages
+        response_object = limit_veto_poll_results(response_object, count)
+        errataCardMessages = response_object.errataCardMessages
+        acceptedCardMessages = response_object.acceptedCardMessages
+        vetoCardMessages = response_object.vetoCardMessages
+        purgatoryCardMessages = response_object.purgatoryCardMessages
 
         reddit_eligible_count = len(acceptedCardMessages) + len(vetoCardMessages)
-        skip_reddit = reddit_eligible_count > 20
+        skip_reddit = reddit_eligible_count > 5
         deferred_reddit_dir = None
         if skip_reddit:
             deferred_reddit_dir = (
@@ -1081,9 +1082,9 @@ class LifecycleCog(commands.Cog):
             except:
                 print(f"ERROR: unable to process: {messageEntry.content}")
 
-        vetoDiscussionChannel = getVetoDiscussionChannel(self.bot)
+        vetoAnnouncementChannel = getVetoHellpitsChannel(self.bot)
 
-        await vetoDiscussionChannel.send(
+        await vetoAnnouncementChannel.send(
             content=f"!! VETO POLLS HAVE BEEN PROCESSED !!"
         )
 
@@ -1093,7 +1094,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(acceptedCards)
             )
             for i in range(0, acceptedMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
@@ -1101,13 +1102,13 @@ class LifecycleCog(commands.Cog):
                 "\n".join(needsErrataCards)
             )
             for i in range(0, errataMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
             vetoMessage = "||\u200b||\nVETOED: \n{0}".format("\n".join(vetoedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
@@ -1115,7 +1116,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(vetoHellCards)
             )
             for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
@@ -1125,7 +1126,7 @@ class LifecycleCog(commands.Cog):
             for i in range(
                 0, mysteryHellMessage.__len__(), hc_constants.LITERALLY_1984
             ):
-                await vetoDiscussionChannel.send(
+                await vetoAnnouncementChannel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
 

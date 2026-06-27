@@ -5,16 +5,42 @@ from typing import Optional, cast
 import discord
 from gspread import Cell
 import hc_constants
+from hellfall_postcard import (
+    postcard_sync_enabled,
+    rollback_postcard_write,
+    sync_accepted_card,
+)
 from is_mork import getDriveUrl, uploadToDrive
 from shared_vars import googleClient
 from discord.ext import commands
 
 
 from reddit_functions import post_to_reddit
+from username_mappings import resolve_authors
 
 cardSheetUnapproved = googleClient.open_by_key(
     hc_constants.HELLSCUBE_DATABASE
 ).worksheet(hc_constants.DATABASE_UNAPPROVED)
+
+
+async def _sync_card_to_hellfall(
+    *,
+    card_name: str,
+    image_url: str,
+    author_name: str,
+    set_id: str,
+    hcid: Optional[str],
+):
+    if not postcard_sync_enabled():
+        return None
+    return await sync_accepted_card(
+        name=card_name,
+        image=image_url,
+        creators=author_name,
+        set_id=set_id,
+        hcid=hcid,
+        kind="card",
+    )
 
 
 async def accept_card(
@@ -32,6 +58,7 @@ async def accept_card(
     deferred_reddit_dir: Optional[str] = None,
 ):
     """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
+    authorName = resolve_authors(authorName)
     extension = re.search("\.([^.]*)$", file.filename)
     file_type = (
         extension.group() if extension else ".png"
@@ -43,9 +70,6 @@ async def accept_card(
     file_copy_for_cardlist = discord.File(
         fp=io.BytesIO(file_data), filename=new_file_name
     )
-
-    card_list_channel = cast(discord.TextChannel, bot.get_channel(channelIdForCard))
-    await card_list_channel.send(file=file_copy_for_cardlist, content=cardMessage)
 
     with open(image_path, "wb") as out:
         out.write(file_data)
@@ -70,6 +94,43 @@ async def accept_card(
     google_drive_file_id = uploadToDrive(
         image_path, image_id_to_update, folder_id=hc_constants.CURRENT_SET_FOLDER
     )
+    imageUrl = getDriveUrl(google_drive_file_id)
+
+    next_id: Optional[str] = None
+    if newCard:
+        next_id = str(int(allCards[allCards.__len__() - 1][0]) + 1)
+
+    firestore_hcid = errataId or next_id
+    postcard_write = None
+    try:
+        postcard_write = await _sync_card_to_hellfall(
+            card_name=cardName,
+            image_url=imageUrl,
+            author_name=authorName,
+            set_id=setId,
+            hcid=firestore_hcid,
+        )
+
+        cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)
+
+        if newCard:
+            cardSheetUnapproved.update_cells(
+                [
+                    Cell(row=dbRowIndex, col=1, value=str(next_id)),
+                    Cell(row=dbRowIndex, col=2, value=cardName),
+                    Cell(row=dbRowIndex, col=4, value=authorName),
+                    Cell(row=dbRowIndex, col=5, value=setId),
+                ]
+            )
+    except Exception:
+        if postcard_write is not None:
+            await rollback_postcard_write(postcard_write)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+        raise
+
+    card_list_channel = cast(discord.TextChannel, bot.get_channel(channelIdForCard))
+    await card_list_channel.send(file=file_copy_for_cardlist, content=cardMessage)
 
     if not errata and not errataId:
         reddit_title = (
@@ -97,21 +158,6 @@ async def accept_card(
     elif os.path.exists(image_path):
         os.remove(image_path)
 
-    imageUrl = getDriveUrl(google_drive_file_id)
-
-    cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)
-
-    if newCard:
-        nextId = int(allCards[allCards.__len__() - 1][0]) + 1
-        cardSheetUnapproved.update_cells(
-            [
-                Cell(row=dbRowIndex, col=1, value=str(nextId)),
-                Cell(row=dbRowIndex, col=2, value=cardName),
-                Cell(row=dbRowIndex, col=4, value=authorName),
-                Cell(row=dbRowIndex, col=5, value=setId),
-            ]
-        )
-
 
 async def accept_veto_card(
     bot: commands.Bot,
@@ -120,6 +166,7 @@ async def accept_veto_card(
     cardName: str,
     authorName: str,
 ):
+    authorName = resolve_authors(authorName)
     extension = re.search("\\.([^.]*)$", file.filename)
     fileType = (
         extension.group() if extension else ".png"
@@ -164,24 +211,44 @@ async def accept_veto_card(
 
     google_drive_file_id = uploadToDrive(image_path, image_id_to_update)
 
-    os.remove(image_path)
-
     imageUrl = getDriveUrl(google_drive_file_id)
 
-    cardSheetUnapproved.update_cells(
-        [
-            Cell(row=dbRowIndex, col=3, value=imageUrl),
-            Cell(row=dbRowIndex, col=5, value="HCV"),
-        ]
-    )
+    existing_hcid = None
+    if not newCard and len(allCards[index[0]]) > 0 and allCards[index[0]][0]:
+        existing_hcid = str(allCards[index[0]][0])
 
-    if newCard:
+    postcard_write = None
+    try:
+        postcard_write = await _sync_card_to_hellfall(
+            card_name=cardName,
+            image_url=imageUrl,
+            author_name=authorName,
+            set_id="HCV",
+            hcid=existing_hcid,
+        )
+
         cardSheetUnapproved.update_cells(
             [
-                Cell(row=dbRowIndex, col=2, value=cardName),
-                Cell(row=dbRowIndex, col=4, value=authorName),
+                Cell(row=dbRowIndex, col=3, value=imageUrl),
+                Cell(row=dbRowIndex, col=5, value="HCV"),
             ]
         )
+
+        if newCard:
+            cardSheetUnapproved.update_cells(
+                [
+                    Cell(row=dbRowIndex, col=2, value=cardName),
+                    Cell(row=dbRowIndex, col=4, value=authorName),
+                ]
+            )
+    except Exception:
+        if postcard_write is not None:
+            await rollback_postcard_write(postcard_write)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+        raise
+
+    os.remove(image_path)
 
     async for message in vetoCardListChannel.history(limit=None):
         if message.content == cardMessage:

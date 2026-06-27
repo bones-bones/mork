@@ -10,6 +10,7 @@ from discord.ext import commands
 
 import hc_constants
 from getters import getSubmissionsChannel
+from is_mork import is_mork
 
 
 def day_marker_content(day: datetime) -> str:
@@ -19,8 +20,43 @@ def day_marker_content(day: datetime) -> str:
     return f"{hc_constants.SUBMISSIONS_DAY_MARKER_PREFIX}{iso}\n{human}"
 
 
+def utc_day_start(day: datetime) -> datetime:
+    return day.astimezone(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
+
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
+
+
+def has_image_attachment(message: Message) -> bool:
+    """True when the first attachment looks like a card image."""
+    if not message.attachments:
+        return False
+    attachment = message.attachments[0]
+    if attachment.content_type and attachment.content_type.startswith("image/"):
+        return True
+    filename = (attachment.filename or "").lower()
+    return any(filename.endswith(ext) for ext in IMAGE_EXTENSIONS)
+
+
+def is_submissions_card(message: Message) -> bool:
+    """Mork-posted submission with an image attachment (same filter as checkSubmissions)."""
+    if not is_mork(message.author.id):
+        return False
+    if not has_image_attachment(message):
+        return False
+    if is_submissions_day_marker(message):
+        return False
+    if message.content.startswith(hc_constants.PREVIOUS_WEEK_PIN_PREFIX):
+        return False
+    if "@everyone" in message.content or "@here" in message.content:
+        return False
+    return True
+
+
 def is_submissions_day_marker(message: Message) -> bool:
-    if message.author.id != hc_constants.MORK_2:
+    if not is_mork(message.author.id):
         return False
     return message.content.startswith(hc_constants.SUBMISSIONS_DAY_MARKER_PREFIX)
 
@@ -77,6 +113,36 @@ async def find_previous_week_message(channel: TextChannel) -> Optional[Message]:
     return None
 
 
+async def find_most_recent_day_marker(channel: TextChannel) -> Optional[Message]:
+    cutoff = datetime.now(timezone.utc) - timedelta(days=21)
+    latest: Optional[Message] = None
+    async for message in channel.history(after=cutoff, limit=None):
+        if not is_submissions_day_marker(message):
+            continue
+        if latest is None or message.created_at > latest.created_at:
+            latest = message
+    return latest
+
+
+async def has_card_submissions_between(
+    channel: TextChannel, start: datetime, end: datetime
+) -> bool:
+    async for message in channel.history(after=start, before=end, limit=None):
+        if is_submissions_card(message):
+            return True
+    return False
+
+
+def submission_period_start(
+    now: datetime, last_marker: Optional[Message]
+) -> datetime:
+    """Start of the open submission window to check before posting a new day marker."""
+    yesterday_start = utc_day_start(now) - timedelta(days=1)
+    if last_marker is None:
+        return yesterday_start
+    return max(last_marker.created_at, yesterday_start)
+
+
 async def has_day_marker_for_date(channel: TextChannel, iso_date: str) -> bool:
     day_start = datetime.strptime(iso_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     async for message in channel.history(after=day_start, limit=100):
@@ -105,6 +171,10 @@ async def ensure_submissions_day_marker(bot: commands.Bot) -> None:
 
     if await has_day_marker_for_date(channel, iso_today):
         await update_previous_week_pin(channel)
+        return
+
+    today_start = utc_day_start(now)
+    if not await has_card_submissions_between(channel, today_start, now):
         return
 
     await channel.send(day_marker_content(now))
