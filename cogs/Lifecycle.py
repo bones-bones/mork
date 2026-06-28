@@ -1281,9 +1281,9 @@ async def redditcatchup():
     pending = list_pending_deferred_posts()
     if not pending:
         return
-    print(f"Posting up to 5 deferred Reddit submissions ")
+    print(f"Posting up to 7 deferred Reddit submissions ")
 
-    posted, errors = await process_deferred_reddit_posts(4)
+    posted, errors = await process_deferred_reddit_posts(7)
     message = f"Posted {posted} to Reddit."
     if errors:
         message += f" {len(errors)} failed: " + "; ".join(errors[:5])
