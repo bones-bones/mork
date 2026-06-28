@@ -1049,7 +1049,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command(aliases=["league"])
     async def leagueOfLegends(self, ctx: commands.Context):
         await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx)
-
+    
     # get a random artifact creature and/or vehicle for Mechtitan 
     @commands.command(aliases=["mechdietan"])
     async def mechtitan(self, ctx: commands.Context):
