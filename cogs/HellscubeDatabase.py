@@ -175,6 +175,9 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.command(name="random")
     async def randomCard(self, ctx: commands.Context):
+        """
+        Returns a random card image from the database.
+        """
         card = allCards[random.choice(list(allCards.keys()))]
         print(card)
         await send_image_reply(
@@ -196,6 +199,9 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.command()
     async def rulings(self, channel, *cardName):
+        """
+        Returns the rulings for a given card.
+        """
         name = cardNameRequest(" ".join(cardName).lower())
         message = "something went wrong!"
         for card in cardList:
@@ -212,6 +218,9 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.command(rest_is_raw=True)
     async def judgement(self, ctx: commands.Context, *, args: str):
+        """
+        Command for judges to run to add rulings to a card
+        """
         if ctx.channel.id != hc_constants.JUDGES_TOWER:
             await ctx.send("Only allowed in the judge's tower")
             return

@@ -250,18 +250,20 @@ class LifecycleCog(commands.Cog):
         now = datetime.now()
         print(f"time is {now}")
 
-        if (now.hour == 14 or now.hour == 2) and now.minute <= 4:
+        is_first_minutes = now.minute <= 4
+
+        if is_first_minutes:
             try:
                 await redditcatchup()
             except Exception:
                 traceback.print_exc()
 
-        if now.hour == 10 and now.minute <= 4:
+        if now.hour == 10 and is_first_minutes:
             try:
                 await post_reddit_card_of_the_day()
             except Exception:
                 traceback.print_exc()
-        if now.hour == 4 and now.minute <= 4:
+        if now.hour == 4 and is_first_minutes:
             try:
                 await post_daily_submissions(self.bot)
             except Exception:
@@ -1281,9 +1283,9 @@ async def redditcatchup():
     pending = list_pending_deferred_posts()
     if not pending:
         return
-    print(f"Posting up to 7 deferred Reddit submissions ")
+    print("Posting up to 1 deferred Reddit submissions")
 
-    posted, errors = await process_deferred_reddit_posts(7)
+    posted, errors = await process_deferred_reddit_posts(1)
     message = f"Posted {posted} to Reddit."
     if errors:
         message += f" {len(errors)} failed: " + "; ".join(errors[:5])
