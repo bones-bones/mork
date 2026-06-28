@@ -250,7 +250,7 @@ class LifecycleCog(commands.Cog):
         now = datetime.now()
         print(f"time is {now}")
 
-        if now.hour == 14 and now.minute <= 4:
+        if (now.hour == 14 or now.hour == 2) and now.minute <= 4:
             try:
                 await redditcatchup()
             except Exception:
