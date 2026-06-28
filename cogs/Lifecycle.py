@@ -4,7 +4,7 @@ import random
 import re
 import traceback
 from datetime import date, datetime, timezone, timedelta
-from typing import cast, Optional
+from typing import cast
 
 import aiohttp
 import asyncpraw
@@ -453,8 +453,6 @@ class LifecycleCog(commands.Cog):
 
         for word in [
             "?si=",
-            "?is=",
-            "?ra=",
             "?utm_source=",
             "?utm_medium=",
             "?utm_campaign=",
@@ -917,7 +915,7 @@ class LifecycleCog(commands.Cog):
         await ctx.send(message)
 
     @commands.command()
-    async def compileveto(self, ctx: commands.Context, count: Optional[int] = None):
+    async def compileveto(self, ctx: commands.Context, count: int = None):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return

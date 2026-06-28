@@ -1,5 +1,5 @@
 import pprint as pp
-from typing import cast, Optional
+from typing import cast
 import os
 import discord
 from discord.ext import commands
@@ -41,10 +41,6 @@ class GeneralCog(commands.Cog):
     @commands.command(name="ch!ai")
     async def chai(self, ctx: commands.Context):
         await ctx.send("¡chai caramba!")
-
-    @commands.command()
-    async def artrequest(self, ctx: commands.Context):
-        await ctx.send("<@&819320922666041355>")
     
     @commands.command()
     async def weight(self, ctx: commands.Context):
@@ -198,44 +194,20 @@ class GeneralCog(commands.Cog):
             await ctx.channel.send(card)
 
     @commands.command(name="eventStart")
-    async def eventStart(self, ctx: commands.Context, *, event_name: Optional[str] = None):
+    async def eventStart(self, ctx: commands.Context):
 
         guild = cast(discord.Guild, ctx.guild)
         if guild is None:
             await ctx.send("Guild not found.")
             return
 
-        event_name = event_name.strip() if event_name else None
-        event_name_map = {
-            "scubey tuesdays": hc_constants.SCUBEY_TUESDAYS,
-            "scuby tuesdays": hc_constants.SCUBEY_TUESDAYS,
-            "scubey": hc_constants.SCUBEY_TUESDAYS,
-            "tuesday": hc_constants.SCUBEY_TUESDAYS,
-            "fnm but its saturday afternoon": hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
-            "fnm but it's saturday afternoon": hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
-            "saturday afternoon": hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
-            "fnm": hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
-            "fwendslop fwendsday": hc_constants.FWENDSLOP_FWENDSDAY,
-            "fwendslop": hc_constants.FWENDSLOP_FWENDSDAY,
-            "fwendsday": hc_constants.FWENDSLOP_FWENDSDAY,
-            "friendslop": hc_constants.FWENDSLOP_FWENDSDAY,
-        }
-        default_event_ids = (
-            hc_constants.SCUBEY_TUESDAYS,
-            hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
-            hc_constants.FWENDSLOP_FWENDSDAY,
-        )
-
-        if event_name:
-            event_id = event_name_map.get(event_name.lower())
-            event_ids = (event_id,) if event_id else default_event_ids
-        else:
-            event_ids = default_event_ids
-
         now_utc = datetime.now(timezone.utc)
         results: list[str] = []
 
-        for ev_id in event_ids:
+        for ev_id in (
+            hc_constants.SCUBEY_TUESDAYS,
+            hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
+        ):
             try:
                 event = await guild.fetch_scheduled_event(ev_id)
                 if event.status is discord.EventStatus.scheduled:
@@ -243,15 +215,14 @@ class GeneralCog(commands.Cog):
                     delta = event.start_time - now_utc
                     if abs(delta.total_seconds()) <= 3600:
                         await event.start()
-                        results.append(f"Started {event.name}.")
+                        results.append(f"Started {event.name} ({event.id}).")
                     else:
-                        start = discord.utils.format_dt(event.start_time)
                         results.append(
-                            f"{event.name} is scheduled for {start}.\nThis command can only be run within one hour of the event start time."
+                            f"{event.name} ({event.id}) is scheduled for {event.start_time.isoformat()} UTC.\nThis command can only be run within one hour of the event start time."
                         )
                 else:
                     results.append(
-                        f"{event.name} is {event.status.name}."
+                        f"{event.name} ({event.id}) is {event.status.name}."
                     )
             except discord.NotFound:
                 results.append(f"Scheduled event {ev_id} not found.")
