@@ -100,6 +100,10 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     )  # just guess that the file is a png
     new_file_name = f'{cardName.replace("/", "|")}{fileType}'
 
+    image_path = f"tempImages/{new_file_name}"
+
+    # new_file_name = f'{cardName.replace("/", "|")}{fileType}' # hope we don't need this
+
     file_data = file.fp.read()
     image_base64 = base64.b64encode(file_data).decode("ascii")
 
