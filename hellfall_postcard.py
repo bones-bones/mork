@@ -18,6 +18,7 @@ class PostcardWrite:
     doc_id: str
     was_create: bool
     previous: dict[str, Any] | None
+    image_url: str | None = None
 
 
 def postcard_sync_enabled() -> bool:
@@ -47,13 +48,15 @@ def _auth_headers() -> dict[str, str]:
 async def sync_accepted_card(
     *,
     name: str,
-    image: str,
     creators: str,
     set_id: str,
+    image: Optional[str] = None,
+    image_base64: Optional[str] = None,
     hcid: Optional[str] = None,
     kind: Literal["card", "token"] = "card",
+    require_sync: bool = False,
 ) -> Optional[PostcardWrite]:
-    if not postcard_sync_enabled():
+    if not require_sync and not postcard_sync_enabled():
         return None
 
     api_url = _api_url()
@@ -63,13 +66,19 @@ async def sync_accepted_card(
             "HELLFALL_API_URL and HELLFALL_POSTCARD_API_KEY are required"
         )
 
+    if not image and not image_base64:
+        raise PostcardSyncError("image or image_base64 is required")
+
     payload: dict[str, str] = {
         "name": name,
-        "image": image,
         "creators": creators,
         "set": set_id,
         "kind": kind,
     }
+    if image_base64:
+        payload["imageBase64"] = image_base64
+    elif image:
+        payload["image"] = image
     if hcid:
         payload["hcid"] = hcid
 
@@ -88,10 +97,12 @@ async def sync_accepted_card(
                 raise PostcardSyncError("postcard_failed")
 
             previous = data.get("previous")
+            image_url = data.get("imageUrl")
             return PostcardWrite(
                 doc_id=str(data["docId"]),
                 was_create=bool(data["wasCreate"]),
                 previous=previous if isinstance(previous, dict) else None,
+                image_url=str(image_url) if image_url else None,
             )
 
 

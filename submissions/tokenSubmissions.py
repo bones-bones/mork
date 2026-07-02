@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 
 
-import os
+import base64
 import re
 from typing import cast
 
@@ -20,9 +20,9 @@ from discord import Message
 from discord.utils import get
 
 from getCardMessage import parseCardNameAndAuthor
-from is_mork import getDriveUrl, is_mork, uploadToDrive
+from is_mork import is_mork
 from hellfall_postcard import (
-    postcard_sync_enabled,
+    PostcardSyncError,
     rollback_postcard_write,
     sync_accepted_card,
 )
@@ -99,18 +99,9 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
         extension.group() if extension else ".png"
     )  # just guess that the file is a png
     new_file_name = f'{cardName.replace("/", "|")}{fileType}'
-    image_path = f"tempImages/{new_file_name}"
 
     file_data = file.fp.read()
-
-    with open(image_path, "wb") as out:
-        out.write(file_data)
-
-    google_drive_file_id = uploadToDrive(image_path, folder_id=hc_constants.TOKEN_FOLDER)
-
-    os.remove(image_path)
-
-    imageUrl = getDriveUrl(google_drive_file_id)
+    image_base64 = base64.b64encode(file_data).decode("ascii")
 
     allCardNames = tokenUnapproved.col_values(1)
 
@@ -132,15 +123,19 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
 
     postcard_write = None
     try:
-        if postcard_sync_enabled():
-            postcard_write = await sync_accepted_card(
-                name=final_card_name,
-                image=imageUrl,
-                creators=creator,
-                set_id="HCT",
-                hcid=final_card_name,
-                kind="token",
-            )
+        postcard_write = await sync_accepted_card(
+            name=final_card_name,
+            image_base64=image_base64,
+            creators=creator,
+            set_id="HCT",
+            hcid=final_card_name,
+            kind="token",
+            require_sync=True,
+        )
+        if not postcard_write or not postcard_write.image_url:
+            raise PostcardSyncError("hellfall did not return imageUrl")
+
+        imageUrl = postcard_write.image_url
 
         tokenUnapproved.update_cells(
             [
