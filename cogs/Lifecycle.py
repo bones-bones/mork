@@ -246,14 +246,24 @@ class LifecycleCog(commands.Cog):
             status=discord.Status.online, activity=discord.Game(status)
         )
 
+        # The next section is stuff that should only happen once a day.
         now = datetime.now()
         print(f"time is {now}")
-        if now.hour == 10 and now.minute <= 4:
+
+        is_first_minutes = now.minute <= 4
+
+        if is_first_minutes:
+            try:
+                await redditcatchup()
+            except Exception:
+                traceback.print_exc()
+
+        if now.hour == 10 and is_first_minutes:
             try:
                 await post_reddit_card_of_the_day()
             except Exception:
                 traceback.print_exc()
-        if now.hour == 4 and now.minute <= 4:
+        if now.hour == 4 and is_first_minutes:
             try:
                 await post_daily_submissions(self.bot)
             except Exception:
@@ -879,30 +889,6 @@ class LifecycleCog(commands.Cog):
             await ctx.send(content="all caught up!")
 
     @commands.command()
-    async def redditcatchup(self, ctx: commands.Context, count: int):
-        if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
-            await ctx.send("Veto Council Only")
-            return
-        if count < 1:
-            await ctx.send("Count must be a positive number")
-            return
-        pending = list_pending_deferred_posts()
-        if not pending:
-            await ctx.send("No deferred Reddit posts")
-            return
-        await ctx.send(
-            f"Posting up to {count} deferred Reddit submissions "
-            f"({len(pending)} pending)..."
-        )
-        posted, errors = await process_deferred_reddit_posts(count)
-        message = f"Posted {posted} to Reddit."
-        if errors:
-            message += f" {len(errors)} failed: " + "; ".join(errors[:5])
-            if len(errors) > 5:
-                message += f" (and {len(errors) - 5} more)"
-        await ctx.send(message)
-
-    @commands.command()
     async def compileveto(self, ctx: commands.Context, count: int = None):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
@@ -1082,9 +1068,9 @@ class LifecycleCog(commands.Cog):
             except:
                 print(f"ERROR: unable to process: {messageEntry.content}")
 
-        vetoAnnouncementChannel = getVetoHellpitsChannel(self.bot)
+        veto_announcement_channel = getVetoHellpitsChannel(self.bot)
 
-        await vetoAnnouncementChannel.send(
+        await veto_announcement_channel.send(
             content=f"!! VETO POLLS HAVE BEEN PROCESSED !!"
         )
 
@@ -1094,7 +1080,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(acceptedCards)
             )
             for i in range(0, acceptedMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoAnnouncementChannel.send(
+                await veto_announcement_channel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
@@ -1102,13 +1088,13 @@ class LifecycleCog(commands.Cog):
                 "\n".join(needsErrataCards)
             )
             for i in range(0, errataMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoAnnouncementChannel.send(
+                await veto_announcement_channel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
             vetoMessage = "||\u200b||\nVETOED: \n{0}".format("\n".join(vetoedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoAnnouncementChannel.send(
+                await veto_announcement_channel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
@@ -1116,7 +1102,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(vetoHellCards)
             )
             for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoAnnouncementChannel.send(
+                await veto_announcement_channel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
@@ -1126,7 +1112,7 @@ class LifecycleCog(commands.Cog):
             for i in range(
                 0, mysteryHellMessage.__len__(), hc_constants.LITERALLY_1984
             ):
-                await vetoAnnouncementChannel.send(
+                await veto_announcement_channel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
 
@@ -1290,3 +1276,19 @@ def reset_countdowns():
     _reset_countdowns_for_file(hc_constants.SUBMISSIONS_STATE_FILE)
     _reset_countdowns_for_file(hc_constants.MASTERPIECE_STATE_FILE)
     print("end reset")
+
+
+async def redditcatchup():
+
+    pending = list_pending_deferred_posts()
+    if not pending:
+        return
+    print("Posting up to 1 deferred Reddit submissions")
+
+    posted, errors = await process_deferred_reddit_posts(1)
+    message = f"Posted {posted} to Reddit."
+    if errors:
+        message += f" {len(errors)} failed: " + "; ".join(errors[:5])
+        if len(errors) > 5:
+            message += f" (and {len(errors) - 5} more)"
+    print(f"catchup complete {message}")
