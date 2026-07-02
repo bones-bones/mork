@@ -2,6 +2,7 @@ from datetime import datetime, timezone, timedelta
 
 
 import base64
+import os
 import re
 from typing import cast
 
@@ -20,7 +21,7 @@ from discord import Message
 from discord.utils import get
 
 from getCardMessage import parseCardNameAndAuthor
-from is_mork import is_mork
+from is_mork import getDriveUrl, is_mork, uploadToDrive
 from hellfall_postcard import (
     PostcardSyncError,
     rollback_postcard_write,
@@ -89,8 +90,6 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     cardName, creator = parseCardNameAndAuthor(first_line)
     relatedCards = accepted_message_no_mentions.split("\n")[1]
 
-    await message.add_reaction(hc_constants.ACCEPT)
-
     file = await message.attachments[0].to_file()
     copy = await message.attachments[0].to_file()
 
@@ -101,8 +100,6 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     new_file_name = f'{cardName.replace("/", "|")}{fileType}'
 
     image_path = f"tempImages/{new_file_name}"
-
-    # new_file_name = f'{cardName.replace("/", "|")}{fileType}' # hope we don't need this
 
     file_data = file.fp.read()
     image_base64 = base64.b64encode(file_data).decode("ascii")
@@ -126,20 +123,49 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     dbRowIndex = allCardNames.__len__() + 1
 
     postcard_write = None
+    imageUrl: str | None = None
     try:
-        postcard_write = await sync_accepted_card(
-            name=final_card_name,
-            image_base64=image_base64,
-            creators=creator,
-            set_id="HCT",
-            hcid=final_card_name,
-            kind="token",
-            require_sync=True,
-        )
-        if not postcard_write or not postcard_write.image_url:
-            raise PostcardSyncError("hellfall did not return imageUrl")
+        try:
+            postcard_write = await sync_accepted_card(
+                name=final_card_name,
+                image_base64=image_base64,
+                creators=creator,
+                set_id="HCT",
+                hcid=final_card_name,
+                kind="token",
+                require_sync=True,
+            )
+            if postcard_write and postcard_write.image_url:
+                imageUrl = postcard_write.image_url
+        except PostcardSyncError as err:
+            if str(err) != "invalid_body":
+                raise
+            postcard_write = None
 
-        imageUrl = postcard_write.image_url
+        if not imageUrl:
+            with open(image_path, "wb") as out:
+                out.write(file_data)
+            try:
+                google_drive_file_id = uploadToDrive(
+                    image_path, folder_id=hc_constants.TOKEN_FOLDER
+                )
+                drive_image_url = getDriveUrl(google_drive_file_id)
+                postcard_write = await sync_accepted_card(
+                    name=final_card_name,
+                    image=drive_image_url,
+                    creators=creator,
+                    set_id="HCT",
+                    hcid=final_card_name,
+                    kind="token",
+                    require_sync=True,
+                )
+                imageUrl = drive_image_url
+            finally:
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+
+        if not imageUrl:
+            raise PostcardSyncError("hellfall did not return imageUrl")
 
         tokenUnapproved.update_cells(
             [
@@ -149,12 +175,13 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
                 Cell(row=dbRowIndex, col=8, value=creator),
             ]
         )
+        await tokenListChannel.send(
+            content=cardName + " by " + creator + "\n" + relatedCards,
+            file=copy,
+        )
+        await message.add_reaction(hc_constants.ACCEPT)
+
     except Exception:
         if postcard_write is not None:
             await rollback_postcard_write(postcard_write)
         raise
-
-    await tokenListChannel.send(
-        content=cardName + " by " + creator + "\n" + relatedCards,
-        file=copy,
-    )
