@@ -48,7 +48,7 @@ from handleVetoPost import handleVetoPost
 import hc_constants
 from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
-from is_mork import is_mork, reasonableCard
+from is_mork import is_mork, reasonable_card
 from printCardImages import print_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
@@ -622,7 +622,7 @@ class LifecycleCog(commands.Cog):
                     )
 
                 file = await message.attachments[0].to_file()
-                if reasonableCard():
+                if reasonable_card():
                     vetoChannel = getVetoChannel(bot=self.bot)
                     acceptedChannel = getSubmissionDiscussionChannel(self.bot)
                     logChannel = getMorkSubmissionsLoggingChannel(self.bot)
@@ -718,7 +718,7 @@ class LifecycleCog(commands.Cog):
                             f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                         )
                     file = await message.attachments[0].to_file()
-                    if reasonableCard():
+                    if reasonable_card():
                         vetoChannel = getVetoChannel(self.bot)
                         acceptedChannel = cast(
                             TextChannel,
