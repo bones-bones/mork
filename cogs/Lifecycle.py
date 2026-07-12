@@ -29,6 +29,10 @@ from checkSubmissions import checkSubmissions
 from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
+from cogs.lifecycle.design_hell_acceptance import (
+    card_name_and_author_from_design_hell_message,
+    get_current_design_hell_set_id,
+)
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
 from getCardMessage import getCardMessage, parseCardNameAndAuthor
 from getVetoPollsResults import (
@@ -82,7 +86,7 @@ def card_list_channel_for_set(cardset: str) -> int:
     match s:
         case "hlc" | "hc2" | "hc3" | "hc4":
             return hc_constants.SIX_ZERO_CARD_LIST
-        case "hcv":
+        case "hcv" | "hcv.s":
             return hc_constants.GRAVEYARD_CARD_LIST
         case "hc6" | "hc6.0":
             return hc_constants.SIX_ZERO_CARD_LIST
@@ -402,6 +406,54 @@ class LifecycleCog(commands.Cog):
             thread = cast(Thread, guild.get_channel_or_thread(message.id))
             if thread:
                 await thread.edit(archived=True)
+
+        # Design Hell: admin medal reactions accept cards into set card lists
+        if (
+            reaction.channel_id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL
+            and str(reaction.emoji)
+            in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE)
+        ):
+            member = reaction.member or guild.get_member(reaction.user_id)
+            if member is None:
+                try:
+                    member = await guild.fetch_member(reaction.user_id)
+                except discord.NotFound:
+                    return
+            if not is_admin(cast(Member, member)):
+                return
+            if get(message.reactions, emoji=hc_constants.ACCEPT):
+                return
+            if not message.attachments:
+                return
+
+            if str(reaction.emoji) == hc_constants.SCLAIR_SECOND_PLACE:
+                set_id = "HCV.S"
+                list_channel = hc_constants.VETO_CARD_LIST
+            else:
+                set_id = await get_current_design_hell_set_id(channelAsText)
+                if not set_id:
+                    return
+                list_channel = hc_constants.SECRET_LAIR
+
+            file = await message.attachments[0].to_file()
+            dbname, card_author = card_name_and_author_from_design_hell_message(
+                message.content, message.author.name
+            )
+            resolved_name = dbname if dbname != "" else "Crazy card with no name"
+            resolved_author = card_author if card_author != "" else "no author"
+            card_message = f"**{resolved_name}** by **{resolved_author}**"
+
+            await accept_card(
+                bot=self.bot,
+                file=file,
+                cardMessage=card_message,
+                cardName=dbname,
+                authorName=card_author,
+                setId=set_id,
+                channelIdForCard=list_channel,
+            )
+            await message.add_reaction(hc_constants.ACCEPT)
+            return
 
         # Pin art assets if it gets 10 pin reactions in the art requests channel
         if (
