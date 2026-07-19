@@ -56,9 +56,8 @@ def build_database():
             rulings = entry[7]
             cmc = entry[8] if entry[8] else 0
             colors = entry[9].split(";")
-            tags = entry[20].split(";") if entry[20] != "" else []
-            # hererere
-            # 9
+            artists = entry[20].split(";") if entry[20] != "" else []
+            tags = entry[21].split(";") if entry[21] != "" else []
             sides = []
             sides.append(create_side(entry[10:19]))  # Name to Image
             if entry[24] != "" and entry[24] != " ":
@@ -81,6 +80,7 @@ def build_database():
                     legality=legality,
                     rulings=rulings,
                     tags=tags,
+                    artists=artists,
                 )
             )
         except Exception as e:
@@ -540,6 +540,7 @@ def format_card_info(card: CardSearch) -> str:
     legality = card.legality()
     rulings = card.rulings()
     tags = card.tags()
+    artists = card.artists()
     to_send = [
         card.name(),
         f"id: {cid}",
@@ -547,6 +548,8 @@ def format_card_info(card: CardSearch) -> str:
         f"set: {cardset}",
         f"legality: {legality}",
     ]
+    if artists.__len__() > 0:
+        to_send.append("artists: " + ", ".join(artists))
     if tags.__len__() > 0:
         to_send.append("tags: " + ", ".join(tags))
     if rulings and rulings.__len__() > 0:

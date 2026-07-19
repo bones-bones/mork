@@ -5,7 +5,10 @@ from __future__ import annotations
 import re
 from typing import Optional
 
-from discord import TextChannel
+import discord
+from discord.ext import commands
+
+from acceptCard import accept_card
 
 DESIGN_HELL_SET_PATTERN = re.compile(
     r"Set:\s*(?:\*\*)?\s*([A-Za-z0-9._]+)",
@@ -27,8 +30,31 @@ def card_name_and_author_from_design_hell_message(
     return card_name, author_name.strip()
 
 
-async def get_current_design_hell_set_id(channel: TextChannel) -> Optional[str]:
+async def get_current_design_hell_set_id(channel: discord.TextChannel) -> Optional[str]:
     pins = await channel.pins()
     if not pins:
         return None
     return parse_set_id_from_design_hell_prompt(pins[0].content)
+
+
+async def accept_design_hell_card(
+    bot: commands.Bot,
+    *,
+    cardMessage: str,
+    file: discord.File,
+    cardName: str,
+    authorName: str,
+    setId: str,
+    channelIdForCard: int,
+) -> None:
+    """Accept a Design Hell card via Drive/sheet/Discord and POST /api/cards/postcard."""
+    await accept_card(
+        bot=bot,
+        file=file,
+        cardMessage=cardMessage,
+        cardName=cardName,
+        authorName=authorName,
+        setId=setId,
+        channelIdForCard=channelIdForCard,
+        require_hellfall_postcard=True,
+    )

@@ -1,3 +1,4 @@
+import base64
 import io
 import os
 import re
@@ -6,6 +7,8 @@ import discord
 from gspread import Cell
 import hc_constants
 from hellfall_postcard import (
+    PostcardSyncError,
+    PostcardWrite,
     postcard_sync_enabled,
     rollback_postcard_write,
     sync_accepted_card,
@@ -43,6 +46,80 @@ async def _sync_card_to_hellfall(
     )
 
 
+async def _resolve_accepted_image_url(
+    *,
+    file_data: bytes,
+    image_path: str,
+    card_name: str,
+    author_name: str,
+    set_id: str,
+    hcid: Optional[str],
+    image_id_to_update: Optional[str],
+    require_hellfall_postcard: bool,
+) -> tuple[str, Optional[PostcardWrite]]:
+    if require_hellfall_postcard:
+        image_base64 = base64.b64encode(file_data).decode("ascii")
+        postcard_write: Optional[PostcardWrite] = None
+        image_url: Optional[str] = None
+        try:
+            postcard_write = await sync_accepted_card(
+                name=card_name,
+                image_base64=image_base64,
+                creators=author_name,
+                set_id=set_id,
+                hcid=hcid,
+                kind="card",
+                require_sync=True,
+            )
+            if postcard_write and postcard_write.image_url:
+                image_url = postcard_write.image_url
+        except PostcardSyncError as err:
+            if str(err) != "invalid_body":
+                raise
+            postcard_write = None
+
+        if not image_url:
+            google_drive_file_id = uploadToDrive(
+                image_path,
+                image_id_to_update,
+                folder_id=hc_constants.CURRENT_SET_FOLDER,
+            )
+            drive_url = getDriveUrl(google_drive_file_id)
+            postcard_write = await sync_accepted_card(
+                name=card_name,
+                image=drive_url,
+                creators=author_name,
+                set_id=set_id,
+                hcid=hcid,
+                kind="card",
+                require_sync=True,
+            )
+            image_url = (
+                postcard_write.image_url
+                if postcard_write and postcard_write.image_url
+                else drive_url
+            )
+
+        if not postcard_write:
+            raise PostcardSyncError("hellfall postcard sync did not complete")
+        if not image_url:
+            raise PostcardSyncError("hellfall did not return imageUrl")
+        return image_url, postcard_write
+
+    google_drive_file_id = uploadToDrive(
+        image_path, image_id_to_update, folder_id=hc_constants.CURRENT_SET_FOLDER
+    )
+    image_url = getDriveUrl(google_drive_file_id)
+    postcard_write = await _sync_card_to_hellfall(
+        card_name=card_name,
+        image_url=image_url,
+        author_name=author_name,
+        set_id=set_id,
+        hcid=hcid,
+    )
+    return image_url, postcard_write
+
+
 async def accept_card(
     bot: commands.Bot,
     cardMessage: str,
@@ -56,6 +133,7 @@ async def accept_card(
     wasVetoed: bool = False,
     skip_reddit: bool = False,
     deferred_reddit_dir: Optional[str] = None,
+    require_hellfall_postcard: bool = False,
 ):
     """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
     authorName = resolve_authors(authorName)
@@ -91,11 +169,6 @@ async def accept_card(
         if cardName == "":
             cardName = "NO NAME"
 
-    google_drive_file_id = uploadToDrive(
-        image_path, image_id_to_update, folder_id=hc_constants.CURRENT_SET_FOLDER
-    )
-    imageUrl = getDriveUrl(google_drive_file_id)
-
     next_id: Optional[str] = None
     if newCard:
         next_id = str(int(allCards[allCards.__len__() - 1][0]) + 1)
@@ -103,12 +176,15 @@ async def accept_card(
     firestore_hcid = errataId or next_id
     postcard_write = None
     try:
-        postcard_write = await _sync_card_to_hellfall(
+        imageUrl, postcard_write = await _resolve_accepted_image_url(
+            file_data=file_data,
+            image_path=image_path,
             card_name=cardName,
-            image_url=imageUrl,
             author_name=authorName,
             set_id=setId,
             hcid=firestore_hcid,
+            image_id_to_update=image_id_to_update,
+            require_hellfall_postcard=require_hellfall_postcard,
         )
 
         cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)

@@ -30,6 +30,7 @@ from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from cogs.lifecycle.design_hell_acceptance import (
+    accept_design_hell_card,
     card_name_and_author_from_design_hell_message,
     get_current_design_hell_set_id,
 )
@@ -443,10 +444,10 @@ class LifecycleCog(commands.Cog):
             resolved_author = card_author if card_author != "" else "no author"
             card_message = f"**{resolved_name}** by **{resolved_author}**"
 
-            await accept_card(
-                bot=self.bot,
-                file=file,
+            await accept_design_hell_card(
+                self.bot,
                 cardMessage=card_message,
+                file=file,
                 cardName=dbname,
                 authorName=card_author,
                 setId=set_id,
