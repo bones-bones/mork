@@ -287,7 +287,7 @@ class LifecycleCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
         await member.send(
-            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe've just started HC9, a vintage cube featuring the return of purple. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe've just started SOH, a Desert cube. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
         )
 
     @commands.Cog.listener()
