@@ -102,7 +102,8 @@ class GeneralCog(commands.Cog):
         }
 
         return is_admin or (is_judge and allowed_judge_channel)
-
+    
+    #allows admins and judges (in specific channels) to make mork say stuff. good for permanent announcements that will not be deleted if the user is hacked/leaves the server/is banned
     @commands.command(name="echo")
     async def echo(self, ctx: commands.Context, *, message: str = ""):
         if not self._can_use_echo_command(ctx):
@@ -116,6 +117,7 @@ class GeneralCog(commands.Cog):
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
+    #allows admins and judges (in specific channels) to edit things mork says, useful for gameplay rules advanced to have any judge be able to edit the rules.
     @commands.command(name="ecdit")
     async def ecdit(self, ctx: commands.Context, *, message: str = ""):
         if not self._can_use_echo_command(ctx):
