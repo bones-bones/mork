@@ -107,6 +107,8 @@ def card_list_channel_for_set(cardset: str) -> int:
             return hc_constants.HKL_CARD_LIST
         case "hc9" | "hc9.0" | "hc9.1":
             return hc_constants.NINE_CARD_LIST
+        case "soh":
+            return hc_constants.SOH_CARD_LIST
         case _:
             return hc_constants.HKL_CARD_LIST
 
@@ -285,7 +287,7 @@ class LifecycleCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
         await member.send(
-            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe've just started HC9, a vintage cube featuring the return of purple. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe've just started SOH, a Desert cube. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
         )
 
     @commands.Cog.listener()
@@ -1016,8 +1018,8 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.cardset()
                 channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
             else:
-                set_to_add_to = "HC9.0"
-                channel_to_add_to = hc_constants.NINE_CARD_LIST
+                set_to_add_to = "SOH"
+                channel_to_add_to = hc_constants.SOH_CARD_LIST
 
             await accept_card(
                 bot=self.bot,
