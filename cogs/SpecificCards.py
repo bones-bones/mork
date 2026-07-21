@@ -25,6 +25,9 @@ SCRYFALL_RANDOM_API_URL = "https://api.scryfall.com/cards/random?q="
 
 # load json from scryfall
 async def get_scryfall_json(targetUrl):
+    """
+    Get json of a card from scryfall. it's important to use the header so they know to block us lol.
+    """
     headers = {"User-Agent": hc_constants.USER_AGENT}
     return requests.get(targetUrl, headers=headers).json()
 
@@ -1466,6 +1469,15 @@ class SpecificCardsCog(commands.Cog):
         message_parts.append(f"-# [original](https://zaxer2.github.io/howtogrunch)")
 
         await ctx.send("\n".join(message_parts))
+
+    # for the Mechtitan
+    @commands.command()
+    async def mechtitan(self, ctx: commands.Context):
+        for i in range(4):
+            await fetchAndSendCard(
+                f"{SCRYFALL_RANDOM_API_URL}(t:/artifact+creature/+or+t:artifact+and+t:vehicle)+game:paper+prefer:best+-function:you_matter+-function:dexterity+-function:art-matters+-function:speech-matters+-function:un-set-mechanics&unique=cards&as=grid&order=name",
+                ctx,
+            )
 
 
 async def setup(bot: commands.Bot):

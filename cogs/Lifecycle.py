@@ -29,8 +29,13 @@ from checkSubmissions import checkSubmissions
 from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
+from cogs.lifecycle.design_hell_acceptance import (
+    accept_design_hell_card,
+    card_name_and_author_from_design_hell_message,
+    get_current_design_hell_set_id,
+)
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
-from getCardMessage import getCardMessage
+from getCardMessage import getCardMessage, parseCardNameAndAuthor
 from getVetoPollsResults import (
     VetoPollResults,
     getVetoPollsResults,
@@ -42,12 +47,13 @@ from getters import (
     getSubmissionDiscussionChannel,
     getVetoChannel,
     getVetoDiscussionChannel,
+    getVetoHellpitsChannel,
 )
 from handleVetoPost import handleVetoPost
 import hc_constants
 from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
-from is_mork import is_mork, reasonableCard
+from is_mork import is_mork, reasonable_card
 from printCardImages import print_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
@@ -81,7 +87,7 @@ def card_list_channel_for_set(cardset: str) -> int:
     match s:
         case "hlc" | "hc2" | "hc3" | "hc4":
             return hc_constants.SIX_ZERO_CARD_LIST
-        case "hcv":
+        case "hcv" | "hcv.s":
             return hc_constants.GRAVEYARD_CARD_LIST
         case "hc6" | "hc6.0":
             return hc_constants.SIX_ZERO_CARD_LIST
@@ -101,6 +107,8 @@ def card_list_channel_for_set(cardset: str) -> int:
             return hc_constants.HKL_CARD_LIST
         case "hc9" | "hc9.0" | "hc9.1":
             return hc_constants.NINE_CARD_LIST
+        case "soh":
+            return hc_constants.SOH_CARD_LIST
         case _:
             return hc_constants.HKL_CARD_LIST
 
@@ -245,14 +253,24 @@ class LifecycleCog(commands.Cog):
             status=discord.Status.online, activity=discord.Game(status)
         )
 
+        # The next section is stuff that should only happen once a day.
         now = datetime.now()
         print(f"time is {now}")
-        if now.hour == 10 and now.minute <= 4:
+
+        is_first_minutes = now.minute <= 4
+
+        if is_first_minutes:
+            try:
+                await redditcatchup()
+            except Exception:
+                traceback.print_exc()
+
+        if now.hour == 10 and is_first_minutes:
             try:
                 await post_reddit_card_of_the_day()
             except Exception:
                 traceback.print_exc()
-        if now.hour == 4 and now.minute <= 4:
+        if now.hour == 4 and is_first_minutes:
             try:
                 await post_daily_submissions(self.bot)
             except Exception:
@@ -269,7 +287,7 @@ class LifecycleCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
         await member.send(
-            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe've just started HC9, a vintage cube featuring the return of purple. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe've just started SOH, a Desert cube. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
         )
 
     @commands.Cog.listener()
@@ -368,20 +386,7 @@ class LifecycleCog(commands.Cog):
             file = await message.attachments[0].to_file()
             acceptanceMessage = message.content
             # consider putting most of this into acceptCard
-            # this is pretty much the same as getCardMessage but teasing out the db logic too was gonna suck
-            dbname = ""
-            card_author = ""
-            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
-                ...  # This is really the case of setting both to "", but due to scoping i got lazy
-            elif acceptanceMessage[0:3] == "by ":
-                card_author = str((acceptanceMessage.split("by "))[1])
-            else:
-                messageChunks = acceptanceMessage.split(" by ")
-                firstPart = messageChunks[0]
-                secondPart = "".join(messageChunks[1:])
-
-                dbname = str(firstPart)
-                card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
@@ -404,6 +409,54 @@ class LifecycleCog(commands.Cog):
             thread = cast(Thread, guild.get_channel_or_thread(message.id))
             if thread:
                 await thread.edit(archived=True)
+
+        # Design Hell: admin medal reactions accept cards into set card lists
+        if (
+            reaction.channel_id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL
+            and str(reaction.emoji)
+            in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE)
+        ):
+            member = reaction.member or guild.get_member(reaction.user_id)
+            if member is None:
+                try:
+                    member = await guild.fetch_member(reaction.user_id)
+                except discord.NotFound:
+                    return
+            if not is_admin(cast(Member, member)):
+                return
+            if get(message.reactions, emoji=hc_constants.ACCEPT):
+                return
+            if not message.attachments:
+                return
+
+            if str(reaction.emoji) == hc_constants.SCLAIR_SECOND_PLACE:
+                set_id = "HCV.S"
+                list_channel = hc_constants.VETO_CARD_LIST
+            else:
+                set_id = await get_current_design_hell_set_id(channelAsText)
+                if not set_id:
+                    return
+                list_channel = hc_constants.SECRET_LAIR
+
+            file = await message.attachments[0].to_file()
+            dbname, card_author = card_name_and_author_from_design_hell_message(
+                message.content, message.author.name
+            )
+            resolved_name = dbname if dbname != "" else "Crazy card with no name"
+            resolved_author = card_author if card_author != "" else "no author"
+            card_message = f"**{resolved_name}** by **{resolved_author}**"
+
+            await accept_design_hell_card(
+                self.bot,
+                cardMessage=card_message,
+                file=file,
+                cardName=dbname,
+                authorName=card_author,
+                setId=set_id,
+                channelIdForCard=list_channel,
+            )
+            await message.add_reaction(hc_constants.ACCEPT)
+            return
 
         # Pin art assets if it gets 10 pin reactions in the art requests channel
         if (
@@ -626,7 +679,7 @@ class LifecycleCog(commands.Cog):
                     return
                 
                 file = await message.attachments[0].to_file()
-                if reasonableCard():
+                if reasonable_card():
                     vetoChannel = getVetoChannel(bot=self.bot)
                     acceptedChannel = getSubmissionDiscussionChannel(self.bot)
                     logChannel = getMorkSubmissionsLoggingChannel(self.bot)
@@ -722,7 +775,7 @@ class LifecycleCog(commands.Cog):
                             f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                         )
                     file = await message.attachments[0].to_file()
-                    if reasonableCard():
+                    if reasonable_card():
                         vetoChannel = getVetoChannel(self.bot)
                         acceptedChannel = cast(
                             TextChannel,
@@ -893,31 +946,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send(content="all caught up!")
 
     @commands.command()
-    async def redditcatchup(self, ctx: commands.Context, count: int):
-        if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
-            await ctx.send("Veto Council Only")
-            return
-        if count < 1:
-            await ctx.send("Count must be a positive number")
-            return
-        pending = list_pending_deferred_posts()
-        if not pending:
-            await ctx.send("No deferred Reddit posts")
-            return
-        await ctx.send(
-            f"Posting up to {count} deferred Reddit submissions "
-            f"({len(pending)} pending)..."
-        )
-        posted, errors = await process_deferred_reddit_posts(count)
-        message = f"Posted {posted} to Reddit."
-        if errors:
-            message += f" {len(errors)} failed: " + "; ".join(errors[:5])
-            if len(errors) > 5:
-                message += f" (and {len(errors) - 5} more)"
-        await ctx.send(message)
-
-    @commands.command()
-    async def compileveto(self, ctx: commands.Context, count: Optional[int] = None):
+    async def compileveto(self, ctx: commands.Context, count: int = None):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return
@@ -934,17 +963,17 @@ class LifecycleCog(commands.Cog):
 
         await ctx.send(random.choice(epicCatchphrases))
 
-        responseObject = cast(
+        response_object = cast(
             VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
         )
-        responseObject = limit_veto_poll_results(responseObject, count)
-        errataCardMessages = responseObject.errataCardMessages
-        acceptedCardMessages = responseObject.acceptedCardMessages
-        vetoCardMessages = responseObject.vetoCardMessages
-        purgatoryCardMessages = responseObject.purgatoryCardMessages
+        response_object = limit_veto_poll_results(response_object, count)
+        errataCardMessages = response_object.errataCardMessages
+        acceptedCardMessages = response_object.acceptedCardMessages
+        vetoCardMessages = response_object.vetoCardMessages
+        purgatoryCardMessages = response_object.purgatoryCardMessages
 
         reddit_eligible_count = len(acceptedCardMessages) + len(vetoCardMessages)
-        skip_reddit = reddit_eligible_count > 20
+        skip_reddit = reddit_eligible_count > 5
         deferred_reddit_dir = None
         if skip_reddit:
             deferred_reddit_dir = (
@@ -966,8 +995,6 @@ class LifecycleCog(commands.Cog):
             acceptanceMessage = messageEntry.content
             # consider putting most of this into acceptCard
             # errata format: first line "cardname by author", second line "Errata: card_id"
-            dbname = ""
-            card_author = ""
             errataLinens = acceptanceMessage.splitlines()
             errata_id = (
                 errataLinens[1].strip().removeprefix("Errata: ").strip()
@@ -975,16 +1002,7 @@ class LifecycleCog(commands.Cog):
                 else None
             )
             first_line = errataLinens[0] if errataLinens else ""
-            if (len(first_line)) == 0 or " by " not in first_line:
-                ...
-            elif first_line[0:3] == "by ":
-                card_author = str((first_line.split(" by ", 1))[1])
-            else:
-                messageChunks = first_line.split(" by ", 1)
-                firstPart = messageChunks[0].strip()
-                secondPart = messageChunks[1] if len(messageChunks) > 1 else ""
-                dbname = str(firstPart)
-                card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(first_line)
             card_author = card_author.strip()
             # Resolve display name from card id (errata messages use id on first line)
             errata_card = get_card_by_id(errata_id) if errata_id else None
@@ -1002,8 +1020,8 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.cardset()
                 channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
             else:
-                set_to_add_to = "HC9.0"
-                channel_to_add_to = hc_constants.NINE_CARD_LIST
+                set_to_add_to = "SOH"
+                channel_to_add_to = hc_constants.SOH_CARD_LIST
 
             await accept_card(
                 bot=self.bot,
@@ -1030,19 +1048,7 @@ class LifecycleCog(commands.Cog):
             print(f"cvV processing {messageEntry.content}")
 
             acceptanceMessage = messageEntry.content
-            dbname = ""
-            card_author = ""
-            if (len(acceptanceMessage)) == 0 or "by " not in acceptanceMessage:
-                ...
-            elif acceptanceMessage[0:3] == "by ":
-                card_author = str((acceptanceMessage.split("by "))[1])
-            else:
-                messageChunks = acceptanceMessage.split(" by ")
-                firstPart = messageChunks[0]
-                secondPart = "".join(messageChunks[1:])
-
-                dbname = str(firstPart)
-                card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
@@ -1119,9 +1125,9 @@ class LifecycleCog(commands.Cog):
             except:
                 print(f"ERROR: unable to process: {messageEntry.content}")
 
-        vetoDiscussionChannel = getVetoDiscussionChannel(self.bot)
+        veto_announcement_channel = getVetoHellpitsChannel(self.bot)
 
-        await vetoDiscussionChannel.send(
+        await veto_announcement_channel.send(
             content=f"!! VETO POLLS HAVE BEEN PROCESSED !!"
         )
 
@@ -1131,7 +1137,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(acceptedCards)
             )
             for i in range(0, acceptedMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await veto_announcement_channel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
@@ -1139,13 +1145,13 @@ class LifecycleCog(commands.Cog):
                 "\n".join(needsErrataCards)
             )
             for i in range(0, errataMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await veto_announcement_channel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
             vetoMessage = "||\u200b||\nVETOED: \n{0}".format("\n".join(vetoedCards))
             for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await veto_announcement_channel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
@@ -1153,7 +1159,7 @@ class LifecycleCog(commands.Cog):
                 "\n".join(vetoHellCards)
             )
             for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
-                await vetoDiscussionChannel.send(
+                await veto_announcement_channel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
@@ -1163,7 +1169,7 @@ class LifecycleCog(commands.Cog):
             for i in range(
                 0, mysteryHellMessage.__len__(), hc_constants.LITERALLY_1984
             ):
-                await vetoDiscussionChannel.send(
+                await veto_announcement_channel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
 
@@ -1204,12 +1210,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send("Please include a card ID on the first line.")
             return
         else:
-            messageChunks = cardMessage.split(" by ")
-            firstPart = messageChunks[0]
-            secondPart = "".join(messageChunks[1:])
-
-            dbname = str(firstPart)
-            card_author = str(secondPart)
+            dbname, card_author = parseCardNameAndAuthor(cardMessage)
 
         errata_id_clean = errataId.removeprefix("Errata: ").strip()
         db_card = get_card_by_id(errata_id_clean)
@@ -1332,3 +1333,19 @@ def reset_countdowns():
     _reset_countdowns_for_file(hc_constants.SUBMISSIONS_STATE_FILE)
     _reset_countdowns_for_file(hc_constants.MASTERPIECE_STATE_FILE)
     print("end reset")
+
+
+async def redditcatchup():
+
+    pending = list_pending_deferred_posts()
+    if not pending:
+        return
+    print("Posting up to 1 deferred Reddit submissions")
+
+    posted, errors = await process_deferred_reddit_posts(1)
+    message = f"Posted {posted} to Reddit."
+    if errors:
+        message += f" {len(errors)} failed: " + "; ".join(errors[:5])
+        if len(errors) > 5:
+            message += f" (and {len(errors) - 5} more)"
+    print(f"catchup complete {message}")
