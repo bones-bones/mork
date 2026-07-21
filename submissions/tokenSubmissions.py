@@ -21,8 +21,7 @@ from discord import Message
 from discord.utils import get
 
 from getCardMessage import parseCardNameAndAuthor
-from gcs_card_images import upload_card_image
-from is_mork import is_mork
+from is_mork import getDriveUrl, is_mork, uploadToDrive
 from hellfall_postcard import (
     PostcardSyncError,
     rollback_postcard_write,
@@ -147,23 +146,20 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
             with open(image_path, "wb") as out:
                 out.write(file_data)
             try:
-                gcs_image_url = upload_card_image(
-                    image_path, object_name=final_card_name
+                google_drive_file_id = uploadToDrive(
+                    image_path, folder_id=hc_constants.TOKEN_FOLDER
                 )
+                drive_image_url = getDriveUrl(google_drive_file_id)
                 postcard_write = await sync_accepted_card(
                     name=final_card_name,
-                    image=gcs_image_url,
+                    image=drive_image_url,
                     creators=creator,
                     set_id="HCT",
                     hcid=final_card_name,
                     kind="token",
                     require_sync=True,
                 )
-                imageUrl = (
-                    postcard_write.image_url
-                    if postcard_write and postcard_write.image_url
-                    else gcs_image_url
-                )
+                imageUrl = drive_image_url
             finally:
                 if os.path.exists(image_path):
                     os.remove(image_path)
