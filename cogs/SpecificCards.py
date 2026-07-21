@@ -776,7 +776,7 @@ class SpecificCardsCog(commands.Cog):
         await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}will+type=scheme", ctx)
 
     # for the _______ Balls
-    @commands.command()
+    @commands.command(aliases=["balls"])
     async def _______Balls(self, ctx: commands.Context):
         # https://scryfall.com/random?q=will+type=scheme
 
