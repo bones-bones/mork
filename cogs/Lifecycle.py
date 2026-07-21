@@ -107,6 +107,8 @@ def card_list_channel_for_set(cardset: str) -> int:
             return hc_constants.HKL_CARD_LIST
         case "hc9" | "hc9.0" | "hc9.1":
             return hc_constants.NINE_CARD_LIST
+        case "soh":
+            return hc_constants.SOH_CARD_LIST
         case _:
             return hc_constants.HKL_CARD_LIST
 
@@ -1016,8 +1018,8 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.cardset()
                 channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
             else:
-                set_to_add_to = "HC9.0"
-                channel_to_add_to = hc_constants.NINE_CARD_LIST
+                set_to_add_to = "SOH"
+                channel_to_add_to = hc_constants.SOH_CARD_LIST
 
             await accept_card(
                 bot=self.bot,
