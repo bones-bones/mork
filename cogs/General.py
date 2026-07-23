@@ -85,6 +85,59 @@ class GeneralCog(commands.Cog):
             "https://discord.com/channels/631288872814247966/803384271766683668/803389199503982632"
         )
 
+    def _can_use_echo_command(self, ctx: commands.Context) -> bool:
+        if not ctx.guild:
+            return False
+
+        member = cast(discord.Member, ctx.author)
+        is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
+        is_judge = any(role.id == hc_constants.JUDGES for role in member.roles)
+        allowed_judge_channel = ctx.channel.id in {
+            hc_constants.JUDGES_TOWER,
+            hc_constants.GAMEPLAY_RULES_ADVANCED,
+        }
+
+        return is_admin or (is_judge and allowed_judge_channel)
+
+    @commands.command(name="echo")
+    async def echo(self, ctx: commands.Context, *, message: str = ""):
+        if not self._can_use_echo_command(ctx):
+            await ctx.send("sorry, you do not have permission to use that command.")
+            return
+
+        if message:
+            await ctx.send(message)
+            try:
+                await ctx.message.delete()
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
+    @commands.command(name="ecdit")
+    async def ecdit(self, ctx: commands.Context, *, message: str = ""):
+        if not self._can_use_echo_command(ctx):
+            await ctx.send("sorry, you do not have permission to use that command.")
+            return
+
+        if not ctx.message.reference or not ctx.message.reference.resolved:
+            await ctx.send("please *reply* to a message sent by Mork.")
+            return
+
+        referenced_message = ctx.message.reference.resolved
+        if not isinstance(referenced_message, discord.Message):
+            await ctx.send("please reply to a message sent by Mork.")
+            return
+
+        author = referenced_message.author
+        if getattr(author, "id", None) != getattr(self.bot.user, "id", None):
+            await ctx.send("please reply to a message sent by *Mork*.")
+            return
+
+        await referenced_message.edit(content=message)
+        try:
+            await ctx.message.delete()
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
     @commands.command()
     async def menu(self, ctx: commands.Context):
         if (
