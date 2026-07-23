@@ -783,7 +783,7 @@ class SpecificCardsCog(commands.Cog):
 
         stickers = (
             await get_scryfall_json("https://api.scryfall.com/cards/search?q=t:sticker")
-        ).data
+        )["data"]
         selected = random.sample(stickers, k=3)
 
         await send_image(await get_image_from_json(selected[0]), ctx)
