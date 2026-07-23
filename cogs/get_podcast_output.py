@@ -156,6 +156,9 @@ podCards = [
     "Whale Visions",
     "Mistform Ultimus",
     "Lord of Tresserhorn",
+    "Secret Jo Sesh",
+    "Freaky Pizza",
+    "Grunch",
 ]
 podKey = [
     "flying",
@@ -197,6 +200,7 @@ podProduct = [
     "kamigawa block pauper tiny leaders challenger decks",
     "brawl precons",
     "@o VIP Edition",
+    "Magic: The Gathering 30th Anniversary Edition",
 ]
 podFormat = [
     "hellscube sealed",
@@ -223,6 +227,7 @@ podFormat = [
     "usurper",
     "horde",
     "prismatic",
+    "premodern",
 ]
 podColor = ["white", "black", "green", "red", "blue", "purple"]
 podPerson = [
@@ -362,6 +367,7 @@ podBot = [
     "ExploreAside",
     "SurvielStill",
     "RippleApproach",
+    "ConniveRetreat",
 ]
 podEncoding = [
     ("@f", podFormat),
