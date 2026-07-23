@@ -7,7 +7,7 @@ podSentence = [
     "@p 2024",
     "@p is a @s shill! Why do you think they gave @o a good grade?",
     "i would buy @o if @p hadn't told me it was the worst thing for @f since @c",
-    "@0 - now with 50% less @m! I'm so exited.",
+    "@o - now with 50% less @m! I'm so exited.",
     "To this day, no one knows why @c was errata'd to give 10 Devotion to Dreadmaw.",
     "In five years, the only two people still playing @f will be @p and @p",
     "@c should be a basic, change my mind.",
@@ -383,8 +383,17 @@ def get_podcast_output(val: int):
     output = ""
     for i in range(val):
         output += podSentence[randint(0, len(podSentence) - 1)]
+        # Expand one known token per pass. Break if nothing matches so an
+        # unknown "@..." (e.g. a typo) cannot spin forever on the event loop.
         while "@" in output:
-            for key in podEncoding:
-                output = output.replace(key[0], key[1][randint(0, len(key[1]) - 1)], 1)
+            before = output
+            for token, choices in podEncoding:
+                if token in output:
+                    output = output.replace(
+                        token, choices[randint(0, len(choices) - 1)], 1
+                    )
+                    break
+            if output == before:
+                break
         output += "\n"
     return output

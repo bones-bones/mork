@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import asyncio
 import re
 from typing import cast
 import discord
@@ -482,7 +483,7 @@ class SpecificCardsCog(commands.Cog):
             await ctx.send("Please type a number 20 or lower.")
             return
 
-        output = get_podcast_output(number)
+        output = await asyncio.to_thread(get_podcast_output, number)
 
         await ctx.send(output)
 
