@@ -1,5 +1,5 @@
 import pprint as pp
-from typing import cast
+from typing import cast, Optional
 import os
 import discord
 from discord.ext import commands
@@ -41,6 +41,10 @@ class GeneralCog(commands.Cog):
     @commands.command(name="ch!ai")
     async def chai(self, ctx: commands.Context):
         await ctx.send("¡chai caramba!")
+
+    @commands.command()
+    async def artrequest(self, ctx: commands.Context):
+        await ctx.send("<@&819320922666041355>")
     
     @commands.command()
     async def weight(self, ctx: commands.Context):
@@ -84,6 +88,61 @@ class GeneralCog(commands.Cog):
         await ctx.send(
             "https://discord.com/channels/631288872814247966/803384271766683668/803389199503982632"
         )
+
+    def _can_use_echo_command(self, ctx: commands.Context) -> bool:
+        if not ctx.guild:
+            return False
+
+        member = cast(discord.Member, ctx.author)
+        is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
+        is_judge = any(role.id == hc_constants.JUDGES for role in member.roles)
+        allowed_judge_channel = ctx.channel.id in {
+            hc_constants.JUDGES_TOWER,
+            hc_constants.GAMEPLAY_RULES_ADVANCED,
+        }
+
+        return is_admin or (is_judge and allowed_judge_channel)
+    
+    #allows admins and judges (in specific channels) to make mork say stuff. good for permanent announcements that will not be deleted if the user is hacked/leaves the server/is banned
+    @commands.command(name="echo")
+    async def echo(self, ctx: commands.Context, *, message: str = ""):
+        if not self._can_use_echo_command(ctx):
+            await ctx.send("sorry, you do not have permission to use that command.")
+            return
+
+        if message:
+            await ctx.send(message)
+            try:
+                await ctx.message.delete()
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+
+    #allows admins and judges (in specific channels) to edit things mork says, useful for gameplay rules advanced to have any judge be able to edit the rules.
+    @commands.command(name="ecdit")
+    async def ecdit(self, ctx: commands.Context, *, message: str = ""):
+        if not self._can_use_echo_command(ctx):
+            await ctx.send("sorry, you do not have permission to use that command.")
+            return
+
+        if not ctx.message.reference or not ctx.message.reference.resolved:
+            await ctx.send("please *reply* to a message sent by Mork.")
+            return
+
+        referenced_message = ctx.message.reference.resolved
+        if not isinstance(referenced_message, discord.Message):
+            await ctx.send("please reply to a message sent by Mork.")
+            return
+
+        author = referenced_message.author
+        if getattr(author, "id", None) != getattr(self.bot.user, "id", None):
+            await ctx.send("please reply to a message sent by *Mork*.")
+            return
+
+        await referenced_message.edit(content=message)
+        try:
+            await ctx.message.delete()
+        except (discord.Forbidden, discord.HTTPException):
+            pass
 
     @commands.command()
     async def menu(self, ctx: commands.Context):
@@ -210,20 +269,44 @@ class GeneralCog(commands.Cog):
             await ctx.channel.send(card)
 
     @commands.command(name="eventStart")
-    async def eventStart(self, ctx: commands.Context):
+    async def eventStart(self, ctx: commands.Context, *, event_name: Optional[str] = None):
 
         guild = cast(discord.Guild, ctx.guild)
         if guild is None:
             await ctx.send("Guild not found.")
             return
 
+        event_name = event_name.strip() if event_name else None
+        event_name_map = {
+            "scubey tuesdays": hc_constants.SCUBEY_TUESDAYS,
+            "scuby tuesdays": hc_constants.SCUBEY_TUESDAYS,
+            "scubey": hc_constants.SCUBEY_TUESDAYS,
+            "tuesday": hc_constants.SCUBEY_TUESDAYS,
+            "fnm but its saturday afternoon": hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
+            "fnm but it's saturday afternoon": hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
+            "saturday afternoon": hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
+            "fnm": hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
+            "fwendslop fwendsday": hc_constants.FWENDSLOP_FWENDSDAY,
+            "fwendslop": hc_constants.FWENDSLOP_FWENDSDAY,
+            "fwendsday": hc_constants.FWENDSLOP_FWENDSDAY,
+            "friendslop": hc_constants.FWENDSLOP_FWENDSDAY,
+        }
+        default_event_ids = (
+            hc_constants.SCUBEY_TUESDAYS,
+            hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
+            hc_constants.FWENDSLOP_FWENDSDAY,
+        )
+
+        if event_name:
+            event_id = event_name_map.get(event_name.lower())
+            event_ids = (event_id,) if event_id else default_event_ids
+        else:
+            event_ids = default_event_ids
+
         now_utc = datetime.now(timezone.utc)
         results: list[str] = []
 
-        for ev_id in (
-            hc_constants.SCUBEY_TUESDAYS,
-            hc_constants.FNM_BUT_ITS_SATURDAY_AFTERNOON,
-        ):
+        for ev_id in event_ids:
             try:
                 event = await guild.fetch_scheduled_event(ev_id)
                 if event.status is discord.EventStatus.scheduled:
@@ -231,14 +314,15 @@ class GeneralCog(commands.Cog):
                     delta = event.start_time - now_utc
                     if abs(delta.total_seconds()) <= 3600:
                         await event.start()
-                        results.append(f"Started {event.name} ({event.id}).")
+                        results.append(f"Started {event.name}.")
                     else:
+                        start = discord.utils.format_dt(event.start_time)
                         results.append(
-                            f"{event.name} ({event.id}) is scheduled for {event.start_time.isoformat()} UTC.\nThis command can only be run within one hour of the event start time."
+                            f"{event.name} is scheduled for {start}.\nThis command can only be run within one hour of the event start time."
                         )
                 else:
                     results.append(
-                        f"{event.name} ({event.id}) is {event.status.name}."
+                        f"{event.name} is {event.status.name}."
                     )
             except discord.NotFound:
                 results.append(f"Scheduled event {ev_id} not found.")
