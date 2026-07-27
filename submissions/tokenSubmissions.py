@@ -32,6 +32,9 @@ tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).work
     hc_constants.TOKEN_UNAPPROVED
 )
 
+# Column L (header UUID) — Hellfall card ``id`` from postcard response
+_HELLFALL_ID_COL = 12
+
 
 async def checkTokenSubmissions(bot: commands.Bot):
     print("checking token submissions")
@@ -167,14 +170,21 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
         if not imageUrl:
             raise PostcardSyncError("hellfall did not return imageUrl")
 
-        tokenUnapproved.update_cells(
-            [
-                Cell(row=dbRowIndex, col=1, value=final_card_name),
-                Cell(row=dbRowIndex, col=2, value=imageUrl),
-                Cell(row=dbRowIndex, col=6, value=relatedCards),
-                Cell(row=dbRowIndex, col=8, value=creator),
-            ]
-        )
+        token_cells = [
+            Cell(row=dbRowIndex, col=1, value=final_card_name),
+            Cell(row=dbRowIndex, col=2, value=imageUrl),
+            Cell(row=dbRowIndex, col=6, value=relatedCards),
+            Cell(row=dbRowIndex, col=8, value=creator),
+        ]
+        if postcard_write is not None and postcard_write.hellfall_id:
+            token_cells.append(
+                Cell(
+                    row=dbRowIndex,
+                    col=_HELLFALL_ID_COL,
+                    value=postcard_write.hellfall_id,
+                )
+            )
+        tokenUnapproved.update_cells(token_cells)
         await tokenListChannel.send(
             content=cardName + " by " + creator + "\n" + relatedCards,
             file=copy,
