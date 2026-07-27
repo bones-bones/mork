@@ -25,7 +25,7 @@ cardSheetUnapproved = googleClient.open_by_key(
     hc_constants.HELLSCUBE_DATABASE
 ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
-# Column BA — Hellfall/Firestore card doc id returned by postcard sync
+# Column BA (header UUID) — Hellfall card ``id`` from postcard response
 _HELLFALL_ID_COL = 53
 
 
@@ -210,12 +210,12 @@ async def accept_card(
                 Cell(row=dbRowIndex, col=4, value=authorName),
                 Cell(row=dbRowIndex, col=5, value=setId),
             ]
-            if postcard_write is not None and postcard_write.doc_id:
+            if postcard_write is not None and postcard_write.hellfall_id:
                 new_card_cells.append(
                     Cell(
                         row=dbRowIndex,
                         col=_HELLFALL_ID_COL,
-                        value=postcard_write.doc_id,
+                        value=postcard_write.hellfall_id,
                     )
                 )
             cardSheetUnapproved.update_cells(new_card_cells)
@@ -337,12 +337,12 @@ async def accept_veto_card(
                 Cell(row=dbRowIndex, col=2, value=cardName),
                 Cell(row=dbRowIndex, col=4, value=authorName),
             ]
-            if postcard_write is not None and postcard_write.doc_id:
+            if postcard_write is not None and postcard_write.hellfall_id:
                 new_card_cells.append(
                     Cell(
                         row=dbRowIndex,
                         col=_HELLFALL_ID_COL,
-                        value=postcard_write.doc_id,
+                        value=postcard_write.hellfall_id,
                     )
                 )
             cardSheetUnapproved.update_cells(new_card_cells)
