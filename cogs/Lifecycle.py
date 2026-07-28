@@ -4,7 +4,7 @@ import random
 import re
 import traceback
 from datetime import date, datetime, timezone, timedelta
-from typing import cast
+from typing import cast, Optional
 
 import aiohttp
 import asyncpraw
@@ -107,6 +107,8 @@ def card_list_channel_for_set(cardset: str) -> int:
             return hc_constants.HKL_CARD_LIST
         case "hc9" | "hc9.0" | "hc9.1":
             return hc_constants.NINE_CARD_LIST
+        case "soh":
+            return hc_constants.SOH_CARD_LIST
         case _:
             return hc_constants.HKL_CARD_LIST
 
@@ -116,7 +118,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
     add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handleVetoPost.
     """
 
-    channel = cast(TextChannel, bot.get_channel(hc_constants.HC8_ERRATA_SUBMISSIONS))
+    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
     if not channel:
         return
     time_now = datetime.now(timezone.utc)
@@ -285,7 +287,7 @@ class LifecycleCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
         await member.send(
-            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe've just started HC9, a vintage cube featuring the return of purple. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
+            f"Hey there! Welcome to HellsCube. Obligatory pointing towards <#{hc_constants.RULES_CHANNEL}>, <#{hc_constants.QUICKSTART_GUIDE}>,and <#{hc_constants.RESOURCES_CHANNEL}>. Especially the explanation for all our channels and bot command to set your pronouns. Enjoy your stay! \n\nWe've just started SOH, a Desert cube. BE SURE TO CHECK SLOTS. Each cube has requirements and the current one only allows so many cards of each color."
         )
 
     @commands.Cog.listener()
@@ -504,6 +506,8 @@ class LifecycleCog(commands.Cog):
 
         for word in [
             "?si=",
+            "?is=",
+            "?ra=",
             "?utm_source=",
             "?utm_medium=",
             "?utm_campaign=",
@@ -619,14 +623,6 @@ class LifecycleCog(commands.Cog):
                 if len(message.attachments) == 0:
                     return
 
-                if message.content == "":
-                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                    await discussionChannel.send(
-                        f"<@{message.author.id}>, make sure to include the name of your card"
-                    )
-                    await message.delete()
-                    return
-
                 splitString = message.content.split("\n")
                 cardName = splitString[0]
                 if "@" in cardName:
@@ -674,6 +670,14 @@ class LifecycleCog(commands.Cog):
                         f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                     )
 
+                if message.content == "":
+                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, make sure to include the name of your card"
+                    )
+                    await message.delete()
+                    return
+                
                 file = await message.attachments[0].to_file()
                 if reasonable_card():
                     vetoChannel = getVetoChannel(bot=self.bot)
@@ -814,7 +818,7 @@ class LifecycleCog(commands.Cog):
                         await sent_message.create_thread(name=message.content[0:99])
                     await message.delete()
 
-            case hc_constants.HC8_ERRATA_SUBMISSIONS:
+            case hc_constants.ERRATA_SUBMISSIONS:
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
                 print(f"HC8 errata submission: {card_id_input}")
@@ -834,9 +838,9 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                if not (card.cardset() == "HC8.1" or card.cardset() == "HC8.0"):
+                if not (card.cardset() == hc_constants.CUBE_NAME + ".0" or card.cardset() == hc_constants.CUBE_NAME + ".1"):
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
-                        f"<@{message.author.id}>, only HC8 cards are allowed for errata."
+                        f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} cards are allowed for errata."
                     )
                     await message.delete()
                     return
@@ -1016,8 +1020,8 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.cardset()
                 channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
             else:
-                set_to_add_to = "HC9.0"
-                channel_to_add_to = hc_constants.NINE_CARD_LIST
+                set_to_add_to = "SOH"
+                channel_to_add_to = hc_constants.SOH_CARD_LIST
 
             await accept_card(
                 bot=self.bot,

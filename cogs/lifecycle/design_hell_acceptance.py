@@ -47,7 +47,7 @@ async def accept_design_hell_card(
     setId: str,
     channelIdForCard: int,
 ) -> None:
-    """Accept a Design Hell card via Drive/sheet/Discord and POST /api/cards/postcard."""
+    """Accept a Design Hell card via GCS/sheet/Discord and POST /api/cards/postcard."""
     await accept_card(
         bot=bot,
         file=file,
