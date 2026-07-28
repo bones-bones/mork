@@ -563,12 +563,10 @@ class GeneralCog(commands.Cog):
                             (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
                         ) / (60 * 60)
                         
-                        # Check if user is admin
-                        member = cast(discord.Member, ctx.author)
-                        is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
-                        
                         text = ""
-                        if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin:
+                        if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
+                            cast(discord.Member, ctx.author)
+                        ):
                             text += f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards. While you wait, why don't you "
                             randomActivity = random.choice(possibleActivities)
                             text += randomActivity
