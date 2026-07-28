@@ -7,6 +7,7 @@ from cardNameRequest import cardNameRequest
 from shared_vars import drive
 import hc_constants
 from discord.utils import get
+from is_admin import is_admin
 import random
 from datetime import date, datetime, timezone, timedelta
 import aiohttp
