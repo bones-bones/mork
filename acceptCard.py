@@ -25,6 +25,9 @@ cardSheetUnapproved = googleClient.open_by_key(
     hc_constants.HELLSCUBE_DATABASE
 ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
+# Column BA (header UUID) — Hellfall card ``id`` from postcard response
+_HELLFALL_ID_COL = 53
+
 
 def _upload_accepted_image(
     image_path: str, *, object_name: str, existing_image_url: Optional[str]
@@ -201,14 +204,21 @@ async def accept_card(
         cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)
 
         if newCard:
-            cardSheetUnapproved.update_cells(
-                [
-                    Cell(row=dbRowIndex, col=1, value=str(next_id)),
-                    Cell(row=dbRowIndex, col=2, value=cardName),
-                    Cell(row=dbRowIndex, col=4, value=authorName),
-                    Cell(row=dbRowIndex, col=5, value=setId),
-                ]
-            )
+            new_card_cells = [
+                Cell(row=dbRowIndex, col=1, value=str(next_id)),
+                Cell(row=dbRowIndex, col=2, value=cardName),
+                Cell(row=dbRowIndex, col=4, value=authorName),
+                Cell(row=dbRowIndex, col=5, value=setId),
+            ]
+            if postcard_write is not None and postcard_write.hellfall_id:
+                new_card_cells.append(
+                    Cell(
+                        row=dbRowIndex,
+                        col=_HELLFALL_ID_COL,
+                        value=postcard_write.hellfall_id,
+                    )
+                )
+            cardSheetUnapproved.update_cells(new_card_cells)
     except Exception:
         if postcard_write is not None:
             await rollback_postcard_write(postcard_write)
@@ -323,12 +333,19 @@ async def accept_veto_card(
         )
 
         if newCard:
-            cardSheetUnapproved.update_cells(
-                [
-                    Cell(row=dbRowIndex, col=2, value=cardName),
-                    Cell(row=dbRowIndex, col=4, value=authorName),
-                ]
-            )
+            new_card_cells = [
+                Cell(row=dbRowIndex, col=2, value=cardName),
+                Cell(row=dbRowIndex, col=4, value=authorName),
+            ]
+            if postcard_write is not None and postcard_write.hellfall_id:
+                new_card_cells.append(
+                    Cell(
+                        row=dbRowIndex,
+                        col=_HELLFALL_ID_COL,
+                        value=postcard_write.hellfall_id,
+                    )
+                )
+            cardSheetUnapproved.update_cells(new_card_cells)
     except Exception:
         if postcard_write is not None:
             await rollback_postcard_write(postcard_write)
