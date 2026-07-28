@@ -662,11 +662,9 @@ class LifecycleCog(commands.Cog):
                                 ).total_seconds()
                             ) / (60 * 60)
                             
-                            # Check if user is admin
-                            member = cast(discord.Member, message.author)
-                            is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
-                            
-                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin:
+                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
+                                cast(discord.Member, ctx.author)
+                            ):
                                 discussionChannel = getSubmissionDiscussionChannel(
                                     self.bot
                                 )
