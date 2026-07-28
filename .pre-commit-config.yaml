@@ -3,11 +3,7 @@ repos:
     rev: v0.9.9
     hooks:
       - id: ruff
-  - repo: local
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
     hooks:
-      - id: python-compileall
-        name: python compileall (syntax check)
-        entry: python3 -m compileall -q -f .
-        language: system
-        pass_filenames: false
-        always_run: true
+      - id: check-ast

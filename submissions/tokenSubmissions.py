@@ -34,6 +34,8 @@ tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).work
 
 # Column L (header UUID) — Hellfall card ``id`` from postcard response
 _HELLFALL_ID_COL = 12
+# Column M (header UUID) — Hellfall card ``oracle_id`` from postcard response
+_ORACLE_ID_COL = 13
 
 
 async def checkTokenSubmissions(bot: commands.Bot):
@@ -96,7 +98,7 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     file = await message.attachments[0].to_file()
     copy = await message.attachments[0].to_file()
 
-    extension = re.search("\.([^.]*)$", file.filename)
+    extension = re.search(r"\.([^.]*)$", file.filename)
     fileType = (
         extension.group() if extension else ".png"
     )  # just guess that the file is a png
@@ -182,6 +184,14 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
                     row=dbRowIndex,
                     col=_HELLFALL_ID_COL,
                     value=postcard_write.hellfall_id,
+                )
+            )
+        if postcard_write is not None and postcard_write.oracle_id:
+            token_cells.append(
+                Cell(
+                    row=dbRowIndex,
+                    col=_ORACLE_ID_COL,
+                    value=postcard_write.oracle_id,
                 )
             )
         tokenUnapproved.update_cells(token_cells)

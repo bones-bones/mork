@@ -28,6 +28,9 @@ cardSheetUnapproved = googleClient.open_by_key(
 # Column BA (header UUID) — Hellfall card ``id`` from postcard response
 _HELLFALL_ID_COL = 53
 
+# Column BB (header UUID) — Hellfall card ``oracle_id`` from postcard response
+_ORACLE_ID_COL = 54
+
 
 def _upload_accepted_image(
     image_path: str, *, object_name: str, existing_image_url: Optional[str]
@@ -152,7 +155,7 @@ async def accept_card(
 ):
     """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
     authorName = resolve_authors(authorName)
-    extension = re.search("\.([^.]*)$", file.filename)
+    extension = re.search(r"\.([^.]*)$", file.filename)
     file_type = (
         extension.group() if extension else ".png"
     )  # just guess that the file is a png
@@ -218,6 +221,14 @@ async def accept_card(
                         value=postcard_write.hellfall_id,
                     )
                 )
+            if postcard_write is not None and postcard_write.oracle_id:
+                new_card_cells.append(
+                    Cell(
+                        row=dbRowIndex,
+                        col=_ORACLE_ID_COL,
+                        value=postcard_write.oracle_id,
+                    )
+                )
             cardSheetUnapproved.update_cells(new_card_cells)
     except Exception:
         if postcard_write is not None:
@@ -256,119 +267,130 @@ async def accept_card(
         os.remove(image_path)
 
 
-async def accept_veto_card(
-    bot: commands.Bot,
-    cardMessage: str,
-    file: discord.File,
-    cardName: str,
-    authorName: str,
-):
-    authorName = resolve_authors(authorName)
-    extension = re.search("\\.([^.]*)$", file.filename)
-    fileType = (
-        extension.group() if extension else ".png"
-    )  # just guess that the file is a png
-    new_file_name = f'{cardName.replace("/", "|")}{fileType}'
-    image_path = f"tempImages/{new_file_name}"
+# async def accept_veto_card(
+#     bot: commands.Bot,
+#     cardMessage: str,
+#     file: discord.File,
+#     cardName: str,
+#     authorName: str,
+#     kind: Literal["card", "land"] = "card",
+# ):
+#     authorName = resolve_authors(authorName)
+#     extension = re.search(r"\.([^.]*)$", file.filename)
+#     fileType = (
+#         extension.group() if extension else ".png"
+#     )  # just guess that the file is a png
+#     new_file_name = f'{cardName.replace("/", "|")}{fileType}'
+#     image_path = f"tempImages/{new_file_name}"
 
-    file_data = file.fp.read()
-    file_copy_for_cardlist = discord.File(
-        fp=io.BytesIO(file_data), filename=new_file_name
-    )
-    cardListChannel = cast(
-        discord.TextChannel, bot.get_channel(hc_constants.SIX_ONE_CARD_LIST)
-    )
-    vetoCardListChannel = cast(
-        discord.TextChannel, bot.get_channel(hc_constants.VETO_CARD_LIST)
-    )
+#     file_data = file.fp.read()
+#     file_copy_for_cardlist = discord.File(
+#         fp=io.BytesIO(file_data), filename=new_file_name
+#     )
+#     cardListChannel = cast(
+#         discord.TextChannel, bot.get_channel(hc_constants.SIX_ONE_CARD_LIST)
+#     )
+#     vetoCardListChannel = cast(
+#         discord.TextChannel, bot.get_channel(hc_constants.VETO_CARD_LIST)
+#     )
 
-    with open(image_path, "wb") as out:
-        out.write(file_data)
+#     with open(image_path, "wb") as out:
+#         out.write(file_data)
 
-    allCards = cardSheetUnapproved.get("A:E")
-    index = [
-        i
-        for i in range(len(allCards))
-        if allCards[i][1] == cardName and allCards[i][4] == "HCV"
-    ]
+#     currentSheet = cardSheetUnapproved if kind == "card" else landSheetUnapproved
+#     allCards = currentSheet.get("A:E")
+#     index = [
+#         i
+#         for i in range(len(allCards))
+#         if allCards[i][1] == cardName and allCards[i][4][:3] == "HCV"
+#     ]
 
-    newCard = True
-    existing_image_url: Optional[str] = None
-    # At least on match was found, and the name isn't blank
-    if cardName != "" and index.__len__() > 0:
-        dbRowIndex = index[0] + 1
-        newCard = False
-        if len(allCards[index[0]]) > 2 and allCards[index[0]][2]:
-            existing_image_url = str(allCards[index[0]][2])
-    else:
-        dbRowIndex = len(allCards) + 1
-        if cardName == "":
-            cardName = "NO NAME"
+#     newCard = True
+#     existing_image_url: Optional[str] = None
+#     # At least on match was found, and the name isn't blank
+#     if cardName != "" and index.__len__() > 0:
+#         dbRowIndex = index[0] + 1
+#         newCard = False
+#         if len(allCards[index[0]]) > 2 and allCards[index[0]][2]:
+#             existing_image_url = str(allCards[index[0]][2])
+#     else:
+#         dbRowIndex = len(allCards) + 1
+#         if cardName == "":
+#             cardName = "NO NAME"
 
-    existing_hcid = None
-    if not newCard and len(allCards[index[0]]) > 0 and allCards[index[0]][0]:
-        existing_hcid = str(allCards[index[0]][0])
+#     existing_hcid = None
+#     if not newCard and len(allCards[index[0]]) > 0 and allCards[index[0]][0]:
+#         existing_hcid = str(allCards[index[0]][0])
 
-    imageUrl = _upload_accepted_image(
-        image_path,
-        object_name=existing_hcid or cardName,
-        existing_image_url=existing_image_url,
-    )
+#     imageUrl = _upload_accepted_image(
+#         image_path,
+#         object_name=existing_hcid or cardName,
+#         existing_image_url=existing_image_url,
+#     )
 
-    postcard_write = None
-    try:
-        postcard_write = await _sync_card_to_hellfall(
-            card_name=cardName,
-            image_url=imageUrl,
-            author_name=authorName,
-            set_id="HCV",
-            hcid=existing_hcid,
-        )
+#     postcard_write = None
+#     try:
+#         postcard_write = await _sync_card_to_hellfall(
+#             card_name=cardName,
+#             image_url=imageUrl,
+#             author_name=authorName,
+#             set_id="HCV",
+#             hcid=existing_hcid,
+#             kind=kind
+#         )
 
-        cardSheetUnapproved.update_cells(
-            [
-                Cell(row=dbRowIndex, col=3, value=imageUrl),
-                Cell(row=dbRowIndex, col=5, value="HCV"),
-            ]
-        )
+#         cardSheetUnapproved.update_cells(
+#             [
+#                 Cell(row=dbRowIndex, col=3, value=imageUrl),
+#                 Cell(row=dbRowIndex, col=5, value="HCV"),
+#             ]
+#         )
 
-        if newCard:
-            new_card_cells = [
-                Cell(row=dbRowIndex, col=2, value=cardName),
-                Cell(row=dbRowIndex, col=4, value=authorName),
-            ]
-            if postcard_write is not None and postcard_write.hellfall_id:
-                new_card_cells.append(
-                    Cell(
-                        row=dbRowIndex,
-                        col=_HELLFALL_ID_COL,
-                        value=postcard_write.hellfall_id,
-                    )
-                )
-            cardSheetUnapproved.update_cells(new_card_cells)
-    except Exception:
-        if postcard_write is not None:
-            await rollback_postcard_write(postcard_write)
-        if os.path.exists(image_path):
-            os.remove(image_path)
-        raise
+#         if newCard:
+#             new_card_cells = [
+#                 Cell(row=dbRowIndex, col=2, value=cardName),
+#                 Cell(row=dbRowIndex, col=4, value=authorName),
+#             ]
+#             if postcard_write is not None and postcard_write.hellfall_id:
+#                 new_card_cells.append(
+#                     Cell(
+#                         row=dbRowIndex,
+#                         col=_HELLFALL_ID_COL,
+#                         value=postcard_write.hellfall_id,
+#                     )
+#                 )
+#             if postcard_write is not None and postcard_write.oracle_id:
+#                 new_card_cells.append(
+#                     Cell(
+#                         row=dbRowIndex,
+#                         col=_HELLFALL_ID_COL,
+#                         value=postcard_write.hellfall_id,
+#                     )
+#                 )
+#             cardSheetUnapproved.update_cells(new_card_cells)
+#     except Exception:
+#         if postcard_write is not None:
+#             await rollback_postcard_write(postcard_write)
+#         if os.path.exists(image_path):
+#             os.remove(image_path)
+#         raise
 
-    os.remove(image_path)
+#     os.remove(image_path)
 
-    async for message in vetoCardListChannel.history(limit=None):
-        if message.content == cardMessage:
-            try:
-                await message.delete()  # Delete message if it matches
-                print(f"Deleted message: {message.content}")
-            except discord.HTTPException as e:
-                print(f"Failed to delete message: {e}")
+#     async for message in vetoCardListChannel.history(limit=None):
+#         if message.content == cardMessage:
+#             try:
+#                 await message.delete()  # Delete message if it matches
+#                 print(f"Deleted message: {message.content}")
+#             except discord.HTTPException as e:
+#                 print(f"Failed to delete message: {e}")
 
-    async for message in cardListChannel.history(limit=None):
-        if message.content == cardMessage:
-            try:
-                await message.delete()  # Delete message if it matches
-                print(f"Deleted message: {message.content}")
-            except discord.HTTPException as e:
-                print(f"Failed to delete message: {e}")
+#     async for message in cardListChannel.history(limit=None):
+#         if message.content == cardMessage:
+#             try:
+#                 await message.delete()  # Delete message if it matches
+#                 print(f"Deleted message: {message.content}")
+#             except discord.HTTPException as e:
+#                 print(f"Failed to delete message: {e}")
 
-    await vetoCardListChannel.send(file=file_copy_for_cardlist, content=cardMessage)
+#     await vetoCardListChannel.send(file=file_copy_for_cardlist, content=cardMessage)

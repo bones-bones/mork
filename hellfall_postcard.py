@@ -22,6 +22,8 @@ class PostcardWrite:
     # Hellfall card UUID from response ``id`` (sheet BA / token L). Not always
     # equal to ``doc_id`` on updates — use this for sheet UUID columns.
     hellfall_id: str | None = None
+    # Oracle card UUID from response ``oracle_id`` (sheet BA / token M).
+    oracle_id: str | None = None
 
 
 def postcard_sync_enabled() -> bool:
@@ -111,6 +113,7 @@ async def sync_accepted_card(
                 previous=previous if isinstance(previous, dict) else None,
                 image_url=str(image_url) if image_url else None,
                 hellfall_id=hellfall_id,
+                oracle_id=str(data["oracle_id"])
             )
 
 
