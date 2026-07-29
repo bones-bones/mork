@@ -37,7 +37,7 @@ from getVetoPollsResults import (
     limit_veto_poll_results,
 )
 from getters import (
-    getErrataSubmissionChannel,
+    getErrataTrackingChannel,
     getMorkSubmissionsLoggingChannel,
     getSubmissionDiscussionChannel,
     getVetoChannel,
@@ -110,7 +110,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
     add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handleVetoPost.
     """
 
-    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
+    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
     if not channel:
         return
     time_now = datetime.now(timezone.utc)
@@ -352,7 +352,7 @@ class LifecycleCog(commands.Cog):
                         veto_council=veto_council_to_notify,
                     )
                     await ogMessage.add_reaction(hc_constants.DELETE)
-                    errata_submissions_channel = getErrataSubmissionChannel(
+                    errata_submissions_channel = getErrataTrackingChannel(
                         bot=self.bot
                     )
                     errata_submission_message = await errata_submissions_channel.send(
@@ -476,11 +476,23 @@ class LifecycleCog(commands.Cog):
                 await message.channel.send(
                     "Hey there! It looks like you are sharing a link with tracking information."
                 )
+
+        if "mtg.fandom.com" in message.content.lower():
+            await message.channel.send(
+                "Don't use the fandom wiki, fandom sucks. Use mtg.wiki instead, it forked from the fandom wiki, and is now owned by the scryfall people. Fandom wiki has been abandoned and has outdated information."
+            )
+
+        if "homestuckcube" in message.content.lower():
+            await message.add_reaction("🏐")
+
         if "mork i will" in message.content.lower():
             await message.channel.send("pls don't")
 
         if "mork bork" in message.content.lower():
-            await message.channel.send("no i ain't")
+            if random.randint(1, 50) == 1:
+                await message.channel.send("neigh")
+            else:
+                await message.channel.send("no i ain't")
 
         # Hello single coolest thing about python
         match message.channel.id:
@@ -603,11 +615,9 @@ class LifecycleCog(commands.Cog):
                                 ).total_seconds()
                             ) / (60 * 60)
 
-                            # Check if user is admin
-                            member = cast(discord.Member, message.author)
-                            is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
-
-                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin:
+                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
+                                cast(discord.Member, message.author)
+                            ):
                                 discussionChannel = getSubmissionDiscussionChannel(
                                     self.bot
                                 )
@@ -709,11 +719,9 @@ class LifecycleCog(commands.Cog):
                                         ).total_seconds()
                                     ) / (60 * 60)
 
-                                    # Check if user is admin
-                                    member = cast(discord.Member, message.author)
-                                    is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
-
-                                    if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin:
+                                    if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
+                                        cast(discord.Member, message.author)
+                                    ):
                                         discussionChannel = cast(
                                             TextChannel,
                                             self.bot.get_channel(
