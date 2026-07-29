@@ -1053,17 +1053,9 @@ class SpecificCardsCog(commands.Cog):
     @commands.command(aliases=["league"])
     async def leagueOfLegends(self, ctx: commands.Context):
         await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx)
-    
-    # get a random artifact creature and/or vehicle for Mechtitan 
-    @commands.command(aliases=["mechdietan"])
-    async def mechtitan(self, ctx: commands.Context):
-        await fetchAndSendCard(
-            f"{SCRYFALL_RANDOM_API_URL}(t%3A%2Fartifact+creature%2F+or+t%3Aartifact+and+t%3Avehicle)+game%3Apaper+prefer%3Abest+-function%3Ayou_matter+-function%3Adexterity+-function%3Aart-matters+-function%3Aspeech-matters+-function%3Aun-set-mechanics&unique=cards",
-            ctx,
-        )
-    
+
     # ger a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
-    @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell", "bigwizardspell"])
+    @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell"])
     async def archmage(self, ctx: commands.Context):
         wizardSpells = [
             "https://lh3.googleusercontent.com/d/19rnWIq5XPCDrkEbiC0V9oyCs9jAYB0EY",
@@ -1471,8 +1463,8 @@ class SpecificCardsCog(commands.Cog):
 
         await ctx.send("\n".join(message_parts))
 
-    # for the Mechtitan
-    @commands.command()
+    # get random artifact creatures and/or vehicles for Mechtitan
+    @commands.command(aliases=["mechdietan"])
     async def mechtitan(self, ctx: commands.Context):
         for i in range(4):
             await fetchAndSendCard(
