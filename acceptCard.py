@@ -25,11 +25,11 @@ cardSheetUnapproved = googleClient.open_by_key(
     hc_constants.HELLSCUBE_DATABASE
 ).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
-# Column BA (header UUID) — Hellfall card ``id`` from postcard response
-_HELLFALL_ID_COL = 53
+# Column BB (header UUID) — Hellfall card ``id`` from postcard response
+_HELLFALL_ID_COL = 54
 
-# Column BB (header UUID) — Hellfall card ``oracle_id`` from postcard response
-_ORACLE_ID_COL = 54
+# Column BC (header UUID) — Hellfall card ``oracle_id`` from postcard response
+_ORACLE_ID_COL = 55
 
 
 def _upload_accepted_image(
