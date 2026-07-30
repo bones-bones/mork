@@ -958,7 +958,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send(content="all caught up!")
 
     @commands.command()
-    async def compileveto(self, ctx: commands.Context, count: int = None):
+    async def compileveto(self, ctx: commands.Context, count: int|None = None):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return
