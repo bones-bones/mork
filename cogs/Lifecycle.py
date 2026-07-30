@@ -529,11 +529,23 @@ class LifecycleCog(commands.Cog):
                 await message.channel.send(
                     "Hey there! It looks like you are sharing a link with tracking information."
                 )
+
+        if "mtg.fandom.com" in message.content.lower():
+            await message.channel.send(
+                "Don't use the fandom wiki, fandom sucks. Use mtg.wiki instead, it forked from the fandom wiki, and is now owned by the scryfall people. Fandom wiki has been abandoned and has outdated information."
+            )
+
+        if "homestuckcube" in message.content.lower():
+            await message.add_reaction("🏐")
+
         if "mork i will" in message.content.lower():
             await message.channel.send("pls don't")
 
         if "mork bork" in message.content.lower():
-            await message.channel.send("no i ain't")
+            if random.randint(1, 50) == 1:
+                await message.channel.send("neigh")
+            else:
+                await message.channel.send("no i ain't")
 
         # Hello single coolest thing about python
         match message.channel.id:
