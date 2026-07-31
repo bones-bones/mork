@@ -65,8 +65,24 @@ class GeneralCog(commands.Cog):
     @commands.command()
     async def waiy(self, ctx: commands.Context):
         await ctx.send(f"<@467941798321324034>")
-    # this command is temporary for maintaining a bit and will be deleted in a week or so 
+    # ping user biollante
 
+    @commands.command()
+    async def ping4cb(self, ctx: commands.Context):
+        await ctx.send(f"<@1528573435733872660>")
+
+    @commands.command()
+    async def pingwanttodraft(self, ctx: commands.Context):
+        await ctx.send(f"<@661721357066698762>")
+
+    @commands.command()
+    async def pinghellsmander(self, ctx: commands.Context):
+        await ctx.send(f"<@720043670870425691>")
+
+    @commands.command()
+    async def pinghellstructed(self, ctx: commands.Context):
+        await ctx.send(f"<@856927890120769576>")
+    
     @commands.command()
     async def help(self, ctx: commands.Context):
         await ctx.send(
@@ -86,7 +102,8 @@ class GeneralCog(commands.Cog):
         }
 
         return is_admin or (is_judge and allowed_judge_channel)
-
+    
+    #allows admins and judges (in specific channels) to make mork say stuff. good for permanent announcements that will not be deleted if the user is hacked/leaves the server/is banned
     @commands.command(name="echo")
     async def echo(self, ctx: commands.Context, *, message: str = ""):
         if not self._can_use_echo_command(ctx):
@@ -100,6 +117,7 @@ class GeneralCog(commands.Cog):
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
+    #allows admins and judges (in specific channels) to edit things mork says, useful for gameplay rules advanced to have any judge be able to edit the rules.
     @commands.command(name="ecdit")
     async def ecdit(self, ctx: commands.Context, *, message: str = ""):
         if not self._can_use_echo_command(ctx):

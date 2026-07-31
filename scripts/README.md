@@ -13,6 +13,6 @@ Each script starts with `import mork_repo_root`, which adds the repo root to `sy
 |--------|---------|
 | `mork_repo_root.py` | Not run directly; adjusts `sys.path` for other scripts |
 | `download_and_upload_images.py` | Sheet → download art → process borders → Google Drive / printable sheet flow |
-| `download_and_upload_images_gcs.py` | [Tokens Database](https://docs.google.com/spreadsheets/d/1qqGCedHmQ8bwi-YFjmv-pNKKMjubZQUAaF7ItJN5d1g/edit?gid=2123813197) tab (cols A=name, B=image) → GCS; defaults to tab gid `2123813197`; `--help` for flags |
+| `download_and_upload_images_gcs.py` | [Tokens Database](https://docs.google.com/spreadsheets/d/1qqGCedHmQ8bwi-YFjmv-pNKKMjubZQUAaF7ItJN5d1g/edit?gid=2123813197) tab: download image (lh3/Drive) → GCS → update sheet + Hellfall; `--dry-run`, `--skip-if-gcs`, `--no-sync-hellfall` |
 | `fix_borders_gcs.py` | Pull printable images from GCS, fix borders, re-upload |
 | `bonus.py` | Small ad-hoc sheet range dump (edit indices in file as needed) |

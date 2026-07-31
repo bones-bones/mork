@@ -75,6 +75,7 @@ class CardSearch:
         legality: str,
         rulings: str,
         tags: list[str],
+        artists: list[str],
         id: str,
     ):
         self._id = id
@@ -88,6 +89,7 @@ class CardSearch:
         self._legality = legality
         self._rulings = rulings
         self._tags = tags
+        self._artists = artists
 
     def name(self):
         return self._name
@@ -118,6 +120,9 @@ class CardSearch:
 
     def tags(self):
         return self._tags
+
+    def artists(self):
+        return self._artists
 
     def addTag(self, tag):
         self._tags.append(tag)

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import asyncio
 import re
 from typing import cast
 import discord
@@ -25,6 +26,9 @@ SCRYFALL_RANDOM_API_URL = "https://api.scryfall.com/cards/random?q="
 
 # load json from scryfall
 async def get_scryfall_json(targetUrl):
+    """
+    Get json of a card from scryfall. it's important to use the header so they know to block us lol.
+    """
     headers = {"User-Agent": hc_constants.USER_AGENT}
     return requests.get(targetUrl, headers=headers).json()
 
@@ -479,7 +483,7 @@ class SpecificCardsCog(commands.Cog):
             await ctx.send("Please type a number 20 or lower.")
             return
 
-        output = get_podcast_output(number)
+        output = await asyncio.to_thread(get_podcast_output, number)
 
         await ctx.send(output)
 
@@ -773,13 +777,13 @@ class SpecificCardsCog(commands.Cog):
         await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}will+type=scheme", ctx)
 
     # for the _______ Balls
-    @commands.command()
+    @commands.command(aliases=["balls"])
     async def _______Balls(self, ctx: commands.Context):
         # https://scryfall.com/random?q=will+type=scheme
 
         stickers = (
             await get_scryfall_json("https://api.scryfall.com/cards/search?q=t:sticker")
-        ).data
+        )["data"]
         selected = random.sample(stickers, k=3)
 
         await send_image(await get_image_from_json(selected[0]), ctx)
@@ -1060,6 +1064,29 @@ class SpecificCardsCog(commands.Cog):
     
     # ger a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
     @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell", "bigwizardspell"])
+    async def archmage(self, ctx: commands.Context):
+        wizardSpells = [
+            "https://lh3.googleusercontent.com/d/19rnWIq5XPCDrkEbiC0V9oyCs9jAYB0EY",
+            "https://lh3.googleusercontent.com/d/1ldCQPfz1IrRQR4hZA0N1K3cUEnTnwujf",
+            "https://lh3.googleusercontent.com/d/1Eym0VyDGP-8oVdaQCUuq_4_N-EfUqeOp",
+            "https://lh3.googleusercontent.com/d/1dKulOK2SvwM-Zg4f3BkUeKcSOiyz8hLZ",
+            "https://lh3.googleusercontent.com/d/1R3iqur_xMGQAJZc5XDuFS_I3GS2GyDMQ",
+            "https://lh3.googleusercontent.com/d/19e4pFfg3P6Efouu4B2_zHIOQIJVpUdkp",
+            "https://lh3.googleusercontent.com/d/1sK_P_excMIEsqjq_YiAuhNnkPwSc3YkF",
+            "https://lh3.googleusercontent.com/d/19KoWsqfc8WUIndZXKYe6Bk_zY_135W3N",
+            "https://lh3.googleusercontent.com/d/1OJhtS8UH0iltbHcD3M6Tw2bz-cywFyX7",
+            "https://lh3.googleusercontent.com/d/1Rm1EvmuQHYgGGLMqHZlE_Rg3ZgIaRDc7",
+            "https://lh3.googleusercontent.com/d/1QTVU_QZIvWIX3HfwblAu7E6_JsY_aWOD",
+            "https://lh3.googleusercontent.com/d/1aMId0MQGLkkV344_LVPW7WM--m1VPlHj",
+            "https://lh3.googleusercontent.com/d/1lsIh3TsGWQiNt_Ie02P0MAtnT0R3xEKw",
+            "https://lh3.googleusercontent.com/d/1yPrP7ntPyi4VZygX0cgHQVuB7pNDZRVk",
+            "https://lh3.googleusercontent.com/d/1Qf2mymfif1UqpmbhRIaMIBJDnkVXqSZQ",
+        ]
+        rwizardspell = random.randint(0, len(wizardSpells) - 1)
+        await ctx.send(wizardSpells[rwizardspell])
+
+    # ger a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
+    @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell"])
     async def archmage(self, ctx: commands.Context):
         wizardSpells = [
             "https://lh3.googleusercontent.com/d/19rnWIq5XPCDrkEbiC0V9oyCs9jAYB0EY",
@@ -1466,6 +1493,15 @@ class SpecificCardsCog(commands.Cog):
         message_parts.append(f"-# [original](https://zaxer2.github.io/howtogrunch)")
 
         await ctx.send("\n".join(message_parts))
+
+    # get random artifact creatures and/or vehicles for Mechtitan
+    @commands.command(aliases=["mechdietan"])
+    async def mechtitan(self, ctx: commands.Context):
+        for i in range(4):
+            await fetchAndSendCard(
+                f"{SCRYFALL_RANDOM_API_URL}(t:/artifact+creature/+or+t:artifact+and+t:vehicle)+game:paper+prefer:best+-function:you_matter+-function:dexterity+-function:art-matters+-function:speech-matters+-function:un-set-mechanics&unique=cards&as=grid&order=name",
+                ctx,
+            )
 
 
 async def setup(bot: commands.Bot):

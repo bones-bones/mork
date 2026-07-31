@@ -7,6 +7,7 @@ from discord.ext import commands
 
 import hc_constants
 
+from cogs.lifecycle.submissions_day_markers import is_submissions_card
 from reddit_functions import post_gallery_to_reddit
 
 
@@ -21,7 +22,9 @@ async def post_daily_submissions(bot: commands.Bot):
 
     messages = [message async for message in messages]
 
-    filteredMessages = list(filter(lambda x: len(x.attachments) > 0, messages))
+    filteredMessages = [m for m in messages if is_submissions_card(m)]
+    if not filteredMessages:
+        return
 
     toPost = sample(filteredMessages, min(10, filteredMessages.__len__()))
     for messageEntry in toPost:
