@@ -19,6 +19,10 @@ DISCORD_ACCESS_TOKEN = os.environ["DISCORD_ACCESS_TOKEN"]
 
 
 class MyBot(commands.Bot):
+    """
+    This is it. this is the mork.
+    """
+
     async def setup_hook(self):
         print("This is asynchronous!")
 

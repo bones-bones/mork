@@ -164,3 +164,4 @@ typings
 .notes
 .ruff_cache/
 LESSONS_LEARNED.md
+.worktrees/

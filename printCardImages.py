@@ -10,7 +10,7 @@ from shared_vars import allCards
 from discord.message import Message
 
 
-async def print_card_images(message: Message):
+async def post_card_images(message: Message):
     print(message.author)
     message_text = message.content.lower().split("{{")[1:]
     for i in range(len(message_text)):  # TODO: maybe use a .map here
