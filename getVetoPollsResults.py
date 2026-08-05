@@ -19,7 +19,7 @@ This function groups previous poll results. It's used in two ways: for the compi
 async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
     vetoChannel = getVetoChannel(bot)
     timeNow = datetime.now(timezone.utc)
-    fourWeeksAgo = timeNow + timedelta(days=-28 * 3)
+    sixWeeksAgo = timeNow + timedelta(weeks=-6)
     epicCatchphrases = [
         "If processing lasts more than 5 minutes, consult your doctor.",
         "on it, yo.",
@@ -58,7 +58,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
 
     await ctx.send(random.choice(epicCatchphrases))
 
-    messages = vetoChannel.history(after=fourWeeksAgo, limit=None)
+    messages = vetoChannel.history(after=sixWeeksAgo, limit=None)
 
     if messages is None:
         return

@@ -1,0 +1,16 @@
+{
+  "labels": {
+    "765": {"verdict": "N", "note": "corner color mismatch (reference bad)"},
+    "434": {"verdict": "N", "note": "multi-card in one file (reference bad)"},
+    "486": {"verdict": "N", "note": "conversion bleed (reference bad)"},
+    "2405": {"verdict": "N", "note": "wrong print dimensions — not valid card aspect/size for printing"},
+    "342": {"verdict": "Y", "note": "known good"},
+    "343": {"verdict": "Y", "note": "known good"},
+    "352": {"verdict": "Y", "note": "known good"},
+    "456": {"verdict": "Y", "note": "known good"},
+    "75": {"verdict": "Y", "note": "human: looks good enough (compare mismatch)"},
+    "175": {"verdict": "Y", "note": "human: no corner trim"},
+    "186": {"verdict": "Y", "note": "human: non-standard border color but acceptable"},
+    "135": {"verdict": "N", "note": "human: faint lines extending along border"}
+  }
+}

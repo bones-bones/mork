@@ -18,7 +18,7 @@ I have no idea what is going on, I think Exalted and Cirion built this. (and Zax
 - **`cogs/lifecycle/`** — helpers used by the lifecycle cog
 - **`submissions/`** — token / masterpiece / errata submission checks
 - **`scripts/`** — one-off maintenance (sheet → Drive/GCS image pipelines, border fixes). Run from the **repository root** so `./bot_secrets/...` paths work, e.g. `python scripts/download_and_upload_images_gcs.py --dry-run` — see [scripts/README.md](scripts/README.md)
-- **`docs/`** — deployment and ops notes; [docs/codebase-layout.md](docs/codebase-layout.md) explains why many `.py` files sit at the repo root
+- **`docs/`** — deployment and ops notes; [docs/codebase-layout.md](docs/codebase-layout.md) explains why many `.py` files sit at the repo root; [docs/card-flows/](docs/card-flows/README.md) has Mermaid diagrams for card lifecycle workflows
 - **`bot_secrets/`** — local credentials (gitignored); use the `*.template.py` files as a guide
 - **Top-level `*.py` modules** (e.g. `shared_vars.py`, `acceptCard.py`) — imported by cogs; kept at the root on purpose for `python Mork.py` without a package install
 
@@ -66,6 +66,8 @@ It's pretty easy to get multiple versions of Python installed. particularly 3? I
 
 
 # The lifecycle of a card
+
+Detailed flow diagrams (submission → veto → acceptance → persistence): **[docs/card-flows/](docs/card-flows/README.md)**.
 
 ## 1. Coming up with ideas
 Uh just do it
