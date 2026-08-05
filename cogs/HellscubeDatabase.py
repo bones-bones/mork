@@ -10,7 +10,7 @@ from CardClasses import Card, Side, CardSearch
 from cardNameRequest import cardNameRequest
 import hc_constants
 from isRealCard import isRealCard
-from printCardImages import send_image_reply
+from post_card_images import send_image_reply
 
 
 from shared_vars import intents, allCards, googleClient, cardSheet
@@ -28,11 +28,7 @@ client = discord.Client(intents=intents)
 
 def _sheet_has_collector_number(headers: list[str]) -> bool:
     """True when col W is collector # and Side 2 Cost starts at X."""
-    return (
-        len(headers) > 23
-        and headers[22] != "Cost"
-        and headers[23] == "Cost"
-    )
+    return len(headers) > 23 and headers[22] != "Cost" and headers[23] == "Cost"
 
 
 def build_database():
@@ -71,15 +67,17 @@ def build_database():
             colors = entry[9].split(";")
             artists = entry[20].split(";") if entry[20] != "" else []
             tags = entry[21].split(";") if entry[21] != "" else []
-            collector_number = (
-                entry[22] if has_collector and len(entry) > 22 else ""
-            )
+            collector_number = entry[22] if has_collector and len(entry) > 22 else ""
             sides = []
             sides.append(create_side(entry[10:19]))  # Name to Image
             for face_offset in (0, 10, 20):
                 start = side2_start + face_offset
                 type_idx = start + 2
-                if len(entry) > type_idx and entry[type_idx] != "" and entry[type_idx] != " ":
+                if (
+                    len(entry) > type_idx
+                    and entry[type_idx] != ""
+                    and entry[type_idx] != " "
+                ):
                     sides.append(create_side(entry[start : start + 9]))
 
             cardList.append(

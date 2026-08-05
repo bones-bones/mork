@@ -18,7 +18,7 @@ import os
 from cogs.HellscubeDatabase import searchFor
 from cogs.get_podcast_output import get_podcast_output
 import hc_constants
-from printCardImages import send_image_reply
+from post_card_images import send_image_reply
 
 
 SCRYFALL_RANDOM_API_URL = "https://api.scryfall.com/cards/random?q="
@@ -1052,10 +1052,19 @@ class SpecificCardsCog(commands.Cog):
     # get a random legends commander from set:legends, for card League of Legends
     @commands.command(aliases=["league"])
     async def leagueOfLegends(self, ctx: commands.Context):
-        await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx)
+        await fetchAndSendCard(
+            f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx
+        )
 
     # ger a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
-    @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell"])
+    @commands.command(
+        aliases=[
+            "bigwizardspell",
+            "bigfuckingwizardspell",
+            "gamewinningspellbook",
+            "wizardspell",
+        ]
+    )
     async def archmage(self, ctx: commands.Context):
         wizardSpells = [
             "https://lh3.googleusercontent.com/d/19rnWIq5XPCDrkEbiC0V9oyCs9jAYB0EY",
