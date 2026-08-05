@@ -91,12 +91,17 @@ async def _resolve_accepted_image_url(
     hcid: Optional[str],
     existing_image_url: Optional[str],
     require_hellfall_postcard: bool,
+    is_new_card: bool,
 ) -> tuple[str, Optional[PostcardWrite]]:
     object_name = hcid or card_name
-    if require_hellfall_postcard:
+    hellfall_first = require_hellfall_postcard or (
+        is_new_card and postcard_sync_enabled()
+    )
+    if hellfall_first:
         image_base64 = base64.b64encode(file_data).decode("ascii")
         postcard_write: Optional[PostcardWrite] = None
         image_url: Optional[str] = None
+        require_sync = require_hellfall_postcard
         try:
             postcard_write = await sync_accepted_card(
                 name=card_name,
@@ -105,7 +110,7 @@ async def _resolve_accepted_image_url(
                 set_id=set_id,
                 hcid=hcid,
                 kind="card",
-                require_sync=True,
+                require_sync=require_sync,
             )
             if postcard_write and postcard_write.image_url:
                 image_url = postcard_write.image_url
@@ -127,7 +132,7 @@ async def _resolve_accepted_image_url(
                 set_id=set_id,
                 hcid=hcid,
                 kind="card",
-                require_sync=True,
+                require_sync=require_sync,
             )
             image_url = (
                 postcard_write.image_url
@@ -135,7 +140,7 @@ async def _resolve_accepted_image_url(
                 else gcs_url
             )
 
-        if not postcard_write:
+        if require_sync and not postcard_write:
             raise PostcardSyncError("hellfall postcard sync did not complete")
         if not image_url:
             raise PostcardSyncError("hellfall did not return imageUrl")
@@ -220,6 +225,7 @@ async def accept_card(
             hcid=firestore_hcid,
             existing_image_url=existing_image_url,
             require_hellfall_postcard=require_hellfall_postcard,
+            is_new_card=newCard,
         )
 
         cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)

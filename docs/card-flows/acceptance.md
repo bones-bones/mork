@@ -15,7 +15,7 @@ flowchart TD
 
   UPD --> IMG
   NEW --> IMG
-  IMG["GCS upload + optional Hellfall postcard sync"]
+  IMG["Hellfall postcard (new) or GCS + postcard (errata)"]
   IMG --> CL["Post **Name** by **Author** + image<br/>to card-list Discord channel"]
   CL --> RD{"Errata or skip Reddit?"}
   RD -->|no| POST["Post to Reddit<br/>(or defer if batch > 5)"]
@@ -48,21 +48,21 @@ Inside `accept_card`, bytes are written to `tempImages/{cardName}{ext}` (slashes
 ```mermaid
 flowchart TD
   IN["Discord attachment bytes"] --> TMP["Write tempImages/…"]
-  TMP --> MODE{"require_hellfall_postcard?"}
+  TMP --> MODE{"New card + sync on,<br/>or Design Hell?"}
 
-  MODE -->|no — default accepts| GCS1["Upload → hellscube-images GCS"]
-  GCS1 --> OPT{"MORK_POSTCARD_SYNC enabled?"}
-  OPT -->|yes| PC1["POST /api/cards/postcard<br/>image = GCS URL"]
-  OPT -->|no| URL1["Sheet col C = GCS URL"]
-  PC1 --> URL1
-
-  MODE -->|yes — Design Hell| B64["POST /api/cards/postcard<br/>imageBase64"]
+  MODE -->|yes| B64["POST /api/cards/postcard<br/>imageBase64"]
   B64 --> OK{"imageUrl returned?"}
   OK -->|yes| URL2["Sheet col C = Hellfall imageUrl"]
   OK -->|invalid_body only| GCS2["Upload → GCS, retry postcard with image URL"]
   GCS2 --> URL2
   B64 -->|other error| FAIL["Accept fails"]
   GCS2 -->|sync fails| FAIL
+
+  MODE -->|no — errata or sync off| GCS1["Upload → hellscube-images GCS"]
+  GCS1 --> OPT{"MORK_POSTCARD_SYNC enabled?"}
+  OPT -->|yes| PC1["POST /api/cards/postcard<br/>image = GCS URL"]
+  OPT -->|no| URL1["Sheet col C = GCS URL"]
+  PC1 --> URL1
 ```
 
 ### GCS upload
@@ -97,17 +97,17 @@ Payload includes `name`, `creators`, `set`, `kind: "card"`, and either `imageBas
 
 ### Default vs Design Hell
 
-|                    | Default (compile-veto, errata, sneak, graveyard, …) | Design Hell                                                  |
-| ------------------ | --------------------------------------------------- | ------------------------------------------------------------ |
-| Order              | GCS first, then optional Hellfall                   | Hellfall first (base64), GCS fallback on `invalid_body` only |
-| Sync required?     | No — gated by `MORK_POSTCARD_SYNC`                  | Yes — `require_sync=True`                                    |
-| URL in sheet col C | GCS URL (Hellfall `imageUrl` not substituted)       | Hellfall `imageUrl`, or GCS URL if Hellfall omits it         |
+|                    | New card (`MORK_POSTCARD_SYNC` on)                  | Errata / sync off                                         | Design Hell                                                  |
+| ------------------ | --------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ |
+| Order              | Hellfall first (base64), GCS fallback on `invalid_body` only | GCS first, then optional Hellfall                         | Hellfall first (base64), GCS fallback on `invalid_body` only |
+| Sync required?     | No — gated by `MORK_POSTCARD_SYNC`                  | No — gated by `MORK_POSTCARD_SYNC`                        | Yes — `require_sync=True`                                    |
+| URL in sheet col C | Hellfall `imageUrl`, or GCS URL if Hellfall omits it | GCS URL (Hellfall `imageUrl` not substituted)             | Hellfall `imageUrl`, or GCS URL if Hellfall omits it         |
 
 ### Errata vs new card (image)
 
 |                    | New card                           | Errata                                |
 | ------------------ | ---------------------------------- | ------------------------------------- |
 | `hcid` to Hellfall | Next numeric id                    | Existing `errataId`                   |
-| GCS object         | New key from slug                  | Overwrite if col C URL is same bucket |
+| GCS upload (mork)  | Skipped when sync on (Hellfall uploads) | Overwrite if col C URL is same bucket |
 | Sheet write        | Cols A, B, C, D, E + BB/BC on sync | **Col C only** (image URL)            |
 | Reddit             | Posted (unless batch deferred)     | Skipped                               |
