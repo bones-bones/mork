@@ -54,7 +54,7 @@ import hc_constants
 from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonable_card
-from printCardImages import print_card_images
+from printCardImages import post_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
 
@@ -497,7 +497,7 @@ class LifecycleCog(commands.Cog):
         ):
             return
         if "{{" in message.content:
-            await print_card_images(message)
+            await post_card_images(message)
         if "cock" in message.content.lower():
             if random.randint(1, 100) in [67, 69]:
                 await message.channel.send(
