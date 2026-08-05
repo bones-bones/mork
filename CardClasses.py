@@ -77,6 +77,7 @@ class CardSearch:
         tags: list[str],
         artists: list[str],
         id: str,
+        collector_number: str = "",
     ):
         self._id = id
         self._name = name
@@ -90,6 +91,7 @@ class CardSearch:
         self._rulings = rulings
         self._tags = tags
         self._artists = artists
+        self._collector_number = collector_number
 
     def name(self):
         return self._name
@@ -129,6 +131,9 @@ class CardSearch:
 
     def id(self):
         return self._id
+
+    def collector_number(self):
+        return self._collector_number
 
     def types(self):
         returnList: list[str] = []

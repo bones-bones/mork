@@ -19,10 +19,10 @@ class PostcardWrite:
     was_create: bool
     previous: dict[str, Any] | None
     image_url: str | None = None
-    # Hellfall card UUID from response ``id`` (sheet BA / token L). Not always
+    # Hellfall card UUID from response ``id`` (sheet BB / token L). Not always
     # equal to ``doc_id`` on updates — use this for sheet UUID columns.
     hellfall_id: str | None = None
-    # Oracle card UUID from response ``oracle_id`` (sheet BA / token M).
+    # Oracle card UUID from response ``oracle_id`` (sheet BC / token M).
     oracle_id: str | None = None
 
 

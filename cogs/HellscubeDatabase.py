@@ -26,6 +26,15 @@ notMagicCardSheet = databaseSheets.worksheet("NotMagic")
 client = discord.Client(intents=intents)
 
 
+def _sheet_has_collector_number(headers: list[str]) -> bool:
+    """True when col W is collector # and Side 2 Cost starts at X."""
+    return (
+        len(headers) > 23
+        and headers[22] != "Cost"
+        and headers[23] == "Cost"
+    )
+
+
 def build_database():
     global cardList
     cardList = []
@@ -35,7 +44,11 @@ def build_database():
     set_username_mappings(usernameMappings)
 
     cardSheetSearch = databaseSheets.worksheet("Database")
-    cardsDataSearch = cardSheetSearch.get_all_values()[2:]
+    all_values = cardSheetSearch.get_all_values()
+    headers = all_values[1]
+    has_collector = _sheet_has_collector_number(headers)
+    side2_start = 23 if has_collector else 22
+    cardsDataSearch = all_values[2:]
 
     for entry in cardsDataSearch:
         creator_alias = next(
@@ -58,14 +71,16 @@ def build_database():
             colors = entry[9].split(";")
             artists = entry[20].split(";") if entry[20] != "" else []
             tags = entry[21].split(";") if entry[21] != "" else []
+            collector_number = (
+                entry[22] if has_collector and len(entry) > 22 else ""
+            )
             sides = []
             sides.append(create_side(entry[10:19]))  # Name to Image
-            if entry[24] != "" and entry[24] != " ":
-                sides.append(create_side(entry[22:31]))
-            if entry[34] != "" and entry[34] != " ":
-                sides.append(create_side(entry[32:41]))
-            if entry[44] != "" and entry[44] != " ":
-                sides.append(create_side(entry[42:51]))
+            for face_offset in (0, 10, 20):
+                start = side2_start + face_offset
+                type_idx = start + 2
+                if len(entry) > type_idx and entry[type_idx] != "" and entry[type_idx] != " ":
+                    sides.append(create_side(entry[start : start + 9]))
 
             cardList.append(
                 CardSearch(
@@ -81,6 +96,7 @@ def build_database():
                     rulings=rulings,
                     tags=tags,
                     artists=artists,
+                    collector_number=collector_number,
                 )
             )
         except Exception as e:
@@ -548,6 +564,8 @@ def format_card_info(card: CardSearch) -> str:
         f"set: {cardset}",
         f"legality: {legality}",
     ]
+    if card.collector_number():
+        to_send.append(f"collector #: {card.collector_number()}")
     if artists.__len__() > 0:
         to_send.append("artists: " + ", ".join(artists))
     if tags.__len__() > 0:
