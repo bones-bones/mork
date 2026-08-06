@@ -19,10 +19,10 @@ class PostcardWrite:
     was_create: bool
     previous: dict[str, Any] | None
     image_url: str | None = None
-    # Hellfall card UUID from response ``id`` (sheet BA / token L). Not always
+    # Hellfall card UUID from response ``id`` (sheet BB / token L). Not always
     # equal to ``doc_id`` on updates — use this for sheet UUID columns.
     hellfall_id: str | None = None
-    # Oracle card UUID from response ``oracle_id`` (sheet BA / token M).
+    # Oracle card UUID from response ``oracle_id`` (sheet BC / token M).
     oracle_id: str | None = None
 
 
@@ -48,6 +48,32 @@ def _auth_headers() -> dict[str, str]:
         "Authorization": f"Bearer {_api_key()}",
         "Content-Type": "application/json",
     }
+
+
+def _postcard_debug(msg: str) -> None:
+    print(f"[postcard-debug] {msg}", flush=True)
+
+
+def _postcard_request_context(
+    *,
+    kind: str,
+    name: str,
+    set_id: str,
+    hcid: Optional[str],
+    image: Optional[str],
+    image_base64: Optional[str],
+) -> str:
+    return (
+        f"kind={kind} name={name!r} set={set_id!r} hcid={hcid!r} "
+        f"has_image_url={bool(image)} has_image_base64={bool(image_base64)}"
+    )
+
+
+def _payload_summary(payload: dict[str, str]) -> str:
+    summary = {key: value for key, value in payload.items() if key != "imageBase64"}
+    if "imageBase64" in payload:
+        summary["imageBase64"] = f"<{len(payload['imageBase64'])} chars>"
+    return repr(summary)
 
 
 async def sync_accepted_card(
@@ -87,6 +113,18 @@ async def sync_accepted_card(
     if hcid:
         payload["hcid"] = hcid
 
+    request_context = _postcard_request_context(
+        kind=kind,
+        name=name,
+        set_id=set_id,
+        hcid=hcid,
+        image=image,
+        image_base64=image_base64,
+    )
+    _postcard_debug(
+        f"POST /api/cards/postcard payload={_payload_summary(payload)} {request_context}"
+    )
+
     async with aiohttp.ClientSession() as session:
         async with session.post(
             f"{api_url}/api/cards/postcard",
@@ -95,10 +133,24 @@ async def sync_accepted_card(
             timeout=aiohttp.ClientTimeout(total=30),
         ) as resp:
             data = await resp.json(content_type=None)
+            response_keys = (
+                sorted(data.keys()) if isinstance(data, dict) else type(data).__name__
+            )
+            _postcard_debug(
+                f"response status={resp.status} keys={response_keys} {request_context}"
+            )
             if resp.status != 200:
                 reason = data.get("reason") if isinstance(data, dict) else None
+                _postcard_debug(
+                    "postcard HTTP error "
+                    f"status={resp.status} reason={reason!r} response={data!r} "
+                    f"{request_context} payload={_payload_summary(payload)}"
+                )
                 raise PostcardSyncError(reason or f"HTTP {resp.status}")
             if not isinstance(data, dict) or not data.get("ok"):
+                _postcard_debug(
+                    f"postcard_failed response={data!r} {request_context}"
+                )
                 raise PostcardSyncError("postcard_failed")
 
             previous = data.get("previous")
@@ -107,13 +159,27 @@ async def sync_accepted_card(
             # older responses where create used the same value for both.
             raw_id = data.get("id") or data.get("cardId") or data.get("docId")
             hellfall_id = str(raw_id) if raw_id else None
+            oracle_id_raw = data.get("oracle_id")
+            if oracle_id_raw is None:
+                oracle_id_raw = data.get("oracleId")
+            oracle_id = str(oracle_id_raw).strip() if oracle_id_raw is not None else ""
+            if not oracle_id:
+                _postcard_debug(
+                    "missing or empty oracle_id in postcard response "
+                    f"oracle_id_raw={oracle_id_raw!r} docId={data.get('docId')!r} "
+                    f"wasCreate={data.get('wasCreate')!r} id={data.get('id')!r} "
+                    f"hellfall_id={hellfall_id!r} response={data!r} {request_context}"
+                )
+                if oracle_id_raw is None:
+                    raise PostcardSyncError("postcard_missing_oracle_id")
+                raise PostcardSyncError("postcard_empty_oracle_id")
             return PostcardWrite(
                 doc_id=str(data["docId"]),
                 was_create=bool(data["wasCreate"]),
                 previous=previous if isinstance(previous, dict) else None,
                 image_url=str(image_url) if image_url else None,
                 hellfall_id=hellfall_id,
-                oracle_id=str(data["oracle_id"])
+                oracle_id=oracle_id,
             )
 
 

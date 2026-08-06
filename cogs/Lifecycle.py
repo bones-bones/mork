@@ -54,7 +54,7 @@ import hc_constants
 from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonable_card
-from printCardImages import print_card_images
+from post_card_images import post_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
 
@@ -411,11 +411,9 @@ class LifecycleCog(commands.Cog):
                 await thread.edit(archived=True)
 
         # Design Hell: admin medal reactions accept cards into set card lists
-        if (
-            reaction.channel_id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL
-            and str(reaction.emoji)
-            in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE)
-        ):
+        if reaction.channel_id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL and str(
+            reaction.emoji
+        ) in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE):
             member = reaction.member or guild.get_member(reaction.user_id)
             if member is None:
                 try:
@@ -497,7 +495,7 @@ class LifecycleCog(commands.Cog):
         ):
             return
         if "{{" in message.content:
-            await print_card_images(message)
+            await post_card_images(message)
         if "cock" in message.content.lower():
             if random.randint(1, 100) in [67, 69]:
                 await message.channel.send(
@@ -691,7 +689,7 @@ class LifecycleCog(commands.Cog):
                     )
                     await message.delete()
                     return
-                
+
                 file = await message.attachments[0].to_file()
                 if reasonable_card():
                     vetoChannel = getVetoChannel(bot=self.bot)
@@ -854,7 +852,10 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                if not (card.cardset() == hc_constants.CUBE_NAME + ".0" or card.cardset() == hc_constants.CUBE_NAME + ".1"):
+                if not (
+                    card.cardset() == hc_constants.CUBE_NAME + ".0"
+                    or card.cardset() == hc_constants.CUBE_NAME + ".1"
+                ):
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} cards are allowed for errata."
                     )

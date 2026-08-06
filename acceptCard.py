@@ -28,8 +28,26 @@ cardSheetUnapproved = googleClient.open_by_key(
 # Column BB (header UUID) — Hellfall card ``id`` from postcard response
 _HELLFALL_ID_COL = 54
 
-# Column BC (header UUID) — Hellfall card ``oracle_id`` from postcard response
+# Column BC (header Oracle ID) — Hellfall card ``oracle_id`` from postcard response
 _ORACLE_ID_COL = 55
+
+# Column W — collector number
+_COLLECTOR_NUMBER_COL = 23
+
+
+def _next_collector_number_for_set(set_id: str) -> str:
+    """Return the next collector number for ``set_id`` (max leading digits in W + 1)."""
+    sets = cardSheetUnapproved.col_values(5)[2:]  # col E from row 3
+    collectors = cardSheetUnapproved.col_values(_COLLECTOR_NUMBER_COL)[2:]  # col W
+    max_num = 0
+    for i, sheet_set in enumerate(sets):
+        if sheet_set != set_id:
+            continue
+        cn = collectors[i] if i < len(collectors) else ""
+        match = re.match(r"^(\d+)", str(cn))
+        if match:
+            max_num = max(max_num, int(match.group(1)))
+    return str(max_num + 1)
 
 
 def _upload_accepted_image(
@@ -73,12 +91,17 @@ async def _resolve_accepted_image_url(
     hcid: Optional[str],
     existing_image_url: Optional[str],
     require_hellfall_postcard: bool,
+    is_new_card: bool,
 ) -> tuple[str, Optional[PostcardWrite]]:
     object_name = hcid or card_name
-    if require_hellfall_postcard:
+    hellfall_first = require_hellfall_postcard or (
+        is_new_card and postcard_sync_enabled()
+    )
+    if hellfall_first:
         image_base64 = base64.b64encode(file_data).decode("ascii")
         postcard_write: Optional[PostcardWrite] = None
         image_url: Optional[str] = None
+        require_sync = require_hellfall_postcard
         try:
             postcard_write = await sync_accepted_card(
                 name=card_name,
@@ -87,7 +110,7 @@ async def _resolve_accepted_image_url(
                 set_id=set_id,
                 hcid=hcid,
                 kind="card",
-                require_sync=True,
+                require_sync=require_sync,
             )
             if postcard_write and postcard_write.image_url:
                 image_url = postcard_write.image_url
@@ -109,7 +132,7 @@ async def _resolve_accepted_image_url(
                 set_id=set_id,
                 hcid=hcid,
                 kind="card",
-                require_sync=True,
+                require_sync=require_sync,
             )
             image_url = (
                 postcard_write.image_url
@@ -117,7 +140,7 @@ async def _resolve_accepted_image_url(
                 else gcs_url
             )
 
-        if not postcard_write:
+        if require_sync and not postcard_write:
             raise PostcardSyncError("hellfall postcard sync did not complete")
         if not image_url:
             raise PostcardSyncError("hellfall did not return imageUrl")
@@ -202,6 +225,7 @@ async def accept_card(
             hcid=firestore_hcid,
             existing_image_url=existing_image_url,
             require_hellfall_postcard=require_hellfall_postcard,
+            is_new_card=newCard,
         )
 
         cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)
@@ -212,6 +236,11 @@ async def accept_card(
                 Cell(row=dbRowIndex, col=2, value=cardName),
                 Cell(row=dbRowIndex, col=4, value=authorName),
                 Cell(row=dbRowIndex, col=5, value=setId),
+                Cell(
+                    row=dbRowIndex,
+                    col=_COLLECTOR_NUMBER_COL,
+                    value=_next_collector_number_for_set(setId),
+                ),
             ]
             if postcard_write is not None and postcard_write.hellfall_id:
                 new_card_cells.append(

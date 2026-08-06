@@ -34,8 +34,21 @@ tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).work
 
 # Column L (header UUID) — Hellfall card ``id`` from postcard response
 _HELLFALL_ID_COL = 12
-# Column M (header UUID) — Hellfall card ``oracle_id`` from postcard response
+# Column M (header Oracle ID) — Hellfall card ``oracle_id`` from postcard response
 _ORACLE_ID_COL = 13
+# Column J — collector number
+_COLLECTOR_NUMBER_COL = 10
+
+
+def _next_token_collector_number() -> str:
+    """Return the next token collector number (max leading digits in J + 1)."""
+    collectors = tokenUnapproved.col_values(_COLLECTOR_NUMBER_COL)
+    max_num = 0
+    for cn in collectors:
+        match = re.match(r"^(\d+)", str(cn))
+        if match:
+            max_num = max(max_num, int(match.group(1)))
+    return str(max_num + 1)
 
 
 async def checkTokenSubmissions(bot: commands.Bot):
@@ -177,6 +190,11 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
             Cell(row=dbRowIndex, col=2, value=imageUrl),
             Cell(row=dbRowIndex, col=6, value=relatedCards),
             Cell(row=dbRowIndex, col=8, value=creator),
+            Cell(
+                row=dbRowIndex,
+                col=_COLLECTOR_NUMBER_COL,
+                value=_next_token_collector_number(),
+            ),
         ]
         if postcard_write is not None and postcard_write.hellfall_id:
             token_cells.append(

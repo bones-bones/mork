@@ -18,7 +18,7 @@ import os
 from cogs.HellscubeDatabase import searchFor
 from cogs.get_podcast_output import get_podcast_output
 import hc_constants
-from printCardImages import send_image_reply
+from post_card_images import send_image_reply
 
 
 SCRYFALL_RANDOM_API_URL = "https://api.scryfall.com/cards/random?q="
