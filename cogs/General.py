@@ -7,6 +7,7 @@ from cardNameRequest import cardNameRequest
 from shared_vars import drive
 import hc_constants
 from discord.utils import get
+from is_admin import is_admin
 import random
 from datetime import date, datetime, timezone, timedelta
 import aiohttp
@@ -646,9 +647,11 @@ class GeneralCog(commands.Cog):
                         timeSinceLast = (
                             (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
                         ) / (60 * 60)
-
+                        
                         text = ""
-                        if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN:
+                        if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
+                            cast(discord.Member, ctx.author)
+                        ):
                             text += f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards. While you wait, why don't you "
                             randomActivity = random.choice(possibleActivities)
                             text += randomActivity

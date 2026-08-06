@@ -665,8 +665,10 @@ class LifecycleCog(commands.Cog):
                                     datetime.now(tz=timezone.utc) - tempDate
                                 ).total_seconds()
                             ) / (60 * 60)
-
-                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN:
+                            
+                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
+                                cast(discord.Member, ctx.author)
+                            ):
                                 discussionChannel = getSubmissionDiscussionChannel(
                                     self.bot
                                 )
