@@ -1062,7 +1062,7 @@ class SpecificCardsCog(commands.Cog):
             ctx,
         )
     
-    # ger a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
+    # get a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
     @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell", "bigwizardspell"])
     async def archmage(self, ctx: commands.Context):
         wizardSpells = [
@@ -1082,31 +1082,9 @@ class SpecificCardsCog(commands.Cog):
             "https://lh3.googleusercontent.com/d/1yPrP7ntPyi4VZygX0cgHQVuB7pNDZRVk",
             "https://lh3.googleusercontent.com/d/1Qf2mymfif1UqpmbhRIaMIBJDnkVXqSZQ",
         ]
-        rwizardspell = random.randint(0, len(wizardSpells) - 1)
-        await ctx.send(wizardSpells[rwizardspell])
-
-    # ger a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
-    @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell"])
-    async def archmage(self, ctx: commands.Context):
-        wizardSpells = [
-            "https://lh3.googleusercontent.com/d/19rnWIq5XPCDrkEbiC0V9oyCs9jAYB0EY",
-            "https://lh3.googleusercontent.com/d/1ldCQPfz1IrRQR4hZA0N1K3cUEnTnwujf",
-            "https://lh3.googleusercontent.com/d/1Eym0VyDGP-8oVdaQCUuq_4_N-EfUqeOp",
-            "https://lh3.googleusercontent.com/d/1dKulOK2SvwM-Zg4f3BkUeKcSOiyz8hLZ",
-            "https://lh3.googleusercontent.com/d/1R3iqur_xMGQAJZc5XDuFS_I3GS2GyDMQ",
-            "https://lh3.googleusercontent.com/d/19e4pFfg3P6Efouu4B2_zHIOQIJVpUdkp",
-            "https://lh3.googleusercontent.com/d/1sK_P_excMIEsqjq_YiAuhNnkPwSc3YkF",
-            "https://lh3.googleusercontent.com/d/19KoWsqfc8WUIndZXKYe6Bk_zY_135W3N",
-            "https://lh3.googleusercontent.com/d/1OJhtS8UH0iltbHcD3M6Tw2bz-cywFyX7",
-            "https://lh3.googleusercontent.com/d/1Rm1EvmuQHYgGGLMqHZlE_Rg3ZgIaRDc7",
-            "https://lh3.googleusercontent.com/d/1QTVU_QZIvWIX3HfwblAu7E6_JsY_aWOD",
-            "https://lh3.googleusercontent.com/d/1aMId0MQGLkkV344_LVPW7WM--m1VPlHj",
-            "https://lh3.googleusercontent.com/d/1lsIh3TsGWQiNt_Ie02P0MAtnT0R3xEKw",
-            "https://lh3.googleusercontent.com/d/1yPrP7ntPyi4VZygX0cgHQVuB7pNDZRVk",
-            "https://lh3.googleusercontent.com/d/1Qf2mymfif1UqpmbhRIaMIBJDnkVXqSZQ",
-        ]
-        rwizardspell = random.randint(0, len(wizardSpells) - 1)
-        await ctx.send(wizardSpells[rwizardspell])
+        selectedSpells = random.sample(wizardSpells, k=3)
+        for spell in selectedSpells:
+            await ctx.send(spell)
 
     # for the card Mystery Inc on Duskmourn
     @commands.command()
