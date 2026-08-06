@@ -272,7 +272,7 @@ async def accept_card(
     if not errata and not errataId:
         reddit_title = (
             f"{cardMessage.replace('**', '')} "
-            f"{'was accepted!' if not wasVetoed else 'was vetoed!'}"
+            f"{'was accepted into ' + hc_constants.CUBE_NAME if not wasVetoed else 'was vetoed from ' + hc_constants.CUBE_NAME}"
         )
         if skip_reddit and deferred_reddit_dir:
             os.makedirs(deferred_reddit_dir, exist_ok=True)
