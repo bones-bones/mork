@@ -1086,7 +1086,15 @@ class SpecificCardsCog(commands.Cog):
         selectedSpells = random.sample(wizardSpells, k=3)
         for spell in selectedSpells:
             await ctx.send(spell)
-
+            
+    # get a random vanilla draft signpost, for the card Watchwolf
+    @commands.command()
+    async def watchwolf(self, ctx: commands.Context):
+        await fetchAndSendCard(
+            f"{SCRYFALL_RANDOM_API_URL}otag%3Adraft-signpost+is%3Avanilla",
+            ctx,
+        )
+    
     # for the card Mystery Inc on Duskmourn
     @commands.command()
     async def randomRoom(self, ctx: commands.Context):
