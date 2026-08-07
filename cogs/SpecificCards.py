@@ -1087,7 +1087,7 @@ class SpecificCardsCog(commands.Cog):
         for spell in selectedSpells:
             await ctx.send(spell)
             
-    # get a random vanilla draft signpost, for the card Watchwolf
+    # get a random vanilla draft signpost, for the card 2 MV 3/3 Vanilla Signpost Uncommon from Ravnica-mancy
     @commands.command()
     async def watchwolf(self, ctx: commands.Context):
         await fetchAndSendCard(
