@@ -1052,19 +1052,19 @@ class SpecificCardsCog(commands.Cog):
     # get a random legends commander from set:legends, for card League of Legends
     @commands.command(aliases=["league"])
     async def leagueOfLegends(self, ctx: commands.Context):
-        await fetchAndSendCard(
-            f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx
-        )
-
-    # ger a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
-    @commands.command(
-        aliases=[
-            "bigwizardspell",
-            "bigfuckingwizardspell",
-            "gamewinningspellbook",
-            "wizardspell",
-        ]
-    )
+        await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx)
+    
+    # get random artifact creatures and/or vehicles for Mechtitan
+    @commands.command(aliases=["mechdietan"])
+    async def mechtitan(self, ctx: commands.Context):
+        for i in range(4):
+            await fetchAndSendCard(
+                f"{SCRYFALL_RANDOM_API_URL}(t:/artifact+creature/+or+t:artifact+and+t:vehicle)+game:paper+prefer:best+-function:you_matter+-function:dexterity+-function:art-matters+-function:speech-matters+-function:un-set-mechanics&unique=cards&as=grid&order=name",
+                ctx,
+            )
+    
+    # get a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
+    @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell", "bigwizardspell"])
     async def archmage(self, ctx: commands.Context):
         wizardSpells = [
             "https://lh3.googleusercontent.com/d/19rnWIq5XPCDrkEbiC0V9oyCs9jAYB0EY",
@@ -1083,9 +1083,18 @@ class SpecificCardsCog(commands.Cog):
             "https://lh3.googleusercontent.com/d/1yPrP7ntPyi4VZygX0cgHQVuB7pNDZRVk",
             "https://lh3.googleusercontent.com/d/1Qf2mymfif1UqpmbhRIaMIBJDnkVXqSZQ",
         ]
-        rwizardspell = random.randint(0, len(wizardSpells) - 1)
-        await ctx.send(wizardSpells[rwizardspell])
-
+        selectedSpells = random.sample(wizardSpells, k=3)
+        for spell in selectedSpells:
+            await ctx.send(spell)
+            
+    # get a random vanilla draft signpost, for the card 2 MV 3/3 Vanilla Signpost Uncommon from Ravnica-mancy
+    @commands.command()
+    async def watchwolf(self, ctx: commands.Context):
+        await fetchAndSendCard(
+            f"{SCRYFALL_RANDOM_API_URL}otag%3Adraft-signpost+is%3Avanilla",
+            ctx,
+        )
+    
     # for the card Mystery Inc on Duskmourn
     @commands.command()
     async def randomRoom(self, ctx: commands.Context):
@@ -1471,15 +1480,6 @@ class SpecificCardsCog(commands.Cog):
         message_parts.append(f"-# [original](https://zaxer2.github.io/howtogrunch)")
 
         await ctx.send("\n".join(message_parts))
-
-    # get random artifact creatures and/or vehicles for Mechtitan
-    @commands.command(aliases=["mechdietan"])
-    async def mechtitan(self, ctx: commands.Context):
-        for i in range(4):
-            await fetchAndSendCard(
-                f"{SCRYFALL_RANDOM_API_URL}(t:/artifact+creature/+or+t:artifact+and+t:vehicle)+game:paper+prefer:best+-function:you_matter+-function:dexterity+-function:art-matters+-function:speech-matters+-function:un-set-mechanics&unique=cards&as=grid&order=name",
-                ctx,
-            )
 
 
 async def setup(bot: commands.Bot):

@@ -42,7 +42,7 @@ from getVetoPollsResults import (
     limit_veto_poll_results,
 )
 from getters import (
-    getErrataSubmissionChannel,
+    getErrataTrackingChannel,
     getMorkSubmissionsLoggingChannel,
     getSubmissionDiscussionChannel,
     getVetoChannel,
@@ -118,7 +118,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
     add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handleVetoPost.
     """
 
-    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
+    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
     if not channel:
         return
     time_now = datetime.now(timezone.utc)
@@ -370,7 +370,7 @@ class LifecycleCog(commands.Cog):
                         veto_council=veto_council_to_notify,
                     )
                     await ogMessage.add_reaction(hc_constants.DELETE)
-                    errata_submissions_channel = getErrataSubmissionChannel(
+                    errata_submissions_channel = getErrataTrackingChannel(
                         bot=self.bot
                     )
                     errata_submission_message = await errata_submissions_channel.send(
@@ -666,7 +666,9 @@ class LifecycleCog(commands.Cog):
                                 ).total_seconds()
                             ) / (60 * 60)
 
-                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN:
+                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
+                                cast(discord.Member, message.author)
+                            ):
                                 discussionChannel = getSubmissionDiscussionChannel(
                                     self.bot
                                 )
@@ -768,7 +770,9 @@ class LifecycleCog(commands.Cog):
                                         ).total_seconds()
                                     ) / (60 * 60)
 
-                                    if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN:
+                                    if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
+                                        cast(discord.Member, message.author)
+                                    ):
                                         discussionChannel = cast(
                                             TextChannel,
                                             self.bot.get_channel(
@@ -959,7 +963,31 @@ class LifecycleCog(commands.Cog):
             await ctx.send(content="all caught up!")
 
     @commands.command()
-    async def compileveto(self, ctx: commands.Context, count: int | None = None):
+    async def redditcatchup(self, ctx: commands.Context, count: int):
+        if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
+            await ctx.send("Veto Council Only")
+            return
+        if count < 1:
+            await ctx.send("Count must be a positive number")
+            return
+        pending = list_pending_deferred_posts()
+        if not pending:
+            await ctx.send("No deferred Reddit posts")
+            return
+        await ctx.send(
+            f"Posting up to {count} deferred Reddit submissions "
+            f"({len(pending)} pending)..."
+        )
+        posted, errors = await process_deferred_reddit_posts(count)
+        message = f"Posted {posted} to Reddit."
+        if errors:
+            message += f" {len(errors)} failed: " + "; ".join(errors[:5])
+            if len(errors) > 5:
+                message += f" (and {len(errors) - 5} more)"
+        await ctx.send(message)
+
+    @commands.command()
+    async def compileveto(self, ctx: commands.Context, count: Optional[int] = None):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return
