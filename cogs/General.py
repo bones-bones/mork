@@ -518,11 +518,11 @@ class GeneralCog(commands.Cog):
                 await ctx.send(result)
             else:
                 await ctx.send("This game doesn't exist.")
-
+    
     @commands.command()
     async def wait(self, ctx: commands.Context):
-        if ctx.channel.id == hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL:
-            await ctx.send("it doesn't work here anymore, got to #bot-test")
+        if ctx.channel.id != hc_constants.BOT_TEST_CHANNEL:
+            await ctx.send("wait only works in #bot-test")
             return
         # From https://www.resiliencelab.us/thought-lab/self-care-ideas
         possibleActivities = [
