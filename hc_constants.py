@@ -75,6 +75,7 @@ VETO_HELLPITS = 1242640978360274994
 
 # Card discussion: user posts "Card ID\nSome text"; bot replaces with formatted post + thread.
 
+ERRATA_TRACKING = 1480409711277899898
 MODWORK_REQUEST_CHANNEL = 1460534723498737808
 
 # Users

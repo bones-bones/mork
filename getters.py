@@ -15,7 +15,7 @@ def getSubmissionDiscussionChannel(bot: commands.Bot):
     )
 
 
-def getErrataSubmissionChannel(bot: commands.Bot):
+def getErrataTrackingChannel(bot: commands.Bot):
     return cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
 
 
