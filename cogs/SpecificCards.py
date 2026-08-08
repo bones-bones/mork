@@ -1052,8 +1052,10 @@ class SpecificCardsCog(commands.Cog):
     # get a random legends commander from set:legends, for card League of Legends
     @commands.command(aliases=["league"])
     async def leagueOfLegends(self, ctx: commands.Context):
-        await fetchAndSendCard(f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx)
-    
+        await fetchAndSendCard(
+            f"{SCRYFALL_RANDOM_API_URL}set%3Aleg+is%3Acommander ", ctx
+        )
+
     # get random artifact creatures and/or vehicles for Mechtitan
     @commands.command(aliases=["mechdietan"])
     async def mechtitan(self, ctx: commands.Context):
@@ -1062,9 +1064,16 @@ class SpecificCardsCog(commands.Cog):
                 f"{SCRYFALL_RANDOM_API_URL}(t:/artifact+creature/+or+t:artifact+and+t:vehicle)+game:paper+prefer:best+-function:you_matter+-function:dexterity+-function:art-matters+-function:speech-matters+-function:un-set-mechanics&unique=cards&as=grid&order=name",
                 ctx,
             )
-    
+
     # get a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
-    @commands.command(aliases=["bigwizardspell", "bigfuckingwizardspell", "gamewinningspellbook", "wizardspell", "bigwizardspell"])
+    @commands.command(
+        aliases=[
+            "bigwizardspell",
+            "bigfuckingwizardspell",
+            "gamewinningspellbook",
+            "wizardspell",
+        ]
+    )
     async def archmage(self, ctx: commands.Context):
         wizardSpells = [
             "https://lh3.googleusercontent.com/d/19rnWIq5XPCDrkEbiC0V9oyCs9jAYB0EY",
@@ -1086,7 +1095,7 @@ class SpecificCardsCog(commands.Cog):
         selectedSpells = random.sample(wizardSpells, k=3)
         for spell in selectedSpells:
             await ctx.send(spell)
-            
+
     # get a random vanilla draft signpost, for the card 2 MV 3/3 Vanilla Signpost Uncommon from Ravnica-mancy
     @commands.command()
     async def watchwolf(self, ctx: commands.Context):
@@ -1094,7 +1103,7 @@ class SpecificCardsCog(commands.Cog):
             f"{SCRYFALL_RANDOM_API_URL}otag%3Adraft-signpost+is%3Avanilla",
             ctx,
         )
-    
+
     # for the card Mystery Inc on Duskmourn
     @commands.command()
     async def randomRoom(self, ctx: commands.Context):
