@@ -669,6 +669,7 @@ class LifecycleCog(commands.Cog):
                             if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
                                 cast(discord.Member, ctx.author)
                             ):
+                                
                                 discussionChannel = getSubmissionDiscussionChannel(
                                     self.bot
                                 )
