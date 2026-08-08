@@ -14,7 +14,7 @@ QUOTE_SPLIT = ";%;%;"
 from getCardMessage import parseCardNameAndAuthor
 from handleVetoPost import handleVetoPost
 from isRealCard import isRealCard
-from printCardImages import send_image_reply
+from post_card_images import send_image_reply
 from shared_vars import drive
 
 from acceptCard import accept_card

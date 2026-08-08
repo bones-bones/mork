@@ -54,7 +54,7 @@ import hc_constants
 from isRealCard import isRealCard
 from is_admin import is_admin, is_veto
 from is_mork import is_mork, reasonable_card
-from printCardImages import print_card_images
+from post_card_images import post_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
 
@@ -411,11 +411,9 @@ class LifecycleCog(commands.Cog):
                 await thread.edit(archived=True)
 
         # Design Hell: admin medal reactions accept cards into set card lists
-        if (
-            reaction.channel_id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL
-            and str(reaction.emoji)
-            in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE)
-        ):
+        if reaction.channel_id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL and str(
+            reaction.emoji
+        ) in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE):
             member = reaction.member or guild.get_member(reaction.user_id)
             if member is None:
                 try:
@@ -497,7 +495,7 @@ class LifecycleCog(commands.Cog):
         ):
             return
         if "{{" in message.content:
-            await print_card_images(message)
+            await post_card_images(message)
         if "cock" in message.content.lower():
             if random.randint(1, 100) in [67, 69]:
                 await message.channel.send(
@@ -529,11 +527,23 @@ class LifecycleCog(commands.Cog):
                 await message.channel.send(
                     "Hey there! It looks like you are sharing a link with tracking information."
                 )
+
+        if "mtg.fandom.com" in message.content.lower():
+            await message.channel.send(
+                "Don't use the fandom wiki, fandom sucks. Use mtg.wiki instead, it forked from the fandom wiki, and is now owned by the scryfall people. Fandom wiki has been abandoned and has outdated information."
+            )
+
+        if "homestuckcube" in message.content.lower():
+            await message.add_reaction("🏐")
+
         if "mork i will" in message.content.lower():
             await message.channel.send("pls don't")
 
         if "mork bork" in message.content.lower():
-            await message.channel.send("no i ain't")
+            if random.randint(1, 50) == 1:
+                await message.channel.send("neigh")
+            else:
+                await message.channel.send("no i ain't")
 
         # Hello single coolest thing about python
         match message.channel.id:
@@ -679,7 +689,7 @@ class LifecycleCog(commands.Cog):
                     )
                     await message.delete()
                     return
-                
+
                 file = await message.attachments[0].to_file()
                 if reasonable_card():
                     vetoChannel = getVetoChannel(bot=self.bot)
@@ -840,7 +850,10 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                if not (card.cardset() == hc_constants.CUBE_NAME + ".0" or card.cardset() == hc_constants.CUBE_NAME + ".1"):
+                if not (
+                    card.cardset() == hc_constants.CUBE_NAME + ".0"
+                    or card.cardset() == hc_constants.CUBE_NAME + ".1"
+                ):
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} cards are allowed for errata."
                     )
@@ -948,7 +961,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send(content="all caught up!")
 
     @commands.command()
-    async def compileveto(self, ctx: commands.Context, count: int = None):
+    async def compileveto(self, ctx: commands.Context, count: int | None = None):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return

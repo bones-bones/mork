@@ -16,7 +16,7 @@ Because of that, the “application” modules stay next to `Mork.py`. **Do not 
 | `submissions/` | Async checks for token, masterpiece, and errata flows |
 | `scripts/` | One-off CLIs (sheets, Drive, GCS). Always run from repo root: `python scripts/<name>.py` |
 | `bot_secrets/` | Local credentials (gitignored); use `*.template.py` as a guide |
-| `docs/` | Deployment and layout notes (this file, GCP + Actions guide) |
+| `docs/` | Deployment and layout notes (this file, GCP + Actions guide, [card flows](card-flows/README.md)) |
 | `.github/workflows/` | CI (pre-commit) and optional deploy workflows |
 
 ## Root modules (libraries used by cogs)
