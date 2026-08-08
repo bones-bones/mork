@@ -52,7 +52,7 @@ from getters import (
 from handleVetoPost import handleVetoPost
 import hc_constants
 from isRealCard import isRealCard
-from is_admin import is_admin, is_veto
+from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
 from post_card_images import post_card_images
 from reddit_functions import post_to_reddit
@@ -1195,7 +1195,8 @@ class LifecycleCog(commands.Cog):
         splitLines = incomingMessage.splitlines()
         cardMessage = splitLines[0]
         errataId = splitLines[1] if splitLines.__len__() > 1 else None
-        if not is_admin(cast(Member, ctx.author)):
+        if not can_instaerrata(cast(Member, ctx.author)):
+            await ctx.send("You don't have permission to use that command.")
             return
 
         if not ctx.message.attachments:
