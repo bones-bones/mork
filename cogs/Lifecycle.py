@@ -414,6 +414,15 @@ class LifecycleCog(commands.Cog):
         if reaction.channel_id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL and str(
             reaction.emoji
         ) in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE):
+            medal = (
+                "gold"
+                if str(reaction.emoji) == hc_constants.SCLAIR_FIRST_PLACE
+                else "silver"
+            )
+            print(
+                f"Design Hell {medal} react by user {reaction.user_id} "
+                f"on message {reaction.message_id}"
+            )
             member = reaction.member or guild.get_member(reaction.user_id)
             if member is None:
                 try:
