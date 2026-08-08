@@ -414,17 +414,42 @@ class LifecycleCog(commands.Cog):
         if reaction.channel_id == hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL and str(
             reaction.emoji
         ) in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE):
+            medal = (
+                "gold"
+                if str(reaction.emoji) == hc_constants.SCLAIR_FIRST_PLACE
+                else "silver"
+            )
+            print(
+                f"Design Hell {medal} react by user {reaction.user_id} "
+                f"on message {reaction.message_id}"
+            )
             member = reaction.member or guild.get_member(reaction.user_id)
             if member is None:
                 try:
                     member = await guild.fetch_member(reaction.user_id)
                 except discord.NotFound:
+                    print(
+                        f"Design Hell {medal} react ignored: "
+                        f"user {reaction.user_id} not found in guild"
+                    )
                     return
             if not is_admin(cast(Member, member)):
+                print(
+                    f"Design Hell {medal} react ignored: "
+                    f"user {reaction.user_id} is not admin"
+                )
                 return
             if get(message.reactions, emoji=hc_constants.ACCEPT):
+                print(
+                    f"Design Hell {medal} react ignored: "
+                    f"message {reaction.message_id} already accepted"
+                )
                 return
             if not message.attachments:
+                print(
+                    f"Design Hell {medal} react ignored: "
+                    f"message {reaction.message_id} has no attachments"
+                )
                 return
 
             if str(reaction.emoji) == hc_constants.SCLAIR_SECOND_PLACE:
@@ -433,6 +458,10 @@ class LifecycleCog(commands.Cog):
             else:
                 set_id = await get_current_design_hell_set_id(channelAsText)
                 if not set_id:
+                    print(
+                        f"Design Hell gold react ignored: "
+                        f"no set id from pinned prompt in channel {reaction.channel_id}"
+                    )
                     return
                 list_channel = hc_constants.SECRET_LAIR
 
@@ -444,6 +473,10 @@ class LifecycleCog(commands.Cog):
             resolved_author = card_author if card_author != "" else "no author"
             card_message = f"**{resolved_name}** by **{resolved_author}**"
 
+            print(
+                f"Design Hell {medal} accepting '{resolved_name}' by {resolved_author} "
+                f"into set {set_id} -> channel {list_channel}"
+            )
             await accept_design_hell_card(
                 self.bot,
                 cardMessage=card_message,
@@ -454,6 +487,9 @@ class LifecycleCog(commands.Cog):
                 channelIdForCard=list_channel,
             )
             await message.add_reaction(hc_constants.ACCEPT)
+            print(
+                f"Design Hell {medal} accept complete for message {reaction.message_id}"
+            )
             return
 
         # Pin art assets if it gets 10 pin reactions in the art requests channel
