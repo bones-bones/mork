@@ -13,3 +13,10 @@ def is_veto(member: Member):
         or member.get_role(hc_constants.VETO_COUNCIL_2) != None
         or member.get_role(hc_constants.VETO_COUNCIL_PORTAL) != None
     )
+
+
+def can_instaerrata(member: Member) -> bool:
+    return (
+        is_admin(member)
+        or member.get_role(hc_constants.INSTAERRATA_REVIEW) is not None
+    )

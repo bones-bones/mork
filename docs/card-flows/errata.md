@@ -30,7 +30,7 @@ Auto-promote scans the last **14 days**, up to **200 messages**.
 
 ## Admin instant errata
 
-**Entry:** `!instaerrata` (admin) with attachment + text:
+**Entry:** `!instaerrata` (admin or instaerrata-review role) with attachment + text:
 
 ```
 Cardname by Author
