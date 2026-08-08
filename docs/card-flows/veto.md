@@ -38,16 +38,6 @@ flowchart TD
   DONE -->|no| COUNT["Count reactions"]
 ```
 
-### Reaction counts
-
-Missing reactions default to **−1** (not 0):
-
-| Vote   | Emoji    | Count           |
-| ------ | -------- | --------------- |
-| Up     | 👍       | count or **−1** |
-| Down   | 👎       | count or **−1** |
-| Errata | Spelling | count or **−1** |
-
 ### Classification (if / elif chain)
 
 Each eligible message lands in **exactly one** of four outcome buckets. Order matters — first match wins.

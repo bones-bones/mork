@@ -103,7 +103,8 @@ flowchart TD
   U["Line 1: TokenName by @user<br/>Line 2: RelatedCard; RelatedCard2<br/>+ image"] --> VAL{"Related cards exist?"}
   VAL -->|invalid| STOP["Ping in #submissions-discussion"]
   VAL -->|ok| POLL["Mork poll 👍👎❌"]
-  POLL --> CHK{"up − down ≥ 5<br/>age ≥ 1 day?"}
+  POLL --> LOOP["Background check · 5 min"]
+  LOOP --> CHK{"Mork poll:<br/>up − down ≥ 5<br/>age ≥ 1 day?"}
   CHK -->|no| POLL
   CHK -->|yes| ACC["Accept token"]
   ACC --> CL["Post #token-list"]

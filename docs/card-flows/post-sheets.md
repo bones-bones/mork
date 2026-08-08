@@ -4,7 +4,7 @@
 
 Target architecture once card data lives in **Hellfall** (via postcard API + catalog) instead of Google Sheets. Discord submission and veto flows stay the same; only the persistence and lookup layers change.
 
-**Status:** transitional — acceptance still uploads to GCS from mork today (Design Hell sends base64 to Hellfall first); target moves all GCS writes to Hellfall via postcard. Unapproved/approved sheets are still written and bot search still loads from the approved sheet.
+**Status:** acceptance uploads images via Hellfall postcard only (`imageBase64`); unapproved/approved sheets are still written and bot search still loads from the approved sheet.
 
 ---
 
@@ -138,7 +138,7 @@ flowchart TD
   HF --> CL["#token-list"]
 ```
 
-Token flow is closest to target today (postcard required), but mork still uploads to GCS on `invalid_body` retry until Hellfall owns all image ingestion.
+Token flow matches target: postcard required, Hellfall owns GCS upload via `imageBase64`.
 
 ---
 

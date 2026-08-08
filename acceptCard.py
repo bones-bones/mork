@@ -13,7 +13,6 @@ from hellfall_postcard import (
     rollback_postcard_write,
     sync_accepted_card,
 )
-from gcs_card_images import upload_card_image
 from shared_vars import googleClient
 from discord.ext import commands
 
@@ -50,114 +49,37 @@ def _next_collector_number_for_set(set_id: str) -> str:
     return str(max_num + 1)
 
 
-def _upload_accepted_image(
-    image_path: str, *, object_name: str, existing_image_url: Optional[str]
-) -> str:
-    """Store the accepted image in hellscube-images (GCS), never Drive."""
-    return upload_card_image(
-        image_path,
-        object_name=object_name,
-        existing_url=existing_image_url,
-    )
-
-
-async def _sync_card_to_hellfall(
+async def _resolve_accepted_image_url(
     *,
+    file_data: bytes,
     card_name: str,
-    image_url: str,
     author_name: str,
     set_id: str,
     hcid: Optional[str],
-):
-    if not postcard_sync_enabled():
-        return None
-    return await sync_accepted_card(
+    require_hellfall_postcard: bool,
+) -> tuple[str, Optional[PostcardWrite]]:
+    if not postcard_sync_enabled() and not require_hellfall_postcard:
+        raise PostcardSyncError(
+            "MORK_POSTCARD_SYNC is disabled; mork no longer uploads images to GCS"
+        )
+
+    image_base64 = base64.b64encode(file_data).decode("ascii")
+    require_sync = require_hellfall_postcard
+    postcard_write = await sync_accepted_card(
         name=card_name,
-        image=image_url,
+        image_base64=image_base64,
         creators=author_name,
         set_id=set_id,
         hcid=hcid,
         kind="card",
+        require_sync=require_sync,
     )
+    if require_sync and not postcard_write:
+        raise PostcardSyncError("hellfall postcard sync did not complete")
 
-
-async def _resolve_accepted_image_url(
-    *,
-    file_data: bytes,
-    image_path: str,
-    card_name: str,
-    author_name: str,
-    set_id: str,
-    hcid: Optional[str],
-    existing_image_url: Optional[str],
-    require_hellfall_postcard: bool,
-    is_new_card: bool,
-) -> tuple[str, Optional[PostcardWrite]]:
-    object_name = hcid or card_name
-    hellfall_first = require_hellfall_postcard or (
-        is_new_card and postcard_sync_enabled()
-    )
-    if hellfall_first:
-        image_base64 = base64.b64encode(file_data).decode("ascii")
-        postcard_write: Optional[PostcardWrite] = None
-        image_url: Optional[str] = None
-        require_sync = require_hellfall_postcard
-        try:
-            postcard_write = await sync_accepted_card(
-                name=card_name,
-                image_base64=image_base64,
-                creators=author_name,
-                set_id=set_id,
-                hcid=hcid,
-                kind="card",
-                require_sync=require_sync,
-            )
-            if postcard_write and postcard_write.image_url:
-                image_url = postcard_write.image_url
-        except PostcardSyncError as err:
-            if str(err) != "invalid_body":
-                raise
-            postcard_write = None
-
-        if not image_url:
-            gcs_url = _upload_accepted_image(
-                image_path,
-                object_name=object_name,
-                existing_image_url=existing_image_url,
-            )
-            postcard_write = await sync_accepted_card(
-                name=card_name,
-                image=gcs_url,
-                creators=author_name,
-                set_id=set_id,
-                hcid=hcid,
-                kind="card",
-                require_sync=require_sync,
-            )
-            image_url = (
-                postcard_write.image_url
-                if postcard_write and postcard_write.image_url
-                else gcs_url
-            )
-
-        if require_sync and not postcard_write:
-            raise PostcardSyncError("hellfall postcard sync did not complete")
-        if not image_url:
-            raise PostcardSyncError("hellfall did not return imageUrl")
-        return image_url, postcard_write
-
-    image_url = _upload_accepted_image(
-        image_path,
-        object_name=object_name,
-        existing_image_url=existing_image_url,
-    )
-    postcard_write = await _sync_card_to_hellfall(
-        card_name=card_name,
-        image_url=image_url,
-        author_name=author_name,
-        set_id=set_id,
-        hcid=hcid,
-    )
+    image_url = postcard_write.image_url if postcard_write else None
+    if not image_url:
+        raise PostcardSyncError("hellfall did not return imageUrl")
     return image_url, postcard_write
 
 
@@ -197,13 +119,10 @@ async def accept_card(
     index = [i for i in range(len(allCards)) if str(allCards[i][0]) == str(errataId)]
 
     newCard = True
-    existing_image_url: Optional[str] = None
     # At least on match was found, and the name isn't blank. There really shouldn't be any nameless cards though cause it breaks
     if cardName != "" and index.__len__() > 0:
         dbRowIndex = index[0] + 1
         newCard = False
-        if len(allCards[index[0]]) > 2 and allCards[index[0]][2]:
-            existing_image_url = str(allCards[index[0]][2])
     else:
         dbRowIndex = len(allCards) + 1
         if cardName == "":
@@ -218,14 +137,11 @@ async def accept_card(
     try:
         imageUrl, postcard_write = await _resolve_accepted_image_url(
             file_data=file_data,
-            image_path=image_path,
             card_name=cardName,
             author_name=authorName,
             set_id=setId,
             hcid=firestore_hcid,
-            existing_image_url=existing_image_url,
             require_hellfall_postcard=require_hellfall_postcard,
-            is_new_card=newCard,
         )
 
         cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)

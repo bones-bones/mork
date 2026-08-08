@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
 from typing import Any, Literal, Optional
@@ -76,6 +77,27 @@ def _payload_summary(payload: dict[str, str]) -> str:
     return repr(summary)
 
 
+def _request_timeout(*, image_base64: Optional[str]) -> aiohttp.ClientTimeout:
+    if image_base64:
+        # Large base64 uploads can exceed the default 30s (e.g. ~2.7MB payloads).
+        total = max(120, 60 + len(image_base64) // 50_000)
+        return aiohttp.ClientTimeout(total=min(total, 300))
+    return aiohttp.ClientTimeout(total=30)
+
+
+async def _read_response_json(resp: aiohttp.ClientResponse) -> Any:
+    body = await resp.text()
+    if not body.strip():
+        raise PostcardSyncError(f"empty_response HTTP {resp.status}")
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError as exc:
+        snippet = body[:200]
+        raise PostcardSyncError(
+            f"invalid_json HTTP {resp.status}: {snippet!r}"
+        ) from exc
+
+
 async def sync_accepted_card(
     *,
     name: str,
@@ -125,20 +147,15 @@ async def sync_accepted_card(
         f"POST /api/cards/postcard payload={_payload_summary(payload)} {request_context}"
     )
 
+    timeout = _request_timeout(image_base64=image_base64)
     async with aiohttp.ClientSession() as session:
         async with session.post(
             f"{api_url}/api/cards/postcard",
             json=payload,
             headers=_auth_headers(),
-            timeout=aiohttp.ClientTimeout(total=30),
+            timeout=timeout,
         ) as resp:
-            data = await resp.json(content_type=None)
-            response_keys = (
-                sorted(data.keys()) if isinstance(data, dict) else type(data).__name__
-            )
-            _postcard_debug(
-                f"response status={resp.status} keys={response_keys} {request_context}"
-            )
+            data = await _read_response_json(resp)
             if resp.status != 200:
                 reason = data.get("reason") if isinstance(data, dict) else None
                 _postcard_debug(
@@ -204,6 +221,6 @@ async def rollback_postcard_write(write: PostcardWrite) -> None:
             timeout=aiohttp.ClientTimeout(total=30),
         ) as resp:
             if resp.status != 200:
-                data = await resp.json(content_type=None)
+                data = await _read_response_json(resp)
                 reason = data.get("reason") if isinstance(data, dict) else None
                 raise PostcardSyncError(reason or f"rollback HTTP {resp.status}")

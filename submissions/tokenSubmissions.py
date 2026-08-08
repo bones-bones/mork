@@ -2,7 +2,6 @@ from datetime import datetime, timezone, timedelta
 
 
 import base64
-import os
 import re
 from typing import cast
 
@@ -21,7 +20,7 @@ from discord import Message
 from discord.utils import get
 
 from getCardMessage import parseCardNameAndAuthor
-from is_mork import getDriveUrl, is_mork, uploadToDrive
+from is_mork import is_mork
 from hellfall_postcard import (
     PostcardSyncError,
     rollback_postcard_write,
@@ -117,8 +116,6 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     )  # just guess that the file is a png
     new_file_name = f'{cardName.replace("/", "|")}{fileType}'
 
-    image_path = f"tempImages/{new_file_name}"
-
     file_data = file.fp.read()
     image_base64 = base64.b64encode(file_data).decode("ascii")
 
@@ -141,49 +138,19 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     dbRowIndex = allCardNames.__len__() + 1
 
     postcard_write = None
-    imageUrl: str | None = None
     try:
-        try:
-            postcard_write = await sync_accepted_card(
-                name=final_card_name,
-                image_base64=image_base64,
-                creators=creator,
-                set_id="HCT",
-                hcid=final_card_name,
-                kind="token",
-                require_sync=True,
-            )
-            if postcard_write and postcard_write.image_url:
-                imageUrl = postcard_write.image_url
-        except PostcardSyncError as err:
-            if str(err) != "invalid_body":
-                raise
-            postcard_write = None
-
-        if not imageUrl:
-            with open(image_path, "wb") as out:
-                out.write(file_data)
-            try:
-                google_drive_file_id = uploadToDrive(
-                    image_path, folder_id=hc_constants.TOKEN_FOLDER
-                )
-                drive_image_url = getDriveUrl(google_drive_file_id)
-                postcard_write = await sync_accepted_card(
-                    name=final_card_name,
-                    image=drive_image_url,
-                    creators=creator,
-                    set_id="HCT",
-                    hcid=final_card_name,
-                    kind="token",
-                    require_sync=True,
-                )
-                imageUrl = drive_image_url
-            finally:
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-
-        if not imageUrl:
+        postcard_write = await sync_accepted_card(
+            name=final_card_name,
+            image_base64=image_base64,
+            creators=creator,
+            set_id="HCT",
+            hcid=final_card_name,
+            kind="token",
+            require_sync=True,
+        )
+        if not postcard_write or not postcard_write.image_url:
             raise PostcardSyncError("hellfall did not return imageUrl")
+        imageUrl = postcard_write.image_url
 
         token_cells = [
             Cell(row=dbRowIndex, col=1, value=final_card_name),
