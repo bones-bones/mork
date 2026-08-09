@@ -31,6 +31,7 @@ async def post_daily_submissions(bot: commands.Bot):
 
         file = await messageEntry.attachments[0].to_file()
         file_data = file.fp.read()
+        os.makedirs("tempImages", exist_ok=True)
         image_path = f"tempImages/{messageEntry.id}{file.filename}"
         images.append({"image_path": image_path})
         with open(image_path, "wb") as out:

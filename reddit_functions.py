@@ -15,7 +15,34 @@ USER_AGENT = os.environ["REDDIT_USER_AGENT"]
 NAME = os.environ["REDDIT_NAME"]
 
 
-async def post_to_reddit(image_path: str, title: str, flair: str = ""):
+def reddit_title_for_acceptance(
+    card_message: str,
+    set_id: str,
+    *,
+    was_vetoed: bool = False,
+) -> str:
+    verb = "was vetoed from" if was_vetoed else "was accepted into"
+    return f"{card_message.replace('**', '')} {verb} {set_id}"
+
+
+async def post_to_reddit(
+    image_path: str,
+    *,
+    set_id: str = "",
+    card_message: str = "",
+    title: str = "",
+    was_vetoed: bool = False,
+    flair: str = "",
+):
+    if title:
+        resolved_title = title
+    elif set_id and card_message:
+        resolved_title = reddit_title_for_acceptance(
+            card_message, set_id, was_vetoed=was_vetoed
+        )
+    else:
+        raise ValueError("post_to_reddit requires title or (set_id and card_message)")
+
     async with asyncpraw.Reddit(
         client_id=ID,
         client_secret=SECRET,
@@ -28,7 +55,7 @@ async def post_to_reddit(image_path: str, title: str, flair: str = ""):
             "HellsCube"
         )
         await hellscubeSubreddit.submit_image(
-            title=title, image_path=image_path, flair_id=flair
+            title=resolved_title, image_path=image_path, flair_id=flair
         )
 
 

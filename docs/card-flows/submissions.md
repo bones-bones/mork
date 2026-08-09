@@ -128,17 +128,28 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  U["User posts card name + image"] --> V["Mork adds 👍👎"]
+  U["User posts card name + image"] --> ATT{"Any attachment?"}
+  ATT -->|no| MISS["Silent ignore"]
+  ATT -->|yes| NAME{"First line has card name?"}
+  NAME -->|no| NONAME["Design hell discussion:<br/>include card name + image returned<br/>Post deleted"]
+  NAME -->|yes| V["Mork adds 👍👎"]
   V --> MED{"Admin reacts 🥇 or 🥈?"}
   MED -->|no| WAIT["Community votes only"]
   MED -->|🥈| VETO["Accept as HCV.S → veto card list"]
-  MED -->|🥇| PIN["Read Set: from pinned prompt"]
+  MED -->|🥇| TITLE{"First line has card name?"}
+  TITLE -->|no| REJ["Reject acceptance<br/>(no ✅)"]
+  TITLE -->|yes| PIN["Read Set: from pinned prompt"]
   PIN --> SL["Accept → secret lair channel"]
   VETO --> ACC["GCS + mandatory Hellfall postcard"]
   SL --> ACC
   ACC --> SH[("Database (Unapproved)")]
   ACC --> OK["✅ on submission"]
 ```
+
+| Case                  | Trigger                           | Bot response                                 | User post |
+| --------------------- | --------------------------------- | -------------------------------------------- | --------- |
+| **Missing image**     | No attachment                     | None (silent ignore)                         | Kept      |
+| **Missing card name** | Attachment present, empty/whitespace first line | Design hell discussion channel: include card name + image returned | Deleted   |
 
 ---
 

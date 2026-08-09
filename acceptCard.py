@@ -2,6 +2,7 @@ import base64
 import io
 import os
 import re
+import uuid
 from typing import Optional, cast
 import discord
 from gspread import Cell
@@ -17,6 +18,7 @@ from shared_vars import googleClient
 from discord.ext import commands
 
 
+from deferred_reddit import format_deferred_manifest_entry, safe_card_filename
 from reddit_functions import post_to_reddit
 from username_mappings import resolve_authors
 
@@ -100,12 +102,11 @@ async def accept_card(
 ):
     """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
     authorName = resolve_authors(authorName)
-    extension = re.search(r"\.([^.]*)$", file.filename)
-    file_type = (
-        extension.group() if extension else ".png"
-    )  # just guess that the file is a png
-    new_file_name = f'{cardName.replace("/", "|")[:250]}{file_type}'
-    image_path = f"tempImages/{new_file_name}"
+    ext_match = re.search(r"(\.[^.]+)$", file.filename or "")
+    file_type = ext_match.group(1) if ext_match else ".png"
+    new_file_name = safe_card_filename(cardName, file_type)
+    os.makedirs("tempImages", exist_ok=True)
+    image_path = f"tempImages/{uuid.uuid4().hex}{file_type}"
 
     file_data = file.fp.read()
     file_copy_for_cardlist = discord.File(
@@ -186,22 +187,29 @@ async def accept_card(
     await card_list_channel.send(file=file_copy_for_cardlist, content=cardMessage)
 
     if not errata and not errataId:
-        reddit_title = (
-            f"{cardMessage.replace('**', '')} "
-            f"{'was accepted into ' + hc_constants.CUBE_NAME if not wasVetoed else 'was vetoed from ' + hc_constants.CUBE_NAME}"
-        )
+        card_message_for_reddit = cardMessage.replace("\n", " ").replace("\t", " ")
         if skip_reddit and deferred_reddit_dir:
             os.makedirs(deferred_reddit_dir, exist_ok=True)
             deferred_path = os.path.join(deferred_reddit_dir, new_file_name)
             os.rename(image_path, deferred_path)
             manifest_path = os.path.join(deferred_reddit_dir, "manifest.txt")
             with open(manifest_path, "a", encoding="utf-8") as manifest:
-                manifest.write(f"{new_file_name}\t{reddit_title}\n")
+                manifest.write(
+                    format_deferred_manifest_entry(
+                        new_file_name,
+                        card_message_for_reddit,
+                        setId,
+                        wasVetoed,
+                    )
+                    + "\n"
+                )
         else:
             try:
                 await post_to_reddit(
                     image_path=image_path,
-                    title=reddit_title,
+                    set_id=setId,
+                    card_message=card_message_for_reddit,
+                    was_vetoed=wasVetoed,
                     flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
                 )
             except Exception as e:
