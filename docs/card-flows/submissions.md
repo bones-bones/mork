@@ -50,7 +50,7 @@ flowchart TD
   POST["User posts in #submissions"] --> A{"Any attachment?"}
 
   A -->|no| MI["Missing image<br/>No bot reply<br/>Post stays in channel<br/>Cooldown NOT consumed"]
-  A -->|yes| B{"First line empty?<br/>(no card name)"}
+  A -->|yes| B{"First line has card name?<br/>(non-empty after trim)"}
   B -->|yes| NN["Missing name<br/>Ping in #submissions-discussion<br/>Image returned · post deleted<br/>Cooldown NOT consumed"]
   B -->|no| OK["Normal submission flow"]
 
@@ -68,6 +68,8 @@ flowchart TD
 | **Non-image attachment** | e.g. PDF attached                 | Poll created anyway                          | Deleted (reposted as poll) | Consumed       |
 | **Magic skip**           | 1/4001 roll                       | Straight to veto (no poll)                   | Deleted                    | Consumed       |
 
+**Missing name:** Intake bails before cooldown write or repost. The card image is reattached in `#submissions-discussion` so the user can fix the title and resubmit. Whitespace-only first lines count as missing.
+
 **Missing image:** Intake bails before cooldown, name checks, or repost. Text-only posts stay in channel with no ping to attach an image.
 
 **Image detection elsewhere:** Day markers and the daily submissions gallery only count messages whose first attachment is an image (`image/*` content type or `.png` / `.jpg` / `.jpeg` / `.gif` / `.webp` / `.bmp`). That filter does not apply at initial `#submissions` intake.
@@ -76,14 +78,20 @@ flowchart TD
 
 ## Masterpiece / Pause Projects submission
 
-Same shape as standard submission; different channel, threshold, and cooldown state file.
+Same intake validation as standard submission (attachment, `@` in title, card name, cooldown); different channel, poll threshold, and cooldown state file.
 
 ```mermaid
 flowchart TD
   U["User posts to #pause-projects"] --> ATT{"Any attachment?"}
   ATT -->|no| MISS["Silent ignore<br/>(same as #submissions missing image)"]
-  ATT -->|yes| CD["Separate cooldown file"]
-  CD --> POLL["Mork poll 👍👎❌"]
+  ATT -->|yes| NAME{"First line has card name?"}
+  NAME -->|no| NONAME["#submissions-discussion:<br/>include card name + image returned<br/>Post deleted · cooldown NOT consumed"]
+  NAME -->|yes| PING{"@ in card title?"}
+  PING -->|yes| DM["DM user: no @ in title<br/>original post kept"]
+  PING -->|no| CD{"User on masterpiece cooldown?"}
+  CD -->|no| WAIT["#submissions-discussion:<br/>wait message + delete post"]
+  CD -->|yes| COOL["Write masterpiece cooldown timestamp"]
+  COOL --> POLL["Mork poll 👍👎❌"]
   POLL --> CHK{"up − down ≥ 45<br/>age ≥ 1 day?"}
   CHK -->|yes| VP["#veto-polls"]
   VP --> HVP["Veto poll setup"]
