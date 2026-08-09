@@ -14,12 +14,12 @@ flowchart TD
   ATT -->|no| MISS["Silent ignore — see validation"]
   ATT -->|yes| PING{"@ in card title?"}
   PING -->|yes| DM["DM user: no @ in title<br/>original post kept"]
-  PING -->|no| CD{"User is on the submission cooldown?"}
+  PING -->|no| NAME{"First line has card name?"}
+  NAME -->|no| NONAME["#submissions-discussion:<br/>include card name + image returned<br/>Post deleted · cooldown NOT consumed"]
+  NAME -->|yes| CD{"User is on the submission cooldown?"}
   CD -->|no| X["#submissions-discussion:<br/>wait N hours + delete post"]
   CD -->|yes| COOL["Write cooldown timestamp"]
-  COOL --> NAME{"content non-empty?"}
-  NAME -->|no| NONAME["#submissions-discussion:<br/>include card name + delete<br/>(cooldown consumed)"]
-  NAME -->|yes| DEL["Delete user post"]
+  COOL --> DEL["Delete user post"]
   DEL --> MAGIC{"Feeling lucky?"}
   MAGIC -->|yes| VP["#veto-polls + discussion + log<br/>(no community poll)"]
   MAGIC -->|no| POLL["Mork reposts with 👍👎❌ + thread"]
@@ -51,7 +51,7 @@ flowchart TD
 
   A -->|no| MI["Missing image<br/>No bot reply<br/>Post stays in channel<br/>Cooldown NOT consumed"]
   A -->|yes| B{"First line empty?<br/>(no card name)"}
-  B -->|yes| NN["Missing name<br/>Ping in #submissions-discussion<br/>Delete post<br/>Cooldown IS consumed"]
+  B -->|yes| NN["Missing name<br/>Ping in #submissions-discussion<br/>Image returned · post deleted<br/>Cooldown NOT consumed"]
   B -->|no| OK["Normal submission flow"]
 
   A -->|non-image file<br/>e.g. .pdf| NI["No image-type check on intake<br/>Poll still created"]
@@ -62,7 +62,7 @@ flowchart TD
 | Case                     | Trigger                           | Bot response                                 | User post                  | Cooldown       |
 | ------------------------ | --------------------------------- | -------------------------------------------- | -------------------------- | -------------- |
 | **Missing image**        | No attachment                     | None (silent ignore)                         | **Kept** in `#submissions` | Not written    |
-| **Missing card name**    | Attachment present, empty content | `#submissions-discussion`: include card name | Deleted                    | **Consumed**   |
+| **Missing card name**    | Attachment present, empty/whitespace first line | `#submissions-discussion`: include card name + image returned | Deleted                    | Not written    |
 | **`@` in title**         | `@` in first line                 | DM: no `@` allowed                           | Kept                       | Not written    |
 | **On cooldown**          | Submitted within 22 h             | `#submissions-discussion`: wait message      | Deleted                    | Already active |
 | **Non-image attachment** | e.g. PDF attached                 | Poll created anyway                          | Deleted (reposted as poll) | Consumed       |

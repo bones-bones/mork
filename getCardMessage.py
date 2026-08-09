@@ -1,3 +1,7 @@
+def submission_card_name(content: str) -> str:
+    return (content or "").strip().split("\n", 1)[0].strip()
+
+
 def parseCardNameAndAuthor(acceptanceMessage: str) -> tuple[str, str]:
     dbname = ""
     card_author = ""
