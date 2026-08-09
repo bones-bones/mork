@@ -6,6 +6,16 @@ bot_secrets/reddit_secrets.py
 tempImages/.*
 deferred_reddit/
 
+# Printable image pipeline — runtime / batch artifacts
+scripts/data/fix_compare/
+scripts/data/fix_reassess_state.json
+scripts/data/fix_reassess_state.json.tmp
+scripts/data/bad_printable_urls.jsonl
+scripts/data/gcs_encoding_audit.json
+scripts/data/gcs_encoding_repair.json
+scripts/data/br_pt_at_risk.json
+scripts/fix_borders_dry_run/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
