@@ -1,0 +1,35 @@
+---
+description: Keep docs/card-flows in sync when card lifecycle behavior changes
+globs: cogs/Lifecycle.py,acceptCard.py,checkSubmissions.py,handleVetoPost.py,getCardMessage.py,submissions/**,cogs/lifecycle/**
+alwaysApply: false
+---
+
+# Card flow documentation
+
+When you change card lifecycle behavior, update the matching docs in the same change set.
+
+## When this applies
+
+Behavior changes in submission intake, polls, veto, acceptance, errata, tokens, design hell, or background submission checks.
+
+## What to update
+
+| Code area | Doc |
+|-----------|-----|
+| `#submissions`, `#pause-projects`, tokens, design hell | `docs/card-flows/submissions.md` |
+| Veto polls, `!compileveto`, hellpit | `docs/card-flows/veto.md` |
+| `accept_card`, postcard, persistence | `docs/card-flows/acceptance.md` |
+| Errata channel, instaerrata | `docs/card-flows/errata.md` |
+| Background loop, Reddit, lookups | `docs/card-flows/background.md` |
+| Cross-cutting lifecycle changes | `docs/card-flows/overview.md` |
+
+## Requirements
+
+- Update Mermaid diagrams and validation tables when branching, thresholds, channels, cooldowns, or user-visible outcomes change.
+- Keep `#submissions-discussion` pings, image return/delete behavior, and cooldown consumption accurate.
+- If behavior spans multiple areas, update every affected page—not just `submissions.md`.
+
+## PR checklist
+
+- [ ] Matching `docs/card-flows/*.md` updated (or N/A with reason in PR description)
+- [ ] Diagrams and tables reflect the new behavior

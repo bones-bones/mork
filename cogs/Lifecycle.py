@@ -35,7 +35,7 @@ from cogs.lifecycle.design_hell_acceptance import (
     get_current_design_hell_set_id,
 )
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
-from getCardMessage import getCardMessage, parseCardNameAndAuthor
+from getCardMessage import getCardMessage, parseCardNameAndAuthor, submission_card_name
 from getVetoPollsResults import (
     VetoPollResults,
     getVetoPollsResults,
@@ -651,6 +651,17 @@ class LifecycleCog(commands.Cog):
                         'No "@" are allowed in card title submissions to prevent me from spamming'
                     )
                     return  # no pings allowed
+
+                if not submission_card_name(message.content):
+                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
+                    file = await message.attachments[0].to_file()
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, make sure to include the name of your card",
+                        file=file,
+                    )
+                    await message.delete()
+                    return
+
                 author = message.author.mention
 
                 print(f"{cardName} submitted by {message.author.mention}")
@@ -691,14 +702,6 @@ class LifecycleCog(commands.Cog):
                         f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                     )
 
-                if message.content == "":
-                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                    await discussionChannel.send(
-                        f"<@{message.author.id}>, make sure to include the name of your card"
-                    )
-                    await message.delete()
-                    return
-
                 file = await message.attachments[0].to_file()
                 if reasonable_card():
                     vetoChannel = getVetoChannel(bot=self.bot)
@@ -736,15 +739,17 @@ class LifecycleCog(commands.Cog):
 
             case hc_constants.MASTERPIECE_CHANNEL:
                 if len(message.attachments) > 0:
-                    if message.content == "":
+                    if not submission_card_name(message.content):
                         discussionChannel = cast(
                             TextChannel,
                             self.bot.get_channel(
                                 hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
                             ),
                         )
+                        file = await message.attachments[0].to_file()
                         await discussionChannel.send(
-                            f"<@{message.author.id}>, make sure to include the name of your card"
+                            f"<@{message.author.id}>, make sure to include the name of your card",
+                            file=file,
                         )
                         await message.delete()
                         return
