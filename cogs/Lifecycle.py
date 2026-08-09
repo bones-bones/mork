@@ -42,6 +42,7 @@ from getVetoPollsResults import (
     limit_veto_poll_results,
 )
 from getters import (
+    getDesignHellDiscussionChannel,
     getErrataTrackingChannel,
     getMorkSubmissionsLoggingChannel,
     getSubmissionDiscussionChannel,
@@ -205,13 +206,15 @@ class LifecycleCog(commands.Cog):
                 async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(url) as resp:
                         if resp.status == 200:
-                            image_path = f'tempImages/{name.replace("/", "|")}'
+                            os.makedirs("tempImages", exist_ok=True)
+                            image_path = f'tempImages/{name.replace("/", "|")}.png'
                             with open(image_path, "wb") as out:
                                 out.write(await resp.read())
                             try:
                                 await post_to_reddit(
-                                    title=f"HC6 Card of the day: {name}",
                                     image_path=image_path,
+                                    title=f"HC6 Card of the day: {name}",
+                                    set_id="HC6",
                                     flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
                                 )
                             except:
@@ -440,6 +443,12 @@ class LifecycleCog(commands.Cog):
                 set_id = "HCV.S"
                 list_channel = hc_constants.VETO_CARD_LIST
             else:
+                if not submission_card_name(message.content):
+                    print(
+                        f"Design Hell gold react rejected: missing card title on "
+                        f"message {reaction.message_id}"
+                    )
+                    return
                 set_id = await get_current_design_hell_set_id(channelAsText)
                 if not set_id:
                     return
@@ -556,10 +565,22 @@ class LifecycleCog(commands.Cog):
 
         # Hello single coolest thing about python
         match message.channel.id:
-            case (
-                hc_constants.HELLS_UNO_CHANNEL
-                | hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL
-            ):
+            case hc_constants.DESIGN_HELL_SUBMISSION_CHANNEL:
+                if len(message.attachments) == 0:
+                    return
+                if not submission_card_name(message.content):
+                    discussionChannel = getDesignHellDiscussionChannel(self.bot)
+                    file = await message.attachments[0].to_file()
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, make sure to include the name of your card",
+                        file=file,
+                    )
+                    await message.delete()
+                    return
+                await message.add_reaction(hc_constants.VOTE_UP)
+                await message.add_reaction(hc_constants.VOTE_DOWN)
+
+            case hc_constants.HELLS_UNO_CHANNEL:
                 await message.add_reaction(hc_constants.VOTE_UP)
                 await message.add_reaction(hc_constants.VOTE_DOWN)
 

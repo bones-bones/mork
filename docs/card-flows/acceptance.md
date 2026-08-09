@@ -18,13 +18,17 @@ flowchart TD
   IMG["POST /api/cards/postcard (imageBase64)<br/>Hellfall uploads to GCS"]
   IMG --> CL["Post **Name** by **Author** + image<br/>to card-list Discord channel"]
   CL --> RD{"Errata or skip Reddit?"}
-  RD -->|no| POST["Post to Reddit<br/>(or defer if batch > 5)"]
+  RD -->|no| POST["Post to Reddit<br/>(title uses card set ID)"]
   RD -->|yes| DONE["Done"]
   POST --> DONE
 ```
 
 **Defaults:** set `SOH`, card list `SOH_CARD_LIST`  
 **Design Hell:** mandatory Hellfall postcard sync
+
+**Reddit title:** `post_to_reddit` builds `"… was accepted into {set_id}"` (or `"… was vetoed from {set_id}"`) from the card's set — not `CUBE_NAME`. Design Hell gold uses the pinned set (e.g. `SCL.X`); compile-veto accepts use `SOH`.
+
+**Deferred overflow** (`deferred_reddit/` when batch > 5): manifest stores one JSON object per line (`filename`, `card_message`, `set_id`, `was_vetoed`) so Unicode, tabs, and quotes in card names round-trip safely. Older tab-separated manifests still parse.
 
 ---
 

@@ -50,7 +50,9 @@ Reply bridge only fires when the prior Mork message starts with `reddit says:` â
 
 ## Discord â†’ Reddit
 
-**Outbound flair:** all posts use **Official HC** (`OFFICIAL_HC_REDDIT_FLAIR`). Accepted and vetoed cards share the same flair in code
+**Outbound flair:** all posts use **Official HC** (`OFFICIAL_HC_REDDIT_FLAIR`). Accepted and vetoed cards share the same flair in code.
+
+**Outbound titles:** card acceptance posts use the card's **set ID** in the title (e.g. `was accepted into SOH`, `was accepted into SCL.X`), not `CUBE_NAME`.
 
 ```mermaid
 flowchart LR
