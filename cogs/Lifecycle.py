@@ -455,6 +455,10 @@ class LifecycleCog(commands.Cog):
                     return
                 set_id = await get_current_design_hell_set_id(channelAsText)
                 if not set_id:
+                    await cast(Member, member).send(
+                        "No set was found for your Design Hell gold react — pin a "
+                        "prompt with `Set: …` in #design-hell-submissions."
+                    )
                     return
                 list_channel = hc_constants.SECRET_LAIR
 

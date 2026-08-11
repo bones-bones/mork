@@ -139,7 +139,8 @@ flowchart TD
   MED -->|🥇| TITLE{"First line has card name?"}
   TITLE -->|no| REJ["Reject acceptance<br/>(no ✅)"]
   TITLE -->|yes| PIN["Read Set: from pinned prompt"]
-  PIN --> SL["Accept → secret lair channel"]
+  PIN -->|no set| NOSET["DM admin:<br/>no set found"]
+  PIN -->|found| SL["Accept → secret lair channel"]
   VETO --> ACC["GCS + mandatory Hellfall postcard"]
   SL --> ACC
   ACC --> SH[("Database (Unapproved)")]
@@ -150,6 +151,7 @@ flowchart TD
 | --------------------- | --------------------------------- | -------------------------------------------- | --------- |
 | **Missing image**     | No attachment                     | None (silent ignore)                         | Kept      |
 | **Missing card name** | Attachment present, empty/whitespace first line | Design hell discussion channel: include card name + image returned | Deleted   |
+| **Missing set (gold)** | Admin 🥇, no pin or unparsable `Set:` on first pin | DM to admin | Kept      |
 
 ---
 
