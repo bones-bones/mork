@@ -9,6 +9,7 @@ import requests
 from is_mork import getDriveUrl
 from shared_vars import googleClient
 import hc_constants
+from image_response_filename import filename_from_image_response
 from shared_vars import drive
 from PIL import Image, ImageDraw
 from shared_vars import creds
@@ -317,11 +318,11 @@ for id, name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip
                 headers = {"User-Agent": hc_constants.USER_AGENT}
                 response = requests.get(sideUrl, headers=headers)
                 response.raise_for_status()
-                unparsedFileName = response.headers.get("Content-Disposition")
-
-                parsedFileName = cast(
-                    str,
-                    re.findall('inline;filename="(.*)"', str(unparsedFileName))[0],
+                parsedFileName = filename_from_image_response(
+                    content_disposition=response.headers.get("Content-Disposition"),
+                    url=sideUrl,
+                    content_type=response.headers.get("Content-Type"),
+                    fallback_name=cast(str, name),
                 )
                 print(parsedFileName)
                 parsedFileName = (

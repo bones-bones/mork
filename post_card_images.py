@@ -1,9 +1,9 @@
 import io
-import re
 import aiohttp
 import discord
 from cardNameRequest import cardNameRequest
 import hc_constants
+from image_response_filename import filename_from_image_response
 
 FISH_FROM_GO_FISH_SEARCH = "the fish from go fish"
 from shared_vars import allCards
@@ -54,10 +54,12 @@ async def send_image_reply(url: str, cardname: str, text: str | None, message: M
                 )
                 await session.close()
                 return
-            # currently extraFilename looks like inline;filename="Skald.png"
-            # PSA: renaming the file in drive is NOT enough to update the content disposition, gotta reupload the file.
-            extraFilename = resp.headers.get("Content-Disposition")
-            parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
+            parsedFilename = filename_from_image_response(
+                content_disposition=resp.headers.get("Content-Disposition"),
+                url=str(resp.url),
+                content_type=resp.headers.get("Content-Type"),
+                fallback_name=cardname,
+            )
 
             data = io.BytesIO(await resp.read())
             sentMessage = await message.reply(

@@ -18,6 +18,7 @@ import os
 from cogs.HellscubeDatabase import searchFor
 from cogs.get_podcast_output import get_podcast_output
 import hc_constants
+from image_response_filename import filename_from_image_response
 from post_card_images import send_image_reply
 
 
@@ -68,9 +69,12 @@ async def send_drive_image(url, ctx: commands.Context):
                 )
                 await session.close()
                 return
-            # currently extraFilename looks like inline;filename="                                Skald.png"
-            extraFilename = resp.headers.get("Content-Disposition")
-            parsedFilename = re.findall('inline;filename="(.*)"', str(extraFilename))[0]
+            parsedFilename = filename_from_image_response(
+                content_disposition=resp.headers.get("Content-Disposition"),
+                url=str(resp.url),
+                content_type=resp.headers.get("Content-Type"),
+                fallback_name=url.rsplit("/", 1)[-1] or "image",
+            )
             data = io.BytesIO(await resp.read())
             await ctx.send(file=discord.File(data, parsedFilename))
             await session.close()

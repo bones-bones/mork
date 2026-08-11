@@ -55,6 +55,7 @@ import hc_constants
 from isRealCard import isRealCard
 from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
+from image_response_filename import filename_from_image_response
 from post_card_images import post_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
@@ -154,11 +155,14 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                     async with session.get(img_url) as resp:
                         if resp.status != 200:
                             continue
-                        extra_filename = resp.headers.get("Content-Disposition")
-                        parsed = re.findall(
-                            'inline;filename="(.*)"', str(extra_filename)
+                        filename = filename_from_image_response(
+                            content_disposition=resp.headers.get(
+                                "Content-Disposition"
+                            ),
+                            url=str(resp.url),
+                            content_type=resp.headers.get("Content-Type"),
+                            fallback_name=card.name(),
                         )
-                        filename = parsed[0] if parsed else f"{card.name()}.png"
                         data = io.BytesIO(await resp.read())
                 veto_content = (
                     f"{card.name()} by {card.creator()}" + "\n" + "Errata: " + card.id()
@@ -905,11 +909,14 @@ class LifecycleCog(commands.Cog):
                                 f"<@{message.author.id}>, couldn't fetch the card image."
                             )
                             return
-                        extra_filename = resp.headers.get("Content-Disposition")
-                        parsed = re.findall(
-                            'inline;filename="(.*)"', str(extra_filename)
+                        filename = filename_from_image_response(
+                            content_disposition=resp.headers.get(
+                                "Content-Disposition"
+                            ),
+                            url=str(resp.url),
+                            content_type=resp.headers.get("Content-Type"),
+                            fallback_name=card.name(),
                         )
-                        filename = parsed[0] if parsed else f"{card.name()}.png"
                         data = io.BytesIO(await resp.read())
                         await message.delete()
                         content = card_id_input
