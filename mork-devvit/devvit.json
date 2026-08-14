@@ -3,7 +3,13 @@
     "name": "hellscube-bridge",
     "server": {
         "dir": "dist/server",
-        "entry": "index.cjs"
+        "entry": "index.cjs",
+        "externalEndpoints": {
+            "postCard": {
+                "endpoint": "/external/post-card",
+                "scopes": ["global"]
+            }
+        }
     },
     "settings": {
         "global": {

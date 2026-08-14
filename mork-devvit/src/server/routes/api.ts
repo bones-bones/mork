@@ -27,30 +27,20 @@ async function authorizeRequest(
   return authorizationHeader === `Bearer ${expected}`;
 }
 
-export const api = new Hono();
-
-api.post('/post-card', async (c) => {
-  if (!(await authorizeRequest(c.req.header('authorization')))) {
-    return c.json(unauthorized(), 401);
-  }
-
-  let body: PostCardRequest;
-  try {
-    body = await c.req.json<PostCardRequest>();
-  } catch {
-    return c.json(badRequest('invalid JSON body'), 400);
-  }
-
+async function handlePostCard(body: PostCardRequest): Promise<{
+  response: PostCardResponse | PostCardErrorResponse;
+  status: number;
+}> {
   const title = body.title?.trim();
   const imageUrl = body.imageUrl?.trim();
   if (!title) {
-    return c.json(badRequest('title is required'), 400);
+    return { response: badRequest('title is required'), status: 400 };
   }
   if (!imageUrl) {
-    return c.json(badRequest('imageUrl is required'), 400);
+    return { response: badRequest('imageUrl is required'), status: 400 };
   }
   if (!/^https:\/\//i.test(imageUrl)) {
-    return c.json(badRequest('imageUrl must be an https URL'), 400);
+    return { response: badRequest('imageUrl must be an https URL'), status: 400 };
   }
 
   const subredditName = (body.subredditName?.trim() || DEFAULT_SUBREDDIT).replace(
@@ -68,15 +58,47 @@ api.post('/post-card', async (c) => {
       runAs: 'APP',
     });
 
-    const response: PostCardResponse = {
-      ok: true,
-      postId: post.id,
-      permalink: post.permalink,
+    return {
+      response: { ok: true, postId: post.id, permalink: post.permalink } satisfies PostCardResponse,
+      status: 200,
     };
-    return c.json(response);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('submitPost failed:', message);
-    return c.json(badRequest(message), 502);
+    return { response: badRequest(message), status: 502 };
   }
+}
+
+export const api = new Hono();
+
+// Webview-internal route — auth via postCardSecret setting
+api.post('/post-card', async (c) => {
+  if (!(await authorizeRequest(c.req.header('authorization')))) {
+    return c.json(unauthorized(), 401);
+  }
+
+  let body: PostCardRequest;
+  try {
+    body = await c.req.json<PostCardRequest>();
+  } catch {
+    return c.json(badRequest('invalid JSON body'), 400);
+  }
+
+  const { response, status } = await handlePostCard(body);
+  return c.json(response, status);
+});
+
+export const external = new Hono();
+
+// External endpoint — auth handled by Devvit managed token
+external.post('/post-card', async (c) => {
+  let body: PostCardRequest;
+  try {
+    body = await c.req.json<PostCardRequest>();
+  } catch {
+    return c.json(badRequest('invalid JSON body'), 400);
+  }
+
+  const { response, status } = await handlePostCard(body);
+  return c.json(response, status);
 });
