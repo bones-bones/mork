@@ -1,0 +1,41 @@
+name: Deploy Devvit app
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: github.actor == 'bones-bones'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mork-devvit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+          cache: npm
+          cache-dependency-path: mork-devvit/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck and build
+        run: npm run test:types && npm run build
+
+      - name: Install Devvit CLI
+        run: npm install -g devvit@0.13.10
+
+      - name: Configure Devvit credentials
+        env:
+          DEVVIT_TOKEN: ${{ secrets.DEVVIT_TOKEN }}
+        run: |
+          mkdir -p "$HOME/.devvit"
+          echo "$DEVVIT_TOKEN" > "$HOME/.devvit/token"
+
+      - name: Upload to Reddit Developer Platform
+        run: devvit upload --bump=patch

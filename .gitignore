@@ -175,3 +175,7 @@ typings
 .ruff_cache/
 LESSONS_LEARNED.md
 .worktrees/
+
+# Devvit app (mork-devvit/)
+mork-devvit/node_modules/
+mork-devvit/dist/

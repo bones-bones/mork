@@ -54,13 +54,34 @@ Reply bridge only fires when the prior Mork message starts with `reddit says:` �
 
 **Outbound titles:** card acceptance posts use the card's **set ID** in the title (e.g. `was accepted into SOH`, `was accepted into SCL.X`), not `CUBE_NAME`.
 
+Stage 1 Devvit migration: **immediate acceptance/veto posts only** can route through `mork-devvit` when flagged. Everything else still uses asyncpraw.
+
 ```mermaid
-flowchart LR
-  ACC["Card acceptance / veto"] --> RED["Reddit · Official HC flair"]
-  GAL["Daily submissions gallery"] --> RED
-  COTD["HC6 card of the day"] --> RED
-  RC["Redditcatchup<br/>(deferred batch drain)"] --> RED
+flowchart TD
+  subgraph immediate["Immediate accept/veto (accept_card)"]
+    ACC["Card acceptance / veto<br/>(≤ 5 cards in compile batch)"] --> FLAG{"REDDIT_ACCEPT_VIA_DEVVIT?"}
+    FLAG -->|yes| DEV["mork-devvit /api/post-card"]
+    FLAG -->|no| PRAW1["asyncpraw post_to_reddit"]
+    DEV -->|fail| PRAW1
+    DEV --> RED["r/HellsCube · Official HC flair"]
+    PRAW1 --> RED
+  end
+
+  subgraph asyncpraw_only["asyncpraw only (not yet ported)"]
+    RC["Redditcatchup / deferred_reddit"] --> PRAW2["asyncpraw"]
+    GAL["Daily submissions gallery"] --> PRAW2
+    COTD["HC6 card-of-the-day"] --> PRAW2
+    PRAW2 --> RED
+  end
 ```
+
+| Outbound path | Transport | Image source |
+| ------------- | --------- | ------------ |
+| Immediate accept/veto | Devvit (optional) → asyncpraw fallback | Hellfall GCS URL or `tempImages/` |
+| Deferred batch (`> 5` cards) | asyncpraw | `deferred_reddit/` files |
+| Daily gallery | asyncpraw | Discord submission attachments |
+| Card of the day | asyncpraw | HC6 sheet image URL → temp file |
+| Discord → Reddit reply | asyncpraw | — |
 
 ---
 

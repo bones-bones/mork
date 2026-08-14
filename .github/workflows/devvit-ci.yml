@@ -1,0 +1,40 @@
+name: Devvit CI
+
+on:
+  pull_request:
+    paths:
+      - "mork-devvit/**"
+      - ".github/workflows/devvit-ci.yml"
+  push:
+    branches: [main, reddit-devvit-migration]
+    paths:
+      - "mork-devvit/**"
+      - ".github/workflows/devvit-ci.yml"
+
+concurrency:
+  group: devvit-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mork-devvit
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+          cache: npm
+          cache-dependency-path: mork-devvit/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run test:types
+
+      - name: Build
+        run: npm run build

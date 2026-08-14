@@ -48,7 +48,7 @@ flowchart TD
   ACC --> CL["Post to set's card-list channel"]
   ACC --> SH[("Database (Unapproved)")]
   ACC --> HF["GCS + Hellfall postcard sync"]
-  ACC --> RED["Reddit (unless skipped)"]
+  ACC --> RED["Reddit skipped (errata)"]
 ```
 
 ---
