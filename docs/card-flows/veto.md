@@ -109,14 +109,16 @@ flowchart TD
   AC1 -->|no| SET2["Set SOH → soh card list"]
   SET1 --> AC1B["Accept + GCS + Hellfall"]
   SET2 --> AC1B
-  AC1B --> RD1{"> 5 cards?"}
-  RD1 -->|yes| DEF["Defer to deferred_reddit/"]
-  RD1 -->|no| RED1["Reddit accepted flair"]
+  AC1B --> RD1{"> 5 Reddit-eligible<br/>cards this compile?"}
+  RD1 -->|yes| DEF["Defer to deferred_reddit/<br/>(asyncpraw via catchup)"]
+  RD1 -->|no| RED1["Immediate Reddit post<br/>(Devvit if flagged, else asyncpraw)"]
   AC1B --> ARC1["Archive veto thread + ✅"]
 
   LIM --> VET["Vetoed cards"]
   VET --> AC2["Accept as HCV → veto card list"]
-  AC2 --> RED2["Reddit vetoed flair"]
+  AC2 --> RD2{"> 5 Reddit-eligible<br/>cards this compile?"}
+  RD2 -->|yes| DEF
+  RD2 -->|no| RED2["Immediate Reddit post<br/>(Devvit if flagged, else asyncpraw)"]
   AC2 --> ARC2["Archive + ✅"]
 
   LIM --> ERR["Errata cards"]
@@ -127,8 +129,10 @@ flowchart TD
   PUR --> PING["Ping council in veto thread"]
   PUR --> HELL["List as VETO HELL"]
 
-  DEF --> CATCH["Auto redditcatchup 1/hour<br/>+ !redditcatchup N manual drain"]
+  DEF --> CATCH["Auto redditcatchup 1/hour<br/>+ !redditcatchup N manual drain<br/>(asyncpraw only)"]
 ```
+
+See [Acceptance → Reddit posting](acceptance.md#reddit-posting-immediate-accepts-only) for the Devvit vs asyncpraw detail on immediate posts.
 
 ## Hellpit resubmit (errata rework)
 

@@ -1,0 +1,32 @@
+{
+    "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+    "name": "hellscube-bridge",
+    "server": {
+        "dir": "dist/server",
+        "entry": "index.cjs"
+    },
+    "settings": {
+        "global": {
+            "postCardSecret": {
+                "type": "string",
+                "label": "Mork bridge secret (Bearer token for /api/post-card)"
+            }
+        }
+    },
+    "permissions": {
+        "reddit": {
+            "enable": true,
+            "scope": "moderator"
+        },
+        "http": {
+            "enable": true,
+            "domains": [
+                "storage.googleapis.com"
+            ]
+        }
+    },
+    "scripts": {
+        "build": "npm run build",
+        "dev": "vite build"
+    }
+}

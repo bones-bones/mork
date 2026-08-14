@@ -19,7 +19,8 @@ from discord.ext import commands
 
 
 from deferred_reddit import format_deferred_manifest_entry, safe_card_filename
-from reddit_functions import post_to_reddit
+from reddit_devvit import post_accept_via_devvit, reddit_accept_via_devvit_enabled
+from reddit_functions import post_to_reddit, reddit_title_for_acceptance
 from username_mappings import resolve_authors
 
 cardSheetUnapproved = googleClient.open_by_key(
@@ -188,6 +189,9 @@ async def accept_card(
 
     if not errata and not errataId:
         card_message_for_reddit = cardMessage.replace("\n", " ").replace("\t", " ")
+        reddit_title = reddit_title_for_acceptance(
+            card_message_for_reddit, setId, was_vetoed=wasVetoed
+        )
         if skip_reddit and deferred_reddit_dir:
             os.makedirs(deferred_reddit_dir, exist_ok=True)
             deferred_path = os.path.join(deferred_reddit_dir, new_file_name)
@@ -204,16 +208,28 @@ async def accept_card(
                     + "\n"
                 )
         else:
-            try:
-                await post_to_reddit(
-                    image_path=image_path,
-                    set_id=setId,
-                    card_message=card_message_for_reddit,
-                    was_vetoed=wasVetoed,
-                    flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
-                )
-            except Exception as e:
-                print("tried to post to reddit", e)
+            posted = False
+            if reddit_accept_via_devvit_enabled():
+                try:
+                    await post_accept_via_devvit(
+                        title=reddit_title,
+                        image_url=imageUrl,
+                        flair_id=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+                    )
+                    posted = True
+                except Exception as e:
+                    print("Devvit acceptance post failed; falling back to asyncpraw:", e)
+            if not posted:
+                try:
+                    await post_to_reddit(
+                        image_path=image_path,
+                        set_id=setId,
+                        card_message=card_message_for_reddit,
+                        was_vetoed=wasVetoed,
+                        flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+                    )
+                except Exception as e:
+                    print("tried to post to reddit", e)
             if os.path.exists(image_path):
                 os.remove(image_path)
     elif os.path.exists(image_path):

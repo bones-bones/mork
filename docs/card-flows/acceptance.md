@@ -18,15 +18,37 @@ flowchart TD
   IMG["POST /api/cards/postcard (imageBase64)<br/>Hellfall uploads to GCS"]
   IMG --> CL["Post **Name** by **Author** + image<br/>to card-list Discord channel"]
   CL --> RD{"Errata or skip Reddit?"}
-  RD -->|no| POST["Post to Reddit<br/>(title uses card set ID)"]
   RD -->|yes| DONE["Done"]
-  POST --> DONE
+  RD -->|no| BATCH{"> 5 Reddit-eligible<br/>cards this compile?"}
+  BATCH -->|yes| DEF["Defer to deferred_reddit/<br/>(asyncpraw via catchup)"]
+  BATCH -->|no| IMM["Immediate Reddit post"]
+  DEF --> DONE
+  IMM --> DONE
+```
+
+### Reddit posting (immediate accepts only)
+
+When compile-veto has **≤ 5** Reddit-eligible cards, each accept/veto posts immediately. Larger batches defer everything to `deferred_reddit/` (always asyncpraw today).
+
+```mermaid
+flowchart TD
+  IN["Immediate post path<br/>(not deferred, not errata)"] --> TITLE["Title: … was accepted/vetoed from {setId}"]
+  TITLE --> FLAG{"REDDIT_ACCEPT_VIA_DEVVIT=1?"}
+  FLAG -->|yes| DV["POST mork-devvit /api/post-card<br/>imageUrl from Hellfall GCS"]
+  DV --> OK{"Devvit ok?"}
+  OK -->|yes| DONE["Done"]
+  OK -->|no| FB["Fallback: post_to_reddit<br/>(local tempImages file)"]
+  FLAG -->|no| PRAW["post_to_reddit<br/>(asyncpraw)"]
+  FB --> DONE
+  PRAW --> DONE
 ```
 
 **Defaults:** set `SOH`, card list `SOH_CARD_LIST`  
 **Design Hell:** mandatory Hellfall postcard sync
 
 **Reddit title:** `post_to_reddit` builds `"… was accepted into {set_id}"` (or `"… was vetoed from {set_id}"`) from the card's set — not `CUBE_NAME`. Design Hell gold uses the pinned set (e.g. `SCL.X`); compile-veto accepts use `SOH`.
+
+**Stage-1 Devvit (optional):** when `REDDIT_ACCEPT_VIA_DEVVIT=1`, immediate posts go to `mork-devvit` `/api/post-card` using the Hellfall GCS `imageUrl`; falls back to asyncpraw on failure. Deferred batches still use `deferred_reddit/` + asyncpraw.
 
 **Deferred overflow** (`deferred_reddit/` when batch > 5): manifest stores one JSON object per line (`filename`, `card_message`, `set_id`, `was_vetoed`) so Unicode, tabs, and quotes in card names round-trip safely. Older tab-separated manifests still parse.
 
@@ -99,3 +121,4 @@ Payload includes `name`, `creators`, `set`, `kind: "card"`, and `imageBase64`. E
 | Image upload       | Hellfall via `imageBase64`         | Hellfall via `imageBase64`            |
 | Sheet write        | Cols A, B, C, D, E + BB/BC on sync | **Col C only** (image URL)            |
 | Reddit             | Posted (unless batch deferred)     | Skipped                               |
+| Reddit transport   | Devvit `/api/post-card` if flagged | N/A                                   |
