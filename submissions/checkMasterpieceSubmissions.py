@@ -88,7 +88,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 await handleVetoPost(vetoEntry, bot, None)
 
                 copy2 = await messageEntry.attachments[0].to_file()
-                logContent = f"{acceptContent}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
+                logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
                 await acceptedChannel.send(content=acceptContent)
                 await acceptedChannel.send(content="", file=file)
                 await logChannel.send(content=logContent, file=copy2)
