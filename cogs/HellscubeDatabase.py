@@ -1,23 +1,27 @@
 import random
 import re
-from typing import cast
+from typing import Any, List, Literal, cast
 import discord
 from discord.ext import commands
 from random import randrange
 
 from datetime import datetime, timezone, timedelta
 from CardClasses import Card, Side, CardSearch
-from cardNameRequest import cardNameRequest
+# from cardNameRequest import cardNameRequest
 import hc_constants
+from hellfall_fetcher import SearchResponse, getCreators, getInfo, getRulings, getSearchFromServer
 from isRealCard import isRealCard
 from post_card_images import send_image_reply
 
 
 from shared_vars import intents, allCards, googleClient, cardSheet
-from username_mappings import set_username_mappings, resolve_username
+from username_mappings import resolve_authors, set_username_mappings, resolve_username
 
-cardList: list[CardSearch] = []
+cardDict: dict[str,CardSearch] = {}
+""" Maps card ids to cards """
 
+hcidDict: dict[str,str] = {}
+""" Maps hcids to card ids """
 databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
 
 
@@ -26,14 +30,115 @@ notMagicCardSheet = databaseSheets.worksheet("NotMagic")
 client = discord.Client(intents=intents)
 
 
-def _sheet_has_collector_number(headers: list[str]) -> bool:
-    """True when col W is collector # and Side 2 Cost starts at X."""
-    return len(headers) > 23 and headers[22] != "Cost" and headers[23] == "Cost"
+keys = [
+    'hcid',
+    'name',
+    'image',
+    'creators',
+    'cardset',
+    'legalities',
+    'related',
+    'rulings',
+    'mana_value',
+    'colors',
+    'mana_cost',
+    'supertypes',
+    'types',
+    'subtypes',
+    'power',
+    'toughness',
+    'loyalty',
+    'oracle_text',
+    'flavor_text',
+    '0image',
+    'artists',
+    'tags',
+    'accepted_order',
+    '1mana_cost',
+    '1supertypes',
+    '1types',
+    '1subtypes',
+    '1power',
+    '1toughness',
+    '1loyalty',
+    '1oracle_text',
+    '1flavor_text',
+    '1image',
+    '2mana_cost',
+    '2supertypes',
+    '2types',
+    '2subtypes',
+    '2power',
+    '2toughness',
+    '2loyalty',
+    '2oracle_text',
+    '2flavor_text',
+    '2image',
+    '3mana_cost',
+    '3supertypes',
+    '3types',
+    '3subtypes',
+    '3power',
+    '3toughness',
+    '3loyalty',
+    '3oracle_text',
+    '3flavor_text',
+    '3image',
+    'uuid',
+    'oracle_id',
+]
+rootKeys = [
+    'uuid',
+    'oracle_id',
+    'hcid',
+    'name',
+    'cardset',
+    'accepted_order',
+    'image',
+    'mana_value',
+    'colors',
+    'legalities',
+    'creators',
+    'artists',
+    'rulings',
+    'tags',
+    'sides',
+    'related',
+]
+keyType = Literal[*keys]
 
+def fixEmptyArray(value:list[str]):
+    if len(value) == 1 and not value[0]:
+        return []
+    return value
+def getManaValue(mv:str) ->int|float:
+    if mv == '∞':
+        return 999999999999999
+    try:
+        return int(mv)
+    except ValueError:
+        try:
+            return float(mv)
+        except ValueError:
+            return 0
+
+def findLastIndex(lst):
+    for i, value in enumerate(reversed(lst)):
+        if value:
+            return len(lst) - 1 - i
+    return -1
+
+def colToFaceNum(index:int):
+    for i in range(1,4):
+        if index < keys.index(f'{i}mana_cost'):
+            return i
+    return 4
 
 def build_database():
-    global cardList
-    cardList = []
+    global cardDict
+    cardDict = {}
+    global hcidDict
+    hcidDict = {}
 
     usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
     usernameMappings = usernameMappingSheet.get_all_values()[1:]
@@ -41,93 +146,49 @@ def build_database():
 
     cardSheetSearch = databaseSheets.worksheet("Database")
     all_values = cardSheetSearch.get_all_values()
-    headers = all_values[1]
-    has_collector = _sheet_has_collector_number(headers)
-    side2_start = 23 if has_collector else 22
-    cardsDataSearch = all_values[2:]
+    cardsDataSearch:List[List[Any]] = all_values
+    
 
     for entry in cardsDataSearch:
-        creator_alias = next(
-            (
-                usernameEntry
-                for usernameEntry in usernameMappings
-                if entry[2] in usernameEntry[1]
-            ),
-            None,
-        )
+        def entryAt(key:str)->str:
+            return entry[keys.index(key)]
+        cardObject:dict[str,Any] = {
+            'sides':[],
+        }
+        for key in rootKeys:
+            value = entryAt(key)
+            match key:
+                case 'creators':
+                    cardObject[key] = fixEmptyArray(resolve_authors(value))
+                case 'colors' | 'artists' | 'tags' | 'related':
+                    cardObject[key] = fixEmptyArray(value.split(';'))
+                case 'mana_value':
+                    cardObject[key] = getManaValue(value)
+                case _:
+                    cardObject[key] = value
+        newSides = []
+        faceNum = colToFaceNum(findLastIndex(entry[:keys.index('uuid')]))
+        
+        def addPropToFace(key:str,value:Any,index:int):
+            while len(newSides) <= index:
+                newSides.append({})
+            newSides[index][key]=value
+            
+        for i in range(faceNum):
+            for key in [k[1:] for k in keys if k[0] == str(i)]:
+                entryList = entryAt(key).split(' // ') if i == 3 else [entryAt(key)]
+                for index, item in enumerate(entryList):
+                    if (key in ['supertypes', 'types', 'subtypes']):
+                        addPropToFace(key,fixEmptyArray(item.split(';')),i+index)
+                    else:
+                        addPropToFace(key,item,i+index)
+        cardObject['sides'] = newSides
         try:
-            id = entry[0]
-            name = entry[1]
-            img = entry[2]
-            creator = creator_alias[0] if creator_alias else entry[3]
-            cardset = entry[4]
-            legality = entry[5]
-            rulings = entry[7]
-            cmc = entry[8] if entry[8] else 0
-            colors = entry[9].split(";")
-            artists = entry[20].split(";") if entry[20] != "" else []
-            tags = entry[21].split(";") if entry[21] != "" else []
-            collector_number = entry[22] if has_collector and len(entry) > 22 else ""
-            sides = []
-            sides.append(create_side(entry[10:19]))  # Name to Image
-            for face_offset in (0, 10, 20):
-                start = side2_start + face_offset
-                type_idx = start + 2
-                if (
-                    len(entry) > type_idx
-                    and entry[type_idx] != ""
-                    and entry[type_idx] != " "
-                ):
-                    sides.append(create_side(entry[start : start + 9]))
-
-            cardList.append(
-                CardSearch(
-                    id=id,
-                    name=name,
-                    img=img,
-                    creator=creator,
-                    cmc=cmc,
-                    colors=colors,
-                    sides=sides,
-                    cardset=cardset,
-                    legality=legality,
-                    rulings=rulings,
-                    tags=tags,
-                    artists=artists,
-                    collector_number=collector_number,
-                )
-            )
+            card = CardSearch(**cardObject)
+            cardDict[card.uuid()]=card
+            hcidDict[card.hcid()]=card.uuid()
         except Exception as e:
             print(f"couldn't parse {entry}", e)
-
-
-def create_side(stats: list[str]):
-    """
-    in theory: cost, super, type, sub, power, toughness, loyalty, text box, flavor text
-    """
-    cost = stats[0]
-    supertypes = (stats[1] if stats[1] else "").split(";")
-    types = stats[2].split(";")
-    subtypes = (stats[3] if stats[3] else "").split(";")
-
-    power = 0
-    toughness = 0
-    loyalty = 0
-    if stats[4] != "" and stats[4] != " ":
-        newPower = re.sub(r"[^\d]", "", stats[4])
-        power = int(newPower if newPower != "" else "0")
-    if stats[5] != "" and stats[5] != " ":
-        newToughness = re.sub(r"[^\d]", "", stats[5])
-        toughness = int(newToughness if newToughness != "" else "0")
-    if stats[6] != "" and stats[6] != " ":
-        newLoyalty = re.sub(r"[^\d]", "", stats[6])
-
-        loyalty = int(newLoyalty if newLoyalty != "" else "0")
-    text = stats[7]
-    flavor = stats[8] if stats.__len__() >= 9 else ""
-    return Side(
-        cost, supertypes, types, subtypes, power, toughness, loyalty, text, flavor
-    )
 
 
 class HellscubeDatabaseCog(commands.Cog):
@@ -138,15 +199,9 @@ class HellscubeDatabaseCog(commands.Cog):
     async def on_ready(self):
         # global log
         build_database()
-        nameList = cast(list[str], cardSheet.col_values(2)[2:])
-        imgList = cardSheet.col_values(3)[2:]
-        creatorList = cardSheet.col_values(4)[2:]
 
         global allCards  # Need to modify shared allCards object
-        for i in range(len(nameList)):
-            allCards[nameList[i].lower()] = Card(
-                nameList[i], imgList[i], creatorList[i]
-            )
+        allCards = {uuid: Card(card.uuid(),card.oracleId(),card.hcid(),card.name(),card.image(),card.creators(),card.artists()) for uuid, card in cardDict.items()}
 
     # okay not technically a DB command
     @commands.command()
@@ -195,15 +250,22 @@ class HellscubeDatabaseCog(commands.Cog):
         card = allCards[random.choice(list(allCards.keys()))]
         print(card)
         await send_image_reply(
-            url=card.getImg(), cardname=card.getName(), message=ctx.message, text=None
+            url=card.getImage(), cardname=card.getName(), message=ctx.message, text=None
         )
 
     @commands.command()
     async def creator(self, channel, *cardName):
-        name = cardNameRequest(" ".join(cardName).lower())
-        await channel.send(
-            allCards[name].getName() + " created by: " + allCards[name].getCreator()
-        )
+        name = " ".join(cardName).lower()
+        response = await getCreators(cardName=name)
+        message = 'something went wrong!'
+        card = allCards.get(response.uuid)
+        name = card.getName() if card else response.name
+        creators = card.getCreators() if card else response.creators
+        if name is None or creators is None:
+            await channel.send(message)
+            return
+        message = f'{name} created by: {', '.join(creators)}'
+        await channel.send(message)
 
     @commands.command()
     async def syncDb(self, ctx: commands.Context):
@@ -216,18 +278,20 @@ class HellscubeDatabaseCog(commands.Cog):
         """
         Returns the rulings for a given card.
         """
-        name = cardNameRequest(" ".join(cardName).lower())
+        name = " ".join(cardName).lower()
+        response = await getRulings(cardName=name)
         message = "something went wrong!"
-        for card in cardList:
-            if card.name().lower() == name:
-                rulings = card.rulings()
-                rulingsList = rulings.split("\\\\\\")
-                if len(rulings) == 0:
-                    message = "There are no rulings for " + name
-                else:
-                    message = f"rulings for {name}:"
-                    for i in rulingsList:
-                        message = message + "\n```" + i + "```"
+        card = cardDict.get(response.uuid)
+        name = card.name() if card else response.name
+        rulings = card.rulings() if card else response.rulings
+        if name is None or rulings is None:
+            await channel.send(message)
+            return
+        if not len(rulings):
+            message = f'There are no rulings for {name}'
+        else:
+            rulingsList = rulings.split("\\\\\\")
+            message = f'rulings for {name}:{''.join([f'\n```{r}```' for r in rulingsList])}'
         await channel.send(message)
 
     @commands.command(rest_is_raw=True)
@@ -266,8 +330,8 @@ class HellscubeDatabaseCog(commands.Cog):
             f"{currentRuling}\n" if currentRuling != "" else ""
         ) + f"{ruling}- {ctx.author.name} {datetime.today().strftime('%Y-%m-%d')}"
 
-        global cardList
-        for card in cardList:
+        global cardDict
+        for card in cardDict.values():
             # print(card.name())
             if card.name().lower() == cardName.lower():
                 card.setRuling(newRuling)
@@ -323,8 +387,8 @@ class HellscubeDatabaseCog(commands.Cog):
             (f"{currentTags};" if currentTags != "" else "") + f"{tag}",
         )
 
-        global cardList
-        for card in cardList:
+        global cardDict
+        for card in cardDict.values():
             if card.name().lower() == card_name.lower():
                 card.addTag(tag=tag)
                 break
@@ -381,8 +445,8 @@ class HellscubeDatabaseCog(commands.Cog):
             newTags,
         )
 
-        global cardList
-        for card in cardList:
+        global cardDict
+        for card in cardDict.values():
             if card.name().lower() == cardName.lower():
                 card._tags = newTagList
                 break
@@ -391,140 +455,125 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.command()
     async def info(self, channel, *cardName):
-        raw = " ".join(cardName).strip()
-        parts = raw.split()
-        if parts and all(p.isdigit() for p in parts):
-            blocks: list[str] = []
-            for card_id in parts:
-                if card_id in _INFO_JOKE_MISSING_IDS:
-                    blocks.append("not found")
-                    continue
-                found = get_card_by_id(card_id)
-                blocks.append("not found" if found is None else format_card_info(found))
-            await channel.send("\n\n".join(blocks))
-            return
-
-        name = cardNameRequest(" ".join(cardName).lower())
-        message = "something went wrong!"
-        for card in cardList:
-            # print(card.name())
-            if card.name().lower() == name:
-
-                if name == "gas lights":
-                    await channel.send("no card found")
-                    return
-                message = format_card_info(card)
-                break
+        name = " ".join(cardName).lower()
+        response = await getInfo(cardName=name)
+        message = 'something went wrong!'
+        card = allCards.get(response.uuid)
+        if (response.info):
+            message = response.info
         await channel.send(message)
 
     @commands.command()
-    async def search(self, ctx: commands.Context, *conditions: str):
-        restrictions = {}
+    async def search(self, ctx: commands.Context, query: str):
         print("searching")
-        for i in conditions:
-            if i.lower()[0:2] == "o:":
-                if "text" in restrictions.keys():
-                    restrictions["text"].append(i[2:])
-                else:
-                    restrictions["text"] = [i[2:]]
-            if i.lower()[0:2] == "f:":
-                if "flavor" in restrictions.keys():
-                    restrictions["flavor"].append(i[2:])
-                else:
-                    restrictions["flavor"] = [i[2:]]
-            if i.lower()[0:2] == "t:":
-                if "types" in restrictions.keys():
-                    restrictions["types"].append(i[2:])
-                else:
-                    restrictions["types"] = [i[2:]]
-            if i.lower()[0:5] == "type:":
-                if "types" in restrictions.keys():
-                    restrictions["types"].append(i[5:])
-                else:
-                    restrictions["types"] = [i[5:]]
-            if i.lower()[0:4] == "tag:":
-                if "tag" in restrictions.keys():
-                    restrictions["tag"].append(i[4:])
-                else:
-                    restrictions["tag"] = [i[4:]]
-            if i.lower()[0:2] == "n:":
-                if "name" in restrictions.keys():
-                    restrictions["name"].append(i[2:])
-                else:
-                    restrictions["name"] = [i[2:]]
-            if i.lower()[0:5] == "from:":
-                if "creator" in restrictions.keys():
-                    restrictions["creator"].append(i[5:])
-                else:
-                    restrictions["creator"] = [i[5:]]
-            if i.lower()[0:2] == "s:":
-                if "cardset" in restrictions.keys():
-                    restrictions["cardset"].append(i[2:])
-                else:
-                    restrictions["cardset"] = [i[2:]]
-            if i.lower()[0:4] == "set:":
-                if "cardset" in restrictions.keys():
-                    restrictions["cardset"].append(i[4:])
-                else:
-                    restrictions["cardset"] = [i[4:]]
-            if i.lower()[0:6] == "legal:":
-                if "legality" in restrictions.keys():
-                    restrictions["legality"].append(i[6:])
-                else:
-                    restrictions["legality"] = [i[6:]]
-            if i.lower()[0:3] == "cmc":
-                if "cmc" in restrictions.keys():
-                    restrictions["cmc"].append((i[4:], i[3]))
-                else:
-                    restrictions["cmc"] = [(i[4:], i[3])]
-            if i.lower()[0:3] == "pow" and i.lower()[3] in "<=>":
-                if "pow" in restrictions.keys():
-                    restrictions["pow"].append((i[4:], i[3]))
-                else:
-                    restrictions["pow"] = [(i[4:], i[3])]
-            if i.lower()[0:5] == "power":
-                if "pow" in restrictions.keys():
-                    restrictions["pow"].append((i[6:], i[5]))
-                else:
-                    restrictions["pow"] = [(i[6:], i[5])]
-            if i.lower()[0:3] == "tou" and i.lower()[3] in ["<", "=", ">"]:
-                if "tou" in restrictions.keys():
-                    restrictions["tou"].append((i[4:], i[3]))
-                else:
-                    restrictions["tou"] = [(i[4:], i[3])]
-            if i.lower()[0:9] == "toughness":
-                if "tou" in restrictions.keys():
-                    restrictions["tou"].append((i[10:], i[9]))
-                else:
-                    restrictions["tou"] = [(i[10:], i[9])]
-            if i.lower()[0:3] == "loy" and i.lower()[3] in "<=>":
-                if "loy" in restrictions.keys():
-                    restrictions["loy"].append((i[4:], i[3]))
-                else:
-                    restrictions["loy"] = [(i[4:], i[3])]
-            if i.lower()[0:7] == "loyalty":
-                if "loy" in restrictions.keys():
-                    restrictions["loy"].append((i[8:], i[7]))
-                else:
-                    restrictions["loy"] = [(i[8:], i[7])]
-            if i.lower()[0] == "c" and i.lower()[1] in "<=>":
-                if "color" in restrictions.keys():
-                    restrictions["color"].append((i[2:], i[1]))
-                else:
-                    restrictions["color"] = [(i[2:], i[1])]
 
-        if restrictions == {}:
-            return
-        print(restrictions)
-        matchingCards = searchFor(restrictions)
-        if matchingCards.__len__() > 100:
+
+        # for i in conditions:
+        #     if i.lower()[0:2] == "o:":
+        #         if "text" in restrictions.keys():
+        #             restrictions["text"].append(i[2:])
+        #         else:
+        #             restrictions["text"] = [i[2:]]
+        #     if i.lower()[0:2] == "f:":
+        #         if "flavor" in restrictions.keys():
+        #             restrictions["flavor"].append(i[2:])
+        #         else:
+        #             restrictions["flavor"] = [i[2:]]
+        #     if i.lower()[0:2] == "t:":
+        #         if "types" in restrictions.keys():
+        #             restrictions["types"].append(i[2:])
+        #         else:
+        #             restrictions["types"] = [i[2:]]
+        #     if i.lower()[0:5] == "type:":
+        #         if "types" in restrictions.keys():
+        #             restrictions["types"].append(i[5:])
+        #         else:
+        #             restrictions["types"] = [i[5:]]
+        #     if i.lower()[0:4] == "tag:":
+        #         if "tag" in restrictions.keys():
+        #             restrictions["tag"].append(i[4:])
+        #         else:
+        #             restrictions["tag"] = [i[4:]]
+        #     if i.lower()[0:2] == "n:":
+        #         if "name" in restrictions.keys():
+        #             restrictions["name"].append(i[2:])
+        #         else:
+        #             restrictions["name"] = [i[2:]]
+        #     if i.lower()[0:5] == "from:":
+        #         if "creator" in restrictions.keys():
+        #             restrictions["creator"].append(i[5:])
+        #         else:
+        #             restrictions["creator"] = [i[5:]]
+        #     if i.lower()[0:2] == "s:":
+        #         if "cardset" in restrictions.keys():
+        #             restrictions["cardset"].append(i[2:])
+        #         else:
+        #             restrictions["cardset"] = [i[2:]]
+        #     if i.lower()[0:4] == "set:":
+        #         if "cardset" in restrictions.keys():
+        #             restrictions["cardset"].append(i[4:])
+        #         else:
+        #             restrictions["cardset"] = [i[4:]]
+        #     if i.lower()[0:6] == "legal:":
+        #         if "legality" in restrictions.keys():
+        #             restrictions["legality"].append(i[6:])
+        #         else:
+        #             restrictions["legality"] = [i[6:]]
+        #     if i.lower()[0:3] == "cmc":
+        #         if "cmc" in restrictions.keys():
+        #             restrictions["cmc"].append((i[4:], i[3]))
+        #         else:
+        #             restrictions["cmc"] = [(i[4:], i[3])]
+        #     if i.lower()[0:3] == "pow" and i.lower()[3] in "<=>":
+        #         if "pow" in restrictions.keys():
+        #             restrictions["pow"].append((i[4:], i[3]))
+        #         else:
+        #             restrictions["pow"] = [(i[4:], i[3])]
+        #     if i.lower()[0:5] == "power":
+        #         if "pow" in restrictions.keys():
+        #             restrictions["pow"].append((i[6:], i[5]))
+        #         else:
+        #             restrictions["pow"] = [(i[6:], i[5])]
+        #     if i.lower()[0:3] == "tou" and i.lower()[3] in ["<", "=", ">"]:
+        #         if "tou" in restrictions.keys():
+        #             restrictions["tou"].append((i[4:], i[3]))
+        #         else:
+        #             restrictions["tou"] = [(i[4:], i[3])]
+        #     if i.lower()[0:9] == "toughness":
+        #         if "tou" in restrictions.keys():
+        #             restrictions["tou"].append((i[10:], i[9]))
+        #         else:
+        #             restrictions["tou"] = [(i[10:], i[9])]
+        #     if i.lower()[0:3] == "loy" and i.lower()[3] in "<=>":
+        #         if "loy" in restrictions.keys():
+        #             restrictions["loy"].append((i[4:], i[3]))
+        #         else:
+        #             restrictions["loy"] = [(i[4:], i[3])]
+        #     if i.lower()[0:7] == "loyalty":
+        #         if "loy" in restrictions.keys():
+        #             restrictions["loy"].append((i[8:], i[7]))
+        #         else:
+        #             restrictions["loy"] = [(i[8:], i[7])]
+        #     if i.lower()[0] == "c" and i.lower()[1] in "<=>":
+        #         if "color" in restrictions.keys():
+        #             restrictions["color"].append((i[2:], i[1]))
+        #         else:
+        #             restrictions["color"] = [(i[2:], i[1])]
+
+        # if restrictions == {}:
+        #     return
+        # print(restrictions)
+        response = await getSearchFromServer(query)
+
+        if response.total_cards > 100:
             await ctx.send(
-                f"There were {matchingCards.__len__()} results you fucking moron. Go use hellfall or something."
+                f"There were {response.total_cards} results you fucking moron. Go use hellfall or something."
             )
             return
-        message = printCardNames(matchingCards)
-        if message == "":
-            message = "Nothing found"
+        
+        message = printSearchResults(response)
+        # if message == "":
+        #     message = "Nothing found"
         n = 2000
         messages = [message[i : i + n] for i in range(0, len(message), n)]
         for msg in messages:
@@ -535,191 +584,194 @@ async def setup(bot: commands.Bot):
     await bot.add_cog(HellscubeDatabaseCog(bot))
 
 
-def get_card_by_id(card_id: str) -> CardSearch | None:
-    """Return the CardSearch for the given card ID, or None if not found."""
-    for c in cardList:
-        if str(c.id()) == str(card_id):
-            return c
-    return None
+# def get_card_by_id(card_id: str) -> CardSearch | None:
+#     """Return the CardSearch for the given card ID, or None if not found."""
+#     for c in cardList:
+#         if str(c.id()) == str(card_id):
+#             return c
+#     return None
 
 
-# IDs that resolve to "not found" on purpose
-_INFO_JOKE_MISSING_IDS = frozenset({"2142", "2972"})
+# HCIDs that resolve to "not found" on purpose
+# _INFO_JOKE_MISSING_HCIDS = frozenset({"2142", "2972"})
 
 
-def format_card_info(card: CardSearch) -> str:
-    cid = card.id()
-    creator = card.creator()
-    cardset = card.cardset()
-    legality = card.legality()
-    rulings = card.rulings()
-    tags = card.tags()
-    artists = card.artists()
-    to_send = [
-        card.name(),
-        f"id: {cid}",
-        f"creator: {creator}",
-        f"set: {cardset}",
-        f"legality: {legality}",
-    ]
-    if card.collector_number():
-        to_send.append(f"collector #: {card.collector_number()}")
-    if artists.__len__() > 0:
-        to_send.append("artists: " + ", ".join(artists))
-    if tags.__len__() > 0:
-        to_send.append("tags: " + ", ".join(tags))
-    if rulings and rulings.__len__() > 0:
-        to_send.append("rulings: \n" + rulings)
-    return "\n".join(to_send)
+# def format_card_info(card: CardSearch) -> str:
+#     hcid = card.hcid()
+#     creators = card.creators()
+#     cardset = card.cardset()
+#     legality = card.legalities()
+#     rulings = card.rulings()
+#     tags = card.tags()
+#     artists = card.artists()
+#     to_send = [
+#         card.name(),
+#         f"id: {hcid}",
+#         f"creators: {', '.join(creators)}",
+#         f"set: {cardset}",
+#         f"legality: {legality}",
+#     ]
+#     if card.acceptedOrder():
+#         to_send.append(f"collector #: {card.acceptedOrder()}")
+#     if artists.__len__() > 0:
+#         to_send.append(f"artists: {", ".join(artists)}")
+#     if tags.__len__() > 0:
+#         to_send.append(f"tags: {", ".join(tags)}")
+#     if rulings and rulings.__len__() > 0:
+#         to_send.append("rulings: \n" + rulings)
+#     return "\n".join(to_send)
 
 
-def get_card_by_name(card_name: str) -> CardSearch | None:
-    """Return the CardSearch for the given card name, or None if not found."""
-    name_lower = card_name.strip().lower()
-    for c in cardList:
-        if c.name().lower() == name_lower:
-            return c
-    return None
+# def get_card_by_name(card_name: str) -> CardSearch | None:
+#     """Return the CardSearch for the given card name, or None if not found."""
+#     name_lower = card_name.strip().lower()
+#     for c in cardList:
+#         if c.name().lower() == name_lower:
+#             return c
+#     return None
 
 
-def searchFor(searchDict: dict):
-    if searchDict.get("creator"):
-        creators = searchDict["creator"]
-        if isinstance(creators, str):
-            creators = [creators]
-        searchDict["creator"] = [resolve_username(c) for c in creators]
+# def searchFor(searchDict: dict):
+#     if searchDict.get("creator"):
+#         creators = searchDict["creator"]
+#         if isinstance(creators, str):
+#             creators = [creators]
+#         searchDict["creator"] = [resolve_username(c) for c in creators]
 
-    for i in [
-        "types",
-        "text",
-        "flavor",
-        "name",
-        "creator",
-        "cardset",
-        "legality",
-        "tag",
-    ]:
-        if not i in searchDict.keys():
-            searchDict[i] = None
-    for i in ["cmc", "pow", "tou", "loy", "color"]:
-        if not i in searchDict.keys():
-            searchDict[i] = [(None, None)]
-    hits: list[CardSearch] = []
-    for i in cardList:
-        if "no-fetch" in [t.lower() for t in i.tags()]:
-            continue
-        if (
-            checkForString(
-                searchDict["types"], list(map(lambda x: x.lower(), i.types()))
-            )
-            and checkForString(
-                searchDict["tag"], list(map(lambda x: x.lower(), i.tags()))
-            )
-            and checkForString(searchDict["text"], i.text().lower())
-            and checkForString(searchDict["flavor"], i.flavor().lower())
-            and checkForString(searchDict["name"], i.name().lower())
-            and checkForString(searchDict["creator"], i.creator().lower())
-            and checkForString(searchDict["cardset"], i.cardset().lower())
-            and checkForString(searchDict["legality"], i.legality().lower())
-        ):
-            if (
-                checkForInt(searchDict["cmc"], i.cmc())
-                and checkForInt(searchDict["tou"], i.toughness())
-                and checkForInt(searchDict["pow"], i.power())
-                and checkForInt(searchDict["loy"], i.loyalty())
-            ):
-                if checkForColor(
-                    searchDict["color"], list(map(lambda x: x.lower(), i.colors()))
-                ):
-                    hits.append(i)
-    return hits
-
-
-def checkForString(condition, data):
-    if type(condition) is str:
-        condition = [condition.lower()]
-    if condition:
-        for j in condition:
-            if not j.lower() in data:
-                return False
-    return True
+#     for i in [
+#         "types",
+#         "text",
+#         "flavor",
+#         "name",
+#         "creator",
+#         "cardset",
+#         "legality",
+#         "tag",
+#     ]:
+#         if not i in searchDict.keys():
+#             searchDict[i] = None
+#     for i in ["cmc", "pow", "tou", "loy", "color"]:
+#         if not i in searchDict.keys():
+#             searchDict[i] = [(None, None)]
+#     hits: list[CardSearch] = []
+#     for i in cardList:
+#         if "no-fetch" in [t.lower() for t in i.tags()]:
+#             continue
+#         if (
+#             checkForString(
+#                 searchDict["types"], list(map(lambda x: x.lower(), i.types()))
+#             )
+#             and checkForString(
+#                 searchDict["tag"], list(map(lambda x: x.lower(), i.tags()))
+#             )
+#             and checkForString(searchDict["text"], i.oracleText().lower())
+#             and checkForString(searchDict["flavor"], i.flavorText().lower())
+#             and checkForString(searchDict["name"], i.name().lower())
+#             and checkForString(searchDict["creator"], i.creators().lower())
+#             and checkForString(searchDict["cardset"], i.cardset().lower())
+#             and checkForString(searchDict["legality"], i.legalities().lower())
+#         ):
+#             if (
+#                 checkForInt(searchDict["cmc"], i.manaValue())
+#                 and checkForInt(searchDict["tou"], i.toughness())
+#                 and checkForInt(searchDict["pow"], i.power())
+#                 and checkForInt(searchDict["loy"], i.loyalty())
+#             ):
+#                 if checkForColor(
+#                     searchDict["color"], list(map(lambda x: x.lower(), i.colors()))
+#                 ):
+#                     hits.append(i)
+#     return hits
 
 
-def checkForInt(condition, data):
-    for i in condition:
-        if i[0] != None:
-            number = int(i[0])
-            operator = i[1]
-            if operator == "=":
-                if not number in list(map(lambda x: int(x), data)):
-                    return False
-            if operator == ">":
-                works = False
-                for j in data:
-                    if int(j) > (number):
-                        works = True
-                if not works:
-                    return False
-            if operator == "<":
-                works = False
-                for j in data:
-                    if int(j) < (number):
-                        works = True
-                if not works:
-                    return False
-    return True
+# def checkForString(condition, data):
+#     if type(condition) is str:
+#         condition = [condition.lower()]
+#     if condition:
+#         for j in condition:
+#             if not j.lower() in data:
+#                 return False
+#     return True
 
 
-colorLetterDict = {
-    "w": "white",
-    "u": "blue",
-    "b": "black",
-    "r": "red",
-    "g": "green",
-    "p": "purple",
-    "m": "multicolor",
-}
+# def checkForInt(condition, data):
+#     for i in condition:
+#         if i[0] != None:
+#             number = int(i[0])
+#             operator = i[1]
+#             if operator == "=":
+#                 if not number in list(map(lambda x: int(x), data)):
+#                     return False
+#             if operator == ">":
+#                 works = False
+#                 for j in data:
+#                     if int(j) > (number):
+#                         works = True
+#                 if not works:
+#                     return False
+#             if operator == "<":
+#                 works = False
+#                 for j in data:
+#                     if int(j) < (number):
+#                         works = True
+#                 if not works:
+#                     return False
+#     return True
 
 
-def checkForColor(condition, data):
-    if not condition[0][0]:
-        return True
-    allowed = True
-    for requirement in condition:
-        allowedColors = [""]
-        requiredColors = []
-        if requirement[1] == "=":
-            for i in requirement[0]:
-                if i in colorLetterDict.keys():
-                    requiredColors.append(colorLetterDict[i])
-                    allowedColors.append(colorLetterDict[i])
-        if requirement[1] == ">":
-            for i in requirement[0]:
-                if i in colorLetterDict.keys():
-                    requiredColors.append(colorLetterDict[i])
-            for i in colorLetterDict.keys():
-                allowedColors.append(colorLetterDict[i])
-        if requirement[1] == "<":
-            for i in requirement[0]:
-                if i in colorLetterDict.keys():
-                    allowedColors.append(colorLetterDict[i])
-        for i in requiredColors:
-            if i == "multicolor":
-                if len(data) < 2:
-                    allowed = False
-            else:
-                if not i in data:
-                    allowed = False
-        for i in data:
-            if not "m" in requirement[0]:
-                if not i in allowedColors:
-                    allowed = False
-    return allowed
+# colorLetterDict = {
+#     "w": "white",
+#     "u": "blue",
+#     "b": "black",
+#     "r": "red",
+#     "g": "green",
+#     "p": "purple",
+#     "m": "multicolor",
+# }
 
 
-def printCardNames(cards: list[CardSearch]):
-    returnString = "Results: "
-    returnString += str(len(cards)) + "\n"
-    for i in cards:
-        returnString += i.name() + "\n"
+# def checkForColor(condition, data):
+#     if not condition[0][0]:
+#         return True
+#     allowed = True
+#     for requirement in condition:
+#         allowedColors = [""]
+#         requiredColors = []
+#         if requirement[1] == "=":
+#             for i in requirement[0]:
+#                 if i in colorLetterDict.keys():
+#                     requiredColors.append(colorLetterDict[i])
+#                     allowedColors.append(colorLetterDict[i])
+#         if requirement[1] == ">":
+#             for i in requirement[0]:
+#                 if i in colorLetterDict.keys():
+#                     requiredColors.append(colorLetterDict[i])
+#             for i in colorLetterDict.keys():
+#                 allowedColors.append(colorLetterDict[i])
+#         if requirement[1] == "<":
+#             for i in requirement[0]:
+#                 if i in colorLetterDict.keys():
+#                     allowedColors.append(colorLetterDict[i])
+#         for i in requiredColors:
+#             if i == "multicolor":
+#                 if len(data) < 2:
+#                     allowed = False
+#             else:
+#                 if not i in data:
+#                     allowed = False
+#         for i in data:
+#             if not "m" in requirement[0]:
+#                 if not i in allowedColors:
+#                     allowed = False
+#     return allowed
+
+
+def printSearchResults(response: SearchResponse):
+
+    returnString = response.details
+    if (response.warnings):
+        for warning in response.warnings:
+            returnString += f'\n{warning}'
+    for card in response.data:
+        returnString+= f'\n{card.name} ({card.set.replace('_','.')}) {card.collector_number}'    
     return returnString

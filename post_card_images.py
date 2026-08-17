@@ -33,9 +33,9 @@ async def post_card_images(message: Message):
         if post == "":
             await message.reply("No Match Found!", mention_author=False)
         else:
-            print(allCards[post].getImg())
+            print(allCards[post].getImage())
             await send_image_reply(
-                url=allCards[post].getImg(),
+                url=allCards[post].getImage(),
                 cardname=allCards[post].getName(),
                 message=message,
                 text=None,

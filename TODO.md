@@ -15,3 +15,6 @@
 
 nohup python3 Mork.py &
 ps -ef | grep -i '[p]ython'
+
+
+- build better method of integrating ts code?

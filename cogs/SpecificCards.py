@@ -999,7 +999,7 @@ class SpecificCardsCog(commands.Cog):
         result = random.choice(results)
         print(results.__len__())
         await send_image_reply(
-            url=result.img(), cardname=result.name(), text=None, message=ctx.message
+            url=result.image(), cardname=result.name(), text=None, message=ctx.message
         )
 
     # get a random invoker for the card voke enjoyer

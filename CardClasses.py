@@ -2,49 +2,77 @@ from typing import Type
 
 
 class Card:
-    def __init__(self, name, img, creator):
+    def __init__(self, uuid:str, oracle_id:str, hcid:str, name:str, image:str, creators:list[str], artists:list[str]):
+        self._uuid = uuid
+        self._oracle_id = oracle_id
+        self._hcid = hcid
         self._name = name
-        self._img = img
-        self._creator = creator
+        self._image = image
+        self._creators = creators
+        self._artists = artists
 
+    def getUUID(self):
+        return self._uuid
+
+    def getOracleID(self):
+        return self._oracle_id
+    
+    def getHCID(self):
+        return self._hcid
+    
     def getName(self):
         return self._name
 
-    def getImg(self):
-        return self._img
+    def getImage(self):
+        return self._image
 
-    def getCreator(self):
-        return self._creator
+    def getCreators(self):
+        return self._creators
+
+    def getArtists(self):
+        return self._artists
+
 
 
 class Side:
     def __init__(
         self,
-        cost: str,
+        image: str,
+        mana_cost: str,
         supertypes: list[str],
         types: list[str],
         subtypes: list[str],
-        power: int,
-        toughness: int,
-        loyalty: int,
-        text: str,
-        flavor: str,
+        oracle_text: str,
+        flavor_text: str,
+        power: str,
+        toughness: str,
+        loyalty: str,
     ):
-        self._cost = cost
+        self._image = image
+        self._mana_cost = mana_cost
         self._supertypes = supertypes
         self._types = types
         self._subtypes = subtypes
+        self._oracle_text = oracle_text
+        self._flavor_text = flavor_text
         self._power = power
         self._toughness = toughness
         self._loyalty = loyalty
-        self._text = text
-        self._flavor = flavor
 
-    def cost(self):
-        return self._cost
+    def image(self):
+        return self._image
+    
+    def manaCost(self):
+        return self._mana_cost
 
     def types(self):
         return self._supertypes + self._types + self._subtypes
+
+    def oracleText(self):
+        return self._oracle_text
+
+    def flavorText(self):
+        return self._flavor_text
 
     def power(self):
         return self._power
@@ -55,85 +83,95 @@ class Side:
     def loyalty(self):
         return self._loyalty
 
-    def text(self):
-        return self._text
-
-    def flavor(self):
-        return self._flavor
-
 
 class CardSearch:
     def __init__(
         self,
+        uuid: str,
+        oracle_id:str,
+        hcid: str,
         name: str,
-        img: str,
-        creator: str,
-        cmc: int,
-        colors: list[str],
-        sides: list[Side],
         cardset: str,
-        legality: str,
+        accepted_order: str,
+        image: str,
+        mana_value: int|float,
+        colors: list[str],
+        legalities: str,
+        creators: list[str],
+        artists: list[str],
         rulings: str,
         tags: list[str],
-        artists: list[str],
-        id: str,
-        collector_number: str = "",
+        sides: list[Side],
+        related: list[str],
     ):
-        self._id = id
+        self._uuid = uuid
+        self._oracle_id = oracle_id
+        self._hcid = hcid
         self._name = name
-        self._img = img
-        self._creator = creator
-        self._cmc = cmc
-        self._colors = colors
-        self._sides = sides
         self._cardset = cardset
-        self._legality = legality
+        self._accepted_order = accepted_order
+        self._image = image
+        self._mana_value = mana_value
+        self._colors = colors
+        self._legalities = legalities
+        self._creators = creators
+        self._artists = artists
         self._rulings = rulings
         self._tags = tags
-        self._artists = artists
-        self._collector_number = collector_number
+        self._sides = sides
+        self._related = related
+
+    def uuid(self):
+        return self._uuid
+
+    def oracleId(self):
+        return self._oracle_id
+
+    def hcid(self):
+        return self._hcid
 
     def name(self):
         return self._name
 
-    def img(self):
-        return self._img
+    def cardset(self):
+        return self._cardset
 
-    def creator(self):
-        return self._creator
+    def acceptedOrder(self):
+        return self._accepted_order
+    
+    def image(self):
+        return self._image
 
-    def legality(self):
-        return self._legality
-
-    def rulings(self):
-        return self._rulings
-
-    def cmc(self):
-        return [self._cmc]
+    def manaValue(self):
+        return [self._mana_value]
 
     def colors(self):
         return self._colors
 
-    def cardset(self):
-        return self._cardset
+    def legalities(self):
+        return self._legalities
 
-    def sides(self):
-        return self._sides
-
-    def tags(self):
-        return self._tags
+    def creators(self):
+        return self._creators
 
     def artists(self):
         return self._artists
 
+    def rulings(self):
+        return self._rulings
+
+    def tags(self):
+        return self._tags
+
+    def sides(self):
+        return self._sides
+
+    def related(self):
+        return self._related
+
     def addTag(self, tag):
-        self._tags.append(tag)
-
-    def id(self):
-        return self._id
-
-    def collector_number(self):
-        return self._collector_number
+        if (not tag in self._tags):
+            self._tags.append(tag)
 
     def types(self):
         returnList: list[str] = []
@@ -162,14 +200,14 @@ class CardSearch:
             returnList.append(i.loyalty())
         return list(set(returnList))
 
-    def text(self):
+    def oracleText(self):
         returnString = ""
         for i in self._sides:
-            returnString += i.text()
+            returnString += i.oracleText()
         return returnString
 
-    def flavor(self):
+    def flavorText(self):
         returnString = ""
         for i in self._sides:
-            returnString += i.flavor()
+            returnString += i.flavorText()
         return returnString

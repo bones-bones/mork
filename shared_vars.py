@@ -8,7 +8,9 @@ from CardClasses import Card
 import hc_constants
 
 
+""" Maps card ids to the cards """
 allCards: Dict[str, Card] = {}
+
 
 intents = discord.Intents.default()
 intents.members = True

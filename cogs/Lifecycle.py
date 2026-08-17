@@ -148,7 +148,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
             )  # Hey this sucks, get rid of it in a bit
             if not card:
                 continue
-            img_url = card.img()
+            img_url = card.image()
             try:
                 headers = {"User-Agent": hc_constants.USER_AGENT}
                 async with aiohttp.ClientSession(headers=headers) as session:
@@ -165,7 +165,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                         )
                         data = io.BytesIO(await resp.read())
                 veto_content = (
-                    f"{card.name()} by {card.creator()}" + "\n" + "Errata: " + card.id()
+                    f"{card.name()} by {card.creators()}" + "\n" + "Errata: " + card.id()
                 )
                 veto_message = await veto_channel.send(
                     content=veto_content,
@@ -205,7 +205,7 @@ class LifecycleCog(commands.Cog):
                 cards = searchFor({"cardset": "hc6"})
                 card = cards[cardOffset]
                 name = card.name()
-                url = card.img()
+                url = card.image()
                 headers = {"User-Agent": hc_constants.USER_AGENT}
                 async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(url) as resp:
@@ -904,7 +904,7 @@ class LifecycleCog(commands.Cog):
                     )
                     await message.delete()
                     return
-                img_url = card.img()
+                img_url = card.image()
                 headers = {"User-Agent": hc_constants.USER_AGENT}
                 async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(img_url) as resp:
