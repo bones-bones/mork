@@ -5,50 +5,23 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Any
 
 import aiohttp
 
-from CardClasses import CardSearch
+# from CardClasses import CardSearch
 
 
 class CommandError(Exception):
-    """Raised when hellfall commmand fails."""
-
-
-# @dataclass
-# class CommandRequest:
-#     command: str
-#     name:str
-#     # was_create: bool
-#     # previous: dict[str, Any] | None
-#     # image_url: str | None = None
-#     # # Hellfall card UUID from response ``id`` (sheet BB / token L). Not always
-#     # # equal to ``doc_id`` on updates — use this for sheet UUID columns.
-#     # hellfall_id: str | None = None
-#     # # Oracle card UUID from response ``oracle_id`` (sheet BC / token M).
-#     # oracle_id: str | None = None
-
-
-
+    """Raised when hellfall command fails."""
 
 def _api_url() -> str:
     return os.environ.get("HELLFALL_API_URL", "").rstrip("/")
-
-
 
 def _auth_headers() -> dict[str, str]:
     return {
         "Content-Type": "application/json",
     }
-
-
-def _payload_summary(payload: dict[str, str]) -> str:
-    summary = {key: value for key, value in payload.items() if key != "imageBase64"}
-    if "imageBase64" in payload:
-        summary["imageBase64"] = f"<{len(payload['imageBase64'])} chars>"
-    return repr(summary)
-
 
 def _request_timeout() -> aiohttp.ClientTimeout:
     return aiohttp.ClientTimeout(total=30)
@@ -87,52 +60,101 @@ async def getDataFromServer(payload:dict[str,str]):
             if resp.status != 200:
                 reason = data.get("reason") if isinstance(data, dict) else None
                 raise CommandError(reason or f"HTTP {resp.status}")
-            if not isinstance(data, dict) or not data.get("ok"):
+            if not isinstance(data, dict):
                 raise CommandError("command_failed")
             return data
+@dataclass
+class SearchCard:
+    name: str
+    image:str
+    collector_number:str
+    set:str
+    uuid: str
+    hcid: str
+    def __init__(self, **kwargs):
+        # Only assign fields that exist in this dataclass
+        for field in self.__dataclass_fields__:
+            setattr(self, field, kwargs.get(field, ''))
+
+
+
+async def getExactCard(cardName: str)->SearchCard:
+    payload: dict[str, str] = {
+        "command": 'exact',
+        "card_name": cardName,
+    }
+    data = await getDataFromServer(payload)
+    return SearchCard(**data)
+
+
+async def cardExists(cardName: str):
+    try:
+        card = await getExactCard(cardName)
+        return True
+    except:
+        return False
+
+async def cardsExist(cardNames:list[str]):
+    api_url = _api_url()
+    if not api_url:
+        raise CommandError(
+            "HELLFALL_API_URL is required"
+        )
+    timeout = _request_timeout()
+    payload: dict[str, str|list[str]] = {
+        "command": 'exist',
+        "card_names": cardNames,
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            f"{api_url}/api/mork",
+            json=payload,
+            headers=_auth_headers(),
+            timeout=timeout,
+        ) as resp:
+            data = await _read_response_json(resp)
+            if resp.status not in [200, 400]:
+                reason = data.get("reason") if isinstance(data, dict) else None
+                raise CommandError(reason or f"HTTP {resp.status}")
+            return resp.status == 200
 
 @dataclass
 class CreatorResponse:
     uuid: str
-    name: str|None
-    creators: list[str]|None
+    name: str
+    creators: list[str]
 
-async def getCreators(
-    *,
-    cardName: str,
-) -> CreatorResponse:
+async def getCreators(cardName: str,) -> CreatorResponse:
     payload: dict[str, str] = {
         "command": 'creators',
         "card_name": cardName,
     }
     data = await getDataFromServer(payload)
     uuid = data.get('uuid')
-    if not uuid:
-        raise CommandError("command_failed")
     name=data.get('name')
     creators = data.get('creators')
+    if not uuid or name is None or creators is None:
+        raise CommandError("command_failed")
     return CreatorResponse(uuid=uuid,name=name,creators=creators)
 
 @dataclass
 class RulingsResponse:
     uuid: str
-    name: str|None
-    rulings: str|None
+    name: str
+    rulings: str
 
-async def getRulings(
-    *,
-    cardName: str,
-) -> RulingsResponse:
+async def getRulings(cardName: str,) -> RulingsResponse:
     payload: dict[str, str] = {
         "command": 'rulings',
         "card_name": cardName,
     }
     data = await getDataFromServer(payload)
     uuid = data.get('uuid')
-    if not uuid:
-        raise CommandError("command_failed")
     name=data.get('name')
     rulings = data.get('rulings')
+    if not uuid or name is None or rulings is None:
+        raise CommandError("command_failed")
     return RulingsResponse(uuid=uuid,name=name,rulings=rulings)
 
 @dataclass
@@ -140,10 +162,7 @@ class InfoResponse:
     uuid: str
     info: str
 
-async def getInfo(
-    *,
-    cardName: str,
-) -> InfoResponse:
+async def getInfo(cardName: str,) -> InfoResponse:
     payload: dict[str, str] = {
         "command": 'info',
         "card_name": cardName,
@@ -163,7 +182,7 @@ class SearchResponse:
     total_cards:int
     details:str
     warnings:list[str]|None
-    data: list[Any]
+    data: list[SearchCard]
 
 async def getSearchFromServer(query:str)->SearchResponse:
     api_url = _api_url()
@@ -175,7 +194,8 @@ async def getSearchFromServer(query:str)->SearchResponse:
 
     async with aiohttp.ClientSession() as session:
         async with session.get(
-            f"{api_url}/api/cards/search/?q={query}",
+            f"{api_url}/api/cards/search/",
+            params={'q':query, 'format':'json'},
             headers=_auth_headers(),
             timeout=timeout,
         ) as resp:
@@ -183,13 +203,70 @@ async def getSearchFromServer(query:str)->SearchResponse:
             if resp.status != 200:
                 reason = data.get("reason") if isinstance(data, dict) else None
                 raise CommandError(reason or f"HTTP {resp.status}")
-            if not isinstance(data, dict) or not data.get("ok") or data.get('object') is None:
+            if not isinstance(data, dict) or data.get('object') is None:
                 raise CommandError("search_failed")
             object=data.get('object')
             total_cards=data.get('total_cards')
             details=data.get('details')
             warnings=data.get('warnings')
-            cardData=data.get('data')
-            if object is None or total_cards is None or details is None or cardData is None:
+            rawData = data.get('data')
+            if object is None or total_cards is None or details is None or rawData is None:
                 raise CommandError("search_failed")
-            return SearchResponse(object=object,total_cards=total_cards,details=details,warnings=warnings,data=cardData)
+            cards=[SearchCard(**card) for card in rawData]
+            return SearchResponse(object=object,total_cards=total_cards,details=details,warnings=warnings,data=cards)
+
+@dataclass
+class ErrataDataResponse:
+    uuid: str
+    hcid: str
+    name: str
+    image:str
+    creators: list[str]
+
+async def getErrataData(cardName: str,) -> ErrataDataResponse:
+    payload: dict[str, str] = {
+        "command": 'errata_data',
+        "card_name": cardName,
+    }
+    data = await getDataFromServer(payload)
+    uuid = data.get('uuid')
+    name=data.get('name')
+    hcid = data.get('hcid')
+    creators = data.get('creators')
+    image = data.get('image')
+    if not uuid or name is None or creators is None or hcid is None or image is None:
+        raise CommandError("command_failed")
+    return ErrataDataResponse(uuid=uuid,name=name,creators=creators, hcid=hcid, image=image)
+
+@dataclass
+class RandomResponse:
+    name:str
+    image:str
+
+async def getRandomFromServer(query:str|None)->RandomResponse:
+    api_url = _api_url()
+    if not api_url:
+        raise CommandError(
+            "HELLFALL_API_URL is required"
+        )
+    timeout = _request_timeout()
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            f"{api_url}/api/cards/random/",
+            params={'q':query} if query else {},
+            headers=_auth_headers(),
+            timeout=timeout,
+        ) as resp:
+            data = await _read_response_json(resp)
+            if resp.status != 200:
+                reason = data.get("reason") if isinstance(data, dict) else None
+                raise CommandError(reason or f"HTTP {resp.status}")
+            if not isinstance(data, dict) or data.get('object') is None:
+                raise CommandError("search_failed")
+            image = data.get('image')
+            name = data.get('name')
+            if image is None or name is None:
+                raise CommandError("random_failed")
+            return RandomResponse(image=image, name=name)
+

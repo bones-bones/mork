@@ -15,9 +15,10 @@ import requests
 import os
 
 
-from cogs.HellscubeDatabase import searchFor
+# from cogs.HellscubeDatabase import searchFor
 from cogs.get_podcast_output import get_podcast_output
 import hc_constants
+from hellfall_fetcher import getSearchFromServer
 from image_response_filename import filename_from_image_response
 from post_card_images import send_image_reply
 
@@ -803,7 +804,7 @@ class SpecificCardsCog(commands.Cog):
             "https://cards.scryfall.io/large/front/2/8/28603c1c-f9b4-4001-bc56-d1453d5cacf5.jpg",
             "https://cards.scryfall.io/large/front/d/a/da785d1b-6b90-4b65-9efb-d7f329405318.jpg",
             "https://cards.scryfall.io/large/front/c/2/c2536a4f-9e73-482b-8c1b-71974ef8950c.jpg",
-            "https://cards.scryfall.io/large/front/e/c/eca23062-6014-4a0e-8210-2e86a6308aab.jpg"
+            "https://cards.scryfall.io/large/front/e/c/eca23062-6014-4a0e-8210-2e86a6308aab.jpg",
             "https://cards.scryfall.io/large/front/e/c/eca23062-6014-4a0e-8210-2e86a6308aab.jpg",
             (
                 "https://lh3.googleusercontent.com/d/1EsgQVM7jEAy3Yy_KvaVAUpifaEK_GtQh",
@@ -993,13 +994,13 @@ class SpecificCardsCog(commands.Cog):
     # for the card Avatar of BallsJr123
     @commands.command()
     async def avatarOfBalls(self, ctx: commands.Context, cost):
-        results = searchFor({"cmc": [(cost, "=")], "types": ["creature"]})
+        results = (await getSearchFromServer(f'cmc={cost} t:creature')).data
         if results.__len__() == 0:
             await ctx.send("nothing found for that cmc")
         result = random.choice(results)
         print(results.__len__())
         await send_image_reply(
-            url=result.image(), cardname=result.name(), text=None, message=ctx.message
+            url=result.image, cardname=result.name, text=None, message=ctx.message
         )
 
     # get a random invoker for the card voke enjoyer

@@ -18,7 +18,7 @@ class QuotesCog(commands.Cog):
 
     @commands.command()
     async def quote(self, ctx: commands.Context, lookback=1):
-        if ctx.message.reference:
+        if ctx.message.reference and ctx.message.reference.message_id is not None:
             try:
                 replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
 
@@ -68,7 +68,7 @@ class QuotesCog(commands.Cog):
 
     @commands.command()
     async def rquote(self, ctx: commands.Context, lookback=1):
-        if ctx.message.reference:
+        if ctx.message.reference and ctx.message.reference.message_id is not None:
             try:
                 replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
 
@@ -167,9 +167,8 @@ class QuotesCog(commands.Cog):
     async def randomquote(self, ctx: commands.Context, *user):
         fileID = hc_constants.QUOTES_FILE
         file = drive.CreateFile({"id": fileID})
-        quoteList = cast(list[str], file.GetContentString().split(QUOTE_SPLIT))
-        for i in range(len(quoteList)):
-            quoteList[i] = quoteList[i].split(authorSplit)
+        unsplitQuoteList = cast(list[str], file.GetContentString().split(QUOTE_SPLIT))
+        quoteList = [q.split(authorSplit) for q in unsplitQuoteList]
         if user:
             user = user[0] if user.__len__() == 1 else ""
             tempList = []
@@ -190,9 +189,8 @@ class QuotesCog(commands.Cog):
     async def searchquote(self, ctx: commands.Context, text: str, *user):
         fileID = hc_constants.QUOTES_FILE
         file = drive.CreateFile({"id": fileID})
-        quoteList = cast(list[str], file.GetContentString().split(QUOTE_SPLIT))
-        for i in range(len(quoteList)):
-            quoteList[i] = quoteList[i].split(authorSplit)
+        unsplitQuoteList = cast(list[str], file.GetContentString().split(QUOTE_SPLIT))
+        quoteList = [q.split(authorSplit) for q in unsplitQuoteList]
         if user:
             user = " ".join(user)
             tempList = []
@@ -250,14 +248,15 @@ async def createQuoteMenu(ctx: commands.Context, quoteList):
 
     menu = (
         PaginatedMenu(ctx)
-        .set_timeout(100)
         .add_pages(pageList)
         .show_skip_buttons()
         .hide_cancel_button()
-        .persist_on_close()
         .show_page_numbers()
-        .show_command_message()
     )
+    menu.set_timeout(100)
+    menu.persist_on_close()
+    menu.show_command_message()
+
     await menu.open()
 
 

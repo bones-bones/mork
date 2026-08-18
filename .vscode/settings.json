@@ -3,13 +3,15 @@
     "python.analysis.typeCheckingMode": "standard",
     "python.analysis.autoImportCompletions": true,
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.defaultFormatter": "charliermarsh.ruff",
     },
-    "editor.formatOnSave": true,
+    "editor.formatOnSave": false,
     "cSpell.words": [
         "hellpit",
         "HELLPITS"
     ],
     "cursorpyright.analysis.autoImportCompletions": true,
     "cursorpyright.analysis.typeCheckingMode": "standard",
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "ruff.lint.enable": true,
 }

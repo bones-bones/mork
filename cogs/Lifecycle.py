@@ -26,7 +26,7 @@ from dotenv import load_dotenv
 from acceptCard import accept_card
 from deferred_reddit import list_pending_deferred_posts, process_deferred_reddit_posts
 from checkSubmissions import checkSubmissions
-from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
+# from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from cogs.lifecycle.scube_lair_acceptance import (
@@ -52,13 +52,15 @@ from getters import (
 )
 from handleVetoPost import handleVetoPost
 import hc_constants
-from isRealCard import isRealCard
+# from isRealCard import isRealCard
 from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
 from image_response_filename import filename_from_image_response
 from post_card_images import post_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
+
+from hellfall_fetcher import cardExists, cardsExist, getExactCard, getCreators, getErrataData, getSearchFromServer
 
 load_dotenv()
 
@@ -85,7 +87,7 @@ def card_list_channel_for_set(cardset: str) -> int:
 
     Set ids are compared case-insensitively (normalized to lowercase).
     """
-    s = cardset.strip().lower()
+    s = cardset.strip().lower().replace('_','.')
     match s:
         case "hlc" | "hc2" | "hc3" | "hc4":
             return hc_constants.SIX_ZERO_CARD_LIST
@@ -142,13 +144,10 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
             card_id = (parts[0].strip() if parts else "") or ""
             if not card_id:
                 continue
-            card_by_id = get_card_by_id(card_id)
-            card = (
-                card_by_id if card_by_id else get_card_by_name(card_id)
-            )  # Hey this sucks, get rid of it in a bit
+            card = await getErrataData(card_id)
             if not card:
                 continue
-            img_url = card.image()
+            img_url = card.image
             try:
                 headers = {"User-Agent": hc_constants.USER_AGENT}
                 async with aiohttp.ClientSession(headers=headers) as session:
@@ -161,11 +160,11 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                             ),
                             url=str(resp.url),
                             content_type=resp.headers.get("Content-Type"),
-                            fallback_name=card.name(),
+                            fallback_name=card.name,
                         )
                         data = io.BytesIO(await resp.read())
                 veto_content = (
-                    f"{card.name()} by {card.creators()}" + "\n" + "Errata: " + card.id()
+                    f"{card.name} by {';'.join(card.creators)}\nErrata: {card.hcid}"
                 )
                 veto_message = await veto_channel.send(
                     content=veto_content,
@@ -202,10 +201,10 @@ class LifecycleCog(commands.Cog):
             days_since_starting = (nowtime - start).days
             cardOffset = 726 - days_since_starting
             if cardOffset >= 0:
-                cards = searchFor({"cardset": "hc6"})
+                cards = (await getSearchFromServer('set:HC6 unique:prints')).data
                 card = cards[cardOffset]
-                name = card.name()
-                url = card.image()
+                name = card.name
+                url = card.image
                 headers = {"User-Agent": hc_constants.USER_AGENT}
                 async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(url) as resp:
@@ -625,16 +624,8 @@ class LifecycleCog(commands.Cog):
                         content=f"<@{message.author.id}>, make sure to include the name of your token and at least one card it is for on a new line"
                     )
                 forCards = re.split(r"; ?", wholeMessage[1])
-                weGood = True
-                for card in forCards:
-                    if not (
-                        await isRealCard(
-                            cardName=card, ctx=submissionDiscussion  # type: ignore
-                        )
-                    ):
-                        weGood = False
 
-                if not weGood:
+                if not await cardsExist(forCards):
                     await submissionDiscussion.send(
                         content=f"<@{message.author.id}>, ^ looks like one of the cards wasn't found, try again"
                     )
@@ -887,7 +878,8 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                card = get_card_by_id(card_id_input)
+                
+                card = await getExactCard(card_id_input)
                 if not card:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f'<@{message.author.id}>, card ID "{card_id_input}" not found'
@@ -895,16 +887,13 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                if not (
-                    card.cardset() == hc_constants.CUBE_NAME + ".0"
-                    or card.cardset() == hc_constants.CUBE_NAME + ".1"
-                ):
+                if not (card.set.startswith(hc_constants.CUBE_NAME)):
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} cards are allowed for errata."
                     )
                     await message.delete()
                     return
-                img_url = card.image()
+                img_url = card.image
                 headers = {"User-Agent": hc_constants.USER_AGENT}
                 async with aiohttp.ClientSession(headers=headers) as session:
                     async with session.get(img_url) as resp:
@@ -919,7 +908,7 @@ class LifecycleCog(commands.Cog):
                             ),
                             url=str(resp.url),
                             content_type=resp.headers.get("Content-Type"),
-                            fallback_name=card.name(),
+                            fallback_name=card.name,
                         )
                         data = io.BytesIO(await resp.read())
                         await message.delete()
@@ -932,7 +921,7 @@ class LifecycleCog(commands.Cog):
                         )
                         await sent_message.add_reaction(hc_constants.VOTE_UP)
                         await sent_message.add_reaction(hc_constants.VOTE_DOWN)
-                        await sent_message.create_thread(name=card.name()[:99])
+                        await sent_message.create_thread(name=card.name[:99])
 
             case _:
                 pass
@@ -1092,9 +1081,9 @@ class LifecycleCog(commands.Cog):
             dbname, card_author = parseCardNameAndAuthor(first_line)
             card_author = card_author.strip()
             # Resolve display name from card id (errata messages use id on first line)
-            errata_card = get_card_by_id(errata_id) if errata_id else None
+            errata_card = await getExactCard(errata_id) if errata_id else None
             resolvedName = (
-                errata_card.name()
+                errata_card.name
                 if errata_card
                 else (dbname or "Crazy card with no name")
             )
@@ -1104,8 +1093,8 @@ class LifecycleCog(commands.Cog):
             acceptedCards.append(cardMessage)
 
             if errata_card:
-                set_to_add_to = errata_card.cardset()
-                channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
+                set_to_add_to = errata_card.set
+                channel_to_add_to = card_list_channel_for_set(errata_card.set)
             else:
                 set_to_add_to = "SOH"
                 channel_to_add_to = hc_constants.SOH_CARD_LIST
@@ -1301,12 +1290,12 @@ class LifecycleCog(commands.Cog):
             dbname, card_author = parseCardNameAndAuthor(cardMessage)
 
         errata_id_clean = errataId.removeprefix("Errata: ").strip()
-        db_card = get_card_by_id(errata_id_clean)
+        db_card = await getExactCard(errata_id_clean)
 
         if not db_card:
             await ctx.send("Card not found")
             return
-        set_id = db_card.cardset()
+        set_id = db_card.set
         list_channel = card_list_channel_for_set(set_id)
 
         await accept_card(

@@ -3,7 +3,7 @@ from typing import cast, Optional
 import os
 import discord
 from discord.ext import commands
-from cardNameRequest import cardNameRequest
+# from cardNameRequest import cardNameRequest
 from shared_vars import drive
 import hc_constants
 from discord.utils import get

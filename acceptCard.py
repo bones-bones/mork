@@ -6,6 +6,7 @@ import uuid
 from typing import Optional, cast
 import discord
 from gspread import Cell
+from cogs.HellscubeDatabase import getUnapprovedCardSheet
 import hc_constants
 from hellfall_postcard import (
     PostcardSyncError,
@@ -14,7 +15,7 @@ from hellfall_postcard import (
     rollback_postcard_write,
     sync_accepted_card,
 )
-from shared_vars import googleClient
+# from shared_vars import googleClient
 from discord.ext import commands
 
 
@@ -23,9 +24,7 @@ from reddit_devvit import post_accept_via_devvit, reddit_accept_via_devvit_enabl
 from reddit_functions import post_to_reddit, reddit_title_for_acceptance
 from username_mappings import resolve_authors
 
-cardSheetUnapproved = googleClient.open_by_key(
-    hc_constants.HELLSCUBE_DATABASE
-).worksheet(hc_constants.DATABASE_UNAPPROVED)
+cardSheetUnapproved = getUnapprovedCardSheet()
 
 # Column BB (header UUID) — Hellfall card ``id`` from postcard response
 _HELLFALL_ID_COL = 54
@@ -33,22 +32,17 @@ _HELLFALL_ID_COL = 54
 # Column BC (header Oracle ID) — Hellfall card ``oracle_id`` from postcard response
 _ORACLE_ID_COL = 55
 
-# Column W — collector number
-_COLLECTOR_NUMBER_COL = 23
+# Column W — accepted order
+_ACCEPTED_ORDER_COL = 23
 
 
-def _next_collector_number_for_set(set_id: str) -> str:
-    """Return the next collector number for ``set_id`` (max leading digits in W + 1)."""
-    sets = cardSheetUnapproved.col_values(5)[2:]  # col E from row 3
-    collectors = cardSheetUnapproved.col_values(_COLLECTOR_NUMBER_COL)[2:]  # col W
-    max_num = 0
-    for i, sheet_set in enumerate(sets):
-        if sheet_set != set_id:
-            continue
-        cn = collectors[i] if i < len(collectors) else ""
-        match = re.match(r"^(\d+)", str(cn))
-        if match:
-            max_num = max(max_num, int(match.group(1)))
+def _next_accepted_order_for_set(set_id: str) -> str:
+    """Return the next accepted order for ``set_id`` (max leading digits in W + 1)."""
+    condition = r'SCL\.\d+' if set_id.startswith('SCL') else set_id.replace('_','.')
+    rows = [c.row for c in cardSheetUnapproved.findall(condition,in_column=5)]
+    cells = [cardSheetUnapproved.cell(row,_ACCEPTED_ORDER_COL) for row in rows]
+    nums = [int(cell.value) for cell in cells if cell.value and cell.value.isdigit()]
+    max_num = max(nums,default=0)
     return str(max_num + 1)
 
 
@@ -101,8 +95,8 @@ async def accept_card(
     deferred_reddit_dir: Optional[str] = None,
     require_hellfall_postcard: bool = False,
 ):
-    """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
-    authorName = resolve_authors(authorName)
+    """Accepts a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
+    authorName = ';'.join(resolve_authors(authorName))
     ext_match = re.search(r"(\.[^.]+)$", file.filename or "")
     file_type = ext_match.group(1) if ext_match else ".png"
     new_file_name = safe_card_filename(cardName, file_type)
@@ -114,26 +108,27 @@ async def accept_card(
         fp=io.BytesIO(file_data), filename=new_file_name
     )
 
+    newCard = True
+    
     with open(image_path, "wb") as out:
         out.write(file_data)
-
-    allCards = cardSheetUnapproved.get("A:E")
-    index = [i for i in range(len(allCards)) if str(allCards[i][0]) == str(errataId)]
-
-    newCard = True
-    # At least on match was found, and the name isn't blank. There really shouldn't be any nameless cards though cause it breaks
-    if cardName != "" and index.__len__() > 0:
-        dbRowIndex = index[0] + 1
-        newCard = False
-    else:
-        dbRowIndex = len(allCards) + 1
-        if cardName == "":
-            cardName = "NO NAME"
-
+    index = 0
     next_id: Optional[str] = None
-    if newCard:
-        next_id = str(int(allCards[allCards.__len__() - 1][0]) + 1)
+    if errataId:
+        cell = cardSheetUnapproved.find(errataId,in_column=1)
+        if cell and cardName:
+            newCard = False
+            index = cell.row
+    else:
+        allHCIDs = [int(c) for c in cardSheetUnapproved.col_values(1) if c and isinstance(c,int) or (isinstance(c,str) and c.isdigit())]
+        if (allHCIDs):
+            index = len(allHCIDs)+1
+            next_id = str(max(allHCIDs)+1)
 
+    if cardName == "" and newCard:
+        cardName = "NO NAME"
+    if index == 0:
+        raise IndexError('index not found')
     firestore_hcid = errataId or next_id
     postcard_write = None
     try:
@@ -146,24 +141,24 @@ async def accept_card(
             require_hellfall_postcard=require_hellfall_postcard,
         )
 
-        cardSheetUnapproved.update_cell(dbRowIndex, 3, imageUrl)
+        cardSheetUnapproved.update_cell(index, 3, imageUrl)
 
         if newCard:
             new_card_cells = [
-                Cell(row=dbRowIndex, col=1, value=str(next_id)),
-                Cell(row=dbRowIndex, col=2, value=cardName),
-                Cell(row=dbRowIndex, col=4, value=authorName),
-                Cell(row=dbRowIndex, col=5, value=setId),
+                Cell(row=index, col=1, value=str(next_id)),
+                Cell(row=index, col=2, value=cardName),
+                Cell(row=index, col=4, value=authorName),
+                Cell(row=index, col=5, value=setId.replace('_','.')),
                 Cell(
-                    row=dbRowIndex,
-                    col=_COLLECTOR_NUMBER_COL,
-                    value=_next_collector_number_for_set(setId),
+                    row=index,
+                    col=_ACCEPTED_ORDER_COL,
+                    value=_next_accepted_order_for_set(setId),
                 ),
             ]
             if postcard_write is not None and postcard_write.hellfall_id:
                 new_card_cells.append(
                     Cell(
-                        row=dbRowIndex,
+                        row=index,
                         col=_HELLFALL_ID_COL,
                         value=postcard_write.hellfall_id,
                     )
@@ -171,7 +166,7 @@ async def accept_card(
             if postcard_write is not None and postcard_write.oracle_id:
                 new_card_cells.append(
                     Cell(
-                        row=dbRowIndex,
+                        row=index,
                         col=_ORACLE_ID_COL,
                         value=postcard_write.oracle_id,
                     )
@@ -234,132 +229,3 @@ async def accept_card(
                 os.remove(image_path)
     elif os.path.exists(image_path):
         os.remove(image_path)
-
-
-# async def accept_veto_card(
-#     bot: commands.Bot,
-#     cardMessage: str,
-#     file: discord.File,
-#     cardName: str,
-#     authorName: str,
-#     kind: Literal["card", "land"] = "card",
-# ):
-#     authorName = resolve_authors(authorName)
-#     extension = re.search(r"\.([^.]*)$", file.filename)
-#     fileType = (
-#         extension.group() if extension else ".png"
-#     )  # just guess that the file is a png
-#     new_file_name = f'{cardName.replace("/", "|")}{fileType}'
-#     image_path = f"tempImages/{new_file_name}"
-
-#     file_data = file.fp.read()
-#     file_copy_for_cardlist = discord.File(
-#         fp=io.BytesIO(file_data), filename=new_file_name
-#     )
-#     cardListChannel = cast(
-#         discord.TextChannel, bot.get_channel(hc_constants.SIX_ONE_CARD_LIST)
-#     )
-#     vetoCardListChannel = cast(
-#         discord.TextChannel, bot.get_channel(hc_constants.VETO_CARD_LIST)
-#     )
-
-#     with open(image_path, "wb") as out:
-#         out.write(file_data)
-
-#     currentSheet = cardSheetUnapproved if kind == "card" else landSheetUnapproved
-#     allCards = currentSheet.get("A:E")
-#     index = [
-#         i
-#         for i in range(len(allCards))
-#         if allCards[i][1] == cardName and allCards[i][4][:3] == "HCV"
-#     ]
-
-#     newCard = True
-#     existing_image_url: Optional[str] = None
-#     # At least on match was found, and the name isn't blank
-#     if cardName != "" and index.__len__() > 0:
-#         dbRowIndex = index[0] + 1
-#         newCard = False
-#         if len(allCards[index[0]]) > 2 and allCards[index[0]][2]:
-#             existing_image_url = str(allCards[index[0]][2])
-#     else:
-#         dbRowIndex = len(allCards) + 1
-#         if cardName == "":
-#             cardName = "NO NAME"
-
-#     existing_hcid = None
-#     if not newCard and len(allCards[index[0]]) > 0 and allCards[index[0]][0]:
-#         existing_hcid = str(allCards[index[0]][0])
-
-#     imageUrl = _upload_accepted_image(
-#         image_path,
-#         object_name=existing_hcid or cardName,
-#         existing_image_url=existing_image_url,
-#     )
-
-#     postcard_write = None
-#     try:
-#         postcard_write = await _sync_card_to_hellfall(
-#             card_name=cardName,
-#             image_url=imageUrl,
-#             author_name=authorName,
-#             set_id="HCV",
-#             hcid=existing_hcid,
-#             kind=kind
-#         )
-
-#         cardSheetUnapproved.update_cells(
-#             [
-#                 Cell(row=dbRowIndex, col=3, value=imageUrl),
-#                 Cell(row=dbRowIndex, col=5, value="HCV"),
-#             ]
-#         )
-
-#         if newCard:
-#             new_card_cells = [
-#                 Cell(row=dbRowIndex, col=2, value=cardName),
-#                 Cell(row=dbRowIndex, col=4, value=authorName),
-#             ]
-#             if postcard_write is not None and postcard_write.hellfall_id:
-#                 new_card_cells.append(
-#                     Cell(
-#                         row=dbRowIndex,
-#                         col=_HELLFALL_ID_COL,
-#                         value=postcard_write.hellfall_id,
-#                     )
-#                 )
-#             if postcard_write is not None and postcard_write.oracle_id:
-#                 new_card_cells.append(
-#                     Cell(
-#                         row=dbRowIndex,
-#                         col=_HELLFALL_ID_COL,
-#                         value=postcard_write.hellfall_id,
-#                     )
-#                 )
-#             cardSheetUnapproved.update_cells(new_card_cells)
-#     except Exception:
-#         if postcard_write is not None:
-#             await rollback_postcard_write(postcard_write)
-#         if os.path.exists(image_path):
-#             os.remove(image_path)
-#         raise
-
-#     os.remove(image_path)
-
-#     async for message in vetoCardListChannel.history(limit=None):
-#         if message.content == cardMessage:
-#             try:
-#                 await message.delete()  # Delete message if it matches
-#                 print(f"Deleted message: {message.content}")
-#             except discord.HTTPException as e:
-#                 print(f"Failed to delete message: {e}")
-
-#     async for message in cardListChannel.history(limit=None):
-#         if message.content == cardMessage:
-#             try:
-#                 await message.delete()  # Delete message if it matches
-#                 print(f"Deleted message: {message.content}")
-#             except discord.HTTPException as e:
-#                 print(f"Failed to delete message: {e}")
-
-#     await vetoCardListChannel.send(file=file_copy_for_cardlist, content=cardMessage)

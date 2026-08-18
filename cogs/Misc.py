@@ -1,32 +1,32 @@
-from datetime import date, datetime, timedelta, timezone
+# from datetime import date, datetime, timedelta, timezone
 from acceptCard import accept_card
-import random
-from typing import Dict, List, cast
+# import random
+from typing import  cast#, Dict, List
 
-from discord import RawReactionActionEvent, TextChannel, Thread
+from discord import RawReactionActionEvent, TextChannel#, Thread
 import discord
 from discord.ext import commands
 from discord.utils import get
-from cogs.HellscubeDatabase import searchFor
+# from cogs.HellscubeDatabase import searchFor
 
 authorSplit = "$#$#$"
 QUOTE_SPLIT = ";%;%;"
 from getCardMessage import parseCardNameAndAuthor
-from handleVetoPost import handleVetoPost
-from isRealCard import isRealCard
-from post_card_images import send_image_reply
-from shared_vars import drive
+# from handleVetoPost import handleVetoPost
+# from isRealCard import isRealCard
+# from post_card_images import send_image_reply
+# from shared_vars import drive
 
 from acceptCard import accept_card
-from cardNameRequest import cardNameRequest
+# from cardNameRequest import cardNameRequest
 import hc_constants
-from is_admin import is_veto, is_admin
+# from is_admin import is_veto, is_admin
 
 from is_mork import is_mork
 
-from shared_vars import intents, cardSheet, allCards
+# from shared_vars import intents, cardSheet, allCards
 
-from cogs.lifecycle.post_daily_submissions import post_daily_submissions
+# from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 
 
 class MiscCog(commands.Cog):
@@ -54,13 +54,13 @@ class MiscCog(commands.Cog):
             og_message = message
             reference = message.reference
 
-            if reference != None:
+            if reference != None and reference.message_id != None:
                 original_channel = cast(
                     TextChannel,
-                    guild.get_channel_or_thread(message.reference.channel_id),
+                    guild.get_channel_or_thread(reference.channel_id),
                 )
                 message = await original_channel.fetch_message(
-                    message.reference.message_id
+                    reference.message_id
                 )
 
             file = await message.attachments[0].to_file()
