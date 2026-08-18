@@ -1,4 +1,4 @@
-"""Design Hell admin medal reactions → card acceptance."""
+"""Scube Lair admin medal reactions → card acceptance."""
 
 from __future__ import annotations
 
@@ -10,34 +10,34 @@ from discord.ext import commands
 
 from acceptCard import accept_card
 
-DESIGN_HELL_SET_PATTERN = re.compile(
+SCUBE_LAIR_SET_PATTERN = re.compile(
     r"Set:\s*(?:\*\*)?\s*([A-Za-z0-9._]+)",
     re.IGNORECASE,
 )
 
 
-def parse_set_id_from_design_hell_prompt(content: str) -> Optional[str]:
-    match = DESIGN_HELL_SET_PATTERN.search(content)
+def parse_set_id_from_scube_lair_prompt(content: str) -> Optional[str]:
+    match = SCUBE_LAIR_SET_PATTERN.search(content)
     if not match:
         return None
     return match.group(1).strip()
 
 
-def card_name_and_author_from_design_hell_message(
+def card_name_and_author_from_scube_lair_message(
     content: str, author_name: str
 ) -> tuple[str, str]:
     card_name = content.strip().split("\n", 1)[0].strip()
     return card_name, author_name.strip()
 
 
-async def get_current_design_hell_set_id(channel: discord.TextChannel) -> Optional[str]:
+async def get_current_scube_lair_set_id(channel: discord.TextChannel) -> Optional[str]:
     pins = await channel.pins()
     if not pins:
         return None
-    return parse_set_id_from_design_hell_prompt(pins[0].content)
+    return parse_set_id_from_scube_lair_prompt(pins[0].content)
 
 
-async def accept_design_hell_card(
+async def accept_scube_lair_card(
     bot: commands.Bot,
     *,
     cardMessage: str,
@@ -47,7 +47,7 @@ async def accept_design_hell_card(
     setId: str,
     channelIdForCard: int,
 ) -> None:
-    """Accept a Design Hell card via GCS/sheet/Discord and POST /api/cards/postcard."""
+    """Accept a Scube Lair card via GCS/sheet/Discord and POST /api/cards/postcard."""
     await accept_card(
         bot=bot,
         file=file,

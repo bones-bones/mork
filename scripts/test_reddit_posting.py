@@ -16,7 +16,7 @@ class RedditTitleTests(unittest.TestCase):
         )
         self.assertEqual(title, "Cool Card by Author was accepted into SOH")
 
-    def test_design_hell_set_id(self):
+    def test_scube_lair_set_id(self):
         title = reddit_title_for_acceptance(
             "**Secret Lair Card** by **Author**",
             "SCL.X",
