@@ -1,105 +1,62 @@
-from typing import cast
+from typing import Optional, cast
 from discord import Member
 from discord.ext import commands
 from discord.utils import get
 import pprint as pp
 
 
+async def toggleRole(ctx: commands.Context[commands.Bot], roleID:int, roleName:str, addRoleName:bool=False):
+    if (isinstance(ctx.message.author,Member) and isinstance(ctx.author,Member)):
+        role = get(ctx.message.author.guild.roles, id=roleID)
+        if not role:
+            return
+        if addRoleName:
+            roleName += f' {role.name}'
+        if role in ctx.author.roles:
+            await ctx.author.remove_roles(role)
+            await ctx.send(f"Removed {roleName} from {str(ctx.message.author)}")
+            return
+        await ctx.author.add_roles(role)
+        await ctx.send(f"Gave {str(ctx.message.author)} {roleName}")
 class RolesCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
 
     @commands.command()
     async def announcements(self, ctx: commands.Context[commands.Bot]):
-        role = get(ctx.message.author.guild.roles, id=int(862806291844300830))
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed Announcements from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " Announcements")
+        await toggleRole(ctx,int(862806291844300830),'Announcements')
 
     @commands.command()
     async def vent(self, ctx: commands.Context):
-        role = get(ctx.message.author.guild.roles, id=int(1003397744267898920))
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed Vent from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " Vent")
+        await toggleRole(ctx,int(1003397744267898920),'Vent')
 
     @commands.command()
     async def becomeArtist(self, ctx: commands.Context):
-        role = get(ctx.message.author.guild.roles, id=int(819320922666041355))
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed HCArtist from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " HCArtist")
+        await toggleRole(ctx,int(819320922666041355),'HCArtist')
 
     @commands.command()
     async def wantToDraft(self, ctx: commands.Context):
-        role = get(ctx.message.author.guild.roles, id=int(661721357066698762))
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed WantToDraft from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " WantToDraft")
+        await toggleRole(ctx,int(661721357066698762),'WantToDraft')
 
     @commands.command()
     async def wantToEdh(self, ctx: commands.Context):
-        role = get(
-            cast(Member, ctx.message.author).guild.roles, id=int(720043670870425691)
-        )
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed WantToEdh from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " WantToEdh")
+        await toggleRole(ctx,int(720043670870425691),'WantToEdh')
 
     @commands.command()
     async def wantToJumpstart(self, ctx: commands.Context):
-        role = get(ctx.message.author.guild.roles, id=int(733995427237724180))
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed WantToJumpstart from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " WantToJumpstart")
+        await toggleRole(ctx,int(733995427237724180),'WantToJumpstart')
 
     @commands.command()
     async def wantToConstructed(self, ctx: commands.Context):
-        role = get(ctx.message.author.guild.roles, id=int(856927890120769576))
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed WantToConstructed from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " WantToConstructed")
+        await toggleRole(ctx,int(856927890120769576),'WantToConstructed')
 
     @commands.command()
     async def wantToLeaks(self, ctx: commands.Context):
-        role = get(ctx.message.author.guild.roles, id=int(794254398775361578))
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed WantToLeaks from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " WantToLeaks")
+        await toggleRole(ctx,int(794254398775361578),'WantToLeaks')
 
     @commands.command()
     async def popcornCube(self, ctx: commands.Context):
-        role = get(ctx.message.author.guild.roles, id=int(758033490133385308))
-        if role in ctx.author.roles:
-            await ctx.author.remove_roles(role)
-            await ctx.send("Removed PopcornCube from " + str(ctx.message.author))
-            return
-        await ctx.author.add_roles(role)
-        await ctx.send("Gave " + str(ctx.message.author) + " PopcornCube")
+        await toggleRole(ctx,int(758033490133385308),'PopcornCube')
 
     @commands.command()
     async def pronoun(self, ctx: commands.Context, roleName):
@@ -130,17 +87,10 @@ class RolesCog(commands.Cog):
             return
         if roleName in roleId.keys():
             print(roleName)
-            role = get(ctx.message.author.guild.roles, id=int(roleId[roleName]))
-            pp.pprint(ctx.author.roles)
-            if role in ctx.author.roles:
-                await ctx.author.remove_roles(role)
-                await ctx.send(
-                    "Removed the role " + role.name + " from " + str(ctx.message.author)
-                )
+            if (isinstance(ctx.message.author,Member) and isinstance(ctx.author,Member)):
+                pp.pprint(cast(Member,ctx.author).roles)
+                await toggleRole(ctx,int(roleId[roleName]),'the role',True)
                 return
-            await ctx.author.add_roles(role)
-            await ctx.send("Gave " + str(ctx.message.author) + " the role " + role.name)
-            return
         await ctx.send(
             "This is not currently a pronoun role, make sure to type !pronoun and then only the subjective pronoun (Example !pronoun they), If your pronouns are missing please tag llllll"
         )
