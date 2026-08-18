@@ -1,42 +1,36 @@
 import io
 import aiohttp
 import discord
-from cardNameRequest import cardNameRequest
+import re
 import hc_constants
+from hellfall_fetcher import getMultipleRoughCards
 from image_response_filename import filename_from_image_response
 
 FISH_FROM_GO_FISH_SEARCH = "the fish from go fish"
-from shared_vars import allCards
 from discord.message import Message
 
-
+nameRegex = re.compile(r'{{([^}]+)}}')
 async def post_card_images(message: Message):
     print(message.author)
-    message_text = message.content.lower().split("{{")[1:]
-    for i in range(len(message_text)):  # TODO: maybe use a .map here
-        message_text[i] = message_text[i].split("}}")[0]
-    requestedCards = []
+    message_text:list[str] = nameRegex.findall(message.content)
     if len(message_text) > 10:
         await message.reply(
             "Don't call more than 10 cards per message, final warning, keep trying and you get blacklisted from the bot."
         )
         return
-    for cardName in message_text:
-        search_text = cardName
-        if (
-            message.author.id == hc_constants.LLLLLL
-            and cardName.strip() == "fish"
-        ):
-            search_text = FISH_FROM_GO_FISH_SEARCH
-        requestedCards.append(cardNameRequest(search_text))
+    if (message.author.id == hc_constants.LLLLLL):
+        for i, name in enumerate(message_text):
+            if name.strip() == 'fish':
+                message_text[i] = FISH_FROM_GO_FISH_SEARCH
+    requestedCards = await getMultipleRoughCards(message_text)
     for post in requestedCards:
         if post == "":
             await message.reply("No Match Found!", mention_author=False)
         else:
-            print(allCards[post].getImage())
+            print(post.image)
             await send_image_reply(
-                url=allCards[post].getImage(),
-                cardname=allCards[post].getName(),
+                url=post.image,
+                cardname=post.name,
                 message=message,
                 text=None,
             )

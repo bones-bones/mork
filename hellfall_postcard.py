@@ -9,6 +9,8 @@ from typing import Any, Literal, Optional
 
 import aiohttp
 
+from hellfall_shared import get_api_key, get_api_url, get_auth_headers, read_response_json, get_request_timeout
+
 
 class PostcardSyncError(Exception):
     """Raised when hellfall postcard sync fails."""
@@ -33,21 +35,6 @@ def postcard_sync_enabled() -> bool:
         "false",
         "no",
         "off",
-    }
-
-
-def _api_url() -> str:
-    return os.environ.get("HELLFALL_API_URL", "").rstrip("/")
-
-
-def _api_key() -> str:
-    return os.environ.get("HELLFALL_POSTCARD_API_KEY", "")
-
-
-def _auth_headers() -> dict[str, str]:
-    return {
-        "Authorization": f"Bearer {_api_key()}",
-        "Content-Type": "application/json",
     }
 
 
@@ -77,27 +64,6 @@ def _payload_summary(payload: dict[str, str]) -> str:
     return repr(summary)
 
 
-def _request_timeout(*, image_base64: Optional[str]) -> aiohttp.ClientTimeout:
-    if image_base64:
-        # Large base64 uploads can exceed the default 30s (e.g. ~2.7MB payloads).
-        total = max(120, 60 + len(image_base64) // 50_000)
-        return aiohttp.ClientTimeout(total=min(total, 300))
-    return aiohttp.ClientTimeout(total=30)
-
-
-async def _read_response_json(resp: aiohttp.ClientResponse) -> Any:
-    body = await resp.text()
-    if not body.strip():
-        raise PostcardSyncError(f"empty_response HTTP {resp.status}")
-    try:
-        return json.loads(body)
-    except json.JSONDecodeError as exc:
-        snippet = body[:200]
-        raise PostcardSyncError(
-            f"invalid_json HTTP {resp.status}: {snippet!r}"
-        ) from exc
-
-
 async def sync_accepted_card(
     *,
     name: str,
@@ -112,8 +78,8 @@ async def sync_accepted_card(
     if not require_sync and not postcard_sync_enabled():
         return None
 
-    api_url = _api_url()
-    api_key = _api_key()
+    api_url = get_api_url()
+    api_key = get_api_key()
     if not api_url or not api_key:
         raise PostcardSyncError(
             "HELLFALL_API_URL and HELLFALL_POSTCARD_API_KEY are required"
@@ -147,15 +113,15 @@ async def sync_accepted_card(
         f"POST /api/cards/postcard payload={_payload_summary(payload)} {request_context}"
     )
 
-    timeout = _request_timeout(image_base64=image_base64)
+    timeout = get_request_timeout(image_base64=image_base64)
     async with aiohttp.ClientSession() as session:
         async with session.post(
             f"{api_url}/api/cards/postcard",
             json=payload,
-            headers=_auth_headers(),
+            headers=get_auth_headers(),
             timeout=timeout,
         ) as resp:
-            data = await _read_response_json(resp)
+            data = await read_response_json(resp)
             if resp.status != 200:
                 reason = data.get("reason") if isinstance(data, dict) else None
                 _postcard_debug(
@@ -201,8 +167,8 @@ async def sync_accepted_card(
 
 
 async def rollback_postcard_write(write: PostcardWrite) -> None:
-    api_url = _api_url()
-    api_key = _api_key()
+    api_url = get_api_url()
+    api_key = get_api_key()
     if not api_url or not api_key:
         return
 
@@ -217,10 +183,10 @@ async def rollback_postcard_write(write: PostcardWrite) -> None:
         async with session.post(
             f"{api_url}/api/cards/postcard/rollback",
             json=payload,
-            headers=_auth_headers(),
+            headers=get_auth_headers(),
             timeout=aiohttp.ClientTimeout(total=30),
         ) as resp:
             if resp.status != 200:
-                data = await _read_response_json(resp)
+                data = await read_response_json(resp)
                 reason = data.get("reason") if isinstance(data, dict) else None
                 raise PostcardSyncError(reason or f"rollback HTTP {resp.status}")

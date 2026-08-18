@@ -518,7 +518,7 @@ def main() -> None:
         tmp_png = ""
         try:
             tmp_download = _google_call_with_retry(
-                lambda: _download_drive_to_temp(file_id),
+                lambda: _download_drive_to_temp(file_id), # type: ignore
                 what=f"Drive GetContentFile {file_id}",
                 max_tries=args.api_retries,
                 base_delay=args.retry_base_delay,

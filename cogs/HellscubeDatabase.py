@@ -1,27 +1,19 @@
 import random
-from typing import Optional, cast#, Literal
+from typing import Optional, cast
 import discord
 from discord.ext import commands
 from random import randrange
 
 from datetime import datetime, timezone, timedelta
-# from CardClasses import Card, Side, CardSearch
-# from cardNameRequest import cardNameRequest
+
+from numpy import append
 import hc_constants
 from hellfall_changesets import modifyTagWithServer
-from hellfall_fetcher import SearchResponse, getCreators, getExactCard, getInfo, getRandomFromServer, getRulings, getSearchFromServer
-# from isRealCard import isRealCard
+from hellfall_fetcher import SearchCard, SearchResponse, getRoughCard, getExactCard, getRandomFromServer, getSearchFromServer
 from post_card_images import send_image_reply
 
 
-from shared_vars import intents, googleClient#, cardSheet
-# from username_mappings import resolve_authors, set_username_mappings, resolve_username
-
-# cardDict: dict[str,CardSearch] = {}
-# """ Maps card ids to cards """
-
-# hcidDict: dict[str,str] = {}
-# """ Maps hcids to card ids """
+from shared_vars import intents, googleClient
 databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
 
 
@@ -32,179 +24,9 @@ client = discord.Client(intents=intents)
 def getUnapprovedCardSheet():
     return googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(hc_constants.DATABASE_UNAPPROVED)
 
-# keys = [
-#     'hcid',
-#     'name',
-#     'image',
-#     'creators',
-#     'cardset',
-#     'legalities',
-#     'related',
-#     'rulings',
-#     'mana_value',
-#     'colors',
-#     'mana_cost',
-#     'supertypes',
-#     'types',
-#     'subtypes',
-#     'power',
-#     'toughness',
-#     'loyalty',
-#     'oracle_text',
-#     'flavor_text',
-#     '0image',
-#     'artists',
-#     'tags',
-#     'accepted_order',
-#     '1mana_cost',
-#     '1supertypes',
-#     '1types',
-#     '1subtypes',
-#     '1power',
-#     '1toughness',
-#     '1loyalty',
-#     '1oracle_text',
-#     '1flavor_text',
-#     '1image',
-#     '2mana_cost',
-#     '2supertypes',
-#     '2types',
-#     '2subtypes',
-#     '2power',
-#     '2toughness',
-#     '2loyalty',
-#     '2oracle_text',
-#     '2flavor_text',
-#     '2image',
-#     '3mana_cost',
-#     '3supertypes',
-#     '3types',
-#     '3subtypes',
-#     '3power',
-#     '3toughness',
-#     '3loyalty',
-#     '3oracle_text',
-#     '3flavor_text',
-#     '3image',
-#     'uuid',
-#     'oracle_id',
-# ]
-# rootKeys = [
-#     'uuid',
-#     'oracle_id',
-#     'hcid',
-#     'name',
-#     'cardset',
-#     'accepted_order',
-#     'image',
-#     'mana_value',
-#     'colors',
-#     'legalities',
-#     'creators',
-#     'artists',
-#     'rulings',
-#     'tags',
-#     'sides',
-#     'related',
-# ]
-# keyType = Literal[*keys]
-
-# def fixEmptyArray(value:list[str]):
-#     if len(value) == 1 and not value[0]:
-#         return []
-#     return value
-# def getManaValue(mv:str) ->int|float:
-#     if mv == '∞':
-#         return 999999999999999
-#     try:
-#         return int(mv)
-#     except ValueError:
-#         try:
-#             return float(mv)
-#         except ValueError:
-#             return 0
-
-# def findLastIndex(lst):
-#     for i, value in enumerate(reversed(lst)):
-#         if value:
-#             return len(lst) - 1 - i
-#     return -1
-
-# def colToFaceNum(index:int):
-#     for i in range(1,4):
-#         if index < keys.index(f'{i}mana_cost'):
-#             return i
-#     return 4
-# do I still need this?
-# def build_database():
-#     global cardDict
-#     cardDict = {}
-#     global hcidDict
-#     hcidDict = {}
-
-#     usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
-#     usernameMappings = usernameMappingSheet.get_all_values()[1:]
-#     set_username_mappings(usernameMappings)
-
-#     cardSheetSearch = databaseSheets.worksheet("Database")
-#     all_values = cardSheetSearch.get_all_values()
-#     cardsDataSearch:List[List[Any]] = all_values
-    
-
-#     for entry in cardsDataSearch:
-#         def entryAt(key:str)->str:
-#             return entry[keys.index(key)]
-#         cardObject:dict[str,Any] = {
-#             'sides':[],
-#         }
-#         for key in rootKeys:
-#             value = entryAt(key)
-#             match key:
-#                 case 'creators':
-#                     cardObject[key] = fixEmptyArray(resolve_authors(value))
-#                 case 'colors' | 'artists' | 'tags' | 'related':
-#                     cardObject[key] = fixEmptyArray(value.split(';'))
-#                 case 'mana_value':
-#                     cardObject[key] = getManaValue(value)
-#                 case _:
-#                     cardObject[key] = value
-#         newSides = []
-#         faceNum = colToFaceNum(findLastIndex(entry[:keys.index('uuid')]))
-        
-#         def addPropToFace(key:str,value:Any,index:int):
-#             while len(newSides) <= index:
-#                 newSides.append({})
-#             newSides[index][key]=value
-            
-#         for i in range(faceNum):
-#             for key in [k[1:] for k in keys if k[0] == str(i)]:
-#                 entryList = entryAt(key).split(' // ') if i == 3 else [entryAt(key)]
-#                 for index, item in enumerate(entryList):
-#                     if (key in ['supertypes', 'types', 'subtypes']):
-#                         addPropToFace(key,fixEmptyArray(item.split(';')),i+index)
-#                     else:
-#                         addPropToFace(key,item,i+index)
-#         cardObject['sides'] = newSides
-#         try:
-#             card = CardSearch(**cardObject)
-#             cardDict[card.uuid()]=card
-#             hcidDict[card.hcid()]=card.uuid()
-#         except Exception as e:
-#             print(f"couldn't parse {entry}", e)
-
-
 class HellscubeDatabaseCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-
-    # @commands.Cog.listener()
-    # async def on_ready(self):
-    #     # still necessary?
-    #     # global log
-    #     build_database()
-
-    #     global allCards  # Need to modify shared allCards object
-    #     allCards = {uuid: Card(card.uuid(),card.oracleId(),card.hcid(),card.name(),card.image(),card.creators(),card.artists()) for uuid, card in cardDict.items()}
 
     # okay not technically a DB command
     @commands.command()
@@ -260,15 +82,9 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.command()
     async def creator(self, channel, *cardName):
         name = " ".join(cardName).lower()
-        response = await getCreators(name)
-        message = f'{response.name} created by: {', '.join(response.creators)}'
+        card = await getRoughCard(name)
+        message = f'{card.name} created by: {', '.join(card.creators)}'
         await channel.send(message)
-
-    # @commands.command()
-    # async def syncDb(self, ctx: commands.Context):
-    #     if ctx.author.id == hc_constants.LLLLLL:
-    #         build_database()
-    #         await ctx.send("done")
 
     @commands.command()
     async def rulings(self, channel, *cardName):
@@ -276,10 +92,10 @@ class HellscubeDatabaseCog(commands.Cog):
         Returns the rulings for a given card.
         """
         name = " ".join(cardName).lower()
-        response = await getRulings(name)
+        card = await getRoughCard(name)
         message = "something went wrong!"
-        name = response.name
-        rulings = response.rulings
+        name = card.name
+        rulings = card.rulings
         if not rulings:
             message = f'There are no rulings for {name}'
         else:
@@ -311,13 +127,6 @@ class HellscubeDatabaseCog(commands.Cog):
         newRuling = (
             f"{currentRuling}\n" if currentRuling != "" else ""
         ) + f"{ruling}- {ctx.author.name} {datetime.today().strftime('%Y-%m-%d')}"
-
-        # global cardDict
-        # for card in cardDict.values():
-        #     # print(card.name())
-        #     if card.name().lower() == cardName.lower():
-        #         card.setRuling(newRuling)
-        #         break
 
         cardSheetUnapproved.update_cell(
             cell.row,
@@ -369,10 +178,8 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.command()
     async def info(self, channel, *cardName):
         name = " ".join(cardName).lower()
-        response = await getInfo(cardName=name)
-        message = 'something went wrong!'
-        if (response.info):
-            message = response.info
+        card = await getRoughCard(cardName=name)
+        message = getInfo(card)
         await channel.send(message)
 
     @commands.command()
@@ -386,8 +193,6 @@ class HellscubeDatabaseCog(commands.Cog):
             return
         
         message = formatSearchResults(response)
-        # if message == "":
-        #     message = "Nothing found"
         n = 2000
         messages = [message[i : i + n] for i in range(0, len(message), n)]
         for msg in messages:
@@ -405,3 +210,22 @@ def formatSearchResults(response: SearchResponse):
     for card in response.data:
         returnString+= f'\n{card.name} ({card.set.replace('_','.')}) {card.collector_number}'
     return returnString
+
+def getInfo(card:SearchCard):
+    if card.oracle_id == 'f90c6ef4-a631-49fd-b191-6e004b59a570':
+        return 'no card found'
+    lines: list[str] = [
+        f'id: {card.hcid}',
+        f'creator{'' if len(card.creators) == 1 else 's'}: {', '.join(card.creators)}',
+        f'set: {card.set.replace('_','.')} #{card.collector_number} (AO: ${card.accepted_order})',
+    ]
+    for format, legality in card.legalities.items():
+        lines.append(f'{format}: {legality}')
+
+    if card.artists:    
+        lines.append(f'artist{'' if len(card.artists) == 1 else 's'}: {', '.join(card.artists)}')
+    if card.base_tags:
+        lines.append(f'tags: {', '.join(card.base_tags)}')
+    if card.rulings:
+        lines.append(f'rulings: \n{card.rulings}')
+    return '\n'.join(lines)

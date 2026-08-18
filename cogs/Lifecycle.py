@@ -26,7 +26,6 @@ from dotenv import load_dotenv
 from acceptCard import accept_card
 from deferred_reddit import list_pending_deferred_posts, process_deferred_reddit_posts
 from checkSubmissions import checkSubmissions
-# from cogs.HellscubeDatabase import get_card_by_id, get_card_by_name, searchFor
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from cogs.lifecycle.scube_lair_acceptance import (
@@ -52,7 +51,6 @@ from getters import (
 )
 from handleVetoPost import handleVetoPost
 import hc_constants
-# from isRealCard import isRealCard
 from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
 from image_response_filename import filename_from_image_response
@@ -60,7 +58,7 @@ from post_card_images import post_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
 
-from hellfall_fetcher import cardExists, cardsExist, getExactCard, getCreators, getErrataData, getSearchFromServer
+from hellfall_fetcher import cardsExist, getExactCard, getErrataData, getSearchFromServer
 
 load_dotenv()
 

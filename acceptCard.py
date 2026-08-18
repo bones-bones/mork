@@ -15,7 +15,6 @@ from hellfall_postcard import (
     rollback_postcard_write,
     sync_accepted_card,
 )
-# from shared_vars import googleClient
 from discord.ext import commands
 
 
