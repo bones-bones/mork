@@ -58,7 +58,7 @@ from post_card_images import post_card_images
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
 
-from hellfall_fetcher import cardsExist, getExactCard, getErrataData, getSearchFromServer
+from hellfall_fetcher import cardsExist, getExactCard, getSearchFromServer
 
 load_dotenv()
 
@@ -142,7 +142,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
             card_id = (parts[0].strip() if parts else "") or ""
             if not card_id:
                 continue
-            card = await getErrataData(card_id)
+            card = await getExactCard(card_id)
             if not card:
                 continue
             img_url = card.image

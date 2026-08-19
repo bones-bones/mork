@@ -6,7 +6,6 @@ from random import randrange
 
 from datetime import datetime, timezone, timedelta
 
-from numpy import append
 import hc_constants
 from hellfall_changesets import modifyTagWithServer
 from hellfall_fetcher import SearchCard, SearchResponse, getRoughCard, getExactCard, getRandomFromServer, getSearchFromServer
