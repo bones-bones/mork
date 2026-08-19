@@ -8,7 +8,7 @@ Runs every 5 minutes. No idea which timezone the instance runs on.
 
 ```mermaid
 flowchart TD
-  LOOP["Every 5 minutes"] --> R1["Reset submission cooldowns"]
+  LOOP["Every 5 minutes"] --> R1["Reset submission cooldowns<br/>(#submissions skips Tue/Sat Eastern)"]
   R1 --> R2["Ensure submissions day marker"]
   R2 --> R3["Check standard submissions"]
   R3 --> R4["Check masterpiece submissions"]
@@ -23,6 +23,8 @@ flowchart TD
   LOOP --> T2{"Is it the <=4th minute of the 10th hour?"}
   T2 -->|yes| COTD["HC6 card-of-the-day → Reddit"]
 ```
+
+`reset_countdowns` keeps `#submissions` cooldown rows until 22 **open** hours have passed (Tuesday and Saturday in US Eastern do not count). Masterpiece cooldowns still use wall-clock hours.
 
 ---
 
