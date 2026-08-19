@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import os
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ from typing import Any, Literal, Optional
 import aiohttp
 
 from hellfall_shared import get_api_key, get_api_url, get_auth_headers, read_response_json, get_request_timeout
+from image_response_filename import mime_type_from_image_bytes
 
 
 class PostcardSyncError(Exception):
@@ -50,11 +52,53 @@ def _postcard_request_context(
     hcid: Optional[str],
     image: Optional[str],
     image_base64: Optional[str],
+    image_mime_type: Optional[str],
 ) -> str:
     return (
         f"kind={kind} name={name!r} set={set_id!r} hcid={hcid!r} "
-        f"has_image_url={bool(image)} has_image_base64={bool(image_base64)}"
+        f"has_image_url={bool(image)} has_image_base64={bool(image_base64)} "
+        f"image_mime_type={image_mime_type!r}"
     )
+
+
+def _sniff_mime_from_base64(image_base64: str) -> str | None:
+    try:
+        prefix = image_base64[:32]
+        pad = "=" * ((4 - len(prefix) % 4) % 4)
+        raw = base64.b64decode(prefix + pad, validate=False)
+    except Exception:
+        return None
+    return mime_type_from_image_bytes(raw)
+
+
+def build_postcard_payload(
+    *,
+    name: str,
+    creators: str,
+    set_id: str,
+    kind: str,
+    image: Optional[str] = None,
+    image_base64: Optional[str] = None,
+    image_mime_type: Optional[str] = None,
+    hcid: Optional[str] = None,
+) -> dict[str, str]:
+    """JSON body for POST /api/cards/postcard."""
+    payload: dict[str, str] = {
+        "name": name,
+        "creators": creators,
+        "set": set_id,
+        "kind": kind,
+    }
+    if image_base64:
+        payload["imageBase64"] = image_base64
+        mime = (image_mime_type or "").strip() or _sniff_mime_from_base64(image_base64)
+        if mime:
+            payload["imageMimeType"] = mime
+    elif image:
+        payload["image"] = image
+    if hcid:
+        payload["hcid"] = hcid
+    return payload
 
 
 def _payload_summary(payload: dict[str, str]) -> str:
@@ -71,6 +115,7 @@ async def sync_accepted_card(
     set_id: str,
     image: Optional[str] = None,
     image_base64: Optional[str] = None,
+    image_mime_type: Optional[str] = None,
     hcid: Optional[str] = None,
     kind: Literal["card", "token"] = "card",
     require_sync: bool = False,
@@ -88,18 +133,16 @@ async def sync_accepted_card(
     if not image and not image_base64:
         raise PostcardSyncError("image or image_base64 is required")
 
-    payload: dict[str, str] = {
-        "name": name,
-        "creators": creators,
-        "set": set_id,
-        "kind": kind,
-    }
-    if image_base64:
-        payload["imageBase64"] = image_base64
-    elif image:
-        payload["image"] = image
-    if hcid:
-        payload["hcid"] = hcid
+    payload = build_postcard_payload(
+        name=name,
+        creators=creators,
+        set_id=set_id,
+        kind=kind,
+        image=image,
+        image_base64=image_base64,
+        image_mime_type=image_mime_type,
+        hcid=hcid,
+    )
 
     request_context = _postcard_request_context(
         kind=kind,
@@ -108,6 +151,7 @@ async def sync_accepted_card(
         hcid=hcid,
         image=image,
         image_base64=image_base64,
+        image_mime_type=payload.get("imageMimeType"),
     )
     _postcard_debug(
         f"POST /api/cards/postcard payload={_payload_summary(payload)} {request_context}"

@@ -87,6 +87,8 @@ flowchart TD
 
 Mork does **not** upload card or token images to GCS or Drive. Hellfall receives `imageBase64` via the postcard API, uploads to `hellscube-images` server-side, and returns `imageUrl`.
 
+Discord card-list attachments and deferred Reddit files use the extension from **magic bytes** (GIF/PNG/JPEG/WebP), not a hardcoded `.png`. Postcard also sends `imageMimeType` (from those bytes) with `imageBase64` so Hellfall can store GIFs as `.gif`.
+
 ### Hellfall postcard sync
 
 Optional for most accepts; **mandatory** for Scube Lair (`require_hellfall_postcard=True`).
@@ -99,7 +101,7 @@ Optional for most accepts; **mandatory** for Scube Lair (`require_hellfall_postc
 
 **Endpoint:** `POST {HELLFALL_API_URL}/api/cards/postcard`
 
-Payload includes `name`, `creators`, `set`, `kind: "card"`, and `imageBase64`. Errata and new cards both send `hcid` (existing id or next numeric id).
+Payload includes `name`, `creators`, `set`, `kind: "card"`, `imageBase64`, and `imageMimeType` (`image/png`, `image/gif`, `image/jpeg`, or `image/webp` when sniffable). Errata and new cards both send `hcid` (existing id or next numeric id).
 
 **Response used:** `imageUrl`, `id` (Hellfall UUID → sheet col BB), `oracle_id` (→ col BC). On new cards only, UUID columns are written when sync succeeds.
 

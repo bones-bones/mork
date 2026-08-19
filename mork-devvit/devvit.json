@@ -7,7 +7,17 @@
         "externalEndpoints": {
             "postCard": {
                 "endpoint": "/external/post-card",
-                "scopes": ["global"]
+                "scopes": [
+                    "global"
+                ]
+            }
+        }
+    },
+    "scheduler": {
+        "tasks": {
+            "card-of-the-day": {
+                "endpoint": "/internal/scheduler/card-of-the-day",
+                "cron": "0 10 * * *"
             }
         }
     },
@@ -15,7 +25,24 @@
         "global": {
             "postCardSecret": {
                 "type": "string",
-                "label": "Mork bridge secret (Bearer token for /api/post-card)"
+                "label": "Bridge secret for /api/post-card (in-app only)",
+                "helpText": "External GCP callers use a managed App Token (devvit_at_…), not this setting."
+            },
+            "catalogUrl": {
+                "type": "string",
+                "label": "Hellfall catalog URL",
+                "helpText": "JSON catalog for card-of-the-day (https; must be HTTP-fetch allow-listed). Set via devvit settings set."
+            },
+            "officialHcRedditFlair": {
+                "type": "string",
+                "label": "Official HC Reddit flair ID",
+                "helpText": "Flair UUID for COTD and default /post-card flair when omitted. Set via devvit settings set."
+            },
+            "cardOfTheDayViaDevvit": {
+                "type": "boolean",
+                "label": "Card of the day via Devvit",
+                "defaultValue": true,
+                "helpText": "Scheduler posts HC6 card-of-the-day. Pair with REDDIT_COTD_VIA_DEVVIT=1 on the Discord bot."
             }
         }
     },
@@ -24,10 +51,13 @@
             "enable": true,
             "scope": "moderator"
         },
+        "redis": true,
         "http": {
             "enable": true,
             "domains": [
-                "storage.googleapis.com"
+                "storage.googleapis.com",
+                "storage.cloud.google.com",
+                "lh3.googleusercontent.com"
             ]
         }
     },

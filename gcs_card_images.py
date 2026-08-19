@@ -12,6 +12,7 @@ from typing import Optional
 from urllib.parse import quote, unquote, urlparse
 
 from google.cloud import storage
+from image_response_filename import extension_from_image_bytes, with_image_extension
 
 DEFAULT_BUCKET = os.environ.get("GCS_CARD_IMAGE_BUCKET", "hellscube-images")
 DEFAULT_CREDENTIALS = os.environ.get(
@@ -72,13 +73,18 @@ def upload_card_image(
     """Upload a local image to the card-image bucket; return its public HTTPS URL.
 
     If ``existing_url`` points at the same bucket, overwrite that object (errata).
-    Otherwise create ``{slug(object_name)}{ext}``.
+    Otherwise create ``{slug(object_name)}{ext}`` without stacking a second
+    suffix onto names that already end in ``.gif`` / ``.png`` / etc.
     """
     bucket_name = bucket_name or DEFAULT_BUCKET
     credentials_path = credentials_path or DEFAULT_CREDENTIALS
     ext = os.path.splitext(path)[1].lower() or ".png"
     if ext == ".jpeg":
         ext = ".jpg"
+    with open(path, "rb") as image_file:
+        sniffed = extension_from_image_bytes(image_file.read(16))
+    if sniffed:
+        ext = sniffed
 
     parsed = (
         parse_gcs_public_url(existing_url, expected_bucket=bucket_name)
@@ -88,7 +94,7 @@ def upload_card_image(
     if parsed:
         object_key = parsed[1]
     else:
-        object_key = f"{slug_object_name(object_name)}{ext}"
+        object_key = with_image_extension(slug_object_name(object_name), ext)
 
     client = storage.Client.from_service_account_json(credentials_path)
     blob = client.bucket(bucket_name).blob(object_key)

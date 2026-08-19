@@ -48,14 +48,16 @@ async def send_image_reply(url: str, cardname: str, text: str | None, message: M
                 )
                 await session.close()
                 return
+            data_bytes = await resp.read()
             parsedFilename = filename_from_image_response(
                 content_disposition=resp.headers.get("Content-Disposition"),
                 url=str(resp.url),
                 content_type=resp.headers.get("Content-Type"),
                 fallback_name=cardname,
+                body=data_bytes,
             )
 
-            data = io.BytesIO(await resp.read())
+            data = io.BytesIO(data_bytes)
             sentMessage = await message.reply(
                 content=text,
                 file=discord.File(data, parsedFilename),

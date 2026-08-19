@@ -6,11 +6,15 @@
 
 **Entry:** `#submissions` · background check every 5 min · `!wait` for cooldown
 
+Closed all day **Tuesday and Saturday** in US Eastern (`America/New_York`, EST/EDT). Those days do not count toward the 22h cooldown. `#pause-projects` and other intake channels stay open.
+
 ### Happy path
 
 ```mermaid
 flowchart TD
-  U["User: CardName by @author(s) + image attachment"] --> ATT{"Any attachment?"}
+  U["User: CardName by @author(s) + image attachment"] --> CLOSED{"Tue or Sat<br/>US Eastern?"}
+  CLOSED -->|yes| CLOSED_MSG["#submissions-discussion:<br/>It is closed<br/>Post deleted · cooldown NOT consumed<br/>wait clock paused"]
+  CLOSED -->|no| ATT{"Any attachment?"}
   ATT -->|no| MISS["Silent ignore — see validation"]
   ATT -->|yes| PING{"@ in card title?"}
   PING -->|yes| DM["DM user: no @ in title<br/>original post kept"]
@@ -25,8 +29,8 @@ flowchart TD
   MAGIC -->|no| POLL["Mork reposts with 👍👎❌ + thread"]
 
   POLL --> LOOP["Background check · 5 min"]
-  LOOP --> CHK{"Mork poll:<br/>up − down ≥ 40<br/>age ≥ 1 day?"}
-  CHK -->|no| REMINDER_CHECK{"margin ≥ 35<br/>age ≥ 5.5 d"}
+  LOOP --> CHK{"Mork poll:<br/>up − down ≥ 60<br/>age ≥ 1 day?"}
+  CHK -->|no| REMINDER_CHECK{"margin ≥ 55<br/>age ≥ 5.5 d"}
   REMINDER_CHECK -->|yes| REM["🕛 nearing-end ping"]
   REM --> POLL
   REMINDER_CHECK -->|no| POLL
@@ -47,7 +51,9 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-  POST["User posts in #submissions"] --> A{"Any attachment?"}
+  POST["User posts in #submissions"] --> CLOSED{"Tue or Sat<br/>US Eastern?"}
+  CLOSED -->|yes| CL["#submissions-discussion: It is closed<br/>Post deleted · cooldown NOT consumed"]
+  CLOSED -->|no| A{"Any attachment?"}
 
   A -->|no| MI["Missing image<br/>No bot reply<br/>Post stays in channel<br/>Cooldown NOT consumed"]
   A -->|yes| B{"First line has card name?<br/>(non-empty after trim)"}
@@ -61,16 +67,19 @@ flowchart TD
 
 | Case                     | Trigger                           | Bot response                                 | User post                  | Cooldown       |
 | ------------------------ | --------------------------------- | -------------------------------------------- | -------------------------- | -------------- |
+| **Closed day**           | Tuesday or Saturday, US Eastern   | `#submissions-discussion`: `It is closed`    | Deleted                    | Not written; clock paused |
 | **Missing image**        | No attachment                     | None (silent ignore)                         | **Kept** in `#submissions` | Not written    |
 | **Missing card name**    | Attachment present, empty/whitespace first line | `#submissions-discussion`: include card name + image returned | Deleted                    | Not written    |
 | **`@` in title**         | `@` in first line                 | DM: no `@` allowed                           | Kept                       | Not written    |
-| **On cooldown**          | Submitted within 22 h             | `#submissions-discussion`: wait message      | Deleted                    | Already active |
+| **On cooldown**          | Submitted within 22 open hours (Tue/Sat Eastern excluded) | `#submissions-discussion`: wait message      | Deleted                    | Already active |
 | **Non-image attachment** | e.g. PDF attached                 | Poll created anyway                          | Deleted (reposted as poll) | Consumed       |
 | **Magic skip**           | 1/4001 roll                       | Straight to veto (no poll)                   | Deleted                    | Consumed       |
 
+**Closed day:** Checked first. Any user post in `#submissions` on Tuesday or Saturday (US Eastern) is deleted and pinged in `#submissions-discussion` with `It is closed`. Cooldown timestamps are not written, and elapsed wait time ignores those days.
+
 **Missing name:** Intake bails before cooldown write or repost. The card image is reattached in `#submissions-discussion` so the user can fix the title and resubmit. Whitespace-only first lines count as missing.
 
-**Missing image:** Intake bails before cooldown, name checks, or repost. Text-only posts stay in channel with no ping to attach an image.
+**Missing image:** Intake bails before cooldown, name checks, or repost. Text-only posts stay in channel with no ping to attach an image. Open days only; closed days delete the post and ping instead.
 
 **Image detection elsewhere:** Day markers and the daily submissions gallery only count messages whose first attachment is an image (`image/*` content type or `.png` / `.jpg` / `.jpeg` / `.gif` / `.webp` / `.bmp`). That filter does not apply at initial `#submissions` intake.
 
@@ -78,7 +87,7 @@ flowchart TD
 
 ## Masterpiece / Pause Projects submission
 
-Same intake validation as standard submission (attachment, `@` in title, card name, cooldown); different channel, poll threshold, and cooldown state file.
+Same intake validation as standard submission (attachment, `@` in title, card name, cooldown); different channel, poll threshold, and cooldown state file. Tuesday/Saturday closures apply only to `#submissions`.
 
 ```mermaid
 flowchart TD

@@ -1,19 +1,14 @@
 import { Hono } from 'hono';
-import { reddit, settings } from '@devvit/web/server';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import { settings } from '@devvit/web/server';
 import type {
   PostCardErrorResponse,
   PostCardRequest,
-  PostCardResponse,
 } from '../../shared/postCard.js';
-
-const DEFAULT_SUBREDDIT = 'HellsCube';
+import { badRequest, handlePostCard } from '../postCard.js';
 
 function unauthorized(): PostCardErrorResponse {
   return { ok: false, error: 'unauthorized' };
-}
-
-function badRequest(message: string): PostCardErrorResponse {
-  return { ok: false, error: message };
 }
 
 async function authorizeRequest(
@@ -25,48 +20,6 @@ async function authorizeRequest(
     return false;
   }
   return authorizationHeader === `Bearer ${expected}`;
-}
-
-async function handlePostCard(body: PostCardRequest): Promise<{
-  response: PostCardResponse | PostCardErrorResponse;
-  status: number;
-}> {
-  const title = body.title?.trim();
-  const imageUrl = body.imageUrl?.trim();
-  if (!title) {
-    return { response: badRequest('title is required'), status: 400 };
-  }
-  if (!imageUrl) {
-    return { response: badRequest('imageUrl is required'), status: 400 };
-  }
-  if (!/^https:\/\//i.test(imageUrl)) {
-    return { response: badRequest('imageUrl must be an https URL'), status: 400 };
-  }
-
-  const subredditName = (body.subredditName?.trim() || DEFAULT_SUBREDDIT).replace(
-    /^r\//,
-    '',
-  );
-
-  try {
-    const post = await reddit.submitPost({
-      subredditName,
-      title,
-      kind: 'image',
-      imageUrls: [imageUrl],
-      flairId: body.flairId?.trim() || undefined,
-      runAs: 'APP',
-    });
-
-    return {
-      response: { ok: true, postId: post.id, permalink: post.permalink } satisfies PostCardResponse,
-      status: 200,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('submitPost failed:', message);
-    return { response: badRequest(message), status: 502 };
-  }
 }
 
 export const api = new Hono();
@@ -85,12 +38,14 @@ api.post('/post-card', async (c) => {
   }
 
   const { response, status } = await handlePostCard(body);
-  return c.json(response, status);
+  return c.json(response, status as ContentfulStatusCode);
 });
 
 export const external = new Hono();
 
-// External endpoint — auth handled by Devvit managed token
+// External endpoint (devvit.json server.externalEndpoints.postCard).
+// Gateway auth: managed App Token (Authorization: Bearer devvit_at_…).
+// See https://developers.reddit.com/docs/capabilities/server/external-endpoints
 external.post('/post-card', async (c) => {
   let body: PostCardRequest;
   try {
@@ -100,5 +55,5 @@ external.post('/post-card', async (c) => {
   }
 
   const { response, status } = await handlePostCard(body);
-  return c.json(response, status);
+  return c.json(response, status as ContentfulStatusCode);
 });

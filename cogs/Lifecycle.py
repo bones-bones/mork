@@ -33,6 +33,10 @@ from cogs.lifecycle.scube_lair_acceptance import (
     card_name_and_author_from_scube_lair_message,
     get_current_scube_lair_set_id,
 )
+from cogs.lifecycle.submissions_closed import (
+    elapsed_open_hours,
+    is_submissions_closed,
+)
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
 from getCardMessage import getCardMessage, parseCardNameAndAuthor, submission_card_name
 from getVetoPollsResults import (
@@ -55,6 +59,7 @@ from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
 from image_response_filename import filename_from_image_response
 from post_card_images import post_card_images
+from reddit_devvit import reddit_cotd_via_devvit_enabled
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
 
@@ -152,6 +157,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                     async with session.get(img_url) as resp:
                         if resp.status != 200:
                             continue
+                        data_bytes = await resp.read()
                         filename = filename_from_image_response(
                             content_disposition=resp.headers.get(
                                 "Content-Disposition"
@@ -159,8 +165,9 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                             url=str(resp.url),
                             content_type=resp.headers.get("Content-Type"),
                             fallback_name=card.name,
+                            body=data_bytes,
                         )
-                        data = io.BytesIO(await resp.read())
+                        data = io.BytesIO(data_bytes)
                 veto_content = (
                     f"{card.name} by {';'.join(card.creators)}\nErrata: {card.hcid}"
                 )
@@ -208,9 +215,22 @@ class LifecycleCog(commands.Cog):
                     async with session.get(url) as resp:
                         if resp.status == 200:
                             os.makedirs("tempImages", exist_ok=True)
-                            image_path = f'tempImages/{name.replace("/", "|")}.png'
+                            data_bytes = await resp.read()
+                            filename = filename_from_image_response(
+                                content_disposition=resp.headers.get(
+                                    "Content-Disposition"
+                                ),
+                                url=str(resp.url),
+                                content_type=resp.headers.get("Content-Type"),
+                                fallback_name=name.replace("/", "|"),
+                                body=data_bytes,
+                            )
+                            ext = os.path.splitext(filename)[1] or ".png"
+                            image_path = (
+                                f'tempImages/{name.replace("/", "|")}{ext}'
+                            )
                             with open(image_path, "wb") as out:
-                                out.write(await resp.read())
+                                out.write(data_bytes)
                             try:
                                 await post_to_reddit(
                                     image_path=image_path,
@@ -269,7 +289,7 @@ class LifecycleCog(commands.Cog):
             except Exception:
                 traceback.print_exc()
 
-        if now.hour == 10 and is_first_minutes:
+        if now.hour == 10 and is_first_minutes and not reddit_cotd_via_devvit_enabled():
             try:
                 await post_reddit_card_of_the_day()
             except Exception:
@@ -657,6 +677,13 @@ class LifecycleCog(commands.Cog):
                 await message.delete()
 
             case hc_constants.SUBMISSIONS_CHANNEL:
+                if is_submissions_closed():
+                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
+                    await discussionChannel.send(
+                        f"<@{message.author.id}>, It is closed"
+                    )
+                    await message.delete()
+                    return
                 if len(message.attachments) == 0:
                     return
 
@@ -698,11 +725,7 @@ class LifecycleCog(commands.Cog):
                                 "%Y-%m-%dT%H:%M:%S%z",
                             )
 
-                            timeSinceLast = (
-                                (
-                                    datetime.now(tz=timezone.utc) - tempDate
-                                ).total_seconds()
-                            ) / (60 * 60)
+                            timeSinceLast = elapsed_open_hours(tempDate)
 
                             if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
                                 cast(discord.Member, message.author)
@@ -900,6 +923,7 @@ class LifecycleCog(commands.Cog):
                                 f"<@{message.author.id}>, couldn't fetch the card image."
                             )
                             return
+                        data_bytes = await resp.read()
                         filename = filename_from_image_response(
                             content_disposition=resp.headers.get(
                                 "Content-Disposition"
@@ -907,8 +931,9 @@ class LifecycleCog(commands.Cog):
                             url=str(resp.url),
                             content_type=resp.headers.get("Content-Type"),
                             fallback_name=card.name,
+                            body=data_bytes,
                         )
-                        data = io.BytesIO(await resp.read())
+                        data = io.BytesIO(data_bytes)
                         await message.delete()
                         content = card_id_input
                         if body:
@@ -1379,9 +1404,10 @@ async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
 
 
-def _reset_countdowns_for_file(state_file: str):
+def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = False):
     if not os.path.exists(state_file):
         return
+    now = datetime.now(tz=timezone.utc)
     lines_to_write = ""
     with open(state_file, "r") as file:
         lines = file.readlines()
@@ -1393,9 +1419,10 @@ def _reset_countdowns_for_file(state_file: str):
                     "%Y-%m-%dT%H:%M:%S%z",
                 )
 
-                timeSinceLast = (
-                    (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
-                ) / (60 * 60)
+                if pause_on_closed_days:
+                    timeSinceLast = elapsed_open_hours(tempDate, now)
+                else:
+                    timeSinceLast = (now - tempDate).total_seconds() / (60 * 60)
 
                 if timeSinceLast <= hc_constants.SUBMISSION_COOLDOWN:
                     lines_to_write += f"{line}"
@@ -1405,7 +1432,9 @@ def _reset_countdowns_for_file(state_file: str):
 
 def reset_countdowns():
     print("reset")
-    _reset_countdowns_for_file(hc_constants.SUBMISSIONS_STATE_FILE)
+    _reset_countdowns_for_file(
+        hc_constants.SUBMISSIONS_STATE_FILE, pause_on_closed_days=True
+    )
     _reset_countdowns_for_file(hc_constants.MASTERPIECE_STATE_FILE)
     print("end reset")
 

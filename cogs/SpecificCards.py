@@ -70,13 +70,15 @@ async def send_drive_image(url, ctx: commands.Context):
                 )
                 await session.close()
                 return
+            data_bytes = await resp.read()
             parsedFilename = filename_from_image_response(
                 content_disposition=resp.headers.get("Content-Disposition"),
                 url=str(resp.url),
                 content_type=resp.headers.get("Content-Type"),
                 fallback_name=url.rsplit("/", 1)[-1] or "image",
+                body=data_bytes,
             )
-            data = io.BytesIO(await resp.read())
+            data = io.BytesIO(data_bytes)
             await ctx.send(file=discord.File(data, parsedFilename))
             await session.close()
 
