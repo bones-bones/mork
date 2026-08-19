@@ -29,8 +29,8 @@ flowchart TD
   MAGIC -->|no| POLL["Mork reposts with 👍👎❌ + thread"]
 
   POLL --> LOOP["Background check · 5 min"]
-  LOOP --> CHK{"Mork poll:<br/>up − down ≥ 40<br/>age ≥ 1 day?"}
-  CHK -->|no| REMINDER_CHECK{"margin ≥ 35<br/>age ≥ 5.5 d"}
+  LOOP --> CHK{"Mork poll:<br/>up − down ≥ 60<br/>age ≥ 1 day?"}
+  CHK -->|no| REMINDER_CHECK{"margin ≥ 55<br/>age ≥ 5.5 d"}
   REMINDER_CHECK -->|yes| REM["🕛 nearing-end ping"]
   REM --> POLL
   REMINDER_CHECK -->|no| POLL
