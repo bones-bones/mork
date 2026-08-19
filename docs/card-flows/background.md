@@ -8,7 +8,7 @@ Runs every 5 minutes. No idea which timezone the instance runs on.
 
 ```mermaid
 flowchart TD
-  LOOP["Every 5 minutes"] --> R1["Reset submission cooldowns"]
+  LOOP["Every 5 minutes"] --> R1["Reset submission cooldowns<br/>(#submissions skips Tue/Sat Eastern)"]
   R1 --> R2["Ensure submissions day marker"]
   R2 --> R3["Check standard submissions"]
   R3 --> R4["Check masterpiece submissions"]
@@ -25,6 +25,8 @@ flowchart TD
 ```
 
 Flag `REDDIT_COTD_VIA_DEVVIT=1` skips the hour-10 branch here; Devvit scheduler handles COTD instead (when `cardOfTheDayViaDevvit` app setting is on).
+
+`reset_countdowns` keeps `#submissions` cooldown rows until 22 **open** hours have passed (Tuesday and Saturday in US Eastern do not count). Masterpiece cooldowns still use wall-clock hours.
 
 ---
 
