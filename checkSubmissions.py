@@ -167,6 +167,7 @@ async def checkSubmissions(bot: commands.Bot):
                     ),
                 )
 
+                # Submissions thread is not deleted with the message.
                 submission_thread = guild.get_channel_or_thread(messageEntry.id)
 
                 await asyncio.sleep(1)
