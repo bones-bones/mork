@@ -9,6 +9,7 @@ import hc_constants
 from discord.utils import get
 import random
 from datetime import date, datetime, timezone, timedelta
+from cogs.lifecycle.submissions_closed import elapsed_open_hours
 import aiohttp
 import io
 import re
@@ -643,9 +644,14 @@ class GeneralCog(commands.Cog):
                             "%Y-%m-%dT%H:%M:%S%z",
                         )
 
-                        timeSinceLast = (
-                            (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
-                        ) / (60 * 60)
+                        if state_file == hc_constants.SUBMISSIONS_STATE_FILE:
+                            timeSinceLast = elapsed_open_hours(tempDate)
+                        else:
+                            timeSinceLast = (
+                                (
+                                    datetime.now(tz=timezone.utc) - tempDate
+                                ).total_seconds()
+                            ) / (60 * 60)
 
                         # Check if user is admin
                         member = cast(discord.Member, ctx.author)
