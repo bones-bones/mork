@@ -123,7 +123,7 @@ mork-devvit/
 ## Migration phases
 
 1. **Scaffold** — `mork-devvit/` Devvit app (done on `reddit-devvit-migration`)
-2. **Phase 1 (in progress)** — `POST /api/post-card` + Mork feature flag `REDDIT_ACCEPT_VIA_DEVVIT`
+2. **Phase 1 (in progress)** — Devvit `/external/post-card` + Mork feature flag `REDDIT_ACCEPT_VIA_DEVVIT` ([external endpoints](https://developers.reddit.com/docs/capabilities/server/external-endpoints) access pending)
 3. **Phase 2** — `PostSubmit` trigger replaces `check_reddit.py` polling
 4. **Phase 3** — Mod menu for deferred queue + card-of-the-day scheduler
 5. **Launch** — Install on r/HellsCube; Terms/Privacy Policy required for HTTP Fetch; apply for Developer Funds
@@ -184,10 +184,12 @@ Before or alongside the Devvit port, clean up the existing Reddit layer:
 ## Status
 
 - [x] Architecture investigation and plan (this doc)
-- [x] Scaffold `mork-devvit/` with `/api/post-card`
+- [x] Scaffold `mork-devvit/` with `/external/post-card` (manifest + handler)
 - [x] Mork feature flag + asyncpraw fallback (`reddit_devvit.py`)
-- [ ] Playtest on r/HellsCube (or test sub)
+- [x] External endpoint mod documentation (`docs/hellscube-bridge/external-endpoint.md`)
+- [ ] Reddit external endpoints access approved
+- [ ] Playtest + publish on r/HellsCube (or test sub)
 - [ ] Enable `REDDIT_ACCEPT_VIA_DEVVIT` in production
 - [ ] Phase 2: PostSubmit mirror
-- [ ] Phase 3: deferred queue + schedulers
+- [ ] Phase 3: deferred queue + schedulers (card-of-the-day scheduler implemented in `mork-devvit`)
 - [ ] Install on r/HellsCube + Developer Funds application

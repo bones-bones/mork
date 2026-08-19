@@ -323,6 +323,7 @@ for id, name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip
                     url=sideUrl,
                     content_type=response.headers.get("Content-Type"),
                     fallback_name=cast(str, name),
+                    body=response.content,
                 )
                 print(parsedFileName)
                 parsedFileName = (

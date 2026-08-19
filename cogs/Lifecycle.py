@@ -57,6 +57,7 @@ from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
 from image_response_filename import filename_from_image_response
 from post_card_images import post_card_images
+from reddit_devvit import reddit_cotd_via_devvit_enabled
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
 
@@ -155,6 +156,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                     async with session.get(img_url) as resp:
                         if resp.status != 200:
                             continue
+                        data_bytes = await resp.read()
                         filename = filename_from_image_response(
                             content_disposition=resp.headers.get(
                                 "Content-Disposition"
@@ -162,8 +164,9 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                             url=str(resp.url),
                             content_type=resp.headers.get("Content-Type"),
                             fallback_name=card.name(),
+                            body=data_bytes,
                         )
-                        data = io.BytesIO(await resp.read())
+                        data = io.BytesIO(data_bytes)
                 veto_content = (
                     f"{card.name()} by {card.creator()}" + "\n" + "Errata: " + card.id()
                 )
@@ -211,9 +214,22 @@ class LifecycleCog(commands.Cog):
                     async with session.get(url) as resp:
                         if resp.status == 200:
                             os.makedirs("tempImages", exist_ok=True)
-                            image_path = f'tempImages/{name.replace("/", "|")}.png'
+                            data_bytes = await resp.read()
+                            filename = filename_from_image_response(
+                                content_disposition=resp.headers.get(
+                                    "Content-Disposition"
+                                ),
+                                url=str(resp.url),
+                                content_type=resp.headers.get("Content-Type"),
+                                fallback_name=name.replace("/", "|"),
+                                body=data_bytes,
+                            )
+                            ext = os.path.splitext(filename)[1] or ".png"
+                            image_path = (
+                                f'tempImages/{name.replace("/", "|")}{ext}'
+                            )
                             with open(image_path, "wb") as out:
-                                out.write(await resp.read())
+                                out.write(data_bytes)
                             try:
                                 await post_to_reddit(
                                     image_path=image_path,
@@ -272,7 +288,7 @@ class LifecycleCog(commands.Cog):
             except Exception:
                 traceback.print_exc()
 
-        if now.hour == 10 and is_first_minutes:
+        if now.hour == 10 and is_first_minutes and not reddit_cotd_via_devvit_enabled():
             try:
                 await post_reddit_card_of_the_day()
             except Exception:
@@ -913,6 +929,7 @@ class LifecycleCog(commands.Cog):
                                 f"<@{message.author.id}>, couldn't fetch the card image."
                             )
                             return
+                        data_bytes = await resp.read()
                         filename = filename_from_image_response(
                             content_disposition=resp.headers.get(
                                 "Content-Disposition"
@@ -920,8 +937,9 @@ class LifecycleCog(commands.Cog):
                             url=str(resp.url),
                             content_type=resp.headers.get("Content-Type"),
                             fallback_name=card.name(),
+                            body=data_bytes,
                         )
-                        data = io.BytesIO(await resp.read())
+                        data = io.BytesIO(data_bytes)
                         await message.delete()
                         content = card_id_input
                         if body:

@@ -47,6 +47,8 @@ from google.cloud import storage
 from gspread.exceptions import APIError
 from PIL import Image
 
+from image_response_filename import extension_from_image_bytes
+
 T = TypeVar("T")
 
 # Prefer scripts/ over any repo-root shadow copies of sibling modules.
@@ -392,6 +394,8 @@ def _guess_extension_from_response(resp: requests.Response, url: str) -> str:
     if ext in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
         return ext if ext != ".jpeg" else ".jpg"
     ctype = (resp.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+    if "gif" in ctype:
+        return ".gif"
     if "png" in ctype:
         return ".png"
     if "jpeg" in ctype or "jpg" in ctype:
@@ -425,6 +429,11 @@ def _download(url: str, dest_path: str, timeout: int = 120) -> tuple[str, str]:
             for chunk in resp.iter_content(chunk_size=65536):
                 if chunk:
                     f.write(chunk)
+    with open(dest_path, "rb") as f:
+        sniffed = extension_from_image_bytes(f.read(16))
+    if sniffed:
+        ext = sniffed
+        ct = _content_type_for_ext(ext)
     return ext, ct
 
 

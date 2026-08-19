@@ -20,9 +20,11 @@ flowchart TD
   T0 -->|yes| RC["Redditcatchup — 1 deferred post"]
   LOOP --> T1{"Is it the <=4th minute of the 4th hour?"}
   T1 -->|yes| GAL["Daily submissions gallery → Reddit"]
-  LOOP --> T2{"Is it the <=4th minute of the 10th hour?"}
-  T2 -->|yes| COTD["HC6 card-of-the-day → Reddit"]
+  LOOP --> T2{"Is it the <=4th minute of the 10th hour<br/>and REDDIT_COTD_VIA_DEVVIT off?"}
+  T2 -->|yes| COTD["HC6 card-of-the-day → Reddit (asyncpraw)"]
 ```
+
+Flag `REDDIT_COTD_VIA_DEVVIT=1` skips the hour-10 branch here; Devvit scheduler handles COTD instead (when `cardOfTheDayViaDevvit` app setting is on).
 
 ---
 
@@ -70,8 +72,13 @@ flowchart TD
   subgraph asyncpraw_only["asyncpraw only (not yet ported)"]
     RC["Redditcatchup / deferred_reddit"] --> PRAW2["asyncpraw"]
     GAL["Daily submissions gallery"] --> PRAW2
-    COTD["HC6 card-of-the-day"] --> PRAW2
+    COTD_FLAG{"REDDIT_COTD_VIA_DEVVIT off?"} -->|yes| COTD["HC6 card-of-the-day"] --> PRAW2
     PRAW2 --> RED
+  end
+
+  subgraph devvit_scheduled["Devvit scheduler (flag on)"]
+    COTD_FLAG2{"cardOfTheDayViaDevvit on?"} -->|yes| DEV2["hellscube-bridge scheduler"]
+    DEV2 --> RED
   end
 ```
 
@@ -80,7 +87,8 @@ flowchart TD
 | Immediate accept/veto | Devvit (optional) → asyncpraw fallback | Hellfall GCS URL or `tempImages/` |
 | Deferred batch (`> 5` cards) | asyncpraw | `deferred_reddit/` files |
 | Daily gallery | asyncpraw | Discord submission attachments |
-| Card of the day | asyncpraw | HC6 sheet image URL → temp file |
+| Card of the day (Devvit) | Devvit scheduler when `REDDIT_COTD_VIA_DEVVIT=1` + app setting | [Hellfall catalog](https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json) |
+| Card of the day (legacy) | Lifecycle/asyncpraw when flag off | HC6 sheet image URL → temp file |
 | Discord → Reddit reply | asyncpraw | — |
 
 ---
@@ -105,6 +113,8 @@ flowchart TD
 | `{{card name}}` in chat | `allCards` via fuzzy match → image | —                            |
 | `!judgement`            | exact name via `allCards`          | Unapproved · rulings (col 8) |
 | `!tag` / `!removetag`   | exact name via `allCards`          | Unapproved · tags (col 22)   |
+
+Lookup replies, errata images, and legacy COTD temp files name the attachment from **magic bytes** (then `Content-Type`), not the URL suffix — so a GIF stored at a `.png` GCS URL still posts as `.gif`.
 
 ---
 
