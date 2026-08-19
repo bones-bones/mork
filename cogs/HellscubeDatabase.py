@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 
 import hc_constants
 from hellfall_changesets import modifyTagWithServer
-from hellfall_fetcher import SearchCard, SearchResponse, getRoughCard, getExactCard, getRandomFromServer, getSearchFromServer
+from hellfall_fetcher import SearchCard, SearchResponse, getFuzzyCard, getExactCard, getRandomFromServer, getSearchFromServer
 from post_card_images import send_image_reply
 
 
@@ -81,7 +81,7 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.command(aliases=["creators"])
     async def creator(self, channel, *cardName):
         name = " ".join(cardName).lower()
-        card = await getRoughCard(name)
+        card = await getFuzzyCard(name)
         message = f'{card.name} created by: {', '.join(card.creators)}'
         await channel.send(message)
 
@@ -91,7 +91,7 @@ class HellscubeDatabaseCog(commands.Cog):
         Returns the rulings for a given card.
         """
         name = " ".join(cardName).lower()
-        card = await getRoughCard(name)
+        card = await getFuzzyCard(name)
         message = "something went wrong!"
         name = card.name
         rulings = card.rulings
@@ -177,7 +177,7 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.command()
     async def info(self, channel, *cardName):
         name = " ".join(cardName).lower()
-        card = await getRoughCard(cardName=name)
+        card = await getFuzzyCard(cardName=name)
         message = getInfo(card)
         await channel.send(message)
 

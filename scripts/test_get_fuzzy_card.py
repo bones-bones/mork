@@ -3,7 +3,7 @@
 
 import time
 
-from hellfall_fetcher import getRoughCard
+from hellfall_fetcher import getFuzzyCard
 
 
 async def main() -> int:
@@ -26,7 +26,7 @@ async def main() -> int:
 
     failures = 0
     for query, expected in cases:
-        result = await getRoughCard(query)
+        result = await getFuzzyCard(query)
         ok = expected is None or result == expected
         if not ok:
             failures += 1
@@ -37,7 +37,7 @@ async def main() -> int:
 
     long_name_queries = ["jace the mind", "angry beavers", "the", "of will"]
     for query in long_name_queries:
-        result = await getRoughCard(query)
+        result = await getFuzzyCard(query)
         if len(result.name) > 200:
             failures += 1
             print(f"[FAIL] '{query}' matched overly long name ({len(result.name)} chars)")
@@ -46,7 +46,7 @@ async def main() -> int:
 
     start = time.perf_counter()
     for _ in range(5):
-        await getRoughCard("lightning bolt")
+        await getFuzzyCard("lightning bolt")
     elapsed_ms = (time.perf_counter() - start) / 5 * 1000
     print(f"\nAvg lookup: {elapsed_ms:.0f}ms")
 

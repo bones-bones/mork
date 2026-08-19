@@ -3,7 +3,7 @@ import aiohttp
 import discord
 import re
 import hc_constants
-from hellfall_fetcher import getMultipleRoughCards
+from hellfall_fetcher import getMultipleFuzzyCards
 from image_response_filename import filename_from_image_response
 
 FISH_FROM_GO_FISH_SEARCH = "the fish from go fish"
@@ -22,7 +22,7 @@ async def post_card_images(message: Message):
         for i, name in enumerate(message_text):
             if name.strip() == 'fish':
                 message_text[i] = FISH_FROM_GO_FISH_SEARCH
-    requestedCards = await getMultipleRoughCards(message_text)
+    requestedCards = await getMultipleFuzzyCards(message_text)
     for post in requestedCards:
         if post == "":
             await message.reply("No Match Found!", mention_author=False)

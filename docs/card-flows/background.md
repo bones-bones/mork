@@ -92,11 +92,11 @@ flowchart TD
 | Trigger                 | Calls                             | Writes                       |
 | ----------------------- | --------------------------------- | ---------------------------- |
 | `!random`               | `api/cards/random` → random image | —                            |
-| `!info`                 | `rough` → info                    | —                            |
+| `!info`                 | `fuzzy` → info                    | —                            |
 | `!search`               | `api/cards/search` → names        | —                            |
-| `!creator`              | `rough` → creators                | —                            |
-| `!rulings`              | `rough` → rulings                 | —                            |
-| `{{card name}}` in chat | `multiple_rough` → image          | —                            |
+| `!creator`              | `fuzzy` → creators                | —                            |
+| `!rulings`              | `fuzzy` → rulings                 | —                            |
+| `{{card name}}` in chat | `multiple_fuzzy` → image          | —                            |
 | `!judgement`            | `exact` → hcid                    | Unapproved · rulings (col 8) |
 | `!tag` / `!removetag`   | `api/cards/:id/tags` via `exact`  | live db (adds changeset)     |
 

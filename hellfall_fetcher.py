@@ -64,17 +64,17 @@ async def getExactCard(cardName: str)->SearchCard:
     data = await getDataFromServer(payload)
     return SearchCard(**data)
 
-async def getRoughCard(cardName: str)->SearchCard:
+async def getFuzzyCard(cardName: str)->SearchCard:
     payload: dict[str, str] = {
-        "command": 'rough',
+        "command": 'fuzzy',
         "card_name": cardName,
     }
     data = await getDataFromServer(payload)
     return SearchCard(**data)
 
-async def getMultipleRoughCards(cardNames: list[str])->list[SearchCard]:
+async def getMultipleFuzzyCards(cardNames: list[str])->list[SearchCard]:
     payload: dict[str, str|list[str]] = {
-        "command": 'multiple_rough',
+        "command": 'multiple_fuzzy',
         "card_names": cardNames,
     }
     data = (await getDataFromServer(payload)).get('data')
