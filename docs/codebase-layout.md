@@ -25,7 +25,8 @@ These are imported directly by cogs or each other:
 
 - `hc_constants.py` — Discord IDs, sheet names, shared constants  
 - `shared_vars.py` — gspread / PyDrive clients, Discord intents, global card cache  
-- `CardClasses.py`, `cardNameRequest.py`, `getters.py`, `is_mork.py`, `is_admin.py`, `isRealCard.py`  
+- `hellfall_changesets.py`, `hellfall_fetcher.py`, `hellfall_postcard.py`, `hellfall_shared.py` - dealing with the hellfall server
+- `getters.py`, `is_mork.py`, `is_admin.py`
 - Lifecycle pipeline: `acceptCard.py`, `checkSubmissions.py`, `getCardMessage.py`, `getVetoPollsResults.py`, `handleVetoPost.py`, `printCardImages.py`, `reddit_functions.py`  
 
 ## Scripts

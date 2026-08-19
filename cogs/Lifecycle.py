@@ -1247,7 +1247,7 @@ class LifecycleCog(commands.Cog):
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
 
-    @commands.command()
+    @commands.command(aliases=["instanterrata"])
     async def instaerrata(self, ctx: commands.Context, *, incomingMessage: str = ""):
         """
         Cardname by Author

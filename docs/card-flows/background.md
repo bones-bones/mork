@@ -87,24 +87,18 @@ flowchart TD
 
 ## Database lookup & metadata
 
-**Entry:** Bot startup · `!syncDb` (admin)
+**Entry:** Bot startup
 
-```mermaid
-flowchart TD
-  START["Startup / !syncDb"] --> BUILD["Load approved Database sheet"]
-  BUILD --> CACHE["In-memory card index<br/>(allCards + cardList)"]
-```
-
-| Trigger                 | Reads                              | Writes                       |
-| ----------------------- | ---------------------------------- | ---------------------------- |
-| `!random`               | `allCards` → random image          | —                            |
-| `!info`                 | `cardList` / ID lookup             | —                            |
-| `!search`               | `cardList` via `searchFor`         | —                            |
-| `!creator`              | `allCards` → creator               | —                            |
-| `!rulings`              | `cardList` → rulings               | —                            |
-| `{{card name}}` in chat | `allCards` via fuzzy match → image | —                            |
-| `!judgement`            | exact name via `allCards`          | Unapproved · rulings (col 8) |
-| `!tag` / `!removetag`   | exact name via `allCards`          | Unapproved · tags (col 22)   |
+| Trigger                 | Calls                             | Writes                       |
+| ----------------------- | --------------------------------- | ---------------------------- |
+| `!random`               | `api/cards/random` → random image | —                            |
+| `!info`                 | `rough` → info                    | —                            |
+| `!search`               | `api/cards/search` → names        | —                            |
+| `!creator`              | `rough` → creators                | —                            |
+| `!rulings`              | `rough` → rulings                 | —                            |
+| `{{card name}}` in chat | `multiple_rough` → image          | —                            |
+| `!judgement`            | `exact` → hcid                    | Unapproved · rulings (col 8) |
+| `!tag` / `!removetag`   | `api/cards/:id/tags` via `exact`  | live db (adds changeset)     |
 
 ---
 

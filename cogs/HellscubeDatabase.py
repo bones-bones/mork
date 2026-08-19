@@ -78,14 +78,14 @@ class HellscubeDatabaseCog(commands.Cog):
             url=response.image, cardname=response.name, message=ctx.message, text=None
         )
 
-    @commands.command()
+    @commands.command(aliases=["creators"])
     async def creator(self, channel, *cardName):
         name = " ".join(cardName).lower()
         card = await getRoughCard(name)
         message = f'{card.name} created by: {', '.join(card.creators)}'
         await channel.send(message)
 
-    @commands.command()
+    @commands.command(aliases=["ruling"])
     async def rulings(self, channel, *cardName):
         """
         Returns the rulings for a given card.
@@ -102,7 +102,7 @@ class HellscubeDatabaseCog(commands.Cog):
             message = f'rulings for {name}:{''.join([f'\n```{r}```' for r in rulingsList])}'
         await channel.send(message)
 
-    @commands.command(rest_is_raw=True)
+    @commands.command(rest_is_raw=True, aliases=["addtag"])
     async def judgement(self, ctx: commands.Context, *, args: str):
         """
         Command for judges to run to add rulings to a card
