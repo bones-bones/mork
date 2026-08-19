@@ -19,6 +19,10 @@ from discord.ext import commands
 
 
 from deferred_reddit import format_deferred_manifest_entry, safe_card_filename
+from image_response_filename import (
+    extension_from_image_bytes,
+    mime_type_from_image_bytes,
+)
 from reddit_devvit import post_accept_via_devvit, reddit_accept_via_devvit_enabled
 from reddit_functions import post_to_reddit, reddit_title_for_acceptance
 from username_mappings import resolve_authors
@@ -71,6 +75,7 @@ async def _resolve_accepted_image_url(
     postcard_write = await sync_accepted_card(
         name=card_name,
         image_base64=image_base64,
+        image_mime_type=mime_type_from_image_bytes(file_data),
         creators=author_name,
         set_id=set_id,
         hcid=hcid,
@@ -104,12 +109,16 @@ async def accept_card(
     """Accept a cards a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
     authorName = resolve_authors(authorName)
     ext_match = re.search(r"(\.[^.]+)$", file.filename or "")
-    file_type = ext_match.group(1) if ext_match else ".png"
-    new_file_name = safe_card_filename(cardName, file_type)
     os.makedirs("tempImages", exist_ok=True)
-    image_path = f"tempImages/{uuid.uuid4().hex}{file_type}"
 
     file_data = file.fp.read()
+    file_type = extension_from_image_bytes(file_data) or (
+        ext_match.group(1) if ext_match else ".png"
+    )
+    if file_type.lower() == ".jpeg":
+        file_type = ".jpg"
+    new_file_name = safe_card_filename(cardName, file_type)
+    image_path = f"tempImages/{uuid.uuid4().hex}{file_type}"
     file_copy_for_cardlist = discord.File(
         fp=io.BytesIO(file_data), filename=new_file_name
     )

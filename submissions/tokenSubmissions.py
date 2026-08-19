@@ -26,6 +26,7 @@ from hellfall_postcard import (
     rollback_postcard_write,
     sync_accepted_card,
 )
+from image_response_filename import content_type_for_ext, extension_from_image_bytes
 
 tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
     hc_constants.TOKEN_UNAPPROVED
@@ -111,12 +112,14 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     copy = await message.attachments[0].to_file()
 
     extension = re.search(r"\.([^.]*)$", file.filename)
-    fileType = (
-        extension.group() if extension else ".png"
-    )  # just guess that the file is a png
-    new_file_name = f'{cardName.replace("/", "|")}{fileType}'
-
     file_data = file.fp.read()
+    fileType = extension_from_image_bytes(file_data) or (
+        extension.group() if extension else ".png"
+    )
+    if fileType.lower() == ".jpeg":
+        fileType = ".jpg"
+    new_file_name = f'{cardName.replace("/", "|")}{fileType}'
+    copy.filename = new_file_name
     image_base64 = base64.b64encode(file_data).decode("ascii")
 
     allCardNames = tokenUnapproved.col_values(1)
@@ -142,6 +145,7 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
         postcard_write = await sync_accepted_card(
             name=final_card_name,
             image_base64=image_base64,
+            image_mime_type=content_type_for_ext(fileType),
             creators=creator,
             set_id="HCT",
             hcid=final_card_name,
