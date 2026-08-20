@@ -10,7 +10,8 @@ Runs every 5 minutes. No idea which timezone the instance runs on.
 flowchart TD
   LOOP["Every 5 minutes"] --> R1["Reset submission cooldowns<br/>(#submissions skips Tue/Sat Eastern)"]
   R1 --> R2["Ensure submissions day marker"]
-  R2 --> R3["Check standard submissions"]
+  R2 --> R2B["Ensure submissions gate announcements"]
+  R2B --> R3["Check standard submissions"]
   R3 --> R4["Check masterpiece submissions"]
   R4 --> R5["Check token submissions"]
   R5 --> R6["Cross-post Reddit posts"]
@@ -32,7 +33,9 @@ Flag `REDDIT_COTD_VIA_DEVVIT=1` skips the hour-10 branch here; Devvit scheduler 
 
 ## Reddit → Discord
 
-Cron: `check_reddit` every 5 minutes (see lifecycle loop above).
+`check_reddit` every 5 minutes when `REDDIT_MIRROR_VIA_DEVVIT` is off (see lifecycle loop above).
+
+When `REDDIT_MIRROR_VIA_DEVVIT=1`, hellscube-bridge `PostSubmit` mirrors instead (see [`docs/hellscube-bridge/mirror.md`](../hellscube-bridge/mirror.md)).
 
 **Inbound flairs** (posts matching any of these are cross-posted to `#reddit`):
 
