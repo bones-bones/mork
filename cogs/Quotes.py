@@ -197,7 +197,7 @@ class QuotesCog(commands.Cog):
             user = " ".join(user)
             tempList = []
             for i in quoteList:
-                if usernames_equivalent(i[1], user):
+                if i.__len__() == 2 and usernames_equivalent(i[1], user):
                     tempList.append(i)
             quoteList = tempList
             if quoteList == []:
@@ -205,7 +205,7 @@ class QuotesCog(commands.Cog):
                 return
         tempList = []
         for i in quoteList:
-            if text.lower() in i[0].lower():
+            if i.__len__() == 2 and text.lower() in i[0].lower():
                 tempList.append(i)
         quoteList = tempList
         if quoteList == []:
