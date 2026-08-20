@@ -7,10 +7,13 @@ import discord
 from discord.ext import commands
 
 import hc_constants
+from database_cache.database import build_database
 from hellfall_changesets import modifyTagWithServer
 from hellfall_fetcher import (
+    STILL_USING_CACHE,
     SearchCard,
     SearchResponse,
+    getDatabaseCache,
     getExactCard,
     getFuzzyCard,
     getRandomFromServer,
@@ -36,6 +39,20 @@ def getUnapprovedCardSheet():
 class HellscubeDatabaseCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if STILL_USING_CACHE:
+            build_database(await getDatabaseCache())
+
+    @commands.command(aliases=["synccache"])
+    async def syncDb(self, ctx: commands.Context):
+        if ctx.author.id == hc_constants.LLLLLL:
+            if STILL_USING_CACHE:
+                build_database(await getDatabaseCache())
+                await ctx.send("done")
+            else:
+                await ctx.send("cache is currently turned off")
 
     # okay not technically a DB command
     @commands.command()
@@ -92,6 +109,10 @@ class HellscubeDatabaseCog(commands.Cog):
     async def creator(self, channel, *cardName):
         name = " ".join(cardName).lower()
         card = await getFuzzyCard(name)
+        message = "something went wrong!"
+        if not card:
+            await channel.send(message)
+            return
         message = f"{card.name} created by: {', '.join(card.creators)}"
         await channel.send(message)
 
@@ -103,6 +124,9 @@ class HellscubeDatabaseCog(commands.Cog):
         name = " ".join(cardName).lower()
         card = await getFuzzyCard(name)
         message = "something went wrong!"
+        if not card:
+            await channel.send(message)
+            return
         name = card.name
         rulings = card.rulings
         if not rulings:
@@ -124,6 +148,10 @@ class HellscubeDatabaseCog(commands.Cog):
         ruling = ("\n".join(args.split("\n")[1:])).strip()
         cardName = args.split("\n")[0].strip()
         response = await getExactCard(cardName)
+        message = "something went wrong!"
+        if not response:
+            await ctx.send(message)
+            return
 
         cardSheetUnapproved = getUnapprovedCardSheet()
         cell = cardSheetUnapproved.find(response.hcid, in_column=1)
@@ -179,6 +207,10 @@ class HellscubeDatabaseCog(commands.Cog):
     async def info(self, channel, *cardName):
         name = " ".join(cardName).lower()
         card = await getFuzzyCard(cardName=name)
+        message = "something went wrong!"
+        if not card:
+            await channel.send(message)
+            return
         message = getInfo(card)
         await channel.send(message)
 

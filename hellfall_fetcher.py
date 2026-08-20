@@ -2,10 +2,20 @@
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
+from typing import Any
 
 import aiohttp
 
+from database_cache.database import (
+    SearchCard,
+    card_name_exists,
+    get_card_by_fuzzy_name,
+    get_card_by_id,
+    get_card_by_name,
+    idMap,
+)
 from hellfall_shared import (
     get_api_url,
     get_auth_headers,
@@ -16,6 +26,9 @@ from hellfall_shared import (
 
 class CommandError(Exception):
     """Raised when hellfall command fails."""
+
+
+STILL_USING_CACHE = True
 
 
 async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]):
@@ -41,29 +54,17 @@ async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]
         return data
 
 
-@dataclass
-class SearchCard:
-    id: str
-    oracle_id: str
-    hcid: str
-    name: str
-    set: str
-    collector_number: str
-    accepted_order: str
-    image: str
-    legalities: dict[str, str]
-    creators: list[str]
-    artists: list[str] | None
-    rulings: str
-    base_tags: list[str] | None
-
-    def __init__(self, **kwargs):
-        # Only assign fields that exist, since python will throw a fit otherwise
-        for field in self.__dataclass_fields__:
-            setattr(self, field, kwargs.get(field, ""))
+async def getDatabaseCache() -> dict[str, dict[str, Any]]:
+    payload: dict[str, str] = {
+        "command": "get_cache",
+    }
+    return await getDataFromServer(payload)
 
 
-async def getExactCard(cardName: str) -> SearchCard:
+async def getExactCard(cardName: str) -> SearchCard | None:
+    if STILL_USING_CACHE:
+        return get_card_by_name(cardName)
+
     payload: dict[str, str] = {
         "command": "exact",
         "card_name": cardName,
@@ -72,35 +73,52 @@ async def getExactCard(cardName: str) -> SearchCard:
     return SearchCard(**data)
 
 
-async def getFuzzyCard(cardName: str) -> SearchCard:
+async def getFuzzyCard(cardName: str) -> SearchCard | None:
+    if STILL_USING_CACHE:
+        return get_card_by_fuzzy_name(cardName)
     payload: dict[str, str] = {
         "command": "fuzzy",
         "card_name": cardName,
     }
-    data = await getDataFromServer(payload)
-    return SearchCard(**data)
+    try:
+        data = await getDataFromServer(payload)
+        return SearchCard(**data)
+    except CommandError:
+        return None
 
 
 async def getMultipleFuzzyCards(cardNames: list[str]) -> list[SearchCard]:
-    payload: dict[str, str | list[str]] = {
-        "command": "multiple_fuzzy",
-        "card_names": cardNames,
-    }
-    data = (await getDataFromServer(payload)).get("data")
-    if isinstance(data, list):
-        return [SearchCard(**card) for card in data]
+    if STILL_USING_CACHE:
+        cards = [get_card_by_fuzzy_name(cardName) for cardName in cardNames]
+        return [card for card in cards if card]
+    try:
+        payload: dict[str, str | list[str]] = {
+            "command": "multiple_fuzzy",
+            "card_names": cardNames,
+        }
+        data = (await getDataFromServer(payload)).get("data")
+        if isinstance(data, list):
+            return [SearchCard(**card) for card in data]
+    except CommandError:
+        return []
     return []
 
 
 async def cardExists(cardName: str):
+    if STILL_USING_CACHE:
+        return card_name_exists(cardName)
     try:
-        card = await getExactCard(cardName)
-        return True
+        if await getExactCard(cardName):
+            return True
     except CommandError:
         return False
+    return False
 
 
 async def cardsExist(cardNames: list[str]):
+    if STILL_USING_CACHE:
+        return all(card_name_exists(cardName) for cardName in cardNames)
+
     api_url = get_api_url()
     if not api_url:
         raise CommandError("HELLFALL_API_URL is required")
@@ -178,6 +196,11 @@ class RandomResponse:
 
 
 async def getRandomFromServer(query: str | None) -> RandomResponse:
+    if STILL_USING_CACHE and not query:
+        card = get_card_by_id(random.choice(list(idMap.keys())))
+        if not card:
+            raise CommandError("random_failed")
+        return RandomResponse(image=card.image, name=card.name)
     api_url = get_api_url()
     if not api_url:
         raise CommandError("HELLFALL_API_URL is required")
