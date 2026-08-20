@@ -28,7 +28,6 @@ from pathlib import Path
 
 import requests
 from PIL import Image
-
 from printable_image_qa import (
     KNOWN_DEFECT_TAGS,
     extract_corner_crops,
@@ -57,6 +56,7 @@ UNFIXABLE = frozenset(
         "multi_card_in_one_file",
     }
 )
+
 
 @dataclass
 class FixResult:
@@ -113,9 +113,7 @@ def _in_corner_apex(x: int, y: int, w: int, h: int, ext: int) -> bool:
     return False
 
 
-def _in_corner_junction(
-    corner: str, x: int, y: int, w: int, h: int, ext: int
-) -> bool:
+def _in_corner_junction(corner: str, x: int, y: int, w: int, h: int, ext: int) -> bool:
     """Padding/card seam square at a named corner (includes y=ext / x=ext rows)."""
     reach = _corner_apex_reach(ext)
     if corner == "TL":
@@ -171,9 +169,7 @@ def _in_corner_fix_zone(
         return True
     if not allow_apex:
         return False
-    return _in_corner_apex(x, y, w, h, ext) or _in_bottom_gutter_arm(
-        x, y, w, h, ext, band
-    )
+    return _in_corner_apex(x, y, w, h, ext) or _in_bottom_gutter_arm(x, y, w, h, ext, band)
 
 
 def _brightness(p: tuple[int, int, int]) -> int:
@@ -271,19 +267,13 @@ def _sample_corner_border_color(
     if not samples:
         return None
     # Drop near-white padding bleed; keep coloured frame and saturated border.
-    filtered = [
-        s
-        for s in samples
-        if _brightness(s) < 248 or max(s) - min(s) > 12
-    ]
+    filtered = [s for s in samples if _brightness(s) < 248 or max(s) - min(s) > 12]
     if not filtered:
         filtered = samples
     return _median_rgb(filtered)
 
 
-def _inner_corner_fill(
-    px, corner: str, w: int, h: int, ext: int
-) -> tuple[int, int, int]:
+def _inner_corner_fill(px, corner: str, w: int, h: int, ext: int) -> tuple[int, int, int]:
     """Card-frame colour just inside a corner — avoids white L-mark padding bleed."""
     reach = max(3, ext // 2 + 2)
     samples: list[tuple[int, int, int]] = []
@@ -309,9 +299,7 @@ def _inner_corner_fill(
     return _median_rgb(filtered or samples)
 
 
-def _corner_fixup_fill(
-    px, corner: str, w: int, h: int, ext: int
-) -> tuple[int, int, int]:
+def _corner_fixup_fill(px, corner: str, w: int, h: int, ext: int) -> tuple[int, int, int]:
     """Target fill for corner artifact removal; prefers inner frame when padding is white."""
     style = _corner_pad_style(px, corner, w, h, ext)
     if style.ref >= 220:
@@ -325,23 +313,13 @@ def _corner_fixup_fill(
     return style.fill
 
 
-def _corner_pad_style(
-    px, corner: str, w: int, h: int, ext: int
-) -> _CornerPadStyle:
+def _corner_pad_style(px, corner: str, w: int, h: int, ext: int) -> _CornerPadStyle:
     """Padding tone and fill for the side(s) adjacent to this corner."""
     skip = max(1, min(w, h) // 10)
     if corner in ("TL", "TR"):
-        samples = [
-            px[x, y][:3]
-            for x in range(skip, w - skip)
-            for y in range(0, ext)
-        ]
+        samples = [px[x, y][:3] for x in range(skip, w - skip) for y in range(0, ext)]
     else:
-        samples = [
-            px[x, y][:3]
-            for x in range(skip, w - skip)
-            for y in range(h - ext, h)
-        ]
+        samples = [px[x, y][:3] for x in range(skip, w - skip) for y in range(h - ext, h)]
         edge: list[tuple[int, int, int]] = []
         if corner == "BL":
             edge = [px[x, y][:3] for x in range(0, ext) for y in range(h - ext, h)]
@@ -403,45 +381,19 @@ def _corner_padding_samples(
         left = [px[x, y][:3] for x in range(0, ext) for y in range(ext, ext + reach)]
         return top + left
     if corner == "TR":
-        top = [
-            px[x, y][:3]
-            for x in range(w - ext - reach, w - ext)
-            for y in range(0, ext)
-        ]
-        right = [
-            px[x, y][:3]
-            for x in range(w - ext, w)
-            for y in range(ext, ext + reach)
-        ]
+        top = [px[x, y][:3] for x in range(w - ext - reach, w - ext) for y in range(0, ext)]
+        right = [px[x, y][:3] for x in range(w - ext, w) for y in range(ext, ext + reach)]
         return top + right
     if corner == "BL":
-        bottom = [
-            px[x, y][:3]
-            for x in range(ext, ext + reach)
-            for y in range(h - ext, h)
-        ]
-        left = [
-            px[x, y][:3]
-            for x in range(0, ext)
-            for y in range(h - ext - reach, h - ext)
-        ]
+        bottom = [px[x, y][:3] for x in range(ext, ext + reach) for y in range(h - ext, h)]
+        left = [px[x, y][:3] for x in range(0, ext) for y in range(h - ext - reach, h - ext)]
         return bottom + left
-    bottom = [
-        px[x, y][:3]
-        for x in range(w - ext - reach, w - ext)
-        for y in range(h - ext, h)
-    ]
-    right = [
-        px[x, y][:3]
-        for x in range(w - ext, w)
-        for y in range(h - ext - reach, h - ext)
-    ]
+    bottom = [px[x, y][:3] for x in range(w - ext - reach, w - ext) for y in range(h - ext, h)]
+    right = [px[x, y][:3] for x in range(w - ext, w) for y in range(h - ext - reach, h - ext)]
     return bottom + right
 
 
-def _detect_full_bleed_corners(
-    px, w: int, h: int, ext: int, *, band: int
-) -> frozenset[str]:
+def _detect_full_bleed_corners(px, w: int, h: int, ext: int, *, band: int) -> frozenset[str]:
     """
     Corners where card art reaches the frame edge (borderless / full-bleed).
 
@@ -469,9 +421,7 @@ def _detect_full_bleed_corners(
             full_bleed.add(corner)
             continue
         if corner in ("BL", "BR") and _brightness(pad_med) < 55:
-            non_neutral = sum(
-                1 for s in inner if not _is_neutral_grey(s, spread=12)
-            )
+            non_neutral = sum(1 for s in inner if not _is_neutral_grey(s, spread=12))
             if non_neutral >= max(2, len(inner) // 3) and inner_spread >= 20:
                 full_bleed.add(corner)
     return frozenset(full_bleed)
@@ -560,9 +510,7 @@ def _protected_bottom_text_zone(x: int, y: int, w: int, h: int, ext: int) -> boo
     )
 
 
-def _footer_blocks_corner_paint(
-    x: int, y: int, w: int, h: int, ext: int, band: int
-) -> bool:
+def _footer_blocks_corner_paint(x: int, y: int, w: int, h: int, ext: int, band: int) -> bool:
     """True when bottom text/P/T should block corner artifact cleanup."""
     del band  # kept for call-site consistency
     return _protected_bottom_text_zone(x, y, w, h, ext)
@@ -578,9 +526,7 @@ def _br_bottom_gutter_x0(w: int, ext: int, reach: int) -> int:
     return max(w - ext - reach, _footer_text_x_span(w)[1])
 
 
-def _in_margin_speck_zone(
-    x: int, y: int, w: int, h: int, ext: int, band: int
-) -> bool:
+def _in_margin_speck_zone(x: int, y: int, w: int, h: int, ext: int, band: int) -> bool:
     """
     Where margin speck/remnant fixes may paint.
 
@@ -618,17 +564,10 @@ def _on_inner_card_border(x: int, y: int, w: int, h: int, ext: int) -> bool:
 
 def _on_card_frame_border_ring(x: int, y: int, w: int, h: int, ext: int) -> bool:
     """Full inner frame rectangle — padding corners included."""
-    return (
-        y == ext
-        or y == h - ext - 1
-        or x == ext
-        or x == w - ext - 1
-    )
+    return y == ext or y == h - ext - 1 or x == ext or x == w - ext - 1
 
 
-def _corner_band_pixels(
-    corner: str, w: int, h: int, ext: int
-) -> list[tuple[int, int]]:
+def _corner_band_pixels(corner: str, w: int, h: int, ext: int) -> list[tuple[int, int]]:
     """Extension pixels in the corner margin bands (where registration lines sit)."""
     reach = ext * 3
     out: list[tuple[int, int]] = []
@@ -706,10 +645,7 @@ def fix_corner_registration_lines(
             thick = sum(
                 1
                 for tx in range(x - 2, x + 3)
-                if any(
-                    (tx, y) in pixel_set and off_color(tx, y)
-                    for y in range(ylo, yhi + 1)
-                )
+                if any((tx, y) in pixel_set and off_color(tx, y) for y in range(ylo, yhi + 1))
             )
             if thick > 4:
                 continue
@@ -775,10 +711,7 @@ def fix_corner_registration_lines(
             thick = sum(
                 1
                 for ty in range(y - 2, y + 3)
-                if any(
-                    (x, ty) in pixel_set and off_color(x, ty)
-                    for x in range(xlo, xhi + 1)
-                )
+                if any((x, ty) in pixel_set and off_color(x, ty) for x in range(xlo, xhi + 1))
             )
             if thick > 4:
                 continue
@@ -1150,9 +1083,7 @@ def fix_corner_notches(
                 if (
                     (in_box or in_arm)
                     and (nx, ny) not in seen
-                    and _in_corner_fix_zone(
-                        nx, ny, w, h, ext, band, allow_apex=allow_apex
-                    )
+                    and _in_corner_fix_zone(nx, ny, w, h, ext, band, allow_apex=allow_apex)
                 ):
                     if is_candidate(nx, ny):
                         seen.add((nx, ny))
@@ -1272,9 +1203,7 @@ def fix_corner_bright_lmarks(
         x0, y0, x1, y1 = _corner_box(corner, w, h, size)
         for y in range(y0, y1):
             for x in range(x0, x1):
-                if not _in_corner_fix_zone(
-                    x, y, w, h, ext, band, allow_apex=allow_apex
-                ):
+                if not _in_corner_fix_zone(x, y, w, h, ext, band, allow_apex=allow_apex):
                     continue
                 if _footer_blocks_corner_paint(x, y, w, h, ext, band):
                     continue
@@ -1329,9 +1258,7 @@ def _corner_l_arm_segments(
     return segs
 
 
-def _corner_l_apex_box(
-    corner: str, w: int, h: int, ext: int
-) -> tuple[int, int, int, int]:
+def _corner_l_apex_box(corner: str, w: int, h: int, ext: int) -> tuple[int, int, int, int]:
     """Small square where inner and outer L arms meet at the image corner."""
     size = ext + _corner_apex_reach(ext) + 4
     return _corner_box(corner, w, h, size)
@@ -1370,9 +1297,7 @@ def _is_corner_l_arm_artifact(
     return False
 
 
-def _in_corner_l_apex_zone(
-    corner: str, x: int, y: int, w: int, h: int, ext: int
-) -> bool:
+def _in_corner_l_apex_zone(corner: str, x: int, y: int, w: int, h: int, ext: int) -> bool:
     """Padding-only apex where outer L arms meet — not inner card title area."""
     reach = ext + _corner_apex_reach(ext) + 2
     if corner == "TL":
@@ -1396,9 +1321,7 @@ def _corner_gutter_reach(ext: int) -> int:
     return ext + _corner_apex_reach(ext) + 2
 
 
-def _on_corner_gutter_seam(
-    corner: str, x: int, y: int, w: int, h: int, ext: int
-) -> bool:
+def _on_corner_gutter_seam(corner: str, x: int, y: int, w: int, h: int, ext: int) -> bool:
     """Frame seam or outer-padding L-arm in a corner gutter (not the centre title bar)."""
     reach = _corner_gutter_reach(ext)
     if corner == "TL":
@@ -1442,9 +1365,7 @@ def _on_corner_gutter_seam(
     return x >= w - ext and h - ext - reach <= y < h - ext
 
 
-def _in_corner_l_paint_zone(
-    corner: str, x: int, y: int, w: int, h: int, ext: int
-) -> bool:
+def _in_corner_l_paint_zone(corner: str, x: int, y: int, w: int, h: int, ext: int) -> bool:
     """Pixels safe to recolour for L-arm cleanup — corner gutter L only."""
     if _in_corner_l_apex_zone(corner, x, y, w, h, ext):
         return True
@@ -1516,9 +1437,7 @@ def fix_corner_l_arm_seams(
                         p, fill=fill, style=style, inner=inner, border=border, tol=tol
                     ):
                         continue
-                    if _l_arm_skip_border_preserve(
-                        corner, x, y, w, h, ext, p, border
-                    ):
+                    if _l_arm_skip_border_preserve(corner, x, y, w, h, ext, p, border):
                         continue
                     if p != fill:
                         px[x, y] = fill
@@ -1537,9 +1456,7 @@ def fix_corner_l_arm_seams(
                         p, fill=fill, style=style, inner=inner, border=border, tol=tol
                     ):
                         continue
-                    if _l_arm_skip_border_preserve(
-                        corner, x, y, w, h, ext, p, border
-                    ):
+                    if _l_arm_skip_border_preserve(corner, x, y, w, h, ext, p, border):
                         continue
                     if p != fill:
                         px[x, y] = fill
@@ -1708,7 +1625,9 @@ def _tiled_band_fraction(px, w: int, h: int, b: int, *, tol: int = 8) -> float:
     return constant / total if total else 0.0
 
 
-def _moving_median_line(line: list[tuple[int, int, int]], window: int) -> list[tuple[int, int, int]]:
+def _moving_median_line(
+    line: list[tuple[int, int, int]], window: int
+) -> list[tuple[int, int, int]]:
     """Per-channel moving median; kills hairline spikes, keeps gradients."""
     n = len(line)
     half = window // 2
@@ -1840,10 +1759,7 @@ def fix_inset_line_marks(
     cx0, cx1 = _center_span(w)
 
     def row_has_colored_center(y: int) -> bool:
-        return any(
-            not _is_neutral_dark(px[x, y][:3])
-            for x in range(cx0, cx1, 2)
-        )
+        return any(not _is_neutral_dark(px[x, y][:3]) for x in range(cx0, cx1, 2))
 
     ext_rows = [
         *range(gap, min(ext, h - gap)),
@@ -2004,15 +1920,20 @@ def fix_margin_specks(
                     too_big = True
                     break
                 for nx, ny in (
-                    (cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1),
-                    (cx - 1, cy - 1), (cx + 1, cy + 1), (cx - 1, cy + 1), (cx + 1, cy - 1),
+                    (cx - 1, cy),
+                    (cx + 1, cy),
+                    (cx, cy - 1),
+                    (cx, cy + 1),
+                    (cx - 1, cy - 1),
+                    (cx + 1, cy + 1),
+                    (cx - 1, cy + 1),
+                    (cx + 1, cy - 1),
                 ):
                     if 0 <= nx < w and 0 <= ny < h and (nx, ny) not in seen:
                         if not in_scan_region(nx, ny):
                             continue
                         if br(nx, ny) >= speck_min_bright or (
-                            len(blob) < max_blob
-                            and br(nx, ny) >= tiny_speck_min_bright
+                            len(blob) < max_blob and br(nx, ny) >= tiny_speck_min_bright
                         ):
                             seen.add((nx, ny))
                             stack.append((nx, ny))
@@ -2248,16 +2169,10 @@ def fix_bottom_gutter_corners(
     strip = max(2, min(w, h) // 200)
     skip = max(1, min(w, h) // 10)
     bottom_vals = [
-        _brightness(px[x, y])
-        for x in range(skip, w - skip)
-        for y in range(h - strip, h)
+        _brightness(px[x, y]) for x in range(skip, w - skip) for y in range(h - strip, h)
     ]
     if bottom_vals and sorted(bottom_vals)[len(bottom_vals) // 2] < 55:
-        top_vals = [
-            _brightness(px[x, y])
-            for x in range(skip, w - skip)
-            for y in range(0, strip)
-        ]
+        top_vals = [_brightness(px[x, y]) for x in range(skip, w - skip) for y in range(0, strip)]
         top_med = sorted(top_vals)[len(top_vals) // 2] if top_vals else 255
         if top_med <= 150:
             wedge_reach = _bottom_gutter_wedge_reach(ext, band)
@@ -2365,9 +2280,7 @@ def fix_bottom_corner_gutter_tips(
     strip = max(2, min(w, h) // 200)
     skip = max(1, min(w, h) // 10)
     bottom_vals = [
-        _brightness(px[x, y])
-        for x in range(skip, w - skip)
-        for y in range(h - strip, h)
+        _brightness(px[x, y]) for x in range(skip, w - skip) for y in range(h - strip, h)
     ]
     if not bottom_vals or sorted(bottom_vals)[len(bottom_vals) // 2] >= 55:
         return out, 0
@@ -2448,9 +2361,7 @@ def _wedge_offsets(
     return (float(x - (w - ext)), float(y - (h - ext)))
 
 
-def _wedge_xy(
-    corner: str, u: float, v: float, w: int, h: int, ext: int
-) -> tuple[int, int]:
+def _wedge_xy(corner: str, u: float, v: float, w: int, h: int, ext: int) -> tuple[int, int]:
     """Map wedge offsets back to image coordinates."""
     if corner == "TL":
         return (int(round(ext - u)), int(round(ext - v)))
@@ -2772,7 +2683,9 @@ def _stretch_cut_line(
                     sy = max(ext, min(ext + reach - 1, ext + int(t_v * (reach - 1))))
             elif corner == "TR":
                 if t_v >= t_u:
-                    sx = max(w - ext - reach, min(w - ext - 1, w - ext - 1 - int(t_u * (reach - 1))))
+                    sx = max(
+                        w - ext - reach, min(w - ext - 1, w - ext - 1 - int(t_u * (reach - 1)))
+                    )
                     sy = ext
                 else:
                     sx = w - ext - 1
@@ -2783,14 +2696,20 @@ def _stretch_cut_line(
                     sy = h - ext - 1
                 else:
                     sx = ext
-                    sy = max(h - ext - reach, min(h - ext - 1, h - ext - 1 - int(t_v * (reach - 1))))
+                    sy = max(
+                        h - ext - reach, min(h - ext - 1, h - ext - 1 - int(t_v * (reach - 1)))
+                    )
             else:  # BR
                 if t_v >= t_u:
-                    sx = max(w - ext - reach, min(w - ext - 1, w - ext - 1 - int(t_u * (reach - 1))))
+                    sx = max(
+                        w - ext - reach, min(w - ext - 1, w - ext - 1 - int(t_u * (reach - 1)))
+                    )
                     sy = h - ext - 1
                 else:
                     sx = w - ext - 1
-                    sy = max(h - ext - reach, min(h - ext - 1, h - ext - 1 - int(t_v * (reach - 1))))
+                    sy = max(
+                        h - ext - reach, min(h - ext - 1, h - ext - 1 - int(t_v * (reach - 1)))
+                    )
             if sample_fn is not None:
                 color = sample_fn(px, corner, u, v, w, h, ext)
             else:
@@ -2856,9 +2775,7 @@ def _fade_bottom_inner_corner(px, w: int, h: int, ext: int, band: int) -> bool:
     """Inner BL/BR corner block fades dark — use outward gradient stretch, not black fill."""
     reach = ext + band
     inner_block = [
-        px[x, y][:3]
-        for x in range(ext, ext + reach)
-        for y in range(h - ext - reach, h - ext)
+        px[x, y][:3] for x in range(ext, ext + reach) for y in range(h - ext - reach, h - ext)
     ] + [
         px[x, y][:3]
         for x in range(w - ext - reach, w - ext)
@@ -2870,9 +2787,7 @@ def _fade_bottom_inner_corner(px, w: int, h: int, ext: int, band: int) -> bool:
     return dark_frac >= 0.12
 
 
-def _fade_bottom_corner_card(
-    px, w: int, h: int, ext: int, band: int
-) -> bool:
+def _fade_bottom_corner_card(px, w: int, h: int, ext: int, band: int) -> bool:
     """Bottom padding is still light while the inner corner block fades to dark."""
     if not _fade_bottom_inner_corner(px, w, h, ext, band):
         return False
@@ -2928,9 +2843,7 @@ def fix_fade_bottom_edge_stretch(
     out = img.convert("RGB").copy()
     w, h = out.size
     px = out.load()
-    if px is None or not _resolve_fade_bottom_card(
-        px, w, h, ext, band, fade_bottom_card
-    ):
+    if px is None or not _resolve_fade_bottom_card(px, w, h, ext, band, fade_bottom_card):
         return out, 0
 
     reach = ext + band
@@ -2963,9 +2876,7 @@ def fix_fade_bottom_edge_stretch(
             )
             changed += n
         elif mode == "line":
-            n = _stretch_cut_line(
-                px, corner, w, h, ext, band=band, sample_fn=sample_fade
-            )
+            n = _stretch_cut_line(px, corner, w, h, ext, band=band, sample_fn=sample_fade)
             changed += n
 
         x0, y0, x1, y1 = _corner_box(corner, w, h, ext + reach)
@@ -3004,9 +2915,7 @@ def fix_fade_bottom_edge_stretch(
                     continue
                 if not _fade_l_arm_needs_stretch(px[x, y][:3]):
                     continue
-                color = _fade_bottom_l_arm_color(
-                    px, corner, x, y, w, h, ext, reach, sample_fade
-                )
+                color = _fade_bottom_l_arm_color(px, corner, x, y, w, h, ext, reach, sample_fade)
                 if px[x, y][:3] != color:
                     px[x, y] = color
                     changed += 1
@@ -3102,8 +3011,7 @@ def fix_bottom_corner_specks(
         for y in range(y0, y1):
             for x in range(w):
                 if not (
-                    _in_extension(x, y, w, h, ext)
-                    or _in_bottom_gutter_arm(x, y, w, h, ext, band)
+                    _in_extension(x, y, w, h, ext) or _in_bottom_gutter_arm(x, y, w, h, ext, band)
                 ):
                     continue
                 if corner == "BL" and x >= _bl_bottom_gutter_x1(w, ext, ext * 2):
@@ -3136,11 +3044,7 @@ def fix_top_corner_match(img: Image.Image, band: int, ext: int) -> tuple[Image.I
 
     strip = max(2, min(w, h) // 200)
     skip = max(1, min(w, h) // 10)
-    top_vals = [
-        _brightness(px[x, y])
-        for x in range(skip, w - skip)
-        for y in range(0, strip)
-    ]
+    top_vals = [_brightness(px[x, y]) for x in range(skip, w - skip) for y in range(0, strip)]
     if not top_vals:
         return out, 0
     top_med = sorted(top_vals)[len(top_vals) // 2]
@@ -3152,10 +3056,7 @@ def fix_top_corner_match(img: Image.Image, band: int, ext: int) -> tuple[Image.I
         px[x, ext][:3]
         for x in range(cx0, cx1)
         if _brightness(px[x, ext]) >= 140
-        and (
-            not _is_neutral_grey(px[x, ext][:3])
-            or _brightness(px[x, ext]) >= 175
-        )
+        and (not _is_neutral_grey(px[x, ext][:3]) or _brightness(px[x, ext]) >= 175)
     ]
     if not border_samples:
         return out, 0
@@ -3235,9 +3136,7 @@ def fix_corner_arc_uniform(
         zone: list[tuple[int, int]] = []
         for y in range(y0, y1):
             for x in range(x0, x1):
-                if not _in_corner_fix_zone(
-                    x, y, w, h, ext, band, allow_apex=name not in bleed
-                ):
+                if not _in_corner_fix_zone(x, y, w, h, ext, band, allow_apex=name not in bleed):
                     continue
                 if _in_footer_text_zone(x, y, w, h, ext):
                     continue
@@ -3248,11 +3147,7 @@ def fix_corner_arc_uniform(
             continue
 
         dominant = _median_rgb([px[x, y][:3] for x, y in zone])
-        minority = [
-            (x, y)
-            for x, y in zone
-            if _color_distance(px[x, y][:3], dominant) > tol
-        ]
+        minority = [(x, y) for x, y in zone if _color_distance(px[x, y][:3], dominant) > tol]
         if not minority or len(minority) > len(zone) * minority_frac:
             continue
 
@@ -3261,9 +3156,7 @@ def fix_corner_arc_uniform(
                 px[x, y] = dominant
                 repainted += 1
         if minority:
-            notes.append(
-                f"{name}: {len(minority)}px -> dominant ({len(minority) / len(zone):.0%})"
-            )
+            notes.append(f"{name}: {len(minority)}px -> dominant ({len(minority) / len(zone):.0%})")
 
     return out, repainted, notes
 
@@ -3692,9 +3585,7 @@ def locate_corner_fixes(
         )
         items = _parse_json_array_blob(raw)
         guides = [
-            _normalize_corner_guide(item, w=w, h=h)
-            for item in items
-            if isinstance(item, dict)
+            _normalize_corner_guide(item, w=w, h=h) for item in items if isinstance(item, dict)
         ]
         if len(guides) < 4:
             by_corner = {g.corner: g for g in guides}
@@ -3739,14 +3630,11 @@ def _center_near_corner(
 ) -> bool:
     expected = _card_corner_center_pct(corner, w, h, ext)
     return (
-        abs(center_pct[0] - expected[0]) <= tol_pct
-        and abs(center_pct[1] - expected[1]) <= tol_pct
+        abs(center_pct[0] - expected[0]) <= tol_pct and abs(center_pct[1] - expected[1]) <= tol_pct
     )
 
 
-def _normalize_arc_guide(
-    raw: dict, *, w: int, h: int, ext: int
-) -> CornerArcGuide:
+def _normalize_arc_guide(raw: dict, *, w: int, h: int, ext: int) -> CornerArcGuide:
     corner = str(raw.get("corner", "")).strip().upper()
     if corner not in _CORNERS:
         corner = "TL"
@@ -3871,9 +3759,7 @@ def locate_corner_arcs(
                 pass
 
 
-def _pct_center_to_px(
-    center_pct: tuple[float, float], w: int, h: int
-) -> tuple[int, int]:
+def _pct_center_to_px(center_pct: tuple[float, float], w: int, h: int) -> tuple[int, int]:
     cx, cy = center_pct
     return (
         max(0, min(w - 1, int(round(cx / 100.0 * w)))),
@@ -3974,9 +3860,7 @@ def apply_corner_arc_guides(
                     continue
                 if guide.corner == "BL" and not (x < ext + reach and y >= h - ext - reach):
                     continue
-                if guide.corner == "BR" and not (
-                    x >= w - ext - reach and y >= h - ext - reach
-                ):
+                if guide.corner == "BR" and not (x >= w - ext - reach and y >= h - ext - reach):
                     continue
                 if _in_footer_text_zone(x, y, w, h, ext):
                     continue
@@ -3995,9 +3879,7 @@ def apply_corner_arc_guides(
             corner_changed += 1
         if corner_changed:
             repainted += corner_changed
-            notes.append(
-                f"{guide.corner}: {corner_changed}px arc r={r_inner:.0f}-{r_outer:.0f}"
-            )
+            notes.append(f"{guide.corner}: {corner_changed}px arc r={r_inner:.0f}-{r_outer:.0f}")
 
     return out, repainted, notes
 
@@ -4127,9 +4009,7 @@ def _apply_vision_corner_pipeline(
             working, guides, band=band, ext=ext
         )
         if repainted:
-            notes.append(
-                f"vision {'retry ' if retry else ''}corner fix: {repainted}px"
-            )
+            notes.append(f"vision {'retry ' if retry else ''}corner fix: {repainted}px")
         elif any(g.needs_fix for g in guides):
             notes.append("vision: flagged corners but no matching pixels")
         for vn in vision_notes:
@@ -4152,9 +4032,7 @@ def _apply_vision_corner_pipeline(
                 working, arc_guides, band=band, ext=ext
             )
             if arc_px:
-                notes.append(
-                    f"vision {'retry ' if retry else ''}corner arcs: {arc_px}px"
-                )
+                notes.append(f"vision {'retry ' if retry else ''}corner arcs: {arc_px}px")
             for an in arc_notes:
                 notes.append(f"  {an}")
         finally:
@@ -4200,9 +4078,8 @@ def apply_fixes(
     if to_fix:
         before = working.copy()
         before_px = before.load()
-        fade_bottom_card = (
-            before_px is not None
-            and _fade_bottom_corner_card(before_px, w, h, ext, band)
+        fade_bottom_card = before_px is not None and _fade_bottom_corner_card(
+            before_px, w, h, ext, band
         )
         full_bleed_corners = (
             _detect_full_bleed_corners(before_px, w, h, ext, band=band)
@@ -4223,9 +4100,7 @@ def apply_fixes(
 
         working, line_marks, line_px = fix_inset_line_marks(working)
         if line_px:
-            notes.append(
-                f"inpainted line marks ({'; '.join(line_marks)}): {line_px}px"
-            )
+            notes.append(f"inpainted line marks ({'; '.join(line_marks)}): {line_px}px")
 
         if "border_seam_lines" in to_fix:
             working, seam_px = inpaint_border_seam_lines(working)
@@ -4263,9 +4138,7 @@ def apply_fixes(
         host = ollama_host or DEFAULT_OLLAMA_HOST
         model = vision_model or DEFAULT_VISION_MODEL
         try_vision = (
-            use_vision_corners
-            if use_vision_corners is not None
-            else _ollama_reachable(host)
+            use_vision_corners if use_vision_corners is not None else _ollama_reachable(host)
         )
         if try_vision:
             card_name = _card_name_from_path(image_path)
@@ -4347,9 +4220,7 @@ def apply_fixes(
 
         working, top_pad_px2 = fix_colored_top_corner_padding(working, band, ext)
         if top_pad_px2:
-            notes.append(
-                f"matched coloured top corner padding (pass 2): {top_pad_px2}px"
-            )
+            notes.append(f"matched coloured top corner padding (pass 2): {top_pad_px2}px")
 
         if fade_bottom_card and not {"BL", "BR"} <= full_bleed_corners:
             working, fade_edge_px = fix_fade_bottom_edge_stretch(
@@ -4362,12 +4233,7 @@ def apply_fixes(
         applied = list(to_fix)
         bpx, apx = before.load(), working.load()
         if bpx is not None and apx is not None:
-            pixels_changed = sum(
-                1
-                for y in range(h)
-                for x in range(w)
-                if bpx[x, y] != apx[x, y]
-            )
+            pixels_changed = sum(1 for y in range(h) for x in range(w) if bpx[x, y] != apx[x, y])
 
     dest = out_path or image_path
     working.convert("RGB").save(dest, "PNG")
@@ -4425,9 +4291,8 @@ def apply_guided_retry_fixes(
 
     before = working.copy()
     before_px = before.load()
-    fade_bottom_card = (
-        before_px is not None
-        and _fade_bottom_corner_card(before_px, w, h, ext, band)
+    fade_bottom_card = before_px is not None and _fade_bottom_corner_card(
+        before_px, w, h, ext, band
     )
     full_bleed_corners = (
         _detect_full_bleed_corners(before_px, w, h, ext, band=band)
@@ -4435,9 +4300,7 @@ def apply_guided_retry_fixes(
         else frozenset()
     )
     if full_bleed_corners:
-        notes.append(
-            f"retry full-bleed corners: {','.join(sorted(full_bleed_corners))}"
-        )
+        notes.append(f"retry full-bleed corners: {','.join(sorted(full_bleed_corners))}")
     host = ollama_host or DEFAULT_OLLAMA_HOST
     model = vision_model or DEFAULT_VISION_MODEL
     card_name = _card_name_from_path(image_path)
@@ -4461,9 +4324,7 @@ def apply_guided_retry_fixes(
             notes.append(f"retry inpainted border seam lines: {seam_px}px")
         working, line_marks, line_px = fix_inset_line_marks(working)
         if line_px:
-            notes.append(
-                f"retry inpainted line marks ({'; '.join(line_marks)}): {line_px}px"
-            )
+            notes.append(f"retry inpainted line marks ({'; '.join(line_marks)}): {line_px}px")
         working, side_fixed = fix_side_border(working, band, ext)
         if side_fixed:
             notes.append(f"retry recolored side border(s): {', '.join(side_fixed)}")
@@ -4486,9 +4347,7 @@ def apply_guided_retry_fixes(
             notes.append(f"retry matched top corner border: {top_match_px}px")
         working, top_pad_px = fix_colored_top_corner_padding(working, band, ext)
         if top_pad_px:
-            notes.append(
-                f"retry matched coloured top corner padding: {top_pad_px}px"
-            )
+            notes.append(f"retry matched coloured top corner padding: {top_pad_px}px")
         working, cut_px, cut_notes = fix_cut_corner_stretch(
             working,
             band,
@@ -4535,9 +4394,7 @@ def apply_guided_retry_fixes(
 
     working, top_pad_px2 = fix_colored_top_corner_padding(working, band, ext)
     if top_pad_px2:
-        notes.append(
-            f"retry matched coloured top corner padding (pass 2): {top_pad_px2}px"
-        )
+        notes.append(f"retry matched coloured top corner padding (pass 2): {top_pad_px2}px")
 
     working, fade_edge_px = fix_fade_bottom_edge_stretch(
         working, band, ext, fade_bottom_card=fade_bottom_card
@@ -4548,9 +4405,7 @@ def apply_guided_retry_fixes(
     applied = list(to_fix)
     bpx, apx = before.load(), working.load()
     if bpx is not None and apx is not None:
-        pixels_changed = sum(
-            1 for y in range(h) for x in range(w) if bpx[x, y] != apx[x, y]
-        )
+        pixels_changed = sum(1 for y in range(h) for x in range(w) if bpx[x, y] != apx[x, y])
 
     dest = out_path or image_path
     working.convert("RGB").save(dest, "PNG")

@@ -1,38 +1,31 @@
 import asyncio
 import io
-from datetime import datetime, timezone, timedelta
-
-
+from datetime import datetime, timedelta, timezone
 from typing import cast
 
-from acceptCard import accept_card
+from discord import File, Guild, Member, Message, TextChannel
+from discord.ext import commands
+from discord.utils import get
 
-
+import hc_constants
+from accept_card import accept_card
+from get_card_message import parseCardNameAndAuthor
 from getters import (
     getSubmissionDiscussionChannel,
     getSubmissionsChannel,
     getVetoChannel,
 )
-from getCardMessage import parseCardNameAndAuthor
-from handleVetoPost import handleVetoPost
-import hc_constants
-from discord.ext import commands
-from discord import File, Guild, Member, Message, TextChannel
-
-from discord.utils import get
-
+from handle_veto_post import handle_veto_post
 from is_admin import is_admin
 from is_mork import is_mork
 
 
-async def checkSubmissions(bot: commands.Bot):
+async def check_submissions(bot: commands.Bot):
     print("checking submissions")
     subChannel = getSubmissionsChannel(bot)
     vetoChannel = getVetoChannel(bot)
     acceptedChannel = getSubmissionDiscussionChannel(bot)
-    logChannel = cast(
-        TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
-    )
+    logChannel = cast(TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
     timeNow = datetime.now(timezone.utc)
     oneWeek = timeNow + timedelta(weeks=-1)
     messages = subChannel.history(after=oneWeek, limit=None)
@@ -64,9 +57,9 @@ async def checkSubmissions(bot: commands.Bot):
             messageAge = timeNow - messageEntry.created_at
 
             positiveMargin = upCount - downCount
-            if positiveMargin >= (
-                hc_constants.SUBMISSIONS_THRESHOLD
-            ) and messageAge >= timedelta(days=1):
+            if positiveMargin >= (hc_constants.SUBMISSIONS_THRESHOLD) and messageAge >= timedelta(
+                days=1
+            ):
                 guild = cast(Guild, messageEntry.guild)
                 await asyncio.sleep(1)
                 upvoteUsers = [user async for user in upvote.users()]
@@ -74,9 +67,7 @@ async def checkSubmissions(bot: commands.Bot):
                 if downCount == 1:
                     prettyValid = False
                     for user in upvoteUsers:
-                        if guild.get_member(user.id) is not None and is_admin(
-                            cast(Member, user)
-                        ):
+                        if guild.get_member(user.id) is not None and is_admin(cast(Member, user)):
                             prettyValid = True
                             break
 
@@ -103,12 +94,10 @@ async def checkSubmissions(bot: commands.Bot):
                     else:
                         mention_name = str(mentionEntry)
                     accepted_message_no_mentions = accepted_message_no_mentions.replace(
-                        f"<@{str(mentionEntry)}>", mention_name
+                        f"<@{mentionEntry}>", mention_name
                     )
 
-                dbname, card_author = parseCardNameAndAuthor(
-                    accepted_message_no_mentions
-                )
+                dbname, card_author = parseCardNameAndAuthor(accepted_message_no_mentions)
                 resolvedName = dbname if dbname != "" else "Crazy card with no name"
                 print(f"Processing submission: {resolvedName}")
 
@@ -123,9 +112,7 @@ async def checkSubmissions(bot: commands.Bot):
                         ):
                             spooky = True
                     if spooky:
-                        resolvedAuthor = (
-                            card_author if card_author != "" else "no author"
-                        )
+                        resolvedAuthor = card_author if card_author != "" else "no author"
                         cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
                         await asyncio.sleep(1)
                         await accept_card(
@@ -148,12 +135,15 @@ async def checkSubmissions(bot: commands.Bot):
                         if time_reacts:
                             await asyncio.sleep(1)
                             async for rem_msg in subChannel.history(limit=200):
-                                if rem_msg.author == bot.user and messageEntry.jump_url in rem_msg.content:
+                                if (
+                                    rem_msg.author == bot.user
+                                    and messageEntry.jump_url in rem_msg.content
+                                ):
                                     try:
                                         await asyncio.sleep(1)
                                         await rem_msg.delete()
-                                    except Exception:
-                                        pass
+                                    except Exception as e:
+                                        print(f"submissions check error: {e}")
 
                         await messageEntry.delete()
                         continue  # and then stop processing the card
@@ -168,7 +158,7 @@ async def checkSubmissions(bot: commands.Bot):
                 )
 
                 await asyncio.sleep(1)
-                await handleVetoPost(message=vetoEntry, bot=bot, veto_council=None)
+                await handle_veto_post(message=vetoEntry, bot=bot, veto_council=None)
 
                 logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
                 await asyncio.sleep(1)
@@ -206,8 +196,8 @@ async def checkSubmissions(bot: commands.Bot):
                             try:
                                 await asyncio.sleep(1)
                                 await rem_msg.delete()
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                print(f"submissions check error: {e}")
 
                 await messageEntry.delete()
                 continue

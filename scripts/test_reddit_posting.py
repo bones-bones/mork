@@ -46,7 +46,7 @@ class DeferredManifestTests(unittest.TestCase):
     def test_parses_json_format_with_unicode_and_tabs(self):
         line = format_deferred_manifest_entry(
             'Bob\'s "Cool" Card™.png',
-            "**Bob's \"Cool\" Card™ — Æther {W}{U}** by **Author**\twith\ttabs",
+            '**Bob\'s "Cool" Card™ — Æther {W}{U}** by **Author**\twith\ttabs',
             "SCL.X",
             False,
         )

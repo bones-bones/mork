@@ -1,10 +1,8 @@
 import discord
-from oauth2client.service_account import ServiceAccountCredentials
 import gspread
-from pydrive2.drive import GoogleDrive
+from oauth2client.service_account import ServiceAccountCredentials
 from pydrive2.auth import GoogleAuth
-
-
+from pydrive2.drive import GoogleDrive
 
 intents = discord.Intents.default()
 intents.members = True
@@ -22,7 +20,10 @@ scope = [
 
 gauth = GoogleAuth()
 gauth.auth_method = "service"
-creds = ServiceAccountCredentials.from_json_keyfile_name("./bot_secrets/client_secrets.json", scope)  # type: ignore
+creds = ServiceAccountCredentials.from_json_keyfile_name(
+    "./bot_secrets/client_secrets.json",
+    scope,  # type: ignore
+)
 gauth.credentials = creds
 drive = GoogleDrive(gauth)
 about = drive.GetAbout()

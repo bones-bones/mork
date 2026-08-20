@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 import discord
 from discord.ext import commands
 
-from acceptCard import accept_card
+from accept_card import accept_card
 
 SCUBE_LAIR_SET_PATTERN = re.compile(
     r"Set:\s*(?:\*\*)?\s*([A-Za-z0-9._]+)",
@@ -16,21 +15,19 @@ SCUBE_LAIR_SET_PATTERN = re.compile(
 )
 
 
-def parse_set_id_from_scube_lair_prompt(content: str) -> Optional[str]:
+def parse_set_id_from_scube_lair_prompt(content: str) -> str | None:
     match = SCUBE_LAIR_SET_PATTERN.search(content)
     if not match:
         return None
     return match.group(1).strip()
 
 
-def card_name_and_author_from_scube_lair_message(
-    content: str, author_name: str
-) -> tuple[str, str]:
+def card_name_and_author_from_scube_lair_message(content: str, author_name: str) -> tuple[str, str]:
     card_name = content.strip().split("\n", 1)[0].strip()
     return card_name, author_name.strip()
 
 
-async def get_current_scube_lair_set_id(channel: discord.TextChannel) -> Optional[str]:
+async def get_current_scube_lair_set_id(channel: discord.TextChannel) -> str | None:
     pins = await channel.pins()
     if not pins:
         return None

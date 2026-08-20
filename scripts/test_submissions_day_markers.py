@@ -10,8 +10,8 @@ from discord import Message
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-import hc_constants  # noqa: E402
-from cogs.lifecycle.submissions_day_markers import (  # noqa: E402
+import hc_constants
+from cogs.lifecycle.submissions_day_markers import (
     day_marker_content,
     day_marker_iso_date,
     format_previous_week_body,
@@ -23,13 +23,13 @@ from cogs.lifecycle.submissions_day_markers import (  # noqa: E402
 )
 
 
-def _msg(content: str, author_id: int = hc_constants.MORK_2, attachments=None)->Message:
+def _msg(content: str, author_id: int = hc_constants.MORK_2, attachments=None) -> Message:
     return SimpleNamespace(
         content=content,
         author=SimpleNamespace(id=author_id),
         jump_url="https://example/jump",
         attachments=attachments or [],
-    ) # type: ignore
+    )  # type: ignore
 
 
 def _attachment(filename="card.png", content_type="image/png"):
@@ -64,25 +64,33 @@ def test_previous_week_body():
 def test_is_submissions_card():
     card = _msg("Cool Card by @user", author_id=hc_constants.MORK_2, attachments=[_attachment()])
     assert is_submissions_card(card)
-    assert not is_submissions_card(_msg(day_marker_content(datetime(2026, 6, 1, tzinfo=timezone.utc))))
+    assert not is_submissions_card(
+        _msg(day_marker_content(datetime(2026, 6, 1, tzinfo=timezone.utc)))
+    )
     assert not is_submissions_card(_msg("no attachment", author_id=hc_constants.MORK_2))
     assert not is_submissions_card(
-        _msg("reminder", author_id=hc_constants.MORK_2, attachments=[_attachment("notes.txt", "text/plain")])
+        _msg(
+            "reminder",
+            author_id=hc_constants.MORK_2,
+            attachments=[_attachment("notes.txt", "text/plain")],
+        )
     )
     assert not is_submissions_card(_msg("user card", author_id=123, attachments=[_attachment()]))
 
 
 def test_has_image_attachment():
     assert has_image_attachment(_msg("card", attachments=[_attachment()]))
-    assert has_image_attachment(_msg("card", attachments=[_attachment("card.jpg", '')]))
+    assert has_image_attachment(_msg("card", attachments=[_attachment("card.jpg", "")]))
     assert not has_image_attachment(_msg("text only"))
-    assert not has_image_attachment(_msg("file", attachments=[_attachment("doc.pdf", "application/pdf")]))
+    assert not has_image_attachment(
+        _msg("file", attachments=[_attachment("doc.pdf", "application/pdf")])
+    )
 
 
 def test_submission_period_start():
     now = datetime(2026, 6, 3, 1, 0, tzinfo=timezone.utc)
     marker = _msg(day_marker_content(datetime(2026, 6, 1, 1, 0, tzinfo=timezone.utc)))
-    marker.created_at = datetime(2026, 6, 1, 1, 0, tzinfo=timezone.utc) # type: ignore
+    marker.created_at = datetime(2026, 6, 1, 1, 0, tzinfo=timezone.utc)  # type: ignore
     assert submission_period_start(now, None) == utc_day_start(now) - timedelta(days=1)
     assert submission_period_start(now, marker) == datetime(2026, 6, 2, 0, 0, tzinfo=timezone.utc)
 

@@ -1,32 +1,27 @@
-from datetime import datetime, timezone, timedelta
-
-
 import base64
 import re
+from datetime import datetime, timedelta, timezone
 from typing import cast
 
+from discord import Message
+from discord.ext import commands
+from discord.utils import get
 from gspread import Cell
 
-from shared_vars import googleClient
-
+import hc_constants
+from get_card_message import parseCardNameAndAuthor
 from getters import (
     getTokenListChannel,
     getTokenSubmissionChannel,
 )
-import hc_constants
-from discord.ext import commands
-from discord import Message
-
-from discord.utils import get
-
-from getCardMessage import parseCardNameAndAuthor
-from is_mork import is_mork
 from hellfall_postcard import (
     PostcardSyncError,
     rollback_postcard_write,
     sync_accepted_card,
 )
 from image_response_filename import content_type_for_ext, extension_from_image_bytes
+from is_mork import is_mork
+from shared_vars import googleClient
 
 tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
     hc_constants.TOKEN_UNAPPROVED
@@ -101,7 +96,7 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
 
     for index, mentionEntry in enumerate(message.raw_mentions):
         accepted_message_no_mentions = accepted_message_no_mentions.replace(
-            f"<@{str(mentionEntry)}>", message.mentions[index].name
+            f"<@{mentionEntry}>", message.mentions[index].name
         )
 
     first_line = accepted_message_no_mentions.split("\n")[0]
@@ -113,21 +108,17 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
 
     extension = re.search(r"\.([^.]*)$", file.filename)
     file_data = file.fp.read()
-    fileType = extension_from_image_bytes(file_data) or (
-        extension.group() if extension else ".png"
-    )
+    fileType = extension_from_image_bytes(file_data) or (extension.group() if extension else ".png")
     if fileType.lower() == ".jpeg":
         fileType = ".jpg"
-    new_file_name = f'{cardName.replace("/", "|")}{fileType}'
+    new_file_name = f"{cardName.replace('/', '|')}{fileType}"
     copy.filename = new_file_name
     image_base64 = base64.b64encode(file_data).decode("ascii")
 
     allCardNames = tokenUnapproved.col_values(1)
 
     matching_cards = [
-        name
-        for name in allCardNames
-        if isinstance(name, str) and name.startswith(cardName)
+        name for name in allCardNames if isinstance(name, str) and name.startswith(cardName)
     ]
     max_number = 0
     for card in matching_cards:
@@ -138,7 +129,7 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
 
     final_card_name = f"{cardName}{max_number + 1}"
 
-    dbRowIndex = allCardNames.__len__() + 1
+    dbRowIndex = len(allCardNames) + 1
 
     postcard_write = None
     try:

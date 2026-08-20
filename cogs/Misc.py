@@ -1,18 +1,13 @@
-from acceptCard import accept_card
 from typing import cast
 
-from discord import RawReactionActionEvent, TextChannel
 import discord
+from discord import RawReactionActionEvent, TextChannel
 from discord.ext import commands
 
-from getCardMessage import parseCardNameAndAuthor
-
-from acceptCard import accept_card
 import hc_constants
-
+from accept_card import accept_card
+from get_card_message import parseCardNameAndAuthor
 from is_mork import is_mork
-
-
 
 
 class MiscCog(commands.Cog):
@@ -26,7 +21,7 @@ class MiscCog(commands.Cog):
         guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
         channel = guild.get_channel_or_thread(reaction.channel_id)
 
-        if channel == None:
+        if channel is None:
             return
 
         channelAsText = cast(discord.TextChannel, channel)
@@ -40,14 +35,12 @@ class MiscCog(commands.Cog):
             og_message = message
             reference = message.reference
 
-            if reference != None and reference.message_id != None:
+            if reference is not None and reference.message_id is not None:
                 original_channel = cast(
                     TextChannel,
                     guild.get_channel_or_thread(reference.channel_id),
                 )
-                message = await original_channel.fetch_message(
-                    reference.message_id
-                )
+                message = await original_channel.fetch_message(reference.message_id)
 
             file = await message.attachments[0].to_file()
             acceptanceMessage = message.content
@@ -74,7 +67,6 @@ class MiscCog(commands.Cog):
             )
 
             await og_message.delete()
-
 
 
 # @commands.command()

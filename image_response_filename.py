@@ -8,7 +8,7 @@ from urllib.parse import unquote, urlparse
 
 _DRIVE_FILENAME_RE = re.compile(r'inline;filename="(.*)"')
 _CONTENT_DISPOSITION_FILENAME_RE = re.compile(
-    r'filename\*?=(?:UTF-8\'\')?"?([^";]+)', re.I
+    r'filename\*?=(?:UTF-8\'\')?"?([^";]+)', re.IGNORECASE
 )
 _IMAGE_EXTENSIONS = frozenset({".png", ".jpg", ".jpeg", ".webp", ".gif"})
 
@@ -126,9 +126,7 @@ def filename_from_image_response(
         fallback_name=fallback_name,
     )
     _, candidate_ext = os.path.splitext(candidate)
-    candidate_ext = (
-        candidate_ext.lower() if candidate_ext.lower() in _IMAGE_EXTENSIONS else ""
-    )
+    candidate_ext = candidate_ext.lower() if candidate_ext.lower() in _IMAGE_EXTENSIONS else ""
     ext = (
         extension_from_image_bytes(body)
         or extension_from_content_type(content_type)

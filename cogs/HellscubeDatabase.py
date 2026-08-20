@@ -1,18 +1,24 @@
 import random
-from typing import Optional, cast
+from datetime import UTC, datetime, timedelta, timezone
+from random import randrange
+from typing import cast
+
 import discord
 from discord.ext import commands
-from random import randrange
-
-from datetime import datetime, timezone, timedelta
 
 import hc_constants
 from hellfall_changesets import modifyTagWithServer
-from hellfall_fetcher import SearchCard, SearchResponse, getFuzzyCard, getExactCard, getRandomFromServer, getSearchFromServer
+from hellfall_fetcher import (
+    SearchCard,
+    SearchResponse,
+    getExactCard,
+    getFuzzyCard,
+    getRandomFromServer,
+    getSearchFromServer,
+)
 from post_card_images import send_image_reply
+from shared_vars import googleClient, intents
 
-
-from shared_vars import intents, googleClient
 databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
 
 
@@ -20,8 +26,12 @@ notMagicCardSheet = databaseSheets.worksheet("NotMagic")
 
 client = discord.Client(intents=intents)
 
+
 def getUnapprovedCardSheet():
-    return googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(hc_constants.DATABASE_UNAPPROVED)
+    return googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
+        hc_constants.DATABASE_UNAPPROVED
+    )
+
 
 class HellscubeDatabaseCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -38,7 +48,7 @@ class HellscubeDatabaseCog(commands.Cog):
         if num > 9:
             await channel.send("Sorry, no cards were found.")
             return
-        subStart = datetime.strptime("5/13/2021 1:30 PM", "%m/%d/%Y %I:%M %p")
+        subStart = datetime.strptime("5/13/2021 1:30 PM", "%m/%d/%Y %I:%M %p").astimezone(UTC)
         timeNow = datetime.now(timezone.utc)
         timeNow = timeNow.replace(tzinfo=None)
         delta = timeNow - subStart
@@ -59,7 +69,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.command()
     async def notMagic(self, ctx: commands.Context):
-        """ Returns a random card from #this-isnt-magic """
+        """Returns a random card from #this-isnt-magic"""
         random_card = random.randint(2, len(notMagicCardSheet.col_values(1)))
         print(random_card)
         name = cast(str, notMagicCardSheet.col_values(1)[random_card])
@@ -68,7 +78,7 @@ class HellscubeDatabaseCog(commands.Cog):
         await send_image_reply(url=img, cardname=name, text=ruling, message=ctx.message)
 
     @commands.command(name="random")
-    async def randomCard(self, ctx: commands.Context, query:Optional[str]):
+    async def randomCard(self, ctx: commands.Context, query: str | None):
         """
         Returns a random card image from the database.
         Can accept a search query to narrow the search.
@@ -82,7 +92,7 @@ class HellscubeDatabaseCog(commands.Cog):
     async def creator(self, channel, *cardName):
         name = " ".join(cardName).lower()
         card = await getFuzzyCard(name)
-        message = f'{card.name} created by: {', '.join(card.creators)}'
+        message = f"{card.name} created by: {', '.join(card.creators)}"
         await channel.send(message)
 
     @commands.command(aliases=["ruling"])
@@ -96,10 +106,10 @@ class HellscubeDatabaseCog(commands.Cog):
         name = card.name
         rulings = card.rulings
         if not rulings:
-            message = f'There are no rulings for {name}'
+            message = f"There are no rulings for {name}"
         else:
             rulingsList = rulings.split("\\\\\\")
-            message = f'rulings for {name}:{''.join([f'\n```{r}```' for r in rulingsList])}'
+            message = f"rulings for {name}:{''.join([f'\n```{r}```' for r in rulingsList])}"
         await channel.send(message)
 
     @commands.command(rest_is_raw=True, aliases=["addtag"])
@@ -113,20 +123,16 @@ class HellscubeDatabaseCog(commands.Cog):
 
         ruling = ("\n".join(args.split("\n")[1:])).strip()
         cardName = args.split("\n")[0].strip()
-        response = await getExactCard(cardName)        
+        response = await getExactCard(cardName)
 
         cardSheetUnapproved = getUnapprovedCardSheet()
-        cell = cardSheetUnapproved.find(response.hcid,in_column=1)
+        cell = cardSheetUnapproved.find(response.hcid, in_column=1)
         if not cell:
             await ctx.send("Unable to find the card... this shouldn't happen")
             return
-        cell.row
         currentRuling = cardSheetUnapproved.cell(cell.row, 8)
 
-        newRuling = (
-            f"{currentRuling}\n" if currentRuling != "" else ""
-        ) + f"{ruling}- {ctx.author.name} {datetime.today().strftime('%Y-%m-%d')}"
-
+        newRuling = f"{f'{currentRuling}\n' if currentRuling != '' else ''}{ruling}- {ctx.author.name} {datetime.now(UTC).strftime('%Y-%m-%d')}"
         cardSheetUnapproved.update_cell(
             cell.row,
             8,
@@ -137,40 +143,35 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.command(rest_is_raw=True)
     async def tag(self, ctx: commands.Context, *, args: str):
-        """ Adds a tag. Uses the same process as on hellfall. """
+        """Adds a tag. Uses the same process as on hellfall."""
         cardName = args.split("\n")[0].strip()
         splitLines = args.split("\n")
-        if splitLines.__len__() != 2:
-            await ctx.send(
-                "seems like you're missing a line break or have an extra one"
-            )
+        if len(splitLines) != 2:
+            await ctx.send("seems like you're missing a line break or have an extra one")
             return
 
         tag = splitLines[1].strip()
 
-        if tag.__contains__(" "):
+        if " " in tag:
             await ctx.send('no spaces allowed, use "-"')
             return
 
-        message = await modifyTagWithServer(cardName, tag, 'add')
+        message = await modifyTagWithServer(cardName, tag, "add")
 
         await ctx.send(message)
 
     @commands.command(rest_is_raw=True)
     async def removetag(self, ctx: commands.Context, *, args: str):
-        """ Removes a tag. Uses the same process as on hellfall. """
+        """Removes a tag. Uses the same process as on hellfall."""
         cardName = args.split("\n")[0].strip()
         splitLines = args.split("\n")
-        if splitLines.__len__() != 2:
-            await ctx.send(
-                "seems like you're missing a line break or have an extra one"
-            )
+        if len(splitLines) != 2:
+            await ctx.send("seems like you're missing a line break or have an extra one")
             return
 
         tag = splitLines[1].strip()
 
-
-        message = await modifyTagWithServer(cardName, tag, 'delete')
+        message = await modifyTagWithServer(cardName, tag, "delete")
 
         await ctx.send(message)
 
@@ -190,7 +191,7 @@ class HellscubeDatabaseCog(commands.Cog):
                 f"There were {response.total_cards} results you fucking moron. Go use hellfall or something."
             )
             return
-        
+
         message = formatSearchResults(response)
         n = 2000
         messages = [message[i : i + n] for i in range(0, len(message), n)]
@@ -201,30 +202,32 @@ class HellscubeDatabaseCog(commands.Cog):
 async def setup(bot: commands.Bot):
     await bot.add_cog(HellscubeDatabaseCog(bot))
 
+
 def formatSearchResults(response: SearchResponse):
     returnString = response.details
-    if (response.warnings):
+    if response.warnings:
         for warning in response.warnings:
-            returnString += f'\n{warning}'
+            returnString += f"\n{warning}"
     for card in response.data:
-        returnString+= f'\n{card.name} ({card.set.replace('_','.')}) {card.collector_number}'
+        returnString += f"\n{card.name} ({card.set.replace('_', '.')}) {card.collector_number}"
     return returnString
 
-def getInfo(card:SearchCard):
-    if card.oracle_id == 'f90c6ef4-a631-49fd-b191-6e004b59a570':
-        return 'no card found'
+
+def getInfo(card: SearchCard):
+    if card.oracle_id == "f90c6ef4-a631-49fd-b191-6e004b59a570":
+        return "no card found"
     lines: list[str] = [
-        f'id: {card.hcid}',
-        f'creator{'' if len(card.creators) == 1 else 's'}: {', '.join(card.creators)}',
-        f'set: {card.set.replace('_','.')} #{card.collector_number} (AO: ${card.accepted_order})',
+        f"id: {card.hcid}",
+        f"creator{'' if len(card.creators) == 1 else 's'}: {', '.join(card.creators)}",
+        f"set: {card.set.replace('_', '.')} #{card.collector_number} (AO: ${card.accepted_order})",
     ]
     for format, legality in card.legalities.items():
-        lines.append(f'{format}: {legality}')
+        lines.append(f"{format}: {legality}")
 
-    if card.artists:    
-        lines.append(f'artist{'' if len(card.artists) == 1 else 's'}: {', '.join(card.artists)}')
+    if card.artists:
+        lines.append(f"artist{'' if len(card.artists) == 1 else 's'}: {', '.join(card.artists)}")
     if card.base_tags:
-        lines.append(f'tags: {', '.join(card.base_tags)}')
+        lines.append(f"tags: {', '.join(card.base_tags)}")
     if card.rulings:
-        lines.append(f'rulings: \n{card.rulings}')
-    return '\n'.join(lines)
+        lines.append(f"rulings: \n{card.rulings}")
+    return "\n".join(lines)

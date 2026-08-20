@@ -32,9 +32,9 @@ def elapsed_open_hours(start: datetime, end: datetime | None = None) -> float:
     cursor = start_utc
     while cursor < end_utc:
         local = cursor.astimezone(SUBMISSIONS_TZ)
-        next_midnight_local = local.replace(
-            hour=0, minute=0, second=0, microsecond=0
-        ) + timedelta(days=1)
+        next_midnight_local = local.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(
+            days=1
+        )
         segment_end = min(end_utc, next_midnight_local.astimezone(timezone.utc))
         if segment_end <= cursor:
             cursor = cursor + timedelta(minutes=1)

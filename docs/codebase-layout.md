@@ -2,16 +2,16 @@
 
 ## Design choice: flat root for the bot
 
-Mork loads cogs with `await self.load_extension("cogs.General")` and those modules import **top-level packages by filename** (for example `from acceptCard import acceptCard`, `from shared_vars import googleClient`). Python’s import path is the repository root when you run `python Mork.py` from that root.
+Mork loads cogs with `await self.load_extension("cogs.General")` and those modules import **top-level packages by filename** (for example `from accept_card import accept_card`, `from shared_vars import googleClient`). Python’s import path is the repository root when you run `python mork.py` from that root.
 
-Because of that, the “application” modules stay next to `Mork.py`. **Do not move** `acceptCard.py`, `getVetoPollsResults.py`, `printCardImages.py`, and similar files into a subfolder unless you refactor imports (for example a proper `pip install -e .` package).
+Because of that, the “application” modules stay next to `mork.py`. **Do not move** `accept_card.py`, `get_veto_polls_results.py`, `printCardImages.py`, and similar files into a subfolder unless you refactor imports (for example a proper `pip install -e .` package).
 
 ## Directories
 
 | Path | Role |
 |------|------|
-| `Mork.py` | Discord bot entrypoint |
-| `cogs/` | Extensions loaded in `Mork.setup_hook` |
+| `mork.py` | Discord bot entrypoint |
+| `cogs/` | Extensions loaded in `mork.setup_hook` |
 | `cogs/lifecycle/` | Reddit / daily post helpers used by `Lifecycle` |
 | `submissions/` | Async checks for token, masterpiece, and errata flows |
 | `scripts/` | One-off CLIs (sheets, Drive, GCS). Always run from repo root: `python scripts/<name>.py` |
@@ -27,7 +27,7 @@ These are imported directly by cogs or each other:
 - `shared_vars.py` — gspread / PyDrive clients, Discord intents, global card cache  
 - `hellfall_changesets.py`, `hellfall_fetcher.py`, `hellfall_postcard.py`, `hellfall_shared.py` - dealing with the hellfall server
 - `getters.py`, `is_mork.py`, `is_admin.py`
-- Lifecycle pipeline: `acceptCard.py`, `checkSubmissions.py`, `getCardMessage.py`, `getVetoPollsResults.py`, `handleVetoPost.py`, `printCardImages.py`, `reddit_functions.py`  
+- Lifecycle pipeline: `accept_card.py`, `check_submissions.py`, `get_card_message.py`, `get_veto_polls_results.py`, `handle_veto_post.py`, `printCardImages.py`, `reddit_functions.py`  
 
 ## Scripts
 

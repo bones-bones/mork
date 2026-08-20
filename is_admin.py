@@ -4,19 +4,16 @@ import hc_constants
 
 
 def is_admin(member: Member):
-    return member.get_role(hc_constants.ADMIN) != None
+    return member.get_role(hc_constants.ADMIN) is not None
 
 
 def is_veto(member: Member):
     return (
-        member.get_role(hc_constants.VETO_COUNCIL) != None
-        or member.get_role(hc_constants.VETO_COUNCIL_2) != None
-        or member.get_role(hc_constants.VETO_COUNCIL_PORTAL) != None
+        member.get_role(hc_constants.VETO_COUNCIL) is not None
+        or member.get_role(hc_constants.VETO_COUNCIL_2) is not None
+        or member.get_role(hc_constants.VETO_COUNCIL_PORTAL) is not None
     )
 
 
 def can_instaerrata(member: Member) -> bool:
-    return (
-        is_admin(member)
-        or member.get_role(hc_constants.INSTAERRATA_REVIEW) is not None
-    )
+    return is_admin(member) or member.get_role(hc_constants.INSTAERRATA_REVIEW) is not None

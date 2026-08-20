@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import cast
 
 import asyncpraw
@@ -29,14 +29,10 @@ async def check_reddit(bot: commands.Bot):
         user_agent=USER_AGENT,
         username=NAME,
     ) as reddit:
-        hellscubeSubreddit = cast(
-            asyncpraw.reddit.Subreddit, await reddit.subreddit("HellsCube")
-        )
+        hellscubeSubreddit = cast(asyncpraw.reddit.Subreddit, await reddit.subreddit("HellsCube"))
 
         redditChannel = cast(TextChannel, bot.get_channel(hc_constants.REDDIT_CHANNEL))
-        messagesInLastDay = [
-            mess async for mess in redditChannel.history(after=oneHour)
-        ]
+        messagesInLastDay = [mess async for mess in redditChannel.history(after=oneHour)]
 
         async for submission in hellscubeSubreddit.search(  # type: ignore
             'flair:"Card Idea" OR flair:"HellsCube Submission" OR flair:"Brainstorming" OR "Hellscube Would Love This (Shitpost)"',
@@ -50,10 +46,7 @@ async def check_reddit(bot: commands.Bot):
                     break
 
             if not alreadyPosted:
-                if (
-                    submission.link_flair_text
-                    == "Hellscube Would Love This (Shitpost)"
-                ):
+                if submission.link_flair_text == "Hellscube Would Love This (Shitpost)":
                     message_prefix = "Reddit thinks Hellscube would love this:"
                 else:
                     message_prefix = "reddit says:"

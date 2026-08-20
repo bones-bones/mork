@@ -1,12 +1,15 @@
 import random
 from typing import cast
+
 import discord
 from discord.ext import commands
+from dpymenus import PaginatedMenu
+
+import hc_constants
 from is_mork import is_mork
 from shared_vars import drive
-from dpymenus import PaginatedMenu
-import hc_constants
 from username_mappings import resolve_username, usernames_equivalent
+from utils import at
 
 authorSplit = "$#$#$"
 QUOTE_SPLIT = ";%;%;"
@@ -27,7 +30,10 @@ class QuotesCog(commands.Cog):
                     return
 
                 user = resolve_username(replied_message.author.name)
-                if is_mork(replied_message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
+                if (
+                    is_mork(replied_message.author.id)
+                    and ctx.channel.id != hc_constants.CUBE_CHANNEL
+                ):
                     await ctx.send("The bot can't quote itself")
                     return
 
@@ -77,7 +83,10 @@ class QuotesCog(commands.Cog):
                     return
 
                 user = resolve_username(replied_message.author.name)
-                if is_mork(replied_message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
+                if (
+                    is_mork(replied_message.author.id)
+                    and ctx.channel.id != hc_constants.CUBE_CHANNEL
+                ):
                     await ctx.send("The bot can't quote itself")
                     return
 
@@ -92,8 +101,8 @@ class QuotesCog(commands.Cog):
                         await ctx.send(YOU_THINK_YOURE_FUNNY)
                         return
                     if (
-                            is_mork(original_message.author.id)
-                            and ctx.channel.id != hc_constants.CUBE_CHANNEL
+                        is_mork(original_message.author.id)
+                        and ctx.channel.id != hc_constants.CUBE_CHANNEL
                     ):
                         await ctx.send("The bot can't quote itself")
                         return
@@ -145,10 +154,7 @@ class QuotesCog(commands.Cog):
             if "@" in original_message.content:
                 await ctx.send(YOU_THINK_YOURE_FUNNY)
                 return
-            if (
-                is_mork(original_message.author.id)
-                and ctx.channel.id != hc_constants.CUBE_CHANNEL
-            ):
+            if is_mork(original_message.author.id) and ctx.channel.id != hc_constants.CUBE_CHANNEL:
                 await ctx.send("The bot can't quote itself")
                 return
             await addToDrive(
@@ -170,12 +176,11 @@ class QuotesCog(commands.Cog):
         unsplitQuoteList = cast(list[str], file.GetContentString().split(QUOTE_SPLIT))
         quoteList = [q.split(authorSplit) for q in unsplitQuoteList]
         if user:
-            user = user[0] if user.__len__() == 1 else ""
+            user = user[0] if len(user) == 1 else ""
             tempList = []
             for i in quoteList:
-                if i.__len__() == 2:
-                    if usernames_equivalent(i[1], user):
-                        tempList.append(i)
+                if usernames_equivalent(at(i, 1, ""), user):
+                    tempList.append(i)
             quoteList = tempList
             if quoteList == []:
                 await ctx.send("No quotes by " + user + " found. :(")
@@ -211,8 +216,7 @@ class QuotesCog(commands.Cog):
             return
         if len(quoteList) > 50:
             await ctx.send(
-                str(len(quoteList))
-                + " quotes found, that's too many, be more specific please"
+                str(len(quoteList)) + " quotes found, that's too many, be more specific please"
             )
             return
         elif len(quoteList) > 2:
@@ -237,7 +241,6 @@ async def addToDrive(message, user, fileID):
     update = file.GetContentString() + text
     file.SetContentString(update)
     file.Upload()
-    return
 
 
 async def createQuoteMenu(ctx: commands.Context, quoteList):

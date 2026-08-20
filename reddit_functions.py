@@ -1,5 +1,4 @@
 import os
-from typing import Dict, List, Union
 
 import asyncpraw
 from asyncpraw.const import API_PATH
@@ -37,9 +36,7 @@ async def post_to_reddit(
     if title:
         resolved_title = title
     elif set_id and card_message:
-        resolved_title = reddit_title_for_acceptance(
-            card_message, set_id, was_vetoed=was_vetoed
-        )
+        resolved_title = reddit_title_for_acceptance(card_message, set_id, was_vetoed=was_vetoed)
     else:
         raise ValueError("post_to_reddit requires title or (set_id and card_message)")
 
@@ -51,15 +48,13 @@ async def post_to_reddit(
         username=NAME,
     ) as reddit:
         # print(await reddit.user.me())
-        hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit(
-            "HellsCube"
-        )
+        hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit("HellsCube")
         await hellscubeSubreddit.submit_image(
             title=resolved_title, image_path=image_path, flair_id=flair
         )
 
 
-def _gallery_media_id(upload_result: Union[str, tuple]) -> str:
+def _gallery_media_id(upload_result: str | tuple) -> str:
     # asyncpraw 7.7.x returns (asset_id, websocket_url); 7.8.x returns asset_id only.
     # submit_gallery still indexes [0], which breaks on 7.8.x (first char of the id).
     if isinstance(upload_result, tuple):
@@ -67,9 +62,7 @@ def _gallery_media_id(upload_result: Union[str, tuple]) -> str:
     return upload_result
 
 
-async def post_gallery_to_reddit(
-    images: List[Dict[str, str]], title: str, flair: str = ""
-):
+async def post_gallery_to_reddit(images: list[dict[str, str]], title: str, flair: str = ""):
     async with asyncpraw.Reddit(
         client_id=ID,
         client_secret=SECRET,
@@ -77,9 +70,7 @@ async def post_gallery_to_reddit(
         user_agent=USER_AGENT,
         username=NAME,
     ) as reddit:
-        hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit(
-            "HellsCube"
-        )
+        hellscubeSubreddit: asyncpraw.reddit.Subreddit = await reddit.subreddit("HellsCube")
         hellscubeSubreddit._validate_gallery(images)
         data = {
             "api_type": "json",

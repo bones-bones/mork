@@ -27,8 +27,6 @@ stays consistent on reruns.
 
 from __future__ import annotations
 
-import mork_repo_root  # noqa: E402
-
 import argparse
 import os
 import random
@@ -38,9 +36,11 @@ import tempfile
 import time
 from collections import defaultdict, deque
 from collections.abc import Callable
+from functools import partial
 from typing import TypeVar
 from urllib.parse import unquote, urlparse
 
+import mork_repo_root  # noqa: F401
 from google.cloud import storage
 from gspread.exceptions import APIError
 from PIL import Image
@@ -187,9 +187,7 @@ def _download_drive_to_temp(file_id: str) -> str:
 
 def _to_png_for_upload(src_path: str, dest_png: str) -> None:
     with Image.open(src_path) as im:
-        if im.mode == "P" and "transparency" in im.info:
-            im = im.convert("RGBA")
-        elif im.mode not in ("RGB", "RGBA"):
+        if (im.mode == "P" and "transparency" in im.info) or im.mode not in ("RGB", "RGBA"):
             im = im.convert("RGBA")
         im.save(dest_png, "PNG")
 
@@ -209,9 +207,7 @@ def _build_printable_queues(
         if not row or not str(row[PRINTABLE_COL_ID - 1]).strip():
             continue
         cid = str(row[PRINTABLE_COL_ID - 1]).strip()
-        sidename = (
-            row[PRINTABLE_COL_SIDENAME - 1] if len(row) >= PRINTABLE_COL_SIDENAME else ""
-        )
+        sidename = row[PRINTABLE_COL_SIDENAME - 1] if len(row) >= PRINTABLE_COL_SIDENAME else ""
         url = row[PRINTABLE_COL_URL - 1] if len(row) >= PRINTABLE_COL_URL else ""
         url = (url or "").strip()
         if not url:
@@ -410,20 +406,12 @@ def main() -> None:
 
     for offset, row in enumerate(fuckups_rows):
         row_1based = args.first_row + offset
-        card_id = (
-            row[FUCKUPS_COL_CARD_ID - 1].strip()
-            if len(row) >= FUCKUPS_COL_CARD_ID
-            else ""
-        )
+        card_id = row[FUCKUPS_COL_CARD_ID - 1].strip() if len(row) >= FUCKUPS_COL_CARD_ID else ""
         fixed_url = (
-            row[FUCKUPS_COL_FIXED_URL - 1].strip()
-            if len(row) >= FUCKUPS_COL_FIXED_URL
-            else ""
+            row[FUCKUPS_COL_FIXED_URL - 1].strip() if len(row) >= FUCKUPS_COL_FIXED_URL else ""
         )
         updated_cell = (
-            row[FUCKUPS_COL_UPDATED - 1].strip()
-            if len(row) >= FUCKUPS_COL_UPDATED
-            else ""
+            row[FUCKUPS_COL_UPDATED - 1].strip() if len(row) >= FUCKUPS_COL_UPDATED else ""
         )
         weird_shaped = (
             row[FUCKUPS_COL_WEIRD_SHAPED - 1].strip()
@@ -518,7 +506,7 @@ def main() -> None:
         tmp_png = ""
         try:
             tmp_download = _google_call_with_retry(
-                lambda: _download_drive_to_temp(file_id), # type: ignore
+                partial(_download_drive_to_temp, file_id),
                 what=f"Drive GetContentFile {file_id}",
                 max_tries=args.api_retries,
                 base_delay=args.retry_base_delay,
@@ -532,17 +520,17 @@ def main() -> None:
             blob.upload_from_filename(tmp_png, content_type="image/png")
 
             _google_call_with_retry(
-                lambda: fuckups_ws.update_acell(
-                    f"{updated_col_letter}{row_1based}", "TRUE"
-                ),
+                partial(fuckups_ws.update_acell, f"{updated_col_letter}{row_1based}", "TRUE"),
                 what=f"Sheets update Fuckups {updated_col_letter}{row_1based}",
                 max_tries=args.api_retries,
                 base_delay=args.retry_base_delay,
             )
             _pause(args.after_sheet_write)
             _google_call_with_retry(
-                lambda: printable_ws.update_acell(
-                    f"{is_good_col_letter}{printable_row}", PRINTABLE_IS_GOOD_FIXED
+                partial(
+                    fuckups_ws.update_acell,
+                    f"{is_good_col_letter}{printable_row}",
+                    PRINTABLE_IS_GOOD_FIXED,
                 ),
                 what=f"Sheets update Printable {is_good_col_letter}{printable_row}",
                 max_tries=args.api_retries,

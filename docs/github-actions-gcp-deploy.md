@@ -4,7 +4,7 @@ This guide walks through running the bot on Google Cloud and adding a **Deploy M
 
 ## What you are building
 
-1. A container image that runs `Mork.py` (see the repo `Dockerfile`).
+1. A container image that runs `mork.py` (see the repo `Dockerfile`).
 2. A GCP runtime that can run that container with secrets available as environment variables or mounted files.
 3. A GitHub Actions workflow that builds the image, pushes it to Artifact Registry, and updates the service on each push to `main` (or on manual dispatch).
 
@@ -77,7 +77,7 @@ gcloud run deploy mork \
   --set-secrets=DISCORD_SECRET=discord-bot-token:latest
 ```
 
-Adapt secret names and env vars to match how `Mork.py` / `bot_secrets` load configuration. If the code expects files on disk, either:
+Adapt secret names and env vars to match how `mork.py` / `bot_secrets` load configuration. If the code expects files on disk, either:
 
 - Change the bot to read from environment variables in production, or  
 - Mount secrets as files via Cloud Run volume mounts (Secret Manager volume).
@@ -159,6 +159,6 @@ After the first successful deploy, tighten the workflow: require CI to pass (the
 
 ## Related repo files
 
-- [`Dockerfile`](../Dockerfile) — container entrypoint `python Mork.py`
+- [`Dockerfile`](../Dockerfile) — container entrypoint `python mork.py`
 - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) — lint / syntax checks on pull requests
 - [`scripts/download_and_upload_images_gcs.py`](../scripts/download_and_upload_images_gcs.py) — optional GCS sync for token images (run from repo root; use a scheduled job with credentials if you automate it)

@@ -3,9 +3,10 @@ import os
 import random
 import re
 import traceback
-from datetime import date, datetime, timezone, timedelta
-from typing import cast, Optional
+from datetime import UTC, date, datetime, timedelta, timezone
+from typing import cast
 
+import aiofiles
 import aiohttp
 import asyncpraw
 import discord
@@ -23,9 +24,9 @@ from discord.message import Message
 from discord.utils import get
 from dotenv import load_dotenv
 
-from acceptCard import accept_card
-from deferred_reddit import list_pending_deferred_posts, process_deferred_reddit_posts
-from checkSubmissions import checkSubmissions
+import hc_constants
+from accept_card import accept_card
+from check_submissions import check_submissions
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import post_daily_submissions
 from cogs.lifecycle.scube_lair_acceptance import (
@@ -38,32 +39,33 @@ from cogs.lifecycle.submissions_closed import (
     is_submissions_closed,
 )
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
-from getCardMessage import getCardMessage, parseCardNameAndAuthor, submission_card_name
-from getVetoPollsResults import (
+from deferred_reddit import list_pending_deferred_posts, process_deferred_reddit_posts
+from get_card_message import get_card_message, parseCardNameAndAuthor, submission_card_name
+from get_veto_polls_results import (
     VetoPollResults,
-    getVetoPollsResults,
+    get_veto_polls_results,
     limit_veto_poll_results,
 )
 from getters import (
-    getScubeLairDiscussionChannel,
     getErrataTrackingChannel,
     getMorkSubmissionsLoggingChannel,
+    getScubeLairDiscussionChannel,
     getSubmissionDiscussionChannel,
     getVetoChannel,
-    getVetoDiscussionChannel,
+    # getVetoDiscussionChannel,
     getVetoHellpitsChannel,
 )
-from handleVetoPost import handleVetoPost
-import hc_constants
+from handle_veto_post import handle_veto_post
+from hellfall_fetcher import cardsExist, getExactCard, getSearchFromServer
+from image_response_filename import filename_from_image_response
 from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
-from image_response_filename import filename_from_image_response
 from post_card_images import post_card_images
 from reddit_devvit import reddit_cotd_via_devvit_enabled
 from reddit_functions import post_to_reddit
-from shared_vars import intents, googleClient
-
-from hellfall_fetcher import cardsExist, getExactCard, getSearchFromServer
+from shared_vars import googleClient, intents
+from submissions.check_masterpiece_submissions import check_masterpiece_submissions
+from submissions.token_submissions import checkTokenSubmissions
 
 load_dotenv()
 
@@ -72,9 +74,6 @@ SECRET = os.environ["REDDIT_SECRET"]
 PASSWORD = os.environ["REDDIT_PASSWORD"]
 USER_AGENT = os.environ["REDDIT_USER_AGENT"]
 NAME = os.environ["REDDIT_NAME"]
-from submissions.checkMasterpieceSubmissions import checkMasterpieceSubmissions
-from submissions.tokenSubmissions import checkTokenSubmissions
-
 client = discord.Client(intents=intents)
 bannedUserIds = []
 
@@ -90,7 +89,7 @@ def card_list_channel_for_set(cardset: str) -> int:
 
     Set ids are compared case-insensitively (normalized to lowercase).
     """
-    s = cardset.strip().lower().replace('_','.')
+    s = cardset.strip().lower().replace("_", ".")
     match s:
         case "hlc" | "hc2" | "hc3" | "hc4":
             return hc_constants.SIX_ZERO_CARD_LIST
@@ -122,7 +121,7 @@ def card_list_channel_for_set(cardset: str) -> int:
 
 async def _check_errata_veto_threshold(bot: commands.Bot):
     """If a message in the errata channel has upvotes - downvotes >= ERRATA_VETO_THRESHOLD,
-    add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handleVetoPost.
+    add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handle_veto_post.
     """
 
     channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
@@ -153,29 +152,24 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
             img_url = card.image
             try:
                 headers = {"User-Agent": hc_constants.USER_AGENT}
-                async with aiohttp.ClientSession(headers=headers) as session:
-                    async with session.get(img_url) as resp:
-                        if resp.status != 200:
-                            continue
-                        data_bytes = await resp.read()
-                        filename = filename_from_image_response(
-                            content_disposition=resp.headers.get(
-                                "Content-Disposition"
-                            ),
-                            url=str(resp.url),
-                            content_type=resp.headers.get("Content-Type"),
-                            fallback_name=card.name,
-                            body=data_bytes,
-                        )
-                        data = io.BytesIO(data_bytes)
-                veto_content = (
-                    f"{card.name} by {';'.join(card.creators)}\nErrata: {card.hcid}"
-                )
+                async with aiohttp.ClientSession(headers=headers).get(img_url) as resp:
+                    if resp.status != 200:
+                        continue
+                    data_bytes = await resp.read()
+                    filename = filename_from_image_response(
+                        content_disposition=resp.headers.get("Content-Disposition"),
+                        url=str(resp.url),
+                        content_type=resp.headers.get("Content-Type"),
+                        fallback_name=card.name,
+                        body=data_bytes,
+                    )
+                    data = io.BytesIO(data_bytes)
+                veto_content = f"{card.name} by {';'.join(card.creators)}\nErrata: {card.hcid}"
                 veto_message = await veto_channel.send(
                     content=veto_content,
                     file=discord.File(data, filename),
                 )
-                await handleVetoPost(
+                await handle_veto_post(
                     message=veto_message,
                     bot=bot,
                     veto_council=hc_constants.VETO_COUNCIL,
@@ -201,47 +195,45 @@ class LifecycleCog(commands.Cog):
     @tasks.loop(seconds=FIVE_MINUTES)
     async def lifecycle_loop(self):
         async def post_reddit_card_of_the_day():
-            nowtime = datetime.now().date()
+            nowtime = datetime.now(UTC).date()
             start = date(2025, 11, 26)
             days_since_starting = (nowtime - start).days
             cardOffset = 726 - days_since_starting
             if cardOffset >= 0:
-                cards = (await getSearchFromServer('set:HC6 unique:prints')).data
+                cards = (await getSearchFromServer("set:HC6 unique:prints")).data
                 card = cards[cardOffset]
                 name = card.name
                 url = card.image
                 headers = {"User-Agent": hc_constants.USER_AGENT}
-                async with aiohttp.ClientSession(headers=headers) as session:
-                    async with session.get(url) as resp:
-                        if resp.status == 200:
-                            os.makedirs("tempImages", exist_ok=True)
-                            data_bytes = await resp.read()
-                            filename = filename_from_image_response(
-                                content_disposition=resp.headers.get(
-                                    "Content-Disposition"
-                                ),
-                                url=str(resp.url),
-                                content_type=resp.headers.get("Content-Type"),
-                                fallback_name=name.replace("/", "|"),
-                                body=data_bytes,
+                async with (
+                    aiohttp.ClientSession(headers=headers) as session,
+                    session.get(url) as resp,
+                ):
+                    if resp.status == 200:
+                        os.makedirs("tempImages", exist_ok=True)
+                        data_bytes = await resp.read()
+                        filename = filename_from_image_response(
+                            content_disposition=resp.headers.get("Content-Disposition"),
+                            url=str(resp.url),
+                            content_type=resp.headers.get("Content-Type"),
+                            fallback_name=name.replace("/", "|"),
+                            body=data_bytes,
+                        )
+                        ext = os.path.splitext(filename)[1] or ".png"
+                        image_path = f"tempImages/{name.replace('/', '|')}{ext}"
+                        async with aiofiles.open(image_path, "wb") as out:
+                            await out.write(data_bytes)
+                        try:
+                            await post_to_reddit(
+                                image_path=image_path,
+                                title=f"HC6 Card of the day: {name}",
+                                set_id="HC6",
+                                flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
                             )
-                            ext = os.path.splitext(filename)[1] or ".png"
-                            image_path = (
-                                f'tempImages/{name.replace("/", "|")}{ext}'
-                            )
-                            with open(image_path, "wb") as out:
-                                out.write(data_bytes)
-                            try:
-                                await post_to_reddit(
-                                    image_path=image_path,
-                                    title=f"HC6 Card of the day: {name}",
-                                    set_id="HC6",
-                                    flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
-                                )
-                            except:
-                                pass
-                            os.remove(image_path)
-                        await session.close()
+                        except Exception as e:
+                            print(f"Failed to post to Reddit: {type(e).__name__}: {e}")
+                        os.remove(image_path)
+                    await session.close()
 
         status = random.choice(hc_constants.statusList)
         try:
@@ -253,11 +245,11 @@ class LifecycleCog(commands.Cog):
         except Exception as e:
             print(e)
         try:
-            await checkSubmissions(self.bot)
+            await check_submissions(self.bot)
         except Exception:
             traceback.print_exc()
         try:
-            await checkMasterpieceSubmissions(self.bot)
+            await check_masterpiece_submissions(self.bot)
         except Exception:
             traceback.print_exc()
         try:
@@ -273,12 +265,10 @@ class LifecycleCog(commands.Cog):
         except Exception:
             traceback.print_exc()
 
-        await self.bot.change_presence(
-            status=discord.Status.online, activity=discord.Game(status)
-        )
+        await self.bot.change_presence(status=discord.Status.online, activity=discord.Game(status))
 
         # The next section is stuff that should only happen once a day.
-        now = datetime.now()
+        now = datetime.now(UTC)
         print(f"time is {now}")
 
         is_first_minutes = now.minute <= 4
@@ -306,7 +296,7 @@ class LifecycleCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f"{cast(ClientUser,self.bot.user).name} has connected to Discord!")
+        print(f"{cast(ClientUser, self.bot.user).name} has connected to Discord!")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
@@ -321,7 +311,7 @@ class LifecycleCog(commands.Cog):
         guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
         channel = guild.get_channel_or_thread(reaction.channel_id)
 
-        if channel == None:
+        if channel is None:
             return
 
         channelAsText = cast(discord.TextChannel, channel)
@@ -352,8 +342,7 @@ class LifecycleCog(commands.Cog):
         ):
             message = await channelAsText.fetch_message(reaction.message_id)
             thread_messages = [
-                message
-                async for message in message.channel.history(limit=3, oldest_first=True)
+                message async for message in message.channel.history(limit=3, oldest_first=True)
             ]
 
             first_message = thread_messages[0]
@@ -388,15 +377,13 @@ class LifecycleCog(commands.Cog):
                     #         else None
                     #     )
                     # )
-                    await handleVetoPost(
+                    await handle_veto_post(
                         message=vetoEntry,
                         bot=self.bot,
                         veto_council=veto_council_to_notify,
                     )
                     await ogMessage.add_reaction(hc_constants.DELETE)
-                    errata_submissions_channel = getErrataTrackingChannel(
-                        bot=self.bot
-                    )
+                    errata_submissions_channel = getErrataTrackingChannel(bot=self.bot)
                     errata_submission_message = await errata_submissions_channel.send(
                         content=first_message.content, file=copy2
                     )
@@ -409,7 +396,7 @@ class LifecycleCog(commands.Cog):
         ):
             file = await message.attachments[0].to_file()
             acceptanceMessage = message.content
-            # consider putting most of this into acceptCard
+            # consider putting most of this into accept_card
             dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
             resolvedAuthor = card_author if card_author != "" else "no author"
@@ -438,11 +425,7 @@ class LifecycleCog(commands.Cog):
         if reaction.channel_id == hc_constants.SCUBE_LAIR_SUBMISSION_CHANNEL and str(
             reaction.emoji
         ) in (hc_constants.SCLAIR_FIRST_PLACE, hc_constants.SCLAIR_SECOND_PLACE):
-            medal = (
-                "gold"
-                if str(reaction.emoji) == hc_constants.SCLAIR_FIRST_PLACE
-                else "silver"
-            )
+            medal = "gold" if str(reaction.emoji) == hc_constants.SCLAIR_FIRST_PLACE else "silver"
             print(
                 f"Scube Lair {medal} react by user {reaction.user_id} "
                 f"on message {reaction.message_id}"
@@ -500,10 +483,7 @@ class LifecycleCog(commands.Cog):
             return
 
         # Pin art assets if it gets 10 pin reactions in the art requests channel
-        if (
-            str(reaction.emoji) == "📌"
-            and reaction.channel_id == hc_constants.ART_REQUESTS_CHANNEL
-        ):
+        if str(reaction.emoji) == "📌" and reaction.channel_id == hc_constants.ART_REQUESTS_CHANNEL:
             message = await channelAsText.fetch_message(reaction.message_id)
             if not message.pinned:
                 pin_reaction = get(message.reactions, emoji="📌")
@@ -517,16 +497,16 @@ class LifecycleCog(commands.Cog):
         if (
             str(reaction.emoji) == hc_constants.DELETE
             and reaction.message.author.id == hc_constants.SCRYFALL
+            and reaction.count >= 2
         ):
-            if reaction.count >= 2:
-                await reaction.message.delete()
-                return
+            await reaction.message.delete()
+            return
 
     @commands.Cog.listener()
     async def on_thread_create(self, thread: Thread):
         try:
             await thread.join()
-        except:
+        except Exception:
             print("Can't join that thread.")
 
     @commands.Cog.listener()
@@ -539,11 +519,10 @@ class LifecycleCog(commands.Cog):
             return
         if "{{" in message.content:
             await post_card_images(message)
-        if "cock" in message.content.lower():
-            if random.randint(1, 100) in [67, 69]:
-                await message.channel.send(
-                    'in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.'
-                )
+        if "cock" in message.content.lower() and random.randint(1, 100) in [67, 69]:
+            await message.channel.send(
+                'in the stripped club. straight up "morking it". and by "it", haha, well. let\'s just say. My peanits.'
+            )
 
         for word in [
             "?si=",
@@ -637,7 +616,7 @@ class LifecycleCog(commands.Cog):
             case hc_constants.TOKEN_SUBMISSIONS:
                 wholeMessage = message.content.split("\n")
                 submissionDiscussion = getSubmissionDiscussionChannel(self.bot)
-                if wholeMessage.__len__() != 2:
+                if len(wholeMessage) != 2:
                     await submissionDiscussion.send(
                         content=f"<@{message.author.id}>, make sure to include the name of your token and at least one card it is for on a new line"
                     )
@@ -652,8 +631,7 @@ class LifecycleCog(commands.Cog):
                 theFile = await message.attachments[0].to_file()
                 morkMessage = await message.channel.send(
                     file=theFile,
-                    content=f"{wholeMessage[0]} by <@{message.author.id}>\n"
-                    + ";".join(forCards),
+                    content=f"{wholeMessage[0]} by <@{message.author.id}>\n" + ";".join(forCards),
                 )
 
                 await morkMessage.add_reaction(hc_constants.VOTE_UP)
@@ -662,7 +640,7 @@ class LifecycleCog(commands.Cog):
                 await message.delete()
 
             case hc_constants.VETO_POLLS_CHANNEL:
-                await handleVetoPost(message=message, bot=self.bot, veto_council=None)
+                await handle_veto_post(message=message, bot=self.bot, veto_council=None)
 
             case hc_constants.MODWORK_REQUEST_CHANNEL:
                 text = (message.content or "").strip()
@@ -679,9 +657,7 @@ class LifecycleCog(commands.Cog):
             case hc_constants.SUBMISSIONS_CHANNEL:
                 if is_submissions_closed():
                     discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                    await discussionChannel.send(
-                        f"<@{message.author.id}>, It is closed"
-                    )
+                    await discussionChannel.send(f"<@{message.author.id}>, It is closed")
                     await message.delete()
                     return
                 if len(message.attachments) == 0:
@@ -711,13 +687,11 @@ class LifecycleCog(commands.Cog):
 
                 print(f"{cardName} submitted by {message.author.mention}")
 
-                if splitString.__len__() > 1:
-                    author = "; ".join(
-                        [f"<@{str(raw)}>" for raw in message.raw_mentions]
-                    )
+                if len(splitString) > 1:
+                    author = "; ".join([f"<@{raw}>" for raw in message.raw_mentions])
 
-                with open(hc_constants.SUBMISSIONS_STATE_FILE, "r") as file:
-                    lines = file.readlines()
+                async with aiofiles.open(hc_constants.SUBMISSIONS_STATE_FILE, "r") as file:
+                    lines = await file.readlines()
                     for line in lines:
                         if line.startswith(f"{message.author.id}—"):
                             tempDate = datetime.strptime(
@@ -730,16 +704,14 @@ class LifecycleCog(commands.Cog):
                             if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
                                 cast(discord.Member, message.author)
                             ):
-                                discussionChannel = getSubmissionDiscussionChannel(
-                                    self.bot
-                                )
+                                discussionChannel = getSubmissionDiscussionChannel(self.bot)
                                 await discussionChannel.send(
                                     f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards"
                                 )
                                 await message.delete()
                                 return
-                with open(hc_constants.SUBMISSIONS_STATE_FILE, "a") as file:
-                    file.write(
+                async with aiofiles.open(hc_constants.SUBMISSIONS_STATE_FILE, "a") as file:
+                    await file.write(
                         f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                     )
 
@@ -751,11 +723,9 @@ class LifecycleCog(commands.Cog):
                     acceptContent = cardName + " by " + author + " was accepted"
                     accepted_message_no_mentions = acceptContent
                     for index, mentionEntry in enumerate(message.raw_mentions):
-                        accepted_message_no_mentions = (
-                            accepted_message_no_mentions.replace(
-                                f"<@{str(mentionEntry)}>",
-                                message.mentions[index].name,
-                            )
+                        accepted_message_no_mentions = accepted_message_no_mentions.replace(
+                            f"<@{mentionEntry}>",
+                            message.mentions[index].name,
                         )
                     copy = await message.attachments[0].to_file()
                     await vetoChannel.send(
@@ -768,9 +738,7 @@ class LifecycleCog(commands.Cog):
                     await logChannel.send(content=logContent, file=copy2)
                 else:
                     contentMessage = f"{cardName} by {author}"
-                    sent_message = await message.channel.send(
-                        content=contentMessage, file=file
-                    )
+                    sent_message = await message.channel.send(content=contentMessage, file=file)
                     await sent_message.add_reaction(hc_constants.VOTE_UP)
                     await sent_message.add_reaction(hc_constants.VOTE_DOWN)
                     await sent_message.add_reaction(hc_constants.DELETE)
@@ -783,9 +751,7 @@ class LifecycleCog(commands.Cog):
                     if not submission_card_name(message.content):
                         discussionChannel = cast(
                             TextChannel,
-                            self.bot.get_channel(
-                                hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
-                            ),
+                            self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL),
                         )
                         file = await message.attachments[0].to_file()
                         await discussionChannel.send(
@@ -805,13 +771,11 @@ class LifecycleCog(commands.Cog):
                         return  # no pings allowed
                     author = message.author.mention
                     print(f"{cardName} submitted by {message.author.mention}")
-                    if splitString.__len__() > 1:
-                        author = "; ".join(
-                            [f"<@{str(raw)}>" for raw in message.raw_mentions]
-                        )
+                    if len(splitString) > 1:
+                        author = "; ".join([f"<@{raw}>" for raw in message.raw_mentions])
                     if os.path.exists(hc_constants.MASTERPIECE_STATE_FILE):
-                        with open(hc_constants.MASTERPIECE_STATE_FILE, "r") as file:
-                            lines = file.readlines()
+                        async with aiofiles.open(hc_constants.MASTERPIECE_STATE_FILE, "r") as file:
+                            lines = await file.readlines()
                             for line in lines:
                                 if line.startswith(f"{message.author.id}—"):
                                     tempDate = datetime.strptime(
@@ -820,13 +784,12 @@ class LifecycleCog(commands.Cog):
                                     )
 
                                     timeSinceLast = (
-                                        (
-                                            datetime.now(tz=timezone.utc) - tempDate
-                                        ).total_seconds()
+                                        (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
                                     ) / (60 * 60)
 
-                                    if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
-                                        cast(discord.Member, message.author)
+                                    if (
+                                        timeSinceLast < hc_constants.SUBMISSION_COOLDOWN
+                                        and not is_admin(cast(discord.Member, message.author))
                                     ):
                                         discussionChannel = cast(
                                             TextChannel,
@@ -839,8 +802,8 @@ class LifecycleCog(commands.Cog):
                                         )
                                         await message.delete()
                                         return
-                    with open(hc_constants.MASTERPIECE_STATE_FILE, "a") as file:
-                        file.write(
+                    async with aiofiles.open(hc_constants.MASTERPIECE_STATE_FILE, "a") as file:
+                        await file.write(
                             f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                         )
                     file = await message.attachments[0].to_file()
@@ -848,24 +811,18 @@ class LifecycleCog(commands.Cog):
                         vetoChannel = getVetoChannel(self.bot)
                         acceptedChannel = cast(
                             TextChannel,
-                            self.bot.get_channel(
-                                hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
-                            ),
+                            self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL),
                         )
                         logChannel = cast(
                             TextChannel,
-                            self.bot.get_channel(
-                                hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL
-                            ),
+                            self.bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL),
                         )
                         acceptContent = cardName + " by " + author + " was accepted"
                         accepted_message_no_mentions = acceptContent
                         for index, mentionEntry in enumerate(message.raw_mentions):
-                            accepted_message_no_mentions = (
-                                accepted_message_no_mentions.replace(
-                                    f"<@{str(mentionEntry)}>",
-                                    message.mentions[index].name,
-                                )
+                            accepted_message_no_mentions = accepted_message_no_mentions.replace(
+                                f"<@{mentionEntry}>",
+                                message.mentions[index].name,
                             )
                         copy = await message.attachments[0].to_file()
                         await vetoChannel.send(
@@ -878,9 +835,7 @@ class LifecycleCog(commands.Cog):
                         await logChannel.send(content=logContent, file=copy2)
                     else:
                         contentMessage = f"{cardName} by {author}"
-                        sent_message = await message.channel.send(
-                            content=contentMessage, file=file
-                        )
+                        sent_message = await message.channel.send(content=contentMessage, file=file)
                         await sent_message.add_reaction(hc_constants.VOTE_UP)
                         await sent_message.add_reaction(hc_constants.VOTE_DOWN)
                         await sent_message.add_reaction(hc_constants.DELETE)
@@ -899,7 +854,7 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                
+
                 card = await getExactCard(card_id_input)
                 if not card:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
@@ -916,35 +871,32 @@ class LifecycleCog(commands.Cog):
                     return
                 img_url = card.image
                 headers = {"User-Agent": hc_constants.USER_AGENT}
-                async with aiohttp.ClientSession(headers=headers) as session:
-                    async with session.get(img_url) as resp:
-                        if resp.status != 200:
-                            await message.channel.send(
-                                f"<@{message.author.id}>, couldn't fetch the card image."
-                            )
-                            return
-                        data_bytes = await resp.read()
-                        filename = filename_from_image_response(
-                            content_disposition=resp.headers.get(
-                                "Content-Disposition"
-                            ),
-                            url=str(resp.url),
-                            content_type=resp.headers.get("Content-Type"),
-                            fallback_name=card.name,
-                            body=data_bytes,
+                async with aiohttp.ClientSession(headers=headers).get(img_url) as resp:
+                    if resp.status != 200:
+                        await message.channel.send(
+                            f"<@{message.author.id}>, couldn't fetch the card image."
                         )
-                        data = io.BytesIO(data_bytes)
-                        await message.delete()
-                        content = card_id_input
-                        if body:
-                            content += "\n\n" + body
-                        sent_message = await message.channel.send(
-                            content=content,
-                            file=discord.File(data, filename),
-                        )
-                        await sent_message.add_reaction(hc_constants.VOTE_UP)
-                        await sent_message.add_reaction(hc_constants.VOTE_DOWN)
-                        await sent_message.create_thread(name=card.name[:99])
+                        return
+                    data_bytes = await resp.read()
+                    filename = filename_from_image_response(
+                        content_disposition=resp.headers.get("Content-Disposition"),
+                        url=str(resp.url),
+                        content_type=resp.headers.get("Content-Type"),
+                        fallback_name=card.name,
+                        body=data_bytes,
+                    )
+                    data = io.BytesIO(data_bytes)
+                    await message.delete()
+                    content = card_id_input
+                    if body:
+                        content += "\n\n" + body
+                    sent_message = await message.channel.send(
+                        content=content,
+                        file=discord.File(data, filename),
+                    )
+                    await sent_message.add_reaction(hc_constants.VOTE_UP)
+                    await sent_message.add_reaction(hc_constants.VOTE_DOWN)
+                    await sent_message.create_thread(name=card.name[:99])
 
             case _:
                 pass
@@ -954,9 +906,7 @@ class LifecycleCog(commands.Cog):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return
-        responseObject = cast(
-            VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
-        )
+        responseObject = cast(VetoPollResults, await get_veto_polls_results(bot=self.bot, ctx=ctx))
 
         purgatoryCardMessages = responseObject.purgatoryCardMessages
 
@@ -1003,19 +953,18 @@ class LifecycleCog(commands.Cog):
 
             is_clock_vc = (
                 hc_constants.CLOCK
-                if cast(Member, ctx.author).get_role(hc_constants.VETO_COUNCIL_PORTAL)
-                is not None
-                else hc_constants.CLOCK
+                # if cast(Member, ctx.author).get_role(hc_constants.VETO_COUNCIL_PORTAL)
+                # is not None
+                # else hc_constants.CLOCK
             )
 
-            links.sort(key=lambda x: not x.__contains__(is_clock_vc))
+            links.sort(key=lambda x: is_clock_vc not in x)
 
         if len(links) > 0:
-
             await ctx.send(content="got some work to do:")
             textToSend = "\n".join(links)
 
-            for i in range(0, textToSend.__len__(), hc_constants.LITERALLY_1984):
+            for i in range(0, len(textToSend), hc_constants.LITERALLY_1984):
                 await ctx.send(content=textToSend[i : i + hc_constants.LITERALLY_1984])
         else:
             await ctx.send(content="all caught up!")
@@ -1033,8 +982,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send("No deferred Reddit posts")
             return
         await ctx.send(
-            f"Posting up to {count} deferred Reddit submissions "
-            f"({len(pending)} pending)..."
+            f"Posting up to {count} deferred Reddit submissions ({len(pending)} pending)..."
         )
         posted, errors = await process_deferred_reddit_posts(count)
         message = f"Posted {posted} to Reddit."
@@ -1045,7 +993,7 @@ class LifecycleCog(commands.Cog):
         await ctx.send(message)
 
     @commands.command()
-    async def compileveto(self, ctx: commands.Context, count: Optional[int] = None):
+    async def compileveto(self, ctx: commands.Context, count: int | None = None):
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
             return
@@ -1062,9 +1010,7 @@ class LifecycleCog(commands.Cog):
 
         await ctx.send(random.choice(epicCatchphrases))
 
-        response_object = cast(
-            VetoPollResults, await getVetoPollsResults(bot=self.bot, ctx=ctx)
-        )
+        response_object = cast(VetoPollResults, await get_veto_polls_results(bot=self.bot, ctx=ctx))
         response_object = limit_veto_poll_results(response_object, count)
         errataCardMessages = response_object.errataCardMessages
         acceptedCardMessages = response_object.acceptedCardMessages
@@ -1075,9 +1021,7 @@ class LifecycleCog(commands.Cog):
         skip_reddit = reddit_eligible_count > 5
         deferred_reddit_dir = None
         if skip_reddit:
-            deferred_reddit_dir = (
-                f"deferred_reddit/{timeNow.strftime('%Y-%m-%d_%H%M%S')}"
-            )
+            deferred_reddit_dir = f"deferred_reddit/{timeNow.strftime('%Y-%m-%d_%H%M%S')}"
             await ctx.send(
                 f"{reddit_eligible_count} cards exceed the Reddit batch limit; "
                 f"saving images and titles to `{deferred_reddit_dir}/`"
@@ -1092,12 +1036,12 @@ class LifecycleCog(commands.Cog):
             print(f"cvA processing {messageEntry.content}")
             file = await messageEntry.attachments[0].to_file()
             acceptanceMessage = messageEntry.content
-            # consider putting most of this into acceptCard
+            # consider putting most of this into accept_card
             # errata format: first line "cardname by author", second line "Errata: card_id"
             errataLinens = acceptanceMessage.splitlines()
             errata_id = (
                 errataLinens[1].strip().removeprefix("Errata: ").strip()
-                if errataLinens.__len__() > 1
+                if len(errataLinens) > 1
                 else None
             )
             first_line = errataLinens[0] if errataLinens else ""
@@ -1106,9 +1050,7 @@ class LifecycleCog(commands.Cog):
             # Resolve display name from card id (errata messages use id on first line)
             errata_card = await getExactCard(errata_id) if errata_id else None
             resolvedName = (
-                errata_card.name
-                if errata_card
-                else (dbname or "Crazy card with no name")
+                errata_card.name if errata_card else (dbname or "Crazy card with no name")
             )
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
@@ -1152,7 +1094,7 @@ class LifecycleCog(commands.Cog):
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
 
-            vetoedCards.append(getCardMessage(messageEntry.content))
+            vetoedCards.append(get_card_message(messageEntry.content))
 
             await accept_card(
                 bot=self.bot,
@@ -1175,7 +1117,7 @@ class LifecycleCog(commands.Cog):
             print(f"cvE processing {messageEntry.content}")
 
             thread = guild.get_channel_or_thread(messageEntry.id)
-            needsErrataCards.append(getCardMessage(messageEntry.content))
+            needsErrataCards.append(get_card_message(messageEntry.content))
             if thread:
                 await cast(Thread, thread).edit(archived=True)
 
@@ -1190,18 +1132,13 @@ class LifecycleCog(commands.Cog):
                         threadMessages = thread.history(oldest_first=True, limit=2)
                         threadMessages = [tm async for tm in threadMessages]
                         hellpit_target = int(threadMessages[1].content.split("/").pop())
-                        hellpit_thread = cast(
-                            Thread, guild.get_channel_or_thread(hellpit_target)
-                        )
-                        newest_message = await hellpit_thread.history(
-                            limit=1
-                        ).__anext__()
+                        hellpit_thread = cast(Thread, guild.get_channel_or_thread(hellpit_target))
+                        newest_message = await anext(hellpit_thread.history(limit=1))
                         threadMessageAge = timeNow - newest_message.created_at
 
                         # then it was recently acted upon
                         recentlyNotified = threadMessageAge < timedelta(days=1)
                         if not recentlyNotified:
-
                             veto_council_to_notify = hc_constants.VETO_COUNCIL
 
                             # (
@@ -1210,64 +1147,48 @@ class LifecycleCog(commands.Cog):
                             #     else hc_constants.VETO_COUNCIL_2
                             # )
 
-                            role = cast(
-                                Role, get(guild.roles, id=veto_council_to_notify)
-                            )
+                            role = cast(Role, get(guild.roles, id=veto_council_to_notify))
 
                             await thread.send(role.mention)
 
-                        vetoHellCards.append(getCardMessage(messageEntry.content))
+                        vetoHellCards.append(get_card_message(messageEntry.content))
                     else:
-                        mysteryVetoHellCards.append(
-                            getCardMessage(messageEntry.content)
-                        )
-            except:
-                print(f"ERROR: unable to process: {messageEntry.content}")
+                        mysteryVetoHellCards.append(get_card_message(messageEntry.content))
+            except Exception as e:
+                print(f"ERROR: unable to process: {messageEntry.content} due to: {e}")
 
         veto_announcement_channel = getVetoHellpitsChannel(self.bot)
 
-        await veto_announcement_channel.send(
-            content=f"!! VETO POLLS HAVE BEEN PROCESSED !!"
-        )
+        await veto_announcement_channel.send(content="!! VETO POLLS HAVE BEEN PROCESSED !!")
 
         # had to use format because python doesn't like \n inside template brackets
         if len(acceptedCards) > 0:
-            acceptedMessage = "||\u200b||\nACCEPTED CARDS: \n{0}".format(
-                "\n".join(acceptedCards)
-            )
-            for i in range(0, acceptedMessage.__len__(), hc_constants.LITERALLY_1984):
+            acceptedMessage = f"||\u200b||\nACCEPTED CARDS: \n{'\n'.join(acceptedCards)}"
+            for i in range(0, len(acceptedMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
-            errataMessage = "||\u200b||\nNEEDS ERRATA: \n{0}".format(
-                "\n".join(needsErrataCards)
-            )
-            for i in range(0, errataMessage.__len__(), hc_constants.LITERALLY_1984):
+            errataMessage = f"||\u200b||\nNEEDS ERRATA: \n{'\n'.join(needsErrataCards)}"
+            for i in range(0, len(errataMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
-            vetoMessage = "||\u200b||\nVETOED: \n{0}".format("\n".join(vetoedCards))
-            for i in range(0, vetoMessage.__len__(), hc_constants.LITERALLY_1984):
+            vetoMessage = f"||\u200b||\nVETOED: \n{'\n'.join(vetoedCards)}"
+            for i in range(0, len(vetoMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
-            hellMessage = "||\u200b||\nVETO HELL: \n{0}".format(
-                "\n".join(vetoHellCards)
-            )
-            for i in range(0, hellMessage.__len__(), hc_constants.LITERALLY_1984):
+            hellMessage = f"||\u200b||\nVETO HELL: \n{'\n'.join(vetoHellCards)}"
+            for i in range(0, len(hellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
-            mysteryHellMessage = "||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{0}".format(
-                "\n".join(mysteryVetoHellCards)
-            )
-            for i in range(
-                0, mysteryHellMessage.__len__(), hc_constants.LITERALLY_1984
-            ):
+            mysteryHellMessage = f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{'\n'.join(mysteryVetoHellCards)}"
+            for i in range(0, len(mysteryHellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
@@ -1280,7 +1201,7 @@ class LifecycleCog(commands.Cog):
         """
         splitLines = incomingMessage.splitlines()
         cardMessage = splitLines[0]
-        errataId = splitLines[1] if splitLines.__len__() > 1 else None
+        errataId = splitLines[1] if len(splitLines) > 1 else None
         if not can_instaerrata(cast(Member, ctx.author)):
             await ctx.send("You don't have permission to use that command.")
             return
@@ -1413,7 +1334,7 @@ def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = 
         lines = file.readlines()
         for line in lines:
             split_line = line.split("—")
-            if split_line.__len__() > 1:
+            if len(split_line) > 1:
                 tempDate = datetime.strptime(
                     line.split("—")[1].replace("\n", ""),
                     "%Y-%m-%dT%H:%M:%S%z",
@@ -1432,9 +1353,7 @@ def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = 
 
 def reset_countdowns():
     print("reset")
-    _reset_countdowns_for_file(
-        hc_constants.SUBMISSIONS_STATE_FILE, pause_on_closed_days=True
-    )
+    _reset_countdowns_for_file(hc_constants.SUBMISSIONS_STATE_FILE, pause_on_closed_days=True)
     _reset_countdowns_for_file(hc_constants.MASTERPIECE_STATE_FILE)
     print("end reset")
 

@@ -1,62 +1,67 @@
-from typing import Optional, cast
+import pprint as pp
+from typing import cast
+
 from discord import Member
 from discord.ext import commands
 from discord.utils import get
-import pprint as pp
 
 
-async def toggleRole(ctx: commands.Context[commands.Bot], roleID:int, roleName:str, addRoleName:bool=False):
-    if (isinstance(ctx.message.author,Member) and isinstance(ctx.author,Member)):
+async def toggleRole(
+    ctx: commands.Context[commands.Bot], roleID: int, roleName: str, addRoleName: bool = False
+):
+    if isinstance(ctx.message.author, Member) and isinstance(ctx.author, Member):
         role = get(ctx.message.author.guild.roles, id=roleID)
         if not role:
             return
         if addRoleName:
-            roleName += f' {role.name}'
+            roleName += f" {role.name}"
         if role in ctx.author.roles:
             await ctx.author.remove_roles(role)
-            await ctx.send(f"Removed {roleName} from {str(ctx.message.author)}")
+            await ctx.send(f"Removed {roleName} from {ctx.message.author}")
             return
         await ctx.author.add_roles(role)
-        await ctx.send(f"Gave {str(ctx.message.author)} {roleName}")
+        await ctx.send(f"Gave {ctx.message.author} {roleName}")
+
+
 class RolesCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
 
     @commands.command()
     async def announcements(self, ctx: commands.Context[commands.Bot]):
-        await toggleRole(ctx,int(862806291844300830),'Announcements')
+        await toggleRole(ctx, 862806291844300830, "Announcements")
 
     @commands.command()
     async def vent(self, ctx: commands.Context):
-        await toggleRole(ctx,int(1003397744267898920),'Vent')
+        await toggleRole(ctx, 1003397744267898920, "Vent")
 
     @commands.command()
     async def becomeArtist(self, ctx: commands.Context):
-        await toggleRole(ctx,int(819320922666041355),'HCArtist')
+        await toggleRole(ctx, 819320922666041355, "HCArtist")
 
     @commands.command()
     async def wantToDraft(self, ctx: commands.Context):
-        await toggleRole(ctx,int(661721357066698762),'WantToDraft')
+        await toggleRole(ctx, 661721357066698762, "WantToDraft")
 
     @commands.command()
     async def wantToEdh(self, ctx: commands.Context):
-        await toggleRole(ctx,int(720043670870425691),'WantToEdh')
+        await toggleRole(ctx, 720043670870425691, "WantToEdh")
 
     @commands.command()
     async def wantToJumpstart(self, ctx: commands.Context):
-        await toggleRole(ctx,int(733995427237724180),'WantToJumpstart')
+        await toggleRole(ctx, 733995427237724180, "WantToJumpstart")
 
     @commands.command()
     async def wantToConstructed(self, ctx: commands.Context):
-        await toggleRole(ctx,int(856927890120769576),'WantToConstructed')
+        await toggleRole(ctx, 856927890120769576, "WantToConstructed")
 
     @commands.command()
     async def wantToLeaks(self, ctx: commands.Context):
-        await toggleRole(ctx,int(794254398775361578),'WantToLeaks')
+        await toggleRole(ctx, 794254398775361578, "WantToLeaks")
 
     @commands.command()
     async def popcornCube(self, ctx: commands.Context):
-        await toggleRole(ctx,int(758033490133385308),'PopcornCube')
+        await toggleRole(ctx, 758033490133385308, "PopcornCube")
 
     @commands.command()
     async def pronoun(self, ctx: commands.Context, roleName):
@@ -80,16 +85,16 @@ class RolesCog(commands.Cog):
         }
         if roleName == "help":
             message = "To give yourself a pronoun role type !pronoun and the subjective version of that pronoun. (You can have as many as you want.) The current list of pronouns is:\n"
-            for i in roleId.keys():
+            for i in roleId:
                 message += i + "\n"
             message += "If your pronouns are missing please tag llllll"
             await ctx.send(message)
             return
-        if roleName in roleId.keys():
+        if roleName in roleId:
             print(roleName)
-            if (isinstance(ctx.message.author,Member) and isinstance(ctx.author,Member)):
-                pp.pprint(cast(Member,ctx.author).roles)
-                await toggleRole(ctx,int(roleId[roleName]),'the role',True)
+            if isinstance(ctx.message.author, Member) and isinstance(ctx.author, Member):
+                pp.pprint(cast(Member, ctx.author).roles)
+                await toggleRole(ctx, int(roleId[roleName]), "the role", True)
                 return
         await ctx.send(
             "This is not currently a pronoun role, make sure to type !pronoun and then only the subjective pronoun (Example !pronoun they), If your pronouns are missing please tag llllll"

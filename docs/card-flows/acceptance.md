@@ -56,7 +56,7 @@ flowchart TD
 
 ## IMG step (image upload + Hellfall sync)
 
-Runs after the sheet row is resolved (new append or errata update). Implemented in `acceptCard.py` → `_resolve_accepted_image_url`.
+Runs after the sheet row is resolved (new append or errata update). Implemented in `accept_card.py` → `_resolve_accepted_image_url`.
 
 ### Input
 

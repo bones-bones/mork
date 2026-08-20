@@ -1,6 +1,6 @@
 ---
 description: Keep docs/card-flows in sync when card lifecycle behavior changes
-globs: cogs/Lifecycle.py,acceptCard.py,checkSubmissions.py,handleVetoPost.py,getCardMessage.py,submissions/**,cogs/lifecycle/**
+globs: cogs/Lifecycle.py,accept_card.py,check_submissions.py,handle_veto_post.py,get_card_message.py,submissions/**,cogs/lifecycle/**
 alwaysApply: false
 ---
 

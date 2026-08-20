@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from cogs.lifecycle.submissions_closed import (  # noqa: E402
+from cogs.lifecycle.submissions_closed import (
     elapsed_open_hours,
     is_submissions_closed,
 )
