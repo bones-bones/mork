@@ -11,3 +11,4 @@ export const DEFAULT_CATALOG_URL =
 export const COTD_START_DATE = '2025-11-26';
 export const COTD_START_INDEX = 726;
 export const COTD_CRON = '0 10 * * *';
+export const DEFAULT_CARD_OF_THE_DAY_VIA_DEVVIT = true;
