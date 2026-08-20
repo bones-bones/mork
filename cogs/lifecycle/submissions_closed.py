@@ -1,4 +1,4 @@
-"""US Eastern closed days for #submissions (Tuesday and Saturday)."""
+"""US Eastern closed days for #submissions (Tuesday, Thursday, and Saturday)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,8 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 SUBMISSIONS_TZ = ZoneInfo("America/New_York")
-CLOSED_WEEKDAYS = {1, 5}  # Tuesday, Saturday
+# Thursday included temporarily for testing.
+CLOSED_WEEKDAYS = {1, 3, 5}  # Tuesday, Thursday, Saturday
 
 
 def _as_aware_utc(dt: datetime) -> datetime:
@@ -16,13 +17,13 @@ def _as_aware_utc(dt: datetime) -> datetime:
 
 
 def is_submissions_closed(at: datetime | None = None) -> bool:
-    """True for the full local calendar day Tuesday or Saturday in US Eastern."""
+    """True for the full local calendar day on closed weekdays in US Eastern."""
     now = _as_aware_utc(at or datetime.now(timezone.utc))
     return now.astimezone(SUBMISSIONS_TZ).weekday() in CLOSED_WEEKDAYS
 
 
 def elapsed_open_hours(start: datetime, end: datetime | None = None) -> float:
-    """Hours between start and end that are not Tuesday or Saturday US Eastern."""
+    """Hours between start and end that are not on closed weekdays US Eastern."""
     start_utc = _as_aware_utc(start)
     end_utc = _as_aware_utc(end or datetime.now(timezone.utc))
     if end_utc <= start_utc:

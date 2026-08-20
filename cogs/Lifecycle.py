@@ -39,6 +39,7 @@ from cogs.lifecycle.submissions_closed import (
     is_submissions_closed,
 )
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
+from cogs.lifecycle.submissions_gates import ensure_submissions_gates
 from deferred_reddit import list_pending_deferred_posts, process_deferred_reddit_posts
 from get_card_message import get_card_message, parseCardNameAndAuthor, submission_card_name
 from get_veto_polls_results import (
@@ -61,7 +62,7 @@ from image_response_filename import filename_from_image_response
 from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
 from post_card_images import post_card_images
-from reddit_devvit import reddit_cotd_via_devvit_enabled
+from reddit_devvit import reddit_cotd_via_devvit_enabled  # , reddit_mirror_via_devvit_enabled
 from reddit_functions import post_to_reddit
 from shared_vars import googleClient, intents
 from submissions.check_masterpiece_submissions import check_masterpiece_submissions
@@ -245,6 +246,10 @@ class LifecycleCog(commands.Cog):
         except Exception as e:
             print(e)
         try:
+            await ensure_submissions_gates(self.bot)
+        except Exception as e:
+            print(e)
+        try:
             await check_submissions(self.bot)
         except Exception:
             traceback.print_exc()
@@ -258,6 +263,7 @@ class LifecycleCog(commands.Cog):
             traceback.print_exc()
         try:
             await check_reddit(self.bot)
+            # if not reddit_mirror_via_devvit_enabled():
         except Exception:
             traceback.print_exc()
         try:
@@ -656,9 +662,17 @@ class LifecycleCog(commands.Cog):
 
             case hc_constants.SUBMISSIONS_CHANNEL:
                 if is_submissions_closed():
-                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                    await discussionChannel.send(f"<@{message.author.id}>, It is closed")
+                    author_id = message.author.id
+                    preview = (message.content or "").strip()
+                    attachment_count = len(message.attachments)
                     await message.delete()
+                    admin = await self.bot.fetch_user(hc_constants.LLLLLL)
+                    parts = [f"<@{author_id}> tried to post in #submissions while it was closed."]
+                    if preview:
+                        parts.append(preview[:500])
+                    if attachment_count:
+                        parts.append(f"({attachment_count} attachment(s))")
+                    await admin.send("\n".join(parts))
                     return
                 if len(message.attachments) == 0:
                     return
