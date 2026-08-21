@@ -136,7 +136,7 @@ class HellscubeDatabaseCog(commands.Cog):
             message = f"rulings for {name}:{''.join([f'\n```{r}```' for r in rulingsList])}"
         await channel.send(message)
 
-    @commands.command(rest_is_raw=True, aliases=["addtag"])
+    @commands.command(rest_is_raw=True)
     async def judgement(self, ctx: commands.Context, *, args: str):
         """
         Command for judges to run to add rulings to a card
@@ -169,7 +169,7 @@ class HellscubeDatabaseCog(commands.Cog):
 
         await ctx.send(f"ruling updated to:\n{newRuling}")
 
-    @commands.command(rest_is_raw=True)
+    @commands.command(rest_is_raw=True, aliases=["addtag"])
     async def tag(self, ctx: commands.Context, *, args: str):
         """Adds a tag. Uses the same process as on hellfall."""
         cardName = args.split("\n")[0].strip()
