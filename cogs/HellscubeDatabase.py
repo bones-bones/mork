@@ -19,7 +19,7 @@ from hellfall_fetcher import (
     getRandomFromServer,
     getSearchFromServer,
 )
-from post_card_images import send_image_reply
+from post_card_images import send_single_image_reply
 from shared_vars import googleClient, intents
 
 databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
@@ -56,15 +56,12 @@ class HellscubeDatabaseCog(commands.Cog):
 
     # okay not technically a DB command
     @commands.command()
-    async def randomReject(self, channel, num=0):
+    async def randomReject(self, ctx: commands.Context):
         """
         Returns a random card image from #submissions.
         Chooses a random date between the start of submissions and now, then gets history near that date.
-        Chooses a random message from that history. If chosen message has no image, calls itself up to 9 more times.
+        Filters out messages without attachments, then chooses a random message from that history.
         """
-        if num > 9:
-            await channel.send("Sorry, no cards were found.")
-            return
         subStart = datetime.strptime("5/13/2021 1:30 PM", "%m/%d/%Y %I:%M %p").astimezone(UTC)
         timeNow = datetime.now(timezone.utc)
         timeNow = timeNow.replace(tzinfo=None)
@@ -74,15 +71,11 @@ class HellscubeDatabaseCog(commands.Cog):
         randomDate = subStart + timedelta(seconds=randomSecond)
         subChannel = self.bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL)
         subHistory = cast(discord.TextChannel, subChannel).history(around=randomDate)
-        subHistory = [message async for message in subHistory]
+        subHistory = [message async for message in subHistory if message.attachments]
         randomNum = randrange(1, len(subHistory)) - 1
-        if len(subHistory[randomNum].attachments) > 0:
-            file = await subHistory[randomNum].attachments[0].to_file()
-            await channel.send(content="", file=file)
-        else:
-            num += 1
-            command = self.bot.get_command("randomReject")
-            await channel.invoke(command, num)
+        file = await subHistory[randomNum].attachments[0].to_file()
+        sentMessage = await ctx.reply(content="", file=file, mention_author=False)
+        await sentMessage.add_reaction(hc_constants.DELETE)
 
     @commands.command()
     async def notMagic(self, ctx: commands.Context):
@@ -92,7 +85,7 @@ class HellscubeDatabaseCog(commands.Cog):
         name = cast(str, notMagicCardSheet.col_values(1)[random_card])
         img = cast(str, notMagicCardSheet.col_values(2)[random_card])
         ruling = cast(str, notMagicCardSheet.col_values(4)[random_card])
-        await send_image_reply(url=img, cardname=name, text=ruling, message=ctx.message)
+        await send_single_image_reply(url=img, cardname=name, text=ruling, message=ctx.message)
 
     @commands.command(name="random")
     async def randomCard(self, ctx: commands.Context, query: str | None):
@@ -101,12 +94,12 @@ class HellscubeDatabaseCog(commands.Cog):
         Can accept a search query to narrow the search.
         """
         response = await getRandomFromServer(query)
-        await send_image_reply(
+        await send_single_image_reply(
             url=response.image, cardname=response.name, message=ctx.message, text=None
         )
 
     @commands.command(aliases=["creators"])
-    async def creator(self, channel, *cardName):
+    async def creator(self, channel: discord.abc.Messageable, *cardName):
         name = " ".join(cardName).lower()
         card = await getFuzzyCard(name)
         message = "something went wrong!"
@@ -117,7 +110,7 @@ class HellscubeDatabaseCog(commands.Cog):
         await channel.send(message)
 
     @commands.command(aliases=["ruling"])
-    async def rulings(self, channel, *cardName):
+    async def rulings(self, channel: discord.abc.Messageable, *cardName):
         """
         Returns the rulings for a given card.
         """
@@ -204,7 +197,7 @@ class HellscubeDatabaseCog(commands.Cog):
         await ctx.send(message)
 
     @commands.command()
-    async def info(self, channel, *cardName):
+    async def info(self, channel: discord.abc.Messageable, *cardName):
         name = " ".join(cardName).lower()
         card = await getFuzzyCard(cardName=name)
         message = "something went wrong!"

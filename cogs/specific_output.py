@@ -333,7 +333,7 @@ hell_locus_ids = [
     "4a8270f4-516a-4d02-9136-ef814b537d56",
     "8b14c2af-ac58-4ce1-b230-5a6d294304cd",
 ]
-# This is not super future proofed against new black border loci, if one gets printed, add its id
+# This is not super future proofed against new black border loci; if one gets printed, add its id
 scry_locus_ids = [
     "5355eecf-c03e-406c-9e7d-70e73dcd7510",
     "3ba372ea-b4a0-4db3-baec-9cbf5d3384b1",

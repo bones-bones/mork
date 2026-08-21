@@ -33,23 +33,29 @@ from specific_output import (
 )
 
 import hc_constants
-from post_card_images import send_image_reply
+from hellfall_fetcher import getCardById, getMultipleCardsByIds, getMultipleRandomFromServer
+from post_card_images import (
+    send_multiple_card_reply,
+    send_multiple_image_reply,
+    send_single_card_reply,
+    send_single_image_reply,
+)
 
 SCRYFALL_API_URL = "https://api.scryfall.com/cards"
-HELLFALL_API_URL = "https://hellfall.skeleton.club/api/cards"
+# HELLFALL_API_URL = "https://hellfall.skeleton.club/api/cards"
 SCRYFALL_RANDOM_API_URL = f"{SCRYFALL_API_URL}/random"
-HELLFALL_RANDOM_API_URL = f"{HELLFALL_API_URL}/random"
+# HELLFALL_RANDOM_API_URL = f"{HELLFALL_API_URL}/random"
 
 
 def scryfallApiForCard(id: str):
     return f"{SCRYFALL_API_URL}/{id}"
 
 
-def hellfallApiForCard(id: str):
-    return f"{HELLFALL_API_URL}/{id}"
+# def hellfallApiForCard(id: str):
+#     return f"{HELLFALL_API_URL}/{id}"
 
 
-# load json from scryfall or hellfall
+# load json from scryfall
 async def get_card_json(targetUrl: str, query: str = "") -> dict[str, Any]:
     """
     Get json of a card from scryfall. it's important to use the header so they know to block us lol.
@@ -61,9 +67,7 @@ async def get_card_json(targetUrl: str, query: str = "") -> dict[str, Any]:
         return await resp.json()
 
 
-def _get_image(ob: dict[str, Any], is_hellfall: bool) -> str | None:
-    if is_hellfall:
-        return ob.get("image")
+def _get_scryfall_image(ob: dict[str, Any]) -> str | None:
     uris: dict[str, str] | None = ob.get("image_uris")
     if not uris:
         return
@@ -73,27 +77,36 @@ def _get_image(ob: dict[str, Any], is_hellfall: bool) -> str | None:
     return normal[:-10]
 
 
-# get card image from scryfall json
 async def get_image_from_json(json: dict[str, Any]):
-    is_hellfall = "creators" in json
-    return _get_image(json, is_hellfall) or _get_image(json["card_faces"][0], is_hellfall)
+    """get card image from scryfall json"""
+    return _get_scryfall_image(json) or (
+        _get_scryfall_image(json["card_faces"][0] if "card_faces" in json else {})
+    )
 
 
-# send card image to channel
 async def send_image(ctx: commands.Context, url: str | None):
+    """send card image to channel"""
     if not url:
         return
-    await send_image_reply(url, ctx.message)
+    await send_single_image_reply(ctx.message, url)
+
+
+async def send_images(ctx: commands.Context, urls: list[str] | None):
+    """send card images to channel"""
+    if not urls:
+        return
+    await send_multiple_image_reply(ctx.message, urls)
 
 
 async def send_drive_image(ctx: commands.Context, url: str):
+    """send image from drive to channel"""
     if not url:
         return
-    await send_image_reply(url, ctx.message, url.rsplit("/", 1)[-1] or "image")
+    await send_single_image_reply(ctx.message, url, url.rsplit("/", 1)[-1] or "image")
 
 
-# helper function for fetching and sending scryfall cards from a URL
-async def fetchAndSendCard(ctx: commands.Context, url: str, query: str = ""):
+async def fetchAndSendScryfallCard(ctx: commands.Context, url: str, query: str = ""):
+    """helper function for fetching and sending scryfall cards from a URL"""
     cardJson = await get_card_json(url, query)
     try:
         await send_image(ctx, await get_image_from_json(cardJson))
@@ -101,38 +114,63 @@ async def fetchAndSendCard(ctx: commands.Context, url: str, query: str = ""):
         pp.pprint(cardJson)
 
 
-# helper function to fetch and send card by query string
-async def fetch_random_from_scryfall(ctx: commands.Context, query: str = ""):
-    await fetchAndSendCard(ctx, SCRYFALL_RANDOM_API_URL, query)
+async def fetch_random_from_scryfall(ctx: commands.Context, query: str = "", num: int = 1):
+    """helper function to fetch and send random card(s) from scryfall by query string"""
+    cardJsons = [await get_card_json(SCRYFALL_RANDOM_API_URL, query) for i in range(num)]
+    try:
+        urls = [await get_image_from_json(cardJson) for cardJson in cardJsons]
+        await send_images(ctx, [url for url in urls if url])
+    except Exception:
+        pp.pprint(cardJsons)
 
 
-# helper function to fetch and send card by query string
-async def fetch_random_from_hellfall(ctx: commands.Context, query: str = ""):
-    await fetchAndSendCard(ctx, HELLFALL_RANDOM_API_URL, query)
+async def fetch_random_from_hellfall(ctx: commands.Context, query: str = "", num: int = 1):
+    """helper function to fetch and send random card(s) from hellfall by query string"""
+    response = await getMultipleRandomFromServer(query, num)
+    await send_multiple_card_reply(ctx.message, response)
 
 
-# helper function to fetch and send card by card id
 async def fetch_scryfall_by_id(ctx: commands.Context, id: str):
-    await fetchAndSendCard(ctx, scryfallApiForCard(id))
+    """helper function to fetch and send card from scryfall by card id"""
+    await fetchAndSendScryfallCard(ctx, scryfallApiForCard(id))
 
 
-# helper function to fetch and send card by card id
-async def fetch_hellfall_by_id(ctx: commands.Context, id):
-    await fetchAndSendCard(ctx, hellfallApiForCard(id))
+async def fetch_multiple_scryfall_by_id(ctx: commands.Context, ids: list[str]):
+    """helper function to fetch and send multiple cards from hellfall by their ids"""
+    cardJsons = [await get_card_json(scryfallApiForCard(uuid)) for uuid in ids]
+    try:
+        urls = [await get_image_from_json(cardJson) for cardJson in cardJsons]
+        await send_images(ctx, [url for url in urls if url])
+    except Exception:
+        pp.pprint(cardJsons)
+
+
+async def fetch_hellfall_by_id(ctx: commands.Context, id: str):
+    """helper function to fetch and send card from hellfall by card id"""
+    card = await getCardById(id)
+    if card:
+        await send_single_card_reply(ctx.message, card)
+
+
+async def fetch_multiple_hellfall_by_id(ctx: commands.Context, ids: list[str]):
+    """helper function to fetch and send multiple cards from hellfall by their ids"""
+    cards = await getMultipleCardsByIds(ids)
+    if cards:
+        await send_multiple_card_reply(ctx.message, cards)
 
 
 class SpecificCardsCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    # for the card item block
     @commands.command()
     async def item(self, ctx: commands.Context):
+        """for the card "Item Block" """
         await fetch_random_from_hellfall(ctx, '~"item block" unique:cards include:extras')
 
-    # for the card shell game
     @commands.command(aliases=["shellgame", "game"])
     async def shell(self, ctx: commands.Context):
+        """for the card "Shell Game" """
         randomNumber = random.randint(0, 2)
         if randomNumber == 0:
             response = "Plains\nDraw 1 card."
@@ -140,9 +178,9 @@ class SpecificCardsCog(commands.Cog):
             response = "Island\nDraw 3 cards."
         await ctx.send(response)
 
-    # for the card big money
     @commands.command(aliases=["big", "money", "bigmoney"])
     async def whammy(self, ctx: commands.Context, number):
+        """for the card "Big Money" """
         try:
             number = int(number)
         except Exception:
@@ -190,31 +228,30 @@ class SpecificCardsCog(commands.Cog):
         else:
             await ctx.send("Please use a number under 6.")
 
-    # for the card ballsjr's druidic vow
     @commands.command()
     async def vow(self, ctx: commands.Context, cost):
+        """for the card "BallsJr123's Druidic Vow" """
         try:
             await fetch_random_from_scryfall(ctx, f"mana:{cost}")
         except Exception:
             await ctx.send("Not a valid mana cost.")
 
-    # for the card stormstorm
     @commands.command(aliases=["stormstorm"])
     async def storm(self, ctx: commands.Context, number):
+        """for the card "Stormstorm" """
         try:
             number = int(number)
         except Exception:
             await ctx.send("Please type a number.")
             return
         if number < 11:
-            for image in choices(stormCards, k=number):
-                await send_image(ctx, image)
+            await send_multiple_image_reply(ctx.message, choices(stormCards, k=number))
         else:
             await ctx.send("Please use 10 or lower.")
 
-    # for the card keyword warp
     @commands.command(aliases=["keyword", "warp"])
     async def keywords(self, ctx: commands.Context, number: int):
+        """for the card "Keyword Warp" """
         try:
             number = int(number)
         except Exception:
@@ -225,25 +262,25 @@ class SpecificCardsCog(commands.Cog):
         else:
             await ctx.send("Please use between 1 and 100, inclusive.")
 
-    # for the card path to degeneracy
     @commands.command(aliases=["path", "degen", "ptd"])
     async def degeneracy(self, ctx: commands.Context):
+        """for the card "Path Towards Degeneracy" """
         await fetch_scryfall_by_id(ctx, choice(femaleWarWalkers))
 
-    # for the card a blue card
     @commands.command(aliases=["blue"])
     async def bluecard(self, ctx: commands.Context):
+        """for the card "A Blue Card" """
         await fetch_scryfall_by_id(ctx, choice(blueCards))
 
-    # for the card wild magic
     @commands.command()
     async def wild(self, ctx: commands.Context):
+        """for the card "Wild Magic <HC>" """
         randomNum = random.randint(1, 100)
         await ctx.send(f"{randomNum}: {wildMagic[randomNum - 1]}")
 
-    # for the card hells triome
     @commands.command()
     async def triome(self, ctx: commands.Context):
+        """for the card "Hell's Triome" """
         message = ""
         lands = ["Plains", "Mountain", "Forest", "Swamp", "Island"]
         random.shuffle(lands)
@@ -251,9 +288,9 @@ class SpecificCardsCog(commands.Cog):
             message += lands[i] + ", "
         await ctx.send(message)
 
-    # for the card wrath of pod
     @commands.command()
     async def podcast(self, ctx: commands.Context, number):
+        """for the card "Wrath of Pod" """
         try:
             number = int(number)
         except Exception:
@@ -267,9 +304,9 @@ class SpecificCardsCog(commands.Cog):
 
         await ctx.send(output)
 
-    # for the card pyrohyperspasm
     @commands.command()
     async def pyrohyperspasm(self, ctx: commands.Context, number):
+        """for the card "Pyrohyperspasm" """
         try:
             number = int(number)
         except Exception:
@@ -311,121 +348,114 @@ class SpecificCardsCog(commands.Cog):
             totalToughness += t
         await ctx.send("Total (new) stats: (" + str(totalPower) + "/" + str(totalToughness) + ")")
 
-    # for the card puzzle box of yogg-saron
     @commands.command(aliases=["puzzle", "box", "pbox", "yogg", "yoggsaron", "pb"])
     async def puzzlebox(self, ctx: commands.Context):
-        for i in range(10):
-            await fetch_random_from_scryfall(ctx, "t:instant or t:sorcery game:paper")
+        """for the card "Puzzle Box of Yogg-Saron" """
+        await fetch_random_from_scryfall(ctx, "t:instant or t:sorcery game:paper", 10)
 
-    # for the card deathseeker
     @commands.command()
     async def death(self, ctx: commands.Context):
-        for _ in range(2):
-            await fetch_random_from_scryfall(ctx, 'o:"When ~ dies" t:creature game:paper')
+        """for the card "Deathseeker" """
+        await fetch_random_from_scryfall(ctx, 'o:"When ~ dies" t:creature game:paper', 2)
 
-    # mirror of !death because why not
     @commands.command()
     async def life(self, ctx: commands.Context):
-        for _ in range(2):
-            await fetch_random_from_scryfall(ctx, 'o:"When ~ enters" t:creature game:paper')
+        """mirror of !death because why not"""
+        await fetch_random_from_scryfall(ctx, 'o:"When ~ enters" t:creature game:paper', 2)
 
-    # another one (this time for attack triggers)
     @commands.command()
     async def attack(self, ctx: commands.Context):
-        for _ in range(2):
-            await fetch_random_from_scryfall(ctx, 'o:"Whenever ~ attacks" t:creature game:paper')
+        """another one (this time for attack triggers)"""
+        await fetch_random_from_scryfall(ctx, 'o:"Whenever ~ attacks" t:creature game:paper', 2)
 
-    # for the card multiverse broadcasting station
     @commands.command()
     async def broadcast(self, ctx: commands.Context):
-        for i in range(2):
-            await fetch_random_from_scryfall(ctx, "-t:narset t:planeswalker r:u")
+        """for the card "Multiverse Broadcasting Station" """
+        await fetch_random_from_scryfall(ctx, "-t:narset t:planeswalker r:u", 2)
 
-    # for the card illusionary GF
     @commands.command(aliases=["gf", "chandra"])
     async def girlfriend(self, ctx: commands.Context):
+        """for the card "Illusionary GF" """
         await fetch_random_from_scryfall(ctx, "t:chandra t:planeswalker")
 
-    # for the card ballsjrs ultimate curvetopper
     @commands.command()
     async def topper(self, ctx: commands.Context, amount):
+        """for the card "Ballsjr's Ultimate Curvetopper" """
         if int(amount) > 10:
             await ctx.send("max is 10")
             return
-        for i in range(int(amount)):
-            await fetch_random_from_scryfall(ctx, "mana>=X")
+        await fetch_random_from_scryfall(ctx, "mana>=X", int(amount))
 
-    # for the card obscure command
     @commands.command()
     async def obscure(self, ctx: commands.Context):
+        """for the card "Obscure Command" """
         await ctx.send("\n".join(choices(obscureModes, k=4)))
 
-    # for the card weird elf
     @commands.command()
     async def weird(self, ctx: commands.Context):
+        """for the card "Weird Elf" """
         modes = ["Colorless", "White", "Blue", "Black", "Red", "Green"]
         for _ in range(2):
             await ctx.send(random.choice(modes))
 
-    # for the card absurdly cryptic command
     @commands.command()
     async def cryptic(self, ctx: commands.Context):
-        for _ in range(4):
-            await fetch_random_from_scryfall(ctx, "c=u t:instant")
+        """for the card "Absurdly Cryptic Command" """
+        await fetch_random_from_scryfall(ctx, "c=u t:instant", 4)
 
-    # for the card we need more white cards
     @commands.command()
     async def whitecards(self, ctx: commands.Context):
-        for _ in range(3):
-            await fetch_random_from_scryfall(ctx, "c=w")
+        """for the card "We Need More White Cards" """
+        await fetch_random_from_scryfall(ctx, "c=w", 3)
 
-    # for the card hugh man, human
     @commands.command(aliases=["hugh", "human"])
     async def hughman(self, ctx: commands.Context):
+        """for the card "Hugh Man, Human" """
         await fetch_random_from_scryfall(ctx, "t:human")
 
-    # for the card random growth
     @commands.command()
     async def growth(self, ctx: commands.Context):
+        """for the card "Random Growth" """
         await fetch_random_from_scryfall(ctx, "t:land")
 
-    # for the card ultimate ultimatum
     @commands.command()
     async def ultimatum(self, ctx: commands.Context):
+        """for the card "Ultimate Ultimatum" """
         await fetch_random_from_scryfall(ctx, "ultimatum -c:bant c=3")
 
-    # for the card regal karakas
     @commands.command()
     async def karakas(self, ctx: commands.Context):
+        """for the card "Regal Karakas" """
         await fetch_random_from_scryfall(ctx, "t:creature t:legendary")
 
-    # for the card pregnant sliver
     @commands.command()
     async def sliver(self, ctx: commands.Context):
+        """for the card "Pregnant Sliver" """
         await fetch_random_from_scryfall(ctx, "t:sliver")
 
-    # for the card a black six drop
     @commands.command()
     async def black6(self, ctx: commands.Context):
+        """for the card "A Black 6 Drop Creature" """
         await fetch_random_from_scryfall(ctx, "t:creature c=b mv=6")
 
-    # for the card kodama's reach but kodama has really long arms
     @commands.command()
     async def reach(self, ctx: commands.Context):
+        """for the card "Kodama's Reach but Kodama has Long Arms" """
         lands = ["Plains", "Mountain", "Forest", "Swamp", "Island"]
         random.shuffle(lands)
         for i in range(2):
             await ctx.send(lands[i])
 
-    # for the card colossal godmaw
     @commands.command()
     async def dreadmaw(self, ctx: commands.Context):
+        """for devotion to dreadmaw"""
         await send_drive_image(
             ctx, "https://lh3.googleusercontent.com/d/1uYdnTLOZw42yNGc3xgO0oxhBGwoReo-c"
         )
 
     @commands.command()
     async def thisIsntMagic(self, ctx: commands.Context):
+        """get a random card from #this-isnt-magic"""
         chan = cast(discord.TextChannel, self.bot.get_channel(hc_constants.THIS_IS_NOT_MAGIC))
         subStart = datetime.strptime("7/4/2024 2:30 PM", "%m/%d/%Y %I:%M %p").astimezone(UTC)
         timeNow = datetime.now(timezone.utc)
@@ -444,25 +474,26 @@ class SpecificCardsCog(commands.Cog):
 
     @commands.command()
     async def wickyp(self, ctx: commands.Context):
+        """for the card Wicky P, Vintage Banworthy" """
+        await send_images(ctx, sample(wicky_sheets, k=3))
         selected = sample(wicky_sheets, k=3)
         for sheet in selected:
             await send_drive_image(ctx, sheet)
 
-    # for the card will, willful scheme
     @commands.command()
     async def willsSchemes(self, ctx: commands.Context):
+        """for the card "Will, Willful Schemer" """
         # https://scryfall.com/random?q=will+type=scheme
         await fetch_random_from_scryfall(ctx, "will t:scheme")
 
-    # for the _______ Balls
     @commands.command(aliases=["balls"])
     async def _______Balls(self, ctx: commands.Context):
-        selected = random.sample(balls_sheets, k=3)
-        for sheet in selected:
-            await fetch_scryfall_by_id(ctx, sheet)
+        """for the card "_______ Balls" """
+        await fetch_multiple_scryfall_by_id(ctx, sample(balls_sheets, k=3))
 
     @commands.command()
     async def locus(self, ctx: commands.Context):
+        """for the card "Omnath, Locus of the Locus" """
         hell_len = len(hell_locus_ids)
         rlocus = random.randint(0, hell_len + len(scry_locus_ids) - 1)
         if rlocus < hell_len:
@@ -470,21 +501,23 @@ class SpecificCardsCog(commands.Cog):
         else:
             await fetch_scryfall_by_id(ctx, scry_locus_ids[rlocus - hell_len])
 
-    # And this one is for if they spell the command wrong
     @commands.command()
     async def locust(self, ctx: commands.Context):
+        """And this one is for if they spell the command wrong"""
         await ctx.send("COMMAND CANCELED!!!!! LOCUST ARMY GO")
-        for i in range(3):
+        for i in range(
+            3
+        ):  # Not grouping this one into one message since that would defeat the joke
             await send_image(
                 ctx,
                 "https://www.icpac.net/media/images/ezgif.com-video-to-gif_1.width-800.gif",
             )
         await ctx.send("You probably want !locus")
 
-    # for the card tunak tunak tun
     @commands.command()
     async def tunak(self, ctx: commands.Context):
-        await fetch_random_from_hellfall(ctx, '~"item block" unique:cards include:extras')
+        """for the card "Tunak Tunak Tun" """
+        await fetch_random_from_hellfall(ctx, '"tunak tunak tun" unique:cards include:extras')
 
         # tunakSecretTokens = [
         #     "https://cdn.discordapp.com/attachments/692431610724745247/717492326653755442/Tunak_Tunak_TunP.jpg",
@@ -503,9 +536,9 @@ class SpecificCardsCog(commands.Cog):
         # else:
         #     await send_image(tunak_tokens[random.randint(0, len(tunak_tokens) - 1)], ctx)
 
-    # for cards with crystallize
     @commands.command()
     async def crystallize(self, ctx: commands.Context):
+        """for cards with crystallize"""
         keywords = [
             "flying",
             "first strike",
@@ -521,29 +554,30 @@ class SpecificCardsCog(commands.Cog):
         random.shuffle(keywords)
         await ctx.send(", ".join([f"||{kw}||" for kw in keywords]))
 
-    # for the card department of homelands security
     @commands.command()
     async def homelands(self, ctx: commands.Context, cost):
+        """for the card "Department of Homelands Security" """
         try:
             await fetch_random_from_scryfall(ctx, f"is:permanent mv={cost}")
         except Exception:
             await ctx.send("Not a valid mana cost.")
 
-    # for the card mythos of hellscube (TODO: decide if this is actually necessary anymore)
     @commands.command()
     async def firstPick(self, ctx: commands.Context):
+        """for the card "Mythos of Hellscube" (TODO: remove when resources documentation is updated)"""
         await fetch_hellfall_by_id(ctx, "51c353c1-7a29-49dc-91aa-3cfad270ce74")
 
-    # https://scryfall.com/random?is%3Atoken+type%3Acreature+power%3C%3D2&unique=cards&as=grid&order=name
-    # That one guy at your LGS + Hero of High Rollers
     @commands.command()
     async def tokenGuy(self, ctx: commands.Context, count: int = 1):
-        for i in range(count):
-            await fetch_random_from_scryfall(ctx, "t:token t:creature pow<=2")
+        """for the cards "That One Guy at Your LGS" and "Hero of High Rollers" """
+        if count < 11:
+            await fetch_random_from_scryfall(ctx, "t:token t:creature pow<=2", count)
+        else:
+            await ctx.send("Please use 10 or lower.")
 
-    # Obscure Commander
     @commands.command()
     async def obscureCommander(self, ctx: commands.Context):
+        """for the card "Obscure Commander" """
         headers = {"User-Agent": hc_constants.USER_AGENT}
         async with (
             aiohttp.ClientSession(headers=headers) as session,
@@ -565,20 +599,19 @@ class SpecificCardsCog(commands.Cog):
             await ctx.send(f"Choose two —\n{'\n'.join(results)}")
             await session.close()
 
-    # for the card Avatar of BallsJr123
     @commands.command()
     async def avatarOfBalls(self, ctx: commands.Context, cost):
+        """for the card "Avatar of BallsJr123" """
         await fetch_random_from_hellfall(ctx, f"mv={cost} t:creature")
 
-    # get a random invoker for the card voke enjoyer
     @commands.command()
     async def invoke(self, ctx: commands.Context):
-        for i in range(2):
-            await fetch_random_from_scryfall(ctx, "invoker unique:cards (o:{7} or o:{8})")
+        """get a random invoker"""
+        await fetch_random_from_scryfall(ctx, "invoker unique:cards (o:{7} or o:{8})", 2)
 
-    # roll the planar die
     @commands.command()
     async def planarDie(self, ctx: commands.Context):
+        """roll the planar die"""
         rresult = random.randint(0, 5)
         await ctx.send("You rolled a ")
         if rresult < 4:
@@ -589,42 +622,40 @@ class SpecificCardsCog(commands.Cog):
             if rresult == 5:
                 await ctx.send("<:chaos:1323372133501505637>")
 
-    # get a random Hero card from Hero's Path
     @commands.command()
     async def therosHero(self, ctx: commands.Context):
+        """get a random Hero card from Hero's Path"""
         await fetch_random_from_scryfall(ctx, "t:hero -t:creature")
 
-    # get three random Dragon card from the set Dragibs of Tarkir, for the card Dragon Age
     @commands.command()
     async def dragonAge(self, ctx: commands.Context):
-        for i in range(3):
-            await fetch_random_from_scryfall(ctx, "t:dragon set:dtk")
+        """get three random Dragon cards from the set Dragons of Tarkir, for the card "Dragon Age" """
+        await fetch_random_from_scryfall(ctx, "t:dragon set:dtk", 3)
 
-    # get a random card that starts with urza, aka urza's stuff
     @commands.command(aliases=["urzas", "urza's", "urzastuff"])
     async def urza(self, ctx: commands.Context):
+        """get a random card that starts with urza, aka urza's stuff"""
         await fetch_random_from_scryfall(ctx, "/^urza's/ legal:vintage")
 
-    # get a random sword from the sword of x and y cycle, for Dr. Jankenstein, Swordsmith
     @commands.command()
     async def sword(self, ctx: commands.Context):
+        """get a random sword from the sword of x and y cycle"""
         await fetch_random_from_scryfall(ctx, "otag:sword-of-x-and-y")
 
-    # get a random legends commander from set:legends, for card League of Legends
     @commands.command(aliases=["league"])
     async def leagueOfLegends(self, ctx: commands.Context):
+        """get a random legends commander from `set:leg`, for the card "League of Legends" """
         await fetch_random_from_scryfall(ctx, "set:leg is:commander")
 
-    # get random artifact creatures and/or vehicles for Mechtitan
     @commands.command(aliases=["mechdietan"])
     async def mechtitan(self, ctx: commands.Context):
-        for i in range(4):
-            await fetch_random_from_scryfall(
-                ctx,
-                "(t:/artifact creature/ or t:vehicle) game:paper -otag:unsetmechanics unique:cards",
-            )
+        """get random artifact creatures and/or vehicles for the card "Mechtitan" """
+        await fetch_random_from_scryfall(
+            ctx,
+            "(t:/artifact creature/ or t:vehicle) game:paper -otag:unsetmechanics unique:cards",
+            4,
+        )
 
-    # get a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK
     @commands.command(
         aliases=[
             "bigwizardspell",
@@ -634,31 +665,29 @@ class SpecificCardsCog(commands.Cog):
         ]
     )
     async def archmage(self, ctx: commands.Context):
-        selectedSpells = random.sample(wizardSpells, k=3)
-        for spell in selectedSpells:
-            await send_image(ctx, spell)
+        """get a random card from ARCHMAGE SEPTIMUS ALGENUS's GAME-WINNING SPELLBOOK"""
+        await send_multiple_image_reply(ctx.message, sample(wizardSpells, k=3))
 
-    # get a random vanilla draft signpost, for the card 2 MV 3/3 Vanilla Signpost Uncommon from Ravnica-mancy
     @commands.command()
     async def watchwolf(self, ctx: commands.Context):
+        """get a random vanilla draft signpost, for the card "2 MV 3/3 Vanilla Signpost Uncommon from Ravnica-mancy" """
         await fetch_random_from_scryfall(ctx, "otag:draft-signpost is:vanilla unique:prints")
 
-    # for the card Mystery Inc on Duskmourn
     @commands.command()
     async def randomRoom(self, ctx: commands.Context):
+        """for the card "Mystery Inc on Duskmourn" """
         await ctx.send(choice(roomDoors))
 
-    # for the card Hearth Magicbrew (subject to change)
     @commands.command()
     async def history(self, ctx: commands.Context):
+        """for the card "Hearth Magicbrew" (subject to change)"""
         # random 1/1001 chance to get channel fireball hand
         selectedHand = random.choice(iconicHands) if random.randint(0, 1000) else channelFireball
-        for card in selectedHand:
-            await fetch_scryfall_by_id(ctx, card)
+        await fetch_multiple_scryfall_by_id(ctx, selectedHand)
 
-    # for the card The Big Bang Theory
     @commands.command()
     async def bigbang(self, ctx: commands.Context, quality: str):
+        """for the card "The Big Bang Theory" """
         quality = quality.lower()
         if quality not in quality_queries:
             await ctx.send(
@@ -668,10 +697,10 @@ class SpecificCardsCog(commands.Cog):
 
         await fetch_random_from_scryfall(ctx, quality_queries[quality])
 
-    # for the card Grunch
-    # Original: https://zaxer2.github.io/howtogrunch
     @commands.command()
     async def grunch(self, ctx: commands.Context):
+        """for cards that grunch"""
+        # Original: https://zaxer2.github.io/howtogrunch
 
         default_grunch_image = "https://i.imgur.com/gbFuCzV.png"
         grunch_image_options = [

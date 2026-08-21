@@ -61,6 +61,35 @@ async def getDatabaseCache() -> dict[str, dict[str, Any]]:
     return await getDataFromServer(payload)
 
 
+async def getCardById(uuid: str) -> SearchCard | None:
+    if STILL_USING_CACHE:
+        return get_card_by_id(uuid)
+
+    payload: dict[str, str] = {
+        "command": "uuid",
+        "card_name": uuid,
+    }
+    data = await getDataFromServer(payload)
+    return SearchCard(**data)
+
+
+async def getMultipleCardsByIds(uuids: list[str]) -> list[SearchCard]:
+    if STILL_USING_CACHE:
+        cards = [get_card_by_id(cardName) for cardName in uuids]
+        return [card for card in cards if card]
+    try:
+        payload: dict[str, str | list[str]] = {
+            "command": "multiple_uuid",
+            "card_names": uuids,
+        }
+        data = (await getDataFromServer(payload)).get("data")
+        if isinstance(data, list):
+            return [SearchCard(**card) for card in data]
+    except CommandError:
+        return []
+    return []
+
+
 async def getExactCard(cardName: str) -> SearchCard | None:
     if STILL_USING_CACHE:
         return get_card_by_name(cardName)
@@ -71,6 +100,23 @@ async def getExactCard(cardName: str) -> SearchCard | None:
     }
     data = await getDataFromServer(payload)
     return SearchCard(**data)
+
+
+async def getMultipleExactCards(cardNames: list[str]) -> list[SearchCard]:
+    if STILL_USING_CACHE:
+        cards = [get_card_by_name(cardName) for cardName in cardNames]
+        return [card for card in cards if card]
+    try:
+        payload: dict[str, str | list[str]] = {
+            "command": "multiple_exact",
+            "card_names": cardNames,
+        }
+        data = (await getDataFromServer(payload)).get("data")
+        if isinstance(data, list):
+            return [SearchCard(**card) for card in data]
+    except CommandError:
+        return []
+    return []
 
 
 async def getFuzzyCard(cardName: str) -> SearchCard | None:
@@ -124,7 +170,7 @@ async def cardsExist(cardNames: list[str]):
         raise CommandError("HELLFALL_API_URL is required")
     timeout = get_request_timeout()
     payload: dict[str, str | list[str]] = {
-        "command": "exist",
+        "command": "all_exist",
         "card_names": cardNames,
     }
 
@@ -189,18 +235,12 @@ async def getSearchFromServer(query: str) -> SearchResponse:
         )
 
 
-@dataclass
-class RandomResponse:
-    name: str
-    image: str
-
-
-async def getRandomFromServer(query: str | None) -> RandomResponse:
+async def getRandomFromServer(query: str | None) -> SearchCard:
     if STILL_USING_CACHE and not query:
         card = get_card_by_id(random.choice(list(idMap.keys())))
         if not card:
             raise CommandError("random_failed")
-        return RandomResponse(image=card.image, name=card.name)
+        return card
     api_url = get_api_url()
     if not api_url:
         raise CommandError("HELLFALL_API_URL is required")
@@ -219,9 +259,37 @@ async def getRandomFromServer(query: str | None) -> RandomResponse:
             reason = data.get("reason") if isinstance(data, dict) else None
             raise CommandError(reason or f"HTTP {resp.status}")
         if not isinstance(data, dict) or data.get("object") is None:
-            raise CommandError("search_failed")
-        image = data.get("image")
-        name = data.get("name")
-        if image is None or name is None:
             raise CommandError("random_failed")
-        return RandomResponse(image=image, name=name)
+        return SearchCard(**data)
+
+
+async def getMultipleRandomFromServer(query: str | None, num: int) -> list[SearchCard]:
+    if num <= 1:
+        return [await getRandomFromServer(query)]
+    if STILL_USING_CACHE and not query:
+        cards = [get_card_by_id(random.choice(list(idMap.keys()))) for i in range(num)]
+        if not cards[0]:
+            raise CommandError("random_failed")
+        return [card for card in cards if card]
+    api_url = get_api_url()
+    if not api_url:
+        raise CommandError("HELLFALL_API_URL is required")
+    timeout = get_request_timeout()
+
+    async with (
+        aiohttp.ClientSession().get(
+            f"{api_url}/api/cards/random/",
+            params={"q": query} if query else None,
+            json={"num": num},
+            headers=get_auth_headers(),
+            timeout=timeout,
+        ) as resp,
+    ):
+        data = await read_response_json(resp)
+        if resp.status != 200:
+            reason = data.get("reason") if isinstance(data, dict) else None
+            raise CommandError(reason or f"HTTP {resp.status}")
+        if not isinstance(data, dict) or data.get("object") is None or data.get("data") is None:
+            raise CommandError("random_failed")
+        cards = data["data"]
+        return [SearchCard(**card) for card in cards]

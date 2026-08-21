@@ -38,7 +38,10 @@ async def main() -> int:
     long_name_queries = ["jace the mind", "angry beavers", "the", "of will"]
     for query in long_name_queries:
         result = await getFuzzyCard(query)
-        if len(result.name) > 200:
+        if not result:
+            failures += 1
+            print(f"[FAIL] '{query}' didn't match anything at all")
+        elif len(result.name) > 200:
             failures += 1
             print(f"[FAIL] '{query}' matched overly long name ({len(result.name)} chars)")
         else:
