@@ -75,7 +75,7 @@ flowchart TD
 | **Non-image attachment** | e.g. PDF attached                 | Poll created anyway                          | Deleted (reposted as poll) | Consumed       |
 | **Magic skip**           | 1/4001 roll                       | Straight to veto (no poll)                   | Deleted                    | Consumed       |
 
-**Closed day:** Checked first. Any user post in `#submissions` on Tuesday, Thursday, or Saturday (US Eastern) is deleted and the admin is DM'd. Cooldown timestamps are not written, and elapsed wait time ignores those days. Mork posts `THE GATES OF HELL ARE CLOSED` in `#submissions` (and DMs the admin) at the start of each closed day and `THE GATES OF HELL HAVE OPENED` at the start of Wednesday, Friday, and Sunday (US Eastern).
+**Closed day:** Checked first. Any user post in `#submissions` on Tuesday, Thursday, or Saturday (US Eastern) is deleted and the admin is DM'd. Cooldown timestamps are not written, and elapsed wait time ignores those days. At the start of each closed day the admin is DM'd `THE GATES OF HELL ARE CLOSED`; at the start of Wednesday, Friday, and Sunday (US Eastern) they receive `THE GATES OF HELL HAVE OPENED`.
 
 **Missing name:** Intake bails before cooldown write or repost. The card image is reattached in `#submissions-discussion` so the user can fix the title and resubmit. Whitespace-only first lines count as missing.
 

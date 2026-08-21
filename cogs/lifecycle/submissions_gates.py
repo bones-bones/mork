@@ -1,4 +1,4 @@
-"""Post gate open/close announcements in #submissions on closed weekdays."""
+"""DM admin gate open/close announcements on closed/open transition days."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from discord.ext import commands
 
 import hc_constants
 from cogs.lifecycle.submissions_closed import CLOSED_WEEKDAYS, SUBMISSIONS_TZ
-from getters import getSubmissionsChannel
 
 GATES_CLOSED_MESSAGE = "THE GATES OF HELL ARE CLOSED"
 GATES_OPENED_MESSAGE = "THE GATES OF HELL HAVE OPENED"
@@ -50,7 +49,7 @@ def _save_state(state: dict[str, Any]) -> None:
 
 
 async def ensure_submissions_gates(bot: commands.Bot) -> None:
-    """Post today's gate message once per lifecycle day (closed/open transition days)."""
+    """DM admin today's gate message once per lifecycle day (closed/open transition days)."""
     now = datetime.now(timezone.utc)
     local = now.astimezone(SUBMISSIONS_TZ)
     message = gate_announcement_for(now)
@@ -63,8 +62,6 @@ async def ensure_submissions_gates(bot: commands.Bot) -> None:
     if state.get("last_announcement") == key:
         return
 
-    channel = getSubmissionsChannel(bot)
-    await channel.send(message)
     admin = await bot.fetch_user(hc_constants.LLLLLL)
     await admin.send(message)
     state["last_announcement"] = key
