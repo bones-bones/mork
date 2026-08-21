@@ -6,6 +6,7 @@ from reddit_devvit import (
     post_accept_via_devvit,
     reddit_accept_via_devvit_enabled,
     reddit_cotd_via_devvit_enabled,
+    reddit_mirror_via_devvit_enabled,
     reddit_title_for_acceptance,
 )
 
@@ -22,6 +23,14 @@ class RedditDevvitTests(unittest.TestCase):
             self.assertTrue(reddit_cotd_via_devvit_enabled())
         with patch.dict(os.environ, {"REDDIT_COTD_VIA_DEVVIT": "0"}, clear=False):
             self.assertFalse(reddit_cotd_via_devvit_enabled())
+
+    def test_mirror_feature_flag(self):
+        with patch.dict(os.environ, {"REDDIT_MIRROR_VIA_DEVVIT": "1"}, clear=False):
+            self.assertTrue(reddit_mirror_via_devvit_enabled())
+        with patch.dict(os.environ, {"REDDIT_MIRROR_VIA_DEVVIT": "0"}, clear=False):
+            self.assertFalse(reddit_mirror_via_devvit_enabled())
+        with patch.dict(os.environ, {"REDDIT_MIRROR_VIA_DEVVIT": ""}, clear=False):
+            self.assertFalse(reddit_mirror_via_devvit_enabled())
 
     def test_title_uses_set_id(self):
         title = reddit_title_for_acceptance(

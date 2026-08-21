@@ -62,7 +62,10 @@ from image_response_filename import filename_from_image_response
 from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
 from post_card_images import post_card_images
-from reddit_devvit import reddit_cotd_via_devvit_enabled  # , reddit_mirror_via_devvit_enabled
+from reddit_devvit import (
+    reddit_cotd_via_devvit_enabled,
+    reddit_mirror_via_devvit_enabled,
+)
 from reddit_functions import post_to_reddit
 from shared_vars import googleClient, intents
 from submissions.check_masterpiece_submissions import check_masterpiece_submissions
@@ -262,8 +265,8 @@ class LifecycleCog(commands.Cog):
         except Exception:
             traceback.print_exc()
         try:
-            await check_reddit(self.bot)
-            # if not reddit_mirror_via_devvit_enabled():
+            if not reddit_mirror_via_devvit_enabled():
+                await check_reddit(self.bot)
         except Exception:
             traceback.print_exc()
         try:
