@@ -27,6 +27,15 @@ def reddit_cotd_via_devvit_enabled() -> bool:
     }
 
 
+def reddit_mirror_via_devvit_enabled() -> bool:
+    """When true, Reddit → Discord mirroring is handled by hellscube-bridge PostSubmit (not check_reddit)."""
+    return os.environ.get("REDDIT_MIRROR_VIA_DEVVIT", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
 def reddit_title_for_acceptance(
     card_message: str,
     set_id: str,
