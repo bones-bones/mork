@@ -14,6 +14,7 @@ async def handleVetoPost(
     message: Message,
     bot: commands.Bot,
     veto_council: int | None,
+    submission_thread_url: str | None = None,
 ):
     if portal_time:
         veto_council = hc_constants.VETO_COUNCIL_PORTAL
@@ -78,6 +79,9 @@ async def handleVetoPost(
     await veto_poll_thread.send(hellpit_discussion_thread.jump_url)
 
     await hellpit_discussion_thread.send(message.jump_url)
+
+    if submission_thread_url:
+        await hellpit_discussion_thread.send(submission_thread_url)
 
     await veto_poll_thread.edit(locked=True)
     return

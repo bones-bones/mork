@@ -167,8 +167,18 @@ async def checkSubmissions(bot: commands.Bot):
                     ),
                 )
 
+                # Submissions thread is not deleted with the message.
+                submission_thread = guild.get_channel_or_thread(messageEntry.id)
+
                 await asyncio.sleep(1)
-                await handleVetoPost(message=vetoEntry, bot=bot, veto_council=None)
+                await handleVetoPost(
+                    message=vetoEntry,
+                    bot=bot,
+                    veto_council=None,
+                    submission_thread_url=(
+                        submission_thread.jump_url if submission_thread else None
+                    ),
+                )
 
                 logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
                 await asyncio.sleep(1)
