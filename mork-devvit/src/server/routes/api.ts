@@ -6,6 +6,8 @@ import type {
   PostCardRequest,
 } from '../../shared/postCard.js';
 import { badRequest, handlePostCard } from '../postCard.js';
+import { handleReplyToPost } from '../replyToPost.js';
+import type { ReplyToPostRequest } from '../../shared/replyToPost.js';
 
 function unauthorized(): PostCardErrorResponse {
   return { ok: false, error: 'unauthorized' };
@@ -55,5 +57,17 @@ external.post('/post-card', async (c) => {
   }
 
   const { response, status } = await handlePostCard(body);
+  return c.json(response, status as ContentfulStatusCode);
+});
+
+external.post('/reply-to-post', async (c) => {
+  let body: ReplyToPostRequest;
+  try {
+    body = await c.req.json<ReplyToPostRequest>();
+  } catch {
+    return c.json(badRequest('invalid JSON body'), 400);
+  }
+
+  const { response, status } = await handleReplyToPost(body);
   return c.json(response, status as ContentfulStatusCode);
 });

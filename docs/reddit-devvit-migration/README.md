@@ -190,6 +190,8 @@ Before or alongside the Devvit port, clean up the existing Reddit layer:
 - [ ] Reddit external endpoints access approved
 - [ ] Playtest + publish on r/HellsCube (or test sub)
 - [ ] Enable `REDDIT_ACCEPT_VIA_DEVVIT` in production
-- [ ] Phase 2: PostSubmit mirror
-- [ ] Phase 3: deferred queue + schedulers (card-of-the-day scheduler implemented in `mork-devvit`)
+- [x] Phase 2: PostSubmit mirror (implemented; default off — `redditMirrorWebhookUrl` + dual flags)
+- [x] Phase 3 schedulers: card-of-the-day (prod on), daily gallery prep (default off; multi-image blocked)
+- [x] Discord → Reddit replies via `/external/reply-to-post` (default off on VM)
+- [ ] Deferred Reddit queue on Devvit (still Python filesystem + asyncpraw)
 - [ ] Install on r/HellsCube + Developer Funds application

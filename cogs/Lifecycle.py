@@ -28,7 +28,10 @@ import hc_constants
 from accept_card import accept_card
 from check_submissions import check_submissions
 from cogs.lifecycle.check_reddit import check_reddit
-from cogs.lifecycle.post_daily_submissions import post_daily_submissions
+from cogs.lifecycle.post_daily_submissions import (
+    gallery_uses_manifest,
+    post_daily_submissions,
+)
 from cogs.lifecycle.scube_lair_acceptance import (
     accept_scube_lair_card,
     card_name_and_author_from_scube_lair_message,
@@ -63,8 +66,11 @@ from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, is_reddit_mirror_author, reasonable_card
 from post_card_images import post_card_images
 from reddit_devvit import (
+    post_reply_via_devvit,
     reddit_cotd_via_devvit_enabled,
+    reddit_gallery_via_devvit_enabled,
     reddit_mirror_via_devvit_enabled,
+    reddit_reply_via_devvit_enabled,
 )
 from reddit_functions import post_to_reddit
 from shared_vars import googleClient, intents
@@ -293,7 +299,7 @@ class LifecycleCog(commands.Cog):
                 await post_reddit_card_of_the_day()
             except Exception:
                 traceback.print_exc()
-        if now.hour == 4 and is_first_minutes:
+        if now.hour == 4 and is_first_minutes and not reddit_gallery_via_devvit_enabled():
             try:
                 await post_daily_submissions(self.bot)
             except Exception:
@@ -601,11 +607,39 @@ class LifecycleCog(commands.Cog):
 
             case hc_constants.REDDIT_CHANNEL:
                 lastTwo = [mess async for mess in message.channel.history(limit=2)]
+                if len(lastTwo) < 2:
+                    return
                 if (
                     not is_mork(lastTwo[0].author.id)
                     and is_reddit_mirror_author(lastTwo[1].author.id)
                     and "reddit says: " in lastTwo[1].content
                 ):
+                    if is_mork(lastTwo[0].author.id):
+                        return
+                    reddit_url = lastTwo[1].content
+                    for prefix in (
+                        "reddit says: ",
+                        "Reddit thinks Hellscube would love this:",
+                    ):
+                        reddit_url = reddit_url.replace(prefix, "")
+                    reddit_url = reddit_url.strip()
+                    source_result = re.search("comments/([^/]*)", reddit_url)
+                    if not source_result:
+                        return
+                    post_id = source_result.group(1)
+                    reply_text = (
+                        "i'm just a bot that can't see pictures, but if i could, "
+                        f"i'd say: {lastTwo[0].content}"
+                    )
+                    if reddit_reply_via_devvit_enabled():
+                        try:
+                            await post_reply_via_devvit(
+                                post_id=post_id,
+                                text=reply_text,
+                            )
+                            return
+                        except Exception:
+                            traceback.print_exc()
                     async with asyncpraw.Reddit(
                         client_id=ID,
                         client_secret=SECRET,
@@ -613,16 +647,8 @@ class LifecycleCog(commands.Cog):
                         user_agent=USER_AGENT,
                         username=NAME,
                     ) as reddit:
-                        reddit_url = lastTwo[1].content.replace("reddit says: ", "")
-
-                        # https://www.reddit.com/r/HellsCube/comments/1c2ii4s/sometitle/
-                        source_result = re.search("comments/([^/]*)", reddit_url)
-                        if source_result:
-                            post_id = source_result.group(1)
-                            post = await reddit.submission(id=post_id)
-                            await post.reply(
-                                body=f"i'm just a bot that can't see pictures, but if i could, i'd say: {lastTwo[0].content}"
-                            )
+                        post = await reddit.submission(id=post_id)
+                        await post.reply(body=reply_text)
 
             case hc_constants.TOKEN_SUBMISSIONS:
                 wholeMessage = message.content.split("\n")
@@ -762,6 +788,20 @@ class LifecycleCog(commands.Cog):
                     await sent_message.add_reaction(hc_constants.DELETE)
 
                     await sent_message.create_thread(name=cardName[0:99])
+                    if gallery_uses_manifest():
+                        try:
+                            from submissions_gallery_manifest import append_submission
+
+                            attachment = message.attachments[0]
+                            image_bytes = await attachment.read()
+                            append_submission(
+                                message_id=str(sent_message.id),
+                                image_bytes=image_bytes,
+                                filename=attachment.filename or "card.png",
+                                card_name=cardName,
+                            )
+                        except Exception:
+                            traceback.print_exc()
                 await message.delete()
 
             case hc_constants.MASTERPIECE_CHANNEL:

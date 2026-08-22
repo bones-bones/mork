@@ -18,7 +18,7 @@ DEFAULT_BUCKET = os.environ.get("GCS_CARD_IMAGE_BUCKET", "hellscube-images")
 DEFAULT_CREDENTIALS = os.environ.get(
     "GOOGLE_APPLICATION_CREDENTIALS", "./bot_secrets/client_secrets.json"
 )
-_GCS_HOSTS = frozenset({"storage.googleapis.com", "storage.cloud.google.com"})
+_GCS_HOSTS = frozenset({"storage.googleapis.com"})
 
 
 def slug_object_name(name: str) -> str:

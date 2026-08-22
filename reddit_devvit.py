@@ -36,6 +36,36 @@ def reddit_mirror_via_devvit_enabled() -> bool:
     }
 
 
+def reddit_reply_via_devvit_enabled() -> bool:
+    """When true, Discord #reddit replies use hellscube-bridge /external/reply-to-post."""
+    return os.environ.get("REDDIT_REPLY_VIA_DEVVIT", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def reddit_gallery_via_devvit_enabled() -> bool:
+    """When true, daily gallery is handled by hellscube-bridge scheduler (not Lifecycle)."""
+    return os.environ.get("REDDIT_GALLERY_VIA_DEVVIT", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def devvit_external_url(endpoint: str) -> str:
+    """Build a hellscube-bridge external URL from DEVVIT_POST_CARD_URL + endpoint name."""
+    base_url = os.environ.get("DEVVIT_POST_CARD_URL", "").strip()
+    if not base_url:
+        raise RuntimeError("DEVVIT_POST_CARD_URL is not set")
+    validate_devvit_post_card_url(base_url)
+    if "/external/" not in base_url:
+        raise RuntimeError("DEVVIT_POST_CARD_URL must include /external/")
+    prefix = base_url.rsplit("/external/", 1)[0] + "/external/"
+    return prefix + endpoint.lstrip("/")
+
+
 def reddit_title_for_acceptance(
     card_message: str,
     set_id: str,
@@ -80,12 +110,40 @@ def _devvit_config() -> tuple[str, str]:
     secret = os.environ.get("DEVVIT_POST_CARD_SECRET", "").strip()
     if not url or not secret:
         raise RuntimeError(
-            "REDDIT_ACCEPT_VIA_DEVVIT is enabled but DEVVIT_POST_CARD_URL "
-            "and DEVVIT_POST_CARD_SECRET must both be set"
+            "Devvit external calls require DEVVIT_POST_CARD_URL "
+            "and DEVVIT_POST_CARD_SECRET to both be set"
         )
     validate_devvit_post_card_url(url)
     validate_devvit_post_card_secret(secret)
     return url, secret
+
+
+def _devvit_headers(secret: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {secret}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+
+async def _post_devvit_external(endpoint: str, payload: dict) -> dict:
+    _, secret = _devvit_config()
+    url = devvit_external_url(endpoint)
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            url, json=payload, headers=_devvit_headers(secret)
+        ) as resp:
+            body = await resp.json(content_type=None)
+            if resp.status >= 400:
+                error = body.get("error") if isinstance(body, dict) else body
+                raise RuntimeError(
+                    f"Devvit {endpoint} failed ({resp.status}): {error}"
+                )
+            if not isinstance(body, dict) or not body.get("ok"):
+                raise RuntimeError(
+                    f"Devvit {endpoint} returned unexpected body: {body}"
+                )
+            return body
 
 
 async def post_accept_via_devvit(
@@ -96,25 +154,23 @@ async def post_accept_via_devvit(
     subreddit_name: str = DEFAULT_DEVVIT_SUBREDDIT,
 ) -> dict:
     """POST an acceptance image to the Devvit /external/post-card endpoint."""
-    url, secret = _devvit_config()
-    payload = {
-        "title": title,
-        "imageUrl": image_url,
-        "flairId": flair_id,
-        "subredditName": subreddit_name,
-    }
-    headers = {
-        "Authorization": f"Bearer {secret}",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    }
-    async with (
-        aiohttp.ClientSession().post(url, json=payload, headers=headers) as resp,
-    ):
-        body = await resp.json(content_type=None)
-        if resp.status >= 400:
-            error = body.get("error") if isinstance(body, dict) else body
-            raise RuntimeError(f"Devvit post-card failed ({resp.status}): {error}")
-        if not isinstance(body, dict) or not body.get("ok"):
-            raise RuntimeError(f"Devvit post-card returned unexpected body: {body}")
-        return body
+    return await _post_devvit_external(
+        "post-card",
+        {
+            "title": title,
+            "imageUrl": image_url,
+            "flairId": flair_id,
+            "subredditName": subreddit_name,
+        },
+    )
+
+
+async def post_reply_via_devvit(*, post_id: str, text: str) -> dict:
+    """POST a top-level comment via Devvit /external/reply-to-post."""
+    return await _post_devvit_external(
+        "reply-to-post",
+        {
+            "postId": post_id,
+            "text": text,
+        },
+    )

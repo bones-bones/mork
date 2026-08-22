@@ -10,14 +10,27 @@
                 "scopes": [
                     "global"
                 ]
+            },
+            "replyToPost": {
+                "endpoint": "/external/reply-to-post",
+                "scopes": [
+                    "global"
+                ]
             }
         }
+    },
+    "triggers": {
+        "onPostSubmit": "/internal/triggers/on-post-submit"
     },
     "scheduler": {
         "tasks": {
             "card-of-the-day": {
                 "endpoint": "/internal/scheduler/card-of-the-day",
                 "cron": "0 10 * * *"
+            },
+            "daily-submissions-gallery": {
+                "endpoint": "/internal/scheduler/daily-submissions-gallery",
+                "cron": "0 4 * * *"
             }
         }
     },
@@ -25,6 +38,7 @@
         "global": {
             "postCardSecret": {
                 "type": "string",
+                "isSecret": true,
                 "label": "Bridge secret for /api/post-card (in-app only)",
                 "helpText": "External GCP callers use a managed App Token (devvit_at_…), not this setting."
             },
@@ -43,6 +57,29 @@
                 "label": "Card of the day via Devvit",
                 "defaultValue": true,
                 "helpText": "Scheduler posts HC6 card-of-the-day. Pair with REDDIT_COTD_VIA_DEVVIT=1 on the Discord bot."
+            },
+            "redditMirrorWebhookUrl": {
+                "type": "string",
+                "label": "Discord webhook URL for #reddit mirroring",
+                "isSecret": true,
+                "helpText": "https://discord.com/api/webhooks/… for PostSubmit → #reddit. Set via devvit settings set."
+            },
+            "redditMirrorViaDevvit": {
+                "type": "boolean",
+                "label": "Mirror inbound Reddit posts via Devvit",
+                "defaultValue": false,
+                "helpText": "PostSubmit → #reddit webhook. Pair with REDDIT_MIRROR_VIA_DEVVIT=1 on the Discord bot."
+            },
+            "submissionsGalleryManifestUrl": {
+                "type": "string",
+                "label": "Submissions gallery manifest URL",
+                "helpText": "GCS JSON manifest for daily gallery. Set via devvit settings set."
+            },
+            "dailyGalleryViaDevvit": {
+                "type": "boolean",
+                "label": "Daily submissions gallery via Devvit",
+                "defaultValue": false,
+                "helpText": "Scheduler reads manifest; multi-image gallery blocked until Reddit API supports it. Pair with REDDIT_GALLERY_VIA_DEVVIT=1 on VM when ready."
             }
         }
     },
@@ -56,8 +93,7 @@
             "enable": true,
             "domains": [
                 "storage.googleapis.com",
-                "storage.cloud.google.com",
-                "lh3.googleusercontent.com"
+                "discord.com"
             ]
         }
     },

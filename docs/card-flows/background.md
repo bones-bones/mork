@@ -19,7 +19,7 @@ flowchart TD
 
   LOOP --> T0{"Is <= the 4th minute of the hour?"}
   T0 -->|yes| RC["Redditcatchup — 1 deferred post"]
-  LOOP --> T1{"Is it the <=4th minute of the 4th hour?"}
+  LOOP --> T1{"Is it the <=4th minute of the 4th hour<br/>and REDDIT_GALLERY_VIA_DEVVIT off?"}
   T1 -->|yes| GAL["Daily submissions gallery → Reddit"]
   LOOP --> T2{"Is it the <=4th minute of the 10th hour<br/>and REDDIT_COTD_VIA_DEVVIT off?"}
   T2 -->|yes| COTD["HC6 card-of-the-day → Reddit (asyncpraw)"]
@@ -52,6 +52,8 @@ flowchart LR
 ```
 
 Reply bridge only fires when the prior mirror message (Mork or mork-bridge webhook) starts with `reddit says:` — not the shitpost prefix.
+
+Stage 2: optional Devvit path via `/external/reply-to-post` when `REDDIT_REPLY_VIA_DEVVIT=1` ([`reply.md`](../hellscube-bridge/reply.md)).
 
 ---
 
@@ -91,10 +93,10 @@ flowchart TD
 | ------------- | --------- | ------------ |
 | Immediate accept/veto | Devvit (optional) → asyncpraw fallback | Hellfall GCS URL or `tempImages/` |
 | Deferred batch (`> 5` cards) | asyncpraw | `deferred_reddit/` files |
-| Daily gallery | asyncpraw | Discord submission attachments |
+| Daily gallery | asyncpraw from GCS manifest (`REDDIT_GALLERY_USE_MANIFEST=1`); Devvit scheduler prep when `REDDIT_GALLERY_VIA_DEVVIT=1` (default off; multi-image blocked) |
 | Card of the day (Devvit) | Devvit scheduler when `REDDIT_COTD_VIA_DEVVIT=1` + app setting | [Hellfall catalog](https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json) |
 | Card of the day (legacy) | Lifecycle/asyncpraw when flag off | HC6 sheet image URL → temp file |
-| Discord → Reddit reply | asyncpraw | — |
+| Discord → Reddit reply | asyncpraw; optional Devvit when `REDDIT_REPLY_VIA_DEVVIT=1` (default off) | — |
 
 ---
 

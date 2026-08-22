@@ -1,4 +1,4 @@
-import { redis, settings } from '@devvit/web/server';
+import { redis } from '@devvit/web/server';
 import type { CatalogCard, CatalogRoot } from '../shared/catalog.js';
 import {
   COTD_START_DATE,
@@ -6,7 +6,11 @@ import {
   DEFAULT_CARD_OF_THE_DAY_VIA_DEVVIT,
   DEFAULT_SUBREDDIT,
 } from '../shared/constants.js';
-import { getCatalogUrl, getOfficialHcRedditFlair } from './appSettings.js';
+import {
+  getAppBooleanSetting,
+  getCatalogUrl,
+  getOfficialHcRedditFlair,
+} from './appSettings.js';
 import { submitImagePost } from './postCard.js';
 
 const LAST_RUN_KEY = 'cotd:lastDate';
@@ -58,11 +62,10 @@ export function pickCardOfTheDay(cards: CatalogCard[]): CatalogCard | null {
 }
 
 export async function runCardOfTheDay(): Promise<CardOfTheDayResult> {
-  const viaDevvitSetting = await settings.get<boolean>('cardOfTheDayViaDevvit');
-  const viaDevvit =
-    viaDevvitSetting === undefined
-      ? DEFAULT_CARD_OF_THE_DAY_VIA_DEVVIT
-      : viaDevvitSetting;
+  const viaDevvit = await getAppBooleanSetting(
+    'cardOfTheDayViaDevvit',
+    DEFAULT_CARD_OF_THE_DAY_VIA_DEVVIT,
+  );
   if (!viaDevvit) {
     return { skipped: true, reason: 'devvit_disabled' };
   }

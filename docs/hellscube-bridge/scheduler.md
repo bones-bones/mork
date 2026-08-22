@@ -4,27 +4,27 @@ Devvit [Scheduler](https://developers.reddit.com/docs/capabilities/server/schedu
 
 ## Card of the day
 
-| | |
-|---|---|
-| **Task** | `card-of-the-day` in `devvit.json` |
-| **Cron** | `0 10 * * *` (10:00 UTC daily) |
-| **Handler** | `POST /internal/scheduler/card-of-the-day` |
-| **Catalog** | Subreddit setting `catalogUrl` (default: Hellfall GCS `catalog.json`) |
-| **Flair** | Global app setting `officialHcRedditFlair` |
+|               |                                                                                        |
+| ------------- | -------------------------------------------------------------------------------------- |
+| **Task**      | `card-of-the-day` in `devvit.json`                                                     |
+| **Cron**      | `0 10 * * *` (10:00 UTC daily)                                                         |
+| **Handler**   | `POST /internal/scheduler/card-of-the-day`                                             |
+| **Catalog**   | Subreddit setting `catalogUrl` (default: Hellfall GCS `catalog.json`)                  |
+| **Flair**     | Global app setting `officialHcRedditFlair`                                             |
 | **Card pick** | HC6 cards (`set` matches `HC6_*`), catalog order, index `726 - days_since(2025-11-26)` |
-| **Dedup** | Redis key `cotd:lastDate` (UTC `YYYY-MM-DD`) |
-| **Post** | Title `HC6 Card of the day: {name}`, Official HC flair, `reddit.submitPost` image |
+| **Dedup**     | Redis key `cotd:lastDate` (UTC `YYYY-MM-DD`)                                           |
+| **Post**      | Title `HC6 Card of the day: {name}`, Official HC flair, `reddit.submitPost` image      |
 
 Implementation: `mork-devvit/src/server/cardOfTheDay.ts`.
 
 ## Feature flag (Devvit vs Lifecycle)
 
-| Switch | Where | Devvit path |
-|--------|-------|-------------|
-| `REDDIT_COTD_VIA_DEVVIT=1` | VM `.env` (Discord bot) | Skips `Lifecycle.py` hour-10 job |
-| `cardOfTheDayViaDevvit` | hellscube-bridge **global** app setting (default `true`) | Scheduler actually posts |
-| `catalogUrl` | **CLI** `devvit settings set` (global) | Catalog JSON URL |
-| `officialHcRedditFlair` | **CLI** `devvit settings set` (global) | Official HC flair UUID |
+| Switch                     | Where                                                    | Devvit path                      |
+| -------------------------- | -------------------------------------------------------- | -------------------------------- |
+| `REDDIT_COTD_VIA_DEVVIT=1` | VM `.env` (Discord bot)                                  | Skips `Lifecycle.py` hour-10 job |
+| `cardOfTheDayViaDevvit`    | hellscube-bridge **global** app setting (default `true`) | Scheduler actually posts         |
+| `catalogUrl`               | **CLI** `devvit settings set` (global)                   | Catalog JSON URL                 |
+| `officialHcRedditFlair`    | **CLI** `devvit settings set` (global)                   | Official HC flair UUID           |
 
 **Legacy path** (Google Sheets + asyncpraw): leave flags off/default.
 
@@ -69,5 +69,5 @@ npx devvit settings set cardOfTheDayViaDevvit   # → false
 
 1. `npm run deploy` / publish updated app
 2. App installed on r/HellsCube
-3. HTTP fetch domains approved: `storage.googleapis.com`, `storage.cloud.google.com`, `lh3.googleusercontent.com`
+3. HTTP fetch domains approved: `storage.googleapis.com`, `lh3.googleusercontent.com`
 4. Set flags per tables above before the next 10:00 UTC window

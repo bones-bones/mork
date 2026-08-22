@@ -5,6 +5,7 @@ from gcs_card_images import (
     public_gcs_url,
     slug_object_name,
 )
+from image_response_filename import with_image_extension
 
 
 class GcsCardImagesTests(unittest.TestCase):
@@ -35,6 +36,20 @@ class GcsCardImagesTests(unittest.TestCase):
                 "https://lh3.googleusercontent.com/d/abc",
                 expected_bucket="hellscube-images",
             )
+        )
+
+    def test_new_object_key_does_not_stack_png_on_gif(self):
+        self.assertEqual(
+            with_image_extension(slug_object_name("Foo.gif"), ".png"),
+            "Foo.png",
+        )
+        self.assertEqual(
+            with_image_extension(slug_object_name("Foo.gif"), ".gif"),
+            "Foo.gif",
+        )
+        self.assertEqual(
+            with_image_extension(slug_object_name("3682"), ".png"),
+            "3682.png",
         )
 
 

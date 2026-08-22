@@ -1,6 +1,6 @@
 # hellscube-bridge deploy checklist
 
-Current production target: **COTD via Devvit ON**, **acceptance postcard via Devvit OFF**, **mirror via Devvit OFF** (enable after webhook configured).
+Current production target: **COTD via Devvit ON**, **acceptance / mirror / reply / gallery via Devvit OFF** until each path is configured and verified.
 
 ## 1. Devvit (`mork-devvit`)
 
@@ -23,10 +23,10 @@ npx devvit install r/HellsCube hellscube-bridge@latest
 | `officialHcRedditFlair` | Official HC UUID | `npx devvit settings set officialHcRedditFlair` (optional) |
 | `redditMirrorWebhookUrl` | Discord webhook | `npx devvit settings set redditMirrorWebhookUrl` (required for mirror) |
 | `redditMirrorViaDevvit` | `false` until cutover | `npx devvit settings set redditMirrorViaDevvit` → `true` when ready |
+| `dailyGalleryViaDevvit` | `false` | blocked at multi-image until Reddit gallery API exists |
+| `submissionsGalleryManifestUrl` | GCS default | optional override via CLI |
 
-To force COTD off later: `npx devvit settings set cardOfTheDayViaDevvit` → enter `false` (after key is registered on upload).
-
-**Acceptance posts** are not gated by a Devvit setting — Mork chooses Devvit vs asyncpraw via VM env below.
+**Acceptance posts** and **Discord replies** are not gated by Devvit booleans — Mork chooses transport via VM env below.
 
 ## 2. Mork VM `.env`
 
@@ -40,7 +40,16 @@ REDDIT_COTD_VIA_DEVVIT=1
 
 # Reddit → Discord mirror — OFF until webhook + app setting enabled
 # REDDIT_MIRROR_VIA_DEVVIT=1
+
+# Daily gallery manifest writer (on) + posting still on Mork asyncpraw
+REDDIT_GALLERY_USE_MANIFEST=1
+# REDDIT_GALLERY_VIA_DEVVIT=1
+
+# Discord #reddit → Reddit comment via Devvit (off until external endpoints approved)
+# REDDIT_REPLY_VIA_DEVVIT=1
 ```
+
+To force COTD off later: `npx devvit settings set cardOfTheDayViaDevvit` → enter `false`.
 
 Redeploy / restart Mork after editing `.env`.
 
@@ -50,3 +59,5 @@ Redeploy / restart Mork after editing `.env`.
 - Hour 10 UTC → Devvit scheduler (not `Lifecycle.py` COTD)
 - No double COTD posts (both `REDDIT_COTD_VIA_DEVVIT=1` and Devvit flag on)
 - Mirror: after cutover, new inbound-flair posts appear in `#reddit` without `check_reddit` running
+- Reply: with `REDDIT_REPLY_VIA_DEVVIT=1`, `#reddit` replies use `/external/reply-to-post` (asyncpraw fallback on failure)
+- Gallery: hour-4 still Mork asyncpraw; Devvit scheduler skips until `dailyGalleryViaDevvit=true` and gallery API exists
