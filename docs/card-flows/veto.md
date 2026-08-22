@@ -106,7 +106,7 @@ flowchart TD
   LIM --> ACC["Accepted cards"]
   ACC --> AC1{"Errata card ID<br/>on message?"}
   AC1 -->|yes| SET1["Set from errata card's cardset"]
-  AC1 -->|no| SET2["Set SOH → soh card list"]
+  AC1 -->|no| SET2["Set ACTIVE_CUBE_ID → nine card list"]
   SET1 --> AC1B["Accept + GCS + Hellfall"]
   SET2 --> AC1B
   AC1B --> RD1{"> 5 Reddit-eligible<br/>cards this compile?"}

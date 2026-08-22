@@ -97,8 +97,8 @@ async def accept_card(
     file: discord.File,
     cardName: str,
     authorName: str,
-    channelIdForCard: int = hc_constants.SOH_CARD_LIST,
-    setId: str = "SOH",
+    channelIdForCard: int = hc_constants.NINE_CARD_LIST,
+    setId: str = hc_constants.ACTIVE_CUBE_ID,
     errata: bool = False,
     errataId: Optional[str] = None,
     wasVetoed: bool = False,
@@ -227,7 +227,9 @@ async def accept_card(
                     )
                     posted = True
                 except Exception as e:
-                    print("Devvit acceptance post failed; falling back to asyncpraw:", e)
+                    print(
+                        "Devvit acceptance post failed; falling back to asyncpraw:", e
+                    )
             if not posted:
                 try:
                     await post_to_reddit(

@@ -69,7 +69,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                     acceptContent = messageEntry.content + " has won hellscube"
                 else:
                     acceptContent = messageEntry.content + " was accepted"
-                
+
                 accepted_message_no_mentions = messageEntry.content
                 for index, mentionEntry in enumerate(messageEntry.raw_mentions):
                     if index < len(messageEntry.mentions):
@@ -82,7 +82,9 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
 
                 copy = await messageEntry.attachments[0].to_file()
                 vetoEntry = await vetoChannel.send(
-                    content="SOH: " + accepted_message_no_mentions, file=copy
+                    content=f"{hc_constants.CUBE_NAME}: "
+                    + accepted_message_no_mentions,
+                    file=copy,
                 )
 
                 # Submissions thread is not deleted with the message.
@@ -109,7 +111,10 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 time_reacts = get(messageEntry.reactions, emoji="🕛")
                 if time_reacts:
                     async for rem_msg in subChannel.history(limit=200):
-                        if rem_msg.author == bot.user and messageEntry.jump_url in rem_msg.content:
+                        if (
+                            rem_msg.author == bot.user
+                            and messageEntry.jump_url in rem_msg.content
+                        ):
                             try:
                                 await rem_msg.delete()
                             except Exception:

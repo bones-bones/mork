@@ -1,4 +1,4 @@
-"""US Eastern closed days for #submissions (Tuesday, Thursday, and Saturday)."""
+"""US Eastern closed days for #submissions (Tuesday and Saturday)."""
 
 from __future__ import annotations
 
@@ -6,8 +6,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 SUBMISSIONS_TZ = ZoneInfo("America/New_York")
-# Thursday included temporarily for testing.
-CLOSED_WEEKDAYS = {1, 3, 5}  # Tuesday, Thursday, Saturday
+CLOSED_WEEKDAYS = {1, 5}  # Tuesday, Saturday
 
 
 def _as_aware_utc(dt: datetime) -> datetime:
