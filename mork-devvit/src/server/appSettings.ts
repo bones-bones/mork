@@ -34,6 +34,35 @@ export async function getAppBooleanSetting(
   return parseAppBoolean(value, defaultValue);
 }
 
+/** Devvit CLI may return boolean settings as strings ("true" / "false"). */
+export function parseAppBoolean(
+  value: boolean | string | undefined,
+  defaultValue: boolean,
+): boolean {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === 'true' || normalized === '1') {
+    return true;
+  }
+  if (normalized === 'false' || normalized === '0' || normalized === '') {
+    return false;
+  }
+  return defaultValue;
+}
+
+export async function getAppBooleanSetting(
+  key: string,
+  defaultValue: boolean,
+): Promise<boolean> {
+  const value = await settings.get<boolean | string>(key);
+  return parseAppBoolean(value, defaultValue);
+}
+
 export async function getOfficialHcRedditFlair(): Promise<string> {
   const value = await settings.get<string>('officialHcRedditFlair');
   const trimmed = value?.trim();
