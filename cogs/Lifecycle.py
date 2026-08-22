@@ -62,7 +62,10 @@ from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, reasonable_card
 from image_response_filename import filename_from_image_response
 from post_card_images import post_card_images
-from reddit_devvit import reddit_cotd_via_devvit_enabled, reddit_mirror_via_devvit_enabled
+from reddit_devvit import (
+    reddit_cotd_via_devvit_enabled,
+    reddit_mirror_via_devvit_enabled,
+)
 from reddit_functions import post_to_reddit
 from shared_vars import intents, googleClient
 
@@ -163,9 +166,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                             continue
                         data_bytes = await resp.read()
                         filename = filename_from_image_response(
-                            content_disposition=resp.headers.get(
-                                "Content-Disposition"
-                            ),
+                            content_disposition=resp.headers.get("Content-Disposition"),
                             url=str(resp.url),
                             content_type=resp.headers.get("Content-Type"),
                             fallback_name=card.name(),
@@ -230,9 +231,7 @@ class LifecycleCog(commands.Cog):
                                 body=data_bytes,
                             )
                             ext = os.path.splitext(filename)[1] or ".png"
-                            image_path = (
-                                f'tempImages/{name.replace("/", "|")}{ext}'
-                            )
+                            image_path = f'tempImages/{name.replace("/", "|")}{ext}'
                             with open(image_path, "wb") as out:
                                 out.write(data_bytes)
                             try:
@@ -403,9 +402,7 @@ class LifecycleCog(commands.Cog):
                         veto_council=veto_council_to_notify,
                     )
                     await ogMessage.add_reaction(hc_constants.DELETE)
-                    errata_submissions_channel = getErrataTrackingChannel(
-                        bot=self.bot
-                    )
+                    errata_submissions_channel = getErrataTrackingChannel(bot=self.bot)
                     errata_submission_message = await errata_submissions_channel.send(
                         content=first_message.content, file=copy2
                     )
@@ -613,6 +610,8 @@ class LifecycleCog(commands.Cog):
                     return
                 await message.add_reaction(hc_constants.VOTE_UP)
                 await message.add_reaction(hc_constants.VOTE_DOWN)
+                card_name = submission_card_name(message.content)
+                await message.create_thread(name=card_name[:99])
 
             case hc_constants.HELLS_UNO_CHANNEL:
                 await message.add_reaction(hc_constants.VOTE_UP)
@@ -699,7 +698,12 @@ class LifecycleCog(commands.Cog):
                     preview = (message.content or "").strip()
                     attachment_count = len(message.attachments)
                     await message.delete()
-                    admin = await self.bot.fetch_user(hc_constants.LLLLLL)
+                    discussion = cast(
+                        TextChannel,
+                        self.bot.get_channel(
+                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                        ),
+                    )
                     parts = [
                         f"<@{author_id}> tried to post in #submissions while it was closed."
                     ]
@@ -707,7 +711,7 @@ class LifecycleCog(commands.Cog):
                         parts.append(preview[:500])
                     if attachment_count:
                         parts.append(f"({attachment_count} attachment(s))")
-                    await admin.send("\n".join(parts))
+                    await discussion.send("\n".join(parts))
                     return
                 if len(message.attachments) == 0:
                     return
@@ -752,8 +756,9 @@ class LifecycleCog(commands.Cog):
 
                             timeSinceLast = elapsed_open_hours(tempDate)
 
-                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
-                                cast(discord.Member, message.author)
+                            if (
+                                timeSinceLast < hc_constants.SUBMISSION_COOLDOWN
+                                and not is_admin(cast(discord.Member, message.author))
                             ):
                                 discussionChannel = getSubmissionDiscussionChannel(
                                     self.bot
@@ -850,8 +855,11 @@ class LifecycleCog(commands.Cog):
                                         ).total_seconds()
                                     ) / (60 * 60)
 
-                                    if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
-                                        cast(discord.Member, message.author)
+                                    if (
+                                        timeSinceLast < hc_constants.SUBMISSION_COOLDOWN
+                                        and not is_admin(
+                                            cast(discord.Member, message.author)
+                                        )
                                     ):
                                         discussionChannel = cast(
                                             TextChannel,
@@ -952,9 +960,7 @@ class LifecycleCog(commands.Cog):
                             return
                         data_bytes = await resp.read()
                         filename = filename_from_image_response(
-                            content_disposition=resp.headers.get(
-                                "Content-Disposition"
-                            ),
+                            content_disposition=resp.headers.get("Content-Disposition"),
                             url=str(resp.url),
                             content_type=resp.headers.get("Content-Type"),
                             fallback_name=card.name(),
@@ -1146,8 +1152,8 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.cardset()
                 channel_to_add_to = card_list_channel_for_set(errata_card.cardset())
             else:
-                set_to_add_to = "SOH"
-                channel_to_add_to = hc_constants.SOH_CARD_LIST
+                set_to_add_to = hc_constants.ACTIVE_CUBE_ID
+                channel_to_add_to = hc_constants.NINE_CARD_LIST
 
             await accept_card(
                 bot=self.bot,

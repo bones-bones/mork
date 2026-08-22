@@ -1,4 +1,4 @@
-"""DM admin gate open/close announcements on closed/open transition days."""
+"""Post gate open/close announcements in submissions channels."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
+from discord import TextChannel
 from discord.ext import commands
 
 import hc_constants
@@ -14,8 +15,12 @@ from cogs.lifecycle.submissions_closed import CLOSED_WEEKDAYS, SUBMISSIONS_TZ
 
 GATES_CLOSED_MESSAGE = "THE GATES OF HELL ARE CLOSED"
 GATES_OPENED_MESSAGE = "THE GATES OF HELL HAVE OPENED"
-# Day after each closed day (Wed/Fri/Sun; Thursday included temporarily for testing).
-OPENED_WEEKDAYS = {2, 4, 6}
+# Day after each closed day (Wed, Sun).
+OPENED_WEEKDAYS = {2, 6}
+GATES_ANNOUNCEMENT_CHANNEL_IDS = (
+    hc_constants.SUBMISSIONS_CHANNEL,
+    hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL,
+)
 
 
 def gate_announcement_for(at: datetime) -> str | None:
@@ -49,7 +54,7 @@ def _save_state(state: dict[str, Any]) -> None:
 
 
 async def ensure_submissions_gates(bot: commands.Bot) -> None:
-    """DM admin today's gate message once per lifecycle day (closed/open transition days)."""
+    """Post today's gate message once per lifecycle day in submissions channels."""
     now = datetime.now(timezone.utc)
     local = now.astimezone(SUBMISSIONS_TZ)
     message = gate_announcement_for(now)
@@ -62,7 +67,10 @@ async def ensure_submissions_gates(bot: commands.Bot) -> None:
     if state.get("last_announcement") == key:
         return
 
-    admin = await bot.fetch_user(hc_constants.LLLLLL)
-    await admin.send(message)
+    content = f"@here {message}"
+    for channel_id in GATES_ANNOUNCEMENT_CHANNEL_IDS:
+        channel = bot.get_channel(channel_id)
+        if isinstance(channel, TextChannel):
+            await channel.send(content)
     state["last_announcement"] = key
     _save_state(state)

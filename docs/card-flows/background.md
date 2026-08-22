@@ -59,7 +59,7 @@ Reply bridge only fires when the prior Mork message starts with `reddit says:` â
 
 **Outbound flair:** all posts use **Official HC** (`OFFICIAL_HC_REDDIT_FLAIR`). Accepted and vetoed cards share the same flair in code.
 
-**Outbound titles:** card acceptance posts use the card's **set ID** in the title (e.g. `was accepted into SOH`, `was accepted into SCL.X`), not `CUBE_NAME`.
+**Outbound titles:** card acceptance posts use the card's **set ID** in the title (e.g. `was accepted into HC9.1`, `was accepted into SCL.X`), not `CUBE_NAME`.
 
 Stage 1 Devvit migration: **immediate acceptance/veto posts only** can route through `mork-devvit` when flagged. Everything else still uses asyncpraw.
 
