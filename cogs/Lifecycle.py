@@ -592,6 +592,8 @@ class LifecycleCog(commands.Cog):
                     return
                 await message.add_reaction(hc_constants.VOTE_UP)
                 await message.add_reaction(hc_constants.VOTE_DOWN)
+                card_name = submission_card_name(message.content)
+                await message.create_thread(name=card_name[:99])
 
             case hc_constants.HELLS_UNO_CHANNEL:
                 await message.add_reaction(hc_constants.VOTE_UP)
@@ -669,13 +671,16 @@ class LifecycleCog(commands.Cog):
                     preview = (message.content or "").strip()
                     attachment_count = len(message.attachments)
                     await message.delete()
-                    admin = await self.bot.fetch_user(hc_constants.LLLLLL)
+                    discussion = cast(
+                        TextChannel,
+                        self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL),
+                    )
                     parts = [f"<@{author_id}> tried to post in #submissions while it was closed."]
                     if preview:
                         parts.append(preview[:500])
                     if attachment_count:
                         parts.append(f"({attachment_count} attachment(s))")
-                    await admin.send("\n".join(parts))
+                    await discussion.send("\n".join(parts))
                     return
                 if len(message.attachments) == 0:
                     return
@@ -1078,8 +1083,8 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.set
                 channel_to_add_to = card_list_channel_for_set(errata_card.set)
             else:
-                set_to_add_to = "SOH"
-                channel_to_add_to = hc_constants.SOH_CARD_LIST
+                set_to_add_to = hc_constants.ACTIVE_CUBE_ID
+                channel_to_add_to = hc_constants.NINE_CARD_LIST
 
             await accept_card(
                 bot=self.bot,
