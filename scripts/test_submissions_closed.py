@@ -23,11 +23,11 @@ NY = ZoneInfo("America/New_York")
 
 def test_closed_weekdays():
     assert is_submissions_closed(datetime(2026, 8, 18, 15, 0, tzinfo=NY))  # Tuesday
-    assert is_submissions_closed(datetime(2026, 8, 20, 15, 0, tzinfo=NY))  # Thursday
     assert is_submissions_closed(datetime(2026, 8, 15, 0, 0, tzinfo=NY))  # Saturday
     assert is_submissions_closed(datetime(2026, 8, 15, 23, 59, tzinfo=NY))
     assert not is_submissions_closed(datetime(2026, 8, 17, 15, 0, tzinfo=NY))  # Monday
     assert not is_submissions_closed(datetime(2026, 8, 19, 15, 0, tzinfo=NY))  # Wednesday
+    assert not is_submissions_closed(datetime(2026, 8, 20, 15, 0, tzinfo=NY))  # Thursday
     assert not is_submissions_closed(datetime(2026, 8, 16, 12, 0, tzinfo=NY))  # Sunday
 
 
@@ -73,11 +73,11 @@ def test_gate_announcements():
     mon = datetime(2026, 8, 17, 12, 0, tzinfo=NY)
 
     assert gate_announcement_for(tue) == GATES_CLOSED_MESSAGE
-    assert gate_announcement_for(thu) == GATES_CLOSED_MESSAGE
     assert gate_announcement_for(sat) == GATES_CLOSED_MESSAGE
     assert gate_announcement_for(wed) == GATES_OPENED_MESSAGE
-    assert gate_announcement_for(fri) == GATES_OPENED_MESSAGE
     assert gate_announcement_for(sun) == GATES_OPENED_MESSAGE
+    assert gate_announcement_for(thu) is None
+    assert gate_announcement_for(fri) is None
     assert gate_announcement_for(mon) is None
 
 

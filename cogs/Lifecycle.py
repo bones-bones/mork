@@ -156,18 +156,19 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
             img_url = card.image
             try:
                 headers = {"User-Agent": hc_constants.USER_AGENT}
-                async with aiohttp.ClientSession(headers=headers).get(img_url) as resp:
-                    if resp.status != 200:
-                        continue
-                    data_bytes = await resp.read()
-                    filename = filename_from_image_response(
-                        content_disposition=resp.headers.get("Content-Disposition"),
-                        url=str(resp.url),
-                        content_type=resp.headers.get("Content-Type"),
-                        fallback_name=card.name,
-                        body=data_bytes,
-                    )
-                    data = io.BytesIO(data_bytes)
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    async with session.get(img_url) as resp:
+                        if resp.status != 200:
+                            continue
+                        data_bytes = await resp.read()
+                        filename = filename_from_image_response(
+                            content_disposition=resp.headers.get("Content-Disposition"),
+                            url=str(resp.url),
+                            content_type=resp.headers.get("Content-Type"),
+                            fallback_name=card.name,
+                            body=data_bytes,
+                        )
+                        data = io.BytesIO(data_bytes)
                 veto_content = f"{card.name} by {';'.join(card.creators)}\nErrata: {card.hcid}"
                 veto_message = await veto_channel.send(
                     content=veto_content,
@@ -592,6 +593,8 @@ class LifecycleCog(commands.Cog):
                     return
                 await message.add_reaction(hc_constants.VOTE_UP)
                 await message.add_reaction(hc_constants.VOTE_DOWN)
+                card_name = submission_card_name(message.content)
+                await message.create_thread(name=card_name[:99])
 
             case hc_constants.HELLS_UNO_CHANNEL:
                 await message.add_reaction(hc_constants.VOTE_UP)
@@ -669,13 +672,20 @@ class LifecycleCog(commands.Cog):
                     preview = (message.content or "").strip()
                     attachment_count = len(message.attachments)
                     await message.delete()
-                    admin = await self.bot.fetch_user(hc_constants.LLLLLL)
-                    parts = [f"<@{author_id}> tried to post in #submissions while it was closed."]
+                    discussion = cast(
+                        TextChannel,
+                        self.bot.get_channel(
+                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                        ),
+                    )
+                    parts = [
+                        f"<@{author_id}> tried to post in #submissions while it was closed."
+                    ]
                     if preview:
                         parts.append(preview[:500])
                     if attachment_count:
                         parts.append(f"({attachment_count} attachment(s))")
-                    await admin.send("\n".join(parts))
+                    await discussion.send("\n".join(parts))
                     return
                 if len(message.attachments) == 0:
                     return
@@ -718,8 +728,9 @@ class LifecycleCog(commands.Cog):
 
                             timeSinceLast = elapsed_open_hours(tempDate)
 
-                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
-                                cast(discord.Member, message.author)
+                            if (
+                                timeSinceLast < hc_constants.SUBMISSION_COOLDOWN
+                                and not is_admin(cast(discord.Member, message.author))
                             ):
                                 discussionChannel = getSubmissionDiscussionChannel(self.bot)
                                 await discussionChannel.send(
@@ -806,7 +817,9 @@ class LifecycleCog(commands.Cog):
 
                                     if (
                                         timeSinceLast < hc_constants.SUBMISSION_COOLDOWN
-                                        and not is_admin(cast(discord.Member, message.author))
+                                        and not is_admin(
+                                            cast(discord.Member, message.author)
+                                        )
                                     ):
                                         discussionChannel = cast(
                                             TextChannel,
@@ -888,21 +901,22 @@ class LifecycleCog(commands.Cog):
                     return
                 img_url = card.image
                 headers = {"User-Agent": hc_constants.USER_AGENT}
-                async with aiohttp.ClientSession(headers=headers).get(img_url) as resp:
-                    if resp.status != 200:
-                        await message.channel.send(
-                            f"<@{message.author.id}>, couldn't fetch the card image."
+                async with aiohttp.ClientSession(headers=headers) as session:
+                    async with session.get(img_url) as resp:
+                        if resp.status != 200:
+                            await message.channel.send(
+                                f"<@{message.author.id}>, couldn't fetch the card image."
+                            )
+                            return
+                        data_bytes = await resp.read()
+                        filename = filename_from_image_response(
+                            content_disposition=resp.headers.get("Content-Disposition"),
+                            url=str(resp.url),
+                            content_type=resp.headers.get("Content-Type"),
+                            fallback_name=card.name,
+                            body=data_bytes,
                         )
-                        return
-                    data_bytes = await resp.read()
-                    filename = filename_from_image_response(
-                        content_disposition=resp.headers.get("Content-Disposition"),
-                        url=str(resp.url),
-                        content_type=resp.headers.get("Content-Type"),
-                        fallback_name=card.name,
-                        body=data_bytes,
-                    )
-                    data = io.BytesIO(data_bytes)
+                        data = io.BytesIO(data_bytes)
                     await message.delete()
                     content = card_id_input
                     if body:
@@ -1078,8 +1092,8 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.set
                 channel_to_add_to = card_list_channel_for_set(errata_card.set)
             else:
-                set_to_add_to = "SOH"
-                channel_to_add_to = hc_constants.SOH_CARD_LIST
+                set_to_add_to = hc_constants.ACTIVE_CUBE_ID
+                channel_to_add_to = hc_constants.NINE_CARD_LIST
 
             await accept_card(
                 bot=self.bot,
@@ -1178,33 +1192,39 @@ class LifecycleCog(commands.Cog):
 
         await veto_announcement_channel.send(content="!! VETO POLLS HAVE BEEN PROCESSED !!")
 
-        # had to use format because python doesn't like \n inside template brackets
         if len(acceptedCards) > 0:
-            acceptedMessage = f"||\u200b||\nACCEPTED CARDS: \n{'\n'.join(acceptedCards)}"
+            accepted_cards_text = "\n".join(acceptedCards)
+            acceptedMessage = f"||\u200b||\nACCEPTED CARDS: \n{accepted_cards_text}"
             for i in range(0, len(acceptedMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
-            errataMessage = f"||\u200b||\nNEEDS ERRATA: \n{'\n'.join(needsErrataCards)}"
+            needs_errata_text = "\n".join(needsErrataCards)
+            errataMessage = f"||\u200b||\nNEEDS ERRATA: \n{needs_errata_text}"
             for i in range(0, len(errataMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
-            vetoMessage = f"||\u200b||\nVETOED: \n{'\n'.join(vetoedCards)}"
+            vetoed_text = "\n".join(vetoedCards)
+            vetoMessage = f"||\u200b||\nVETOED: \n{vetoed_text}"
             for i in range(0, len(vetoMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
-            hellMessage = f"||\u200b||\nVETO HELL: \n{'\n'.join(vetoHellCards)}"
+            veto_hell_text = "\n".join(vetoHellCards)
+            hellMessage = f"||\u200b||\nVETO HELL: \n{veto_hell_text}"
             for i in range(0, len(hellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
-            mysteryHellMessage = f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{'\n'.join(mysteryVetoHellCards)}"
+            mystery_hell_text = "\n".join(mysteryVetoHellCards)
+            mysteryHellMessage = (
+                f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{mystery_hell_text}"
+            )
             for i in range(0, len(mysteryHellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]

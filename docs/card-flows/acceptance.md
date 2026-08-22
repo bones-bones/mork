@@ -43,10 +43,10 @@ flowchart TD
   PRAW --> DONE
 ```
 
-**Defaults:** set `SOH`, card list `SOH_CARD_LIST`  
+**Defaults:** set `ACTIVE_CUBE_ID` (`HC9.1`), card list `NINE_CARD_LIST`  
 **Scube Lair:** mandatory Hellfall postcard sync
 
-**Reddit title:** `post_to_reddit` builds `"… was accepted into {set_id}"` (or `"… was vetoed from {set_id}"`) from the card's set — not `CUBE_NAME`. Scube Lair gold uses the pinned set (e.g. `SCL.X`); compile-veto accepts use `SOH`.
+**Reddit title:** `post_to_reddit` builds `"… was accepted into {set_id}"` (or `"… was vetoed from {set_id}"`) from the card's set — not `CUBE_NAME`. Scube Lair gold uses the pinned set (e.g. `SCL.X`); compile-veto accepts use `ACTIVE_CUBE_ID`.
 
 **Stage-1 Devvit (optional):** when `REDDIT_ACCEPT_VIA_DEVVIT=1`, immediate posts go to `mork-devvit` `/api/post-card` using the Hellfall GCS `imageUrl`; falls back to asyncpraw on failure. Deferred batches still use `deferred_reddit/` + asyncpraw.
 
