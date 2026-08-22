@@ -11,8 +11,6 @@ Example:
 
 from __future__ import annotations
 
-import mork_repo_root  # noqa: E402
-
 import argparse
 import csv
 import os
@@ -24,10 +22,11 @@ from collections import Counter
 from collections.abc import Callable
 from typing import TypeVar
 
+import mork_repo_root  # noqa: F401
 import requests
 from gspread.exceptions import APIError
-
 from printable_image_qa import cleanup_temp_paths, resize_for_vision, review_image
+
 from shared_vars import googleClient
 
 T = TypeVar("T")
@@ -161,7 +160,9 @@ def main() -> None:
         max_tries=6,
         base_delay=2.5,
     )
-    rows = _google_call_with_retry(ws.get_all_values, what="read sheet", max_tries=6, base_delay=2.5)
+    rows = _google_call_with_retry(
+        ws.get_all_values, what="read sheet", max_tries=6, base_delay=2.5
+    )
 
     end_row = args.first_row + args.limit - 1
     results: list[dict[str, str]] = []

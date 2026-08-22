@@ -76,7 +76,7 @@ Replaces the current accept flow where sheet rows are the system of record.
 
 ```mermaid
 flowchart TD
-  IN["Accept card<br/>(compile-veto, errata, design hell, …)"] --> RES["Resolve author names"]
+  IN["Accept card<br/>(compile-veto, errata, scube lair, …)"] --> RES["Resolve author names"]
   RES --> ID{"Errata / existing hcid?"}
   ID -->|yes| UPD["Postcard update<br/>hcid = existing id"]
   ID -->|no| NEW["Postcard create<br/>hcid = next numeric id or Hellfall-assigned"]
@@ -95,7 +95,7 @@ flowchart TD
   RED --> DONE
 ```
 
-**Design Hell** already sends `imageBase64` to Hellfall first — that becomes the default for all accepts. Mork stops calling GCS directly; Hellfall owns upload to `hellscube-images` and returns `imageUrl`.
+**Scube Lair** already sends `imageBase64` to Hellfall first — that becomes the default for all accepts. Mork stops calling GCS directly; Hellfall owns upload to `hellscube-images` and returns `imageUrl`.
 
 **Errata:** lookup existing card by hcid in Hellfall, not sheet row; update image and metadata via postcard with same `hcid` (Hellfall overwrites the GCS object when applicable).
 

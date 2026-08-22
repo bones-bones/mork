@@ -42,8 +42,6 @@ re-run uploaded rows too. ``--local-only`` does not read or write the ledger.
 
 from __future__ import annotations
 
-import mork_repo_root  # noqa: E402
-
 import argparse
 import json
 import os
@@ -55,9 +53,9 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
 from urllib.parse import unquote
 
+import mork_repo_root  # noqa: F401
 import requests
 from google.cloud import storage
 
@@ -67,9 +65,8 @@ if _scripts in sys.path:
     sys.path.remove(_scripts)
 sys.path.insert(0, _scripts)
 
-import hc_constants
-from download_and_upload_images_gcs import prepare_card_for_printing, _download as _download_source
-
+from download_and_upload_images_gcs import _download as _download_source
+from download_and_upload_images_gcs import prepare_card_for_printing
 from printable_image_fixes import (
     FIXABLE,
     UNFIXABLE,
@@ -85,9 +82,11 @@ from printable_image_qa import (
     format_assessment_comment,
     resize_for_vision,
     review_image,
-    types_include_plane,
     supertypes_include_legendary,
+    types_include_plane,
 )
+
+import hc_constants
 from shared_vars import googleClient
 
 DEFAULT_CREDENTIALS = "./bot_secrets/client_secrets.json"
@@ -95,9 +94,7 @@ PRINTABLE_DB_KEY = "1FdnGhkjxnOAbjBEeLGC_QDMVcmEjoOLiuEkM9MeiPFs"
 GCS_BUCKET = os.environ.get("GCS_PRINTABLE_BUCKET", "hellscube-printable-images")
 DEFAULT_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 DEFAULT_MODEL = os.environ.get("OLLAMA_VISION_MODEL", "qwen2.5vl:7b")
-DEFAULT_STATE_FILE = (
-    Path(__file__).resolve().parent / "data" / "fix_reassess_state.json"
-)
+DEFAULT_STATE_FILE = Path(__file__).resolve().parent / "data" / "fix_reassess_state.json"
 STATE_VERSION = 1
 MAX_FIX_ATTEMPTS = 2
 
@@ -118,9 +115,7 @@ COL_BOT = 6
 COL_BOT_COMMENT = 7
 
 # Structural failures — skip under --high-confidence-only.
-HIGH_CONFIDENCE_BLOCK_UNFIXABLE = frozenset(
-    {"wrong_silhouette", "multi_card_in_one_file"}
-)
+HIGH_CONFIDENCE_BLOCK_UNFIXABLE = frozenset({"wrong_silhouette", "multi_card_in_one_file"})
 
 
 def _col_letter(n: int) -> str:
@@ -155,7 +150,7 @@ def _load_database_index() -> tuple[list[list[str]], dict[str, int]]:
 
 
 def _parse_side_num(side_name: str) -> int:
-    m = re.match(r"side\s*(\d+)", (side_name or "").strip(), re.I)
+    m = re.match(r"side\s*(\d+)", (side_name or "").strip(), re.IGNORECASE)
     return int(m.group(1)) if m else 1
 
 
@@ -242,9 +237,7 @@ def _database_is_plane(
     card_id: str,
     side_name: str,
 ) -> bool:
-    return types_include_plane(
-        _database_types(db_rows, id_to_row, card_id, side_name)
-    )
+    return types_include_plane(_database_types(db_rows, id_to_row, card_id, side_name))
 
 
 def _database_is_legendary(
@@ -277,9 +270,7 @@ def _pull_and_prepare(
         if source_copy:
             shutil.copy2(tmp_raw, source_copy)
         shutil.copy2(tmp_raw, dest_prepared)
-        prepare_card_for_printing(
-            dest_prepared, log_tag="fix", force_landscape=is_plane
-        )
+        prepare_card_for_printing(dest_prepared, log_tag="fix", force_landscape=is_plane)
     finally:
         try:
             os.remove(tmp_raw)
@@ -415,9 +406,7 @@ def _post_fix_fail_comment(
         if not tags:
             tags = ", ".join(parse_defect_tags(original_comment))
         parts = [
-            p
-            for p in (tags, review.notes.strip() if review.notes else "", upload_reason)
-            if p
+            p for p in (tags, review.notes.strip() if review.notes else "", upload_reason) if p
         ]
         return " — ".join(parts)
     if review:
@@ -602,8 +591,7 @@ def _run_re_eval_uploaded(args) -> None:
     targets = [
         e
         for e in ledger.entries.values()
-        if e.get("outcome") == "uploaded"
-        and _parse_since(e.get("updated_at", "")) >= since
+        if e.get("outcome") == "uploaded" and _parse_since(e.get("updated_at", "")) >= since
     ]
     targets.sort(key=lambda e: e.get("updated_at", ""))
     if args.limit:
@@ -635,13 +623,9 @@ def _run_re_eval_uploaded(args) -> None:
         url = _cell(row, COL_URL)
         is_good = _cell(row, COL_IS_GOOD)
         is_plane = _database_is_plane(db_rows, db_id_to_row, card_id, side_name)
-        is_legendary = _database_is_legendary(
-            db_rows, db_id_to_row, card_id, side_name
-        )
+        is_legendary = _database_is_legendary(db_rows, db_id_to_row, card_id, side_name)
 
-        print(
-            f"\n[{card_id}] {card_name} ({side_name}) row={row_1based} is_good={is_good!r}"
-        )
+        print(f"\n[{card_id}] {card_name} ({side_name}) row={row_1based} is_good={is_good!r}")
         if not url:
             print("  SKIP: no URL")
             stats["skip"] += 1
@@ -744,9 +728,7 @@ def main() -> None:
             "heuristic corner pipeline validated on the local fix_compare set)"
         ),
     )
-    parser.add_argument(
-        "--skip-reassess", action="store_true", help="Skip Ollama reassessment"
-    )
+    parser.add_argument("--skip-reassess", action="store_true", help="Skip Ollama reassessment")
     parser.add_argument(
         "--high-confidence-only",
         action="store_true",
@@ -795,9 +777,7 @@ def main() -> None:
         args.from_db = True
 
     os.environ.setdefault("GOOGLE_APPLICATION_CREDENTIALS", args.credentials)
-    storage_client = (
-        storage.Client() if not args.local_only and not args.dry_run else None
-    )
+    storage_client = storage.Client() if not args.local_only and not args.dry_run else None
     if args.local_only:
         os.makedirs(args.output_dir, exist_ok=True)
         print(f"Local compare output: {os.path.abspath(args.output_dir)}")
@@ -852,12 +832,7 @@ def main() -> None:
         if not card_id:
             continue
         is_fail_row = _cell(row, COL_IS_GOOD) == "N" and _cell(row, COL_BOT) == "bot"
-        demo_row = (
-            args.local_only
-            and args.from_db
-            and only_ids
-            and card_id in only_ids
-        )
+        demo_row = args.local_only and args.from_db and only_ids and card_id in only_ids
         if not is_fail_row and not demo_row:
             continue
         if only_ids and card_id not in only_ids:
@@ -886,12 +861,8 @@ def main() -> None:
 
         card_name = _cell(row, COL_CARDNAME)
         url = _cell(row, COL_URL)
-        is_plane = _database_is_plane(
-            db_rows, db_id_to_row, card_id, side_name
-        )
-        is_legendary = _database_is_legendary(
-            db_rows, db_id_to_row, card_id, side_name
-        )
+        is_plane = _database_is_plane(db_rows, db_id_to_row, card_id, side_name)
+        is_legendary = _database_is_legendary(db_rows, db_id_to_row, card_id, side_name)
 
         print(f"\n[{card_id}] {card_name} ({side_name})")
         print(f"  defects={defects}  fixable={fixable}  unfixable={unfixable}")
@@ -917,9 +888,7 @@ def main() -> None:
             stats["skipped"] += 1
             continue
 
-        if args.high_confidence_only and not _high_confidence_eligible(
-            fixable, unfixable
-        ):
+        if args.high_confidence_only and not _high_confidence_eligible(fixable, unfixable):
             print(
                 "  SKIP: not high-confidence (need corner_color_mismatch, no structural unfixable)"
             )
@@ -938,16 +907,8 @@ def main() -> None:
 
         run_tag = "high_confidence" if args.high_confidence_only else "default"
         slug = _safe_slug(card_id, card_name, side_name)
-        before_path = (
-            os.path.join(args.output_dir, f"{slug}_before.png")
-            if args.local_only
-            else ""
-        )
-        after_path = (
-            os.path.join(args.output_dir, f"{slug}_after.png")
-            if args.local_only
-            else ""
-        )
+        before_path = os.path.join(args.output_dir, f"{slug}_before.png") if args.local_only else ""
+        after_path = os.path.join(args.output_dir, f"{slug}_after.png") if args.local_only else ""
         source_path = (
             os.path.join(args.output_dir, f"{slug}_source.png")
             if args.local_only and args.from_db
@@ -978,9 +939,7 @@ def main() -> None:
                 if args.local_only:
                     shutil.copy2(tmp, before_path)
 
-            vision_corners = {"auto": None, "on": True, "off": False}[
-                args.vision_corners
-            ]
+            vision_corners = {"auto": None, "on": True, "off": False}[args.vision_corners]
             all_applied: list[str] = []
             total_pixels_changed = 0
             review = None
@@ -1063,11 +1022,7 @@ def main() -> None:
                     skip_row = True
                     break
 
-                if (
-                    attempt == 1
-                    and args.high_confidence_only
-                    and fix_result.pixels_changed == 0
-                ):
+                if attempt == 1 and args.high_confidence_only and fix_result.pixels_changed == 0:
                     print("  SKIP UPLOAD: high-confidence requires pixel changes")
                     _track(
                         "no_pixels_changed",
@@ -1124,10 +1079,7 @@ def main() -> None:
                         print(f"  Reassess pass on retry (attempt {attempt})")
                     break
                 if attempt < MAX_FIX_ATTEMPTS:
-                    print(
-                        f"  Reassess fail (attempt {attempt}): {upload_reason} "
-                        f"— will retry fix"
-                    )
+                    print(f"  Reassess fail (attempt {attempt}): {upload_reason} — will retry fix")
                 else:
                     print(f"  Reassess fail (final): {upload_reason}")
 
@@ -1151,9 +1103,7 @@ def main() -> None:
                 assert storage_client is not None
                 if not upload_ok:
                     verdict = review.verdict if review else "?"
-                    print(
-                        f"  SKIP UPLOAD: {upload_reason} (verdict={verdict}, GCS unchanged)"
-                    )
+                    print(f"  SKIP UPLOAD: {upload_reason} (verdict={verdict}, GCS unchanged)")
                     if review is not None:
                         fail_comment = _post_fix_fail_comment(
                             original_comment=comment,

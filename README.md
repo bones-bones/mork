@@ -9,18 +9,18 @@ I have no idea what is going on, I think Exalted and Cirion built this. (and Zax
 1. Optional: install dev hooks via `pip install -r requirements-dev.txt` and `pre-commit install` (runs Ruff + a Python syntax check on commit)
 1. Copy `.env.template` to `.env` and fill in your credentials (Discord token, Reddit API creds). See https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki for Reddit setup.
 1. Get a copy of `client_secrets.json`, put it in `bot_secrets/`
-1. From the repo root, run `python Mork.py` (or `python3 Mork.py` if that is what your machine uses)
+1. From the repo root, run `python mork.py` (or `python3 mork.py` if that is what your machine uses)
 
 ## Repository layout
 
-- **`Mork.py`** — bot entrypoint
-- **`cogs/`** — Discord extensions loaded by `Mork.py`
+- **`mork.py`** — bot entrypoint
+- **`cogs/`** — Discord extensions loaded by `mork.py`
 - **`cogs/lifecycle/`** — helpers used by the lifecycle cog
 - **`submissions/`** — token / masterpiece / errata submission checks
 - **`scripts/`** — one-off maintenance (sheet → Drive/GCS image pipelines, border fixes). Run from the **repository root** so `./bot_secrets/...` paths work, e.g. `python scripts/download_and_upload_images_gcs.py --dry-run` — see [scripts/README.md](scripts/README.md)
 - **`docs/`** — deployment and ops notes; [docs/codebase-layout.md](docs/codebase-layout.md) explains why many `.py` files sit at the repo root; [docs/card-flows/](docs/card-flows/README.md) has Mermaid diagrams for card lifecycle workflows
 - **`bot_secrets/`** — local credentials (gitignored); use the `*.template.py` files as a guide
-- **Top-level `*.py` modules** (e.g. `shared_vars.py`, `acceptCard.py`) — imported by cogs; kept at the root on purpose for `python Mork.py` without a package install
+- **Top-level `*.py` modules** (e.g. `shared_vars.py`, `accept_card.py`) — imported by cogs; kept at the root on purpose for `python mork.py` without a package install
 
 ## Deploying on Google Cloud (GitHub Actions)
 
@@ -56,12 +56,12 @@ It's pretty easy to get multiple versions of Python installed. particularly 3? I
 
 
 # Assorted commands
-`nohup python3 Mork.py >/dev/null 2>&1`
-`nohup python3 -u Mork.py > nohup.out` - for looking at logs
+`nohup python3 mork.py >/dev/null 2>&1`
+`nohup python3 -u mork.py > nohup.out` - for looking at logs
 `rm -rf mork && unzip mork.zip && cd mork && ps -ef | grep python`
 
 
-`nohup python3 -u Mork.py > nohup.out`
+`nohup python3 -u mork.py > nohup.out`
 
 
 

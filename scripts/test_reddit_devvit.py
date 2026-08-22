@@ -70,16 +70,18 @@ class PostAcceptViaDevvitTests(unittest.IsolatedAsyncioTestCase):
         mock_session_cm.__aenter__.return_value = mock_session
         mock_session_cm.__aexit__.return_value = False
 
-        with patch.dict(os.environ, env, clear=False):
-            with patch(
+        with (
+            patch.dict(os.environ, env, clear=False),
+            patch(
                 "reddit_devvit.aiohttp.ClientSession",
                 return_value=mock_session_cm,
-            ):
-                result = await post_accept_via_devvit(
-                    title="Card was accepted into SOH",
-                    image_url="https://storage.googleapis.com/bucket/card.png",
-                    flair_id="flair-id",
-                )
+            ),
+        ):
+            result = await post_accept_via_devvit(
+                title="Card was accepted into SOH",
+                image_url="https://storage.googleapis.com/bucket/card.png",
+                flair_id="flair-id",
+            )
 
         self.assertEqual(result["postId"], "t3_abc")
         mock_session.post.assert_called_once()

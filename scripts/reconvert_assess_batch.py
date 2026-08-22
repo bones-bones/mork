@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+##!/usr/bin/env python3
 """
 Re-convert + assess Printable DB cards from fresh Database sources.
 
@@ -26,23 +26,20 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import sys
 import threading
 import time
 import traceback
+from functools import partial
 from pathlib import Path
 
-import requests
-
 import mork_repo_root  # noqa: F401
+import requests
 
 _scripts = str(Path(__file__).resolve().parent)
 if _scripts in sys.path:
     sys.path.remove(_scripts)
 sys.path.insert(0, _scripts)
-
-from google.cloud import storage
 
 from download_and_upload_images_gcs import (
     DEFAULT_BAD_URL_LOG,
@@ -58,6 +55,7 @@ from download_and_upload_images_gcs import (
     assess_prepared_card,
 )
 from fix_and_reassess import (
+    _DB_SIDE_COL,
     COL_BOT,
     COL_BOT_COMMENT,
     COL_CARDNAME,
@@ -66,20 +64,21 @@ from fix_and_reassess import (
     COL_SIDENAME,
     COL_URL,
     PRINTABLE_DB_KEY,
-    _DB_SIDE_COL,
     _cell,
     _col_letter,
-    _database_is_plane,
     _database_has_side,
     _database_is_legendary,
+    _database_is_plane,
     _db_cell,
     _download,
     _load_database_index,
     _normalize_card_id,
     _parse_side_num,
 )
+from google.cloud import storage
 from prepare_card_for_printing_stretch import prepare_card_for_printing_stretch
 from printable_image_fixes import UNFIXABLE, parse_defect_tags
+
 from shared_vars import googleClient
 
 DEFAULT_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
@@ -109,9 +108,7 @@ def _completed_keys(summary: list[dict]) -> set[tuple[str, str]]:
         if not cid:
             continue
         key = _target_key(str(cid), e.get("side") or "side 1")
-        if e.get("removed"):
-            done.add(key)
-        elif e.get("verdict") and not e.get("error"):
+        if e.get("removed") or (e.get("verdict") and not e.get("error")):
             done.add(key)
     return done
 
@@ -146,8 +143,7 @@ def _pick_targets(rows: list[list[str]], *, limit: int, n_only: bool) -> list[di
             "bot": bot,
             "comment": comment,
             "defects": defects,
-            "unfixable_only": bool(defects)
-            and all(d in UNFIXABLE for d in defects),
+            "unfixable_only": bool(defects) and all(d in UNFIXABLE for d in defects),
         }
         if is_good == "N":
             n_rows.append(entry)
@@ -300,11 +296,7 @@ def main() -> int:
     targets = _pick_targets(rows, limit=args.limit, n_only=args.n_only)
     if done_keys:
         before = len(targets)
-        targets = [
-            t
-            for t in targets
-            if _target_key(t["card_id"], t["side"]) not in done_keys
-        ]
+        targets = [t for t in targets if _target_key(t["card_id"], t["side"]) not in done_keys]
         print(
             f"Selected {before} cards, {len(targets)} remaining after resume skip "
             f"(N-pool fill toward --limit {args.limit})",
@@ -313,7 +305,7 @@ def main() -> int:
     else:
         print(
             f"Selected {len(targets)} cards "
-            f"(N={sum(1 for t in targets if t['is_good']=='N')}, "
+            f"(N={sum(1 for t in targets if t['is_good'] == 'N')}, "
             f"unfixable_only={sum(1 for t in targets if t['unfixable_only'])})",
             flush=True,
         )
@@ -351,8 +343,7 @@ def main() -> int:
         if args.dry_run:
             if cid not in id_to_row:
                 print(
-                    f"  DRY-RUN: would delete Printable row {t['printable_row']} "
-                    f"(not in Database)",
+                    f"  DRY-RUN: would delete Printable row {t['printable_row']} (not in Database)",
                     flush=True,
                 )
                 summary.append({**t, "removed": True, "dry_run": True})
@@ -361,9 +352,7 @@ def main() -> int:
             continue
 
         src_path = src_dir / _safe_card_filename(cid, name, side_tag, label="source")
-        printable_path = out_dir / _safe_card_filename(
-            cid, name, side_tag, label="printable"
-        )
+        printable_path = out_dir / _safe_card_filename(cid, name, side_tag, label="printable")
         entry = {**t, "source": str(src_path), "printable": str(printable_path)}
 
         if cid not in id_to_row:
@@ -424,9 +413,7 @@ def main() -> int:
             continue
 
         try:
-            url, db_row, side_idx, uses_primary = _database_url_meta(
-                db_rows, id_to_row, cid, side
-            )
+            url, db_row, side_idx, uses_primary = _database_url_meta(db_rows, id_to_row, cid, side)
             side_num = _parse_side_num(side)
 
             if not url.strip():
@@ -542,18 +529,16 @@ def main() -> int:
                             f"{name.replace('/', '|')}.png", cid, side_num - 1
                         )
                         blob = bucket.blob(object_key)
-                        blob.upload_from_filename(
-                            str(printable_path), content_type="image/png"
-                        )
+                        blob.upload_from_filename(str(printable_path), content_type="image/png")
                         gcs_url = blob.public_url
                         entry["gcs_url"] = gcs_url
                         r = t["printable_row"]
                         _google_call_with_retry(
-                            lambda: ws.update(
+                            partial(
+                                ws.update,
                                 values=[[gcs_url, verdict, bot, comment]],
                                 range_name=(
-                                    f"{_col_letter(COL_URL)}{r}:"
-                                    f"{_col_letter(COL_BOT_COMMENT)}{r}"
+                                    f"{_col_letter(COL_URL)}{r}:{_col_letter(COL_BOT_COMMENT)}{r}"
                                 ),
                             ),
                             what=f"reconvert sheet update row {r}",
@@ -577,9 +562,7 @@ def main() -> int:
     n = sum(1 for s in summary if s.get("verdict") == "N")
     removed = sum(1 for s in summary if s.get("removed"))
     err = sum(1 for s in summary if s.get("error"))
-    print(
-        f"\nDone. Y={y} N={n} removed={removed} errors={err} → {summary_path}"
-    )
+    print(f"\nDone. Y={y} N={n} removed={removed} errors={err} → {summary_path}")
     return 1 if err else 0
 
 

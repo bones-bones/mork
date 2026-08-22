@@ -1,4 +1,4 @@
-import mork_repo_root  # noqa: E402
+import mork_repo_root  # noqa: F401
 
 import hc_constants
 from shared_vars import googleClient

@@ -1,5 +1,4 @@
-from random import randint, random
-
+from random import randint
 
 podSentence = [
     "When @p said @c had good flavor, I lost all respect for them",
@@ -395,9 +394,7 @@ def get_podcast_output(val: int):
             before = output
             for token, choices in podEncoding:
                 if token in output:
-                    output = output.replace(
-                        token, choices[randint(0, len(choices) - 1)], 1
-                    )
+                    output = output.replace(token, choices[randint(0, len(choices) - 1)], 1)
                     break
             if output == before:
                 break

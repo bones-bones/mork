@@ -108,14 +108,13 @@ async def post_accept_via_devvit(
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=payload, headers=headers) as resp:
-            body = await resp.json(content_type=None)
-            if resp.status >= 400:
-                error = body.get("error") if isinstance(body, dict) else body
-                raise RuntimeError(
-                    f"Devvit post-card failed ({resp.status}): {error}"
-                )
-            if not isinstance(body, dict) or not body.get("ok"):
-                raise RuntimeError(f"Devvit post-card returned unexpected body: {body}")
-            return body
+    async with (
+        aiohttp.ClientSession().post(url, json=payload, headers=headers) as resp,
+    ):
+        body = await resp.json(content_type=None)
+        if resp.status >= 400:
+            error = body.get("error") if isinstance(body, dict) else body
+            raise RuntimeError(f"Devvit post-card failed ({resp.status}): {error}")
+        if not isinstance(body, dict) or not body.get("ok"):
+            raise RuntimeError(f"Devvit post-card returned unexpected body: {body}")
+        return body

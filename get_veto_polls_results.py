@@ -1,22 +1,20 @@
-from datetime import datetime, timedelta, timezone
 import random
+from datetime import datetime, timedelta, timezone
 
-from discord import Message
 from attr import dataclass
+from discord import Message
 from discord.ext import commands
 from discord.utils import get
 
-
-from getters import getVetoChannel
 import hc_constants
-
+from getters import getVetoChannel
 
 """
 This function groups previous poll results. It's used in two ways: for the compile veto command, where actual processing is done, and in personalhell, which is a read-only op.
 """
 
 
-async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
+async def get_veto_polls_results(bot: commands.Bot, ctx: commands.Context):
     vetoChannel = getVetoChannel(bot)
     timeNow = datetime.now(timezone.utc)
     sixWeeksAgo = timeNow + timedelta(weeks=-6)
@@ -90,9 +88,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
         down = get(messageEntry.reactions, emoji=hc_constants.VOTE_DOWN)
         downvote = down.count if down else -1
 
-        erratas = get(
-            messageEntry.reactions, emoji=bot.get_emoji(hc_constants.CIRION_SPELLING)
-        )
+        erratas = get(messageEntry.reactions, emoji=bot.get_emoji(hc_constants.CIRION_SPELLING))
         errata = erratas.count if erratas else -1
 
         # Check for Judge react to pause the card
@@ -108,11 +104,7 @@ async def getVetoPollsResults(bot: commands.Bot, ctx: commands.Context):
             vetoCardMessages.append(messageEntry)
 
         # Accepted case (HKL / jumpstart list threshold)
-        elif (
-            upvote > hc_constants.VC_THRESHOLD
-            and upvote >= downvote
-            and upvote >= errata
-        ):
+        elif upvote > hc_constants.VC_THRESHOLD and upvote >= downvote and upvote >= errata:
             acceptedCardMessages.append(messageEntry)
 
         # Purgatorio Hell
@@ -137,9 +129,7 @@ class VetoPollResults:
     purgatoryCardMessages: list[Message]
 
 
-def limit_veto_poll_results(
-    results: VetoPollResults, count: int | None
-) -> VetoPollResults:
+def limit_veto_poll_results(results: VetoPollResults, count: int | None) -> VetoPollResults:
     """Keep only the oldest `count` pending cards across all compile-veto categories."""
     tagged = (
         [(m, "accepted") for m in results.acceptedCardMessages]
@@ -154,11 +144,7 @@ def limit_veto_poll_results(
     return VetoPollResults(
         errataCardMessages=[m for m in results.errataCardMessages if m.id in allowed],
         judgeCardMessages=results.judgeCardMessages,
-        acceptedCardMessages=[
-            m for m in results.acceptedCardMessages if m.id in allowed
-        ],
+        acceptedCardMessages=[m for m in results.acceptedCardMessages if m.id in allowed],
         vetoCardMessages=[m for m in results.vetoCardMessages if m.id in allowed],
-        purgatoryCardMessages=[
-            m for m in results.purgatoryCardMessages if m.id in allowed
-        ],
+        purgatoryCardMessages=[m for m in results.purgatoryCardMessages if m.id in allowed],
     )

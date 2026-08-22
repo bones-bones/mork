@@ -13,14 +13,18 @@ Examples:
 
 from __future__ import annotations
 
-import mork_repo_root  # noqa: E402
-
 import argparse
 import csv
 import os
 import sys
 
-from printable_image_qa import load_benchmark_labels, review_image
+import mork_repo_root  # noqa: F401
+from printable_image_qa import (
+    cleanup_temp_paths,
+    load_benchmark_labels,
+    resize_for_vision,
+    review_image,
+)
 from review_printable_benchmark import (
     CACHE_DIR,
     DEFAULT_CREDENTIALS,
@@ -31,7 +35,6 @@ from review_printable_benchmark import (
     _print_results_table,
     _resolve_image_path,
 )
-from printable_image_qa import cleanup_temp_paths, resize_for_vision
 
 
 def _ids_from_compare_csv(path: str) -> list[str]:
@@ -61,7 +64,9 @@ def main() -> None:
     if args.from_compare:
         extra = _ids_from_compare_csv(args.from_compare)
         for cid in extra:
-            labels.setdefault(cid, {"verdict": "?", "note": "compare mismatch (no human label yet)"})
+            labels.setdefault(
+                cid, {"verdict": "?", "note": "compare mismatch (no human label yet)"}
+            )
 
     if args.ids:
         wanted = [s.strip() for s in args.ids.split(",") if s.strip()]
@@ -114,15 +119,13 @@ def main() -> None:
             )
             vision_path = image_path
             if args.max_image_side > 0:
-                vision_path, delete_scaled = resize_for_vision(
-                    image_path, args.max_image_side
-                )
+                vision_path, delete_scaled = resize_for_vision(image_path, args.max_image_side)
                 scaled_path = vision_path if delete_scaled else ""
 
             if args.heuristics_only:
                 review = _heuristics_only_review(vision_path)
             else:
-                from review_printable_benchmark import _row_by_id, _cell, COL_CARDNAME, COL_SIDENAME
+                from review_printable_benchmark import COL_CARDNAME, COL_SIDENAME, _cell, _row_by_id
 
                 row = _row_by_id(sheet_rows, card_id) if sheet_rows else None
                 review = review_image(
@@ -174,7 +177,11 @@ def main() -> None:
         correct = sum(1 for r in labeled if r[3])
         total = len(labeled)
         print()
-        print(f"Accuracy: {correct}/{total} ({100.0 * correct / total:.0f}%)" if total else "No labeled results")
+        print(
+            f"Accuracy: {correct}/{total} ({100.0 * correct / total:.0f}%)"
+            if total
+            else "No labeled results"
+        )
     if skipped:
         print(f"Skipped (no label): {skipped}", file=sys.stderr)
     if errors:

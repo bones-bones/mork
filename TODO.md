@@ -13,5 +13,11 @@
 - ping the pit thread rather than the vote thread - https://discord.com/channels/631288872814247966/798690672512335932/1276207320396861471
 
 
-nohup python3 Mork.py &
+nohup python3 mork.py &
 ps -ef | grep -i '[p]ython'
+
+
+- build better method of integrating ts code?
+- figure out how to get mork commands that need credentials to use the credentials of the user who uses the command
+- fix typing issues with border pixel scripts
+- just straight up delete the approved sheets?? (since they don't seem to be referenced by anything anymore)

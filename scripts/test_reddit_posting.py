@@ -16,7 +16,7 @@ class RedditTitleTests(unittest.TestCase):
         )
         self.assertEqual(title, "Cool Card by Author was accepted into SOH")
 
-    def test_design_hell_set_id(self):
+    def test_scube_lair_set_id(self):
         title = reddit_title_for_acceptance(
             "**Secret Lair Card** by **Author**",
             "SCL.X",
@@ -46,7 +46,7 @@ class DeferredManifestTests(unittest.TestCase):
     def test_parses_json_format_with_unicode_and_tabs(self):
         line = format_deferred_manifest_entry(
             'Bob\'s "Cool" Card™.png',
-            "**Bob's \"Cool\" Card™ — Æther {W}{U}** by **Author**\twith\ttabs",
+            '**Bob\'s "Cool" Card™ — Æther {W}{U}** by **Author**\twith\ttabs',
             "SCL.X",
             False,
         )

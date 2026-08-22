@@ -43,8 +43,8 @@ GAMEPLAY_RULES_ADVANCED = 1237418389480407061
 ERRATA_SUBMISSIONS = 862023130716438549
 THIS_IS_NOT_MAGIC = 1258527797820002304
 BOT_TEST = 654835483771273218
-DESIGN_HELL_SUBMISSION_CHANNEL = 1273085587964035183  # scube-lair-submissions
-DESIGN_HELL_DISCUSSION_CHANNEL = 1273085802523656192
+SCUBE_LAIR_SUBMISSION_CHANNEL = 1273085587964035183
+SCUBE_LAIR_DISCUSSION_CHANNEL = 1273085802523656192
 TOKEN_SUBMISSIONS = 1284365375475023884
 ART_REQUESTS_CHANNEL = 692367491598647338
 
@@ -170,7 +170,7 @@ macroList = {
     "modal": "Modality should come with a cost. If a card is modal than each effect should cost more than what it usually does.",
     "bad": "If the joke is that the the card is bad then the card is bad.",
     "repeat": "As opposed to what some people here may lead to to believe, jokes actually get less funny the more you make them. And if they were never funny to begin with, repeating them will only make people want you to leave. So, please, come up with a new joke, preferably a funny one.",
-    "dentchubs": "https://cdn.discordapp.com/attachments/652255914220584984/798430724297588736/image0.png",
+    "dentchubs": "https://lh3.googleusercontent.com/d/1lHRcWgBhy7nrx9Z32mG4G_cgG1wFxjMK",
     "own": "Cards should do something on their as this cube is too large to consistently draft an archetype, archetype support cards should be playable on their own and great with support.",
     "would": "If your effect doesn't have 'instead', don't use 'would', and if it does, don't use 'whenever'.",
     "cass": "Cass fix your capitals in the name.",
@@ -184,24 +184,24 @@ macroList = {
     "companion": "Unlike wizards we put some forethought into our companions, as such we will not be following the companion nerf. We will forever eternalize wizards mistake.\njk see rule: H0.1.8.1",
     "bot": "When using the bot, please wait until any active commands are finished before adding new ones, doing this repeatedly might get me IP-banned from scryfall, which would kill the bot mostly.",
     "shift": "Use shift+enter to not spam notifications.",
-    "irony": "https://cdn.discordapp.com/attachments/652255914220584984/831010223950135296/irony.png",
+    "irony": "https://lh3.googleusercontent.com/d/1dfGShqG_PDM6aMrIxeDp4yLHEnjn2XXH",
     "murder": "I hhate murder.  it..s so brken  yyou caannt  maake ebtterr; murdeer\n-Raccaroonor",
     "zaxer": "I hhate zaxer.  it..s so brken  yyou caannt  maake ebtterr; zaxeer\n-Raccaroonor",
     "reminder": "Cards need reminder text, even if there are 1-5 cards with it in the cube.",
-    "child": "https://cdn.discordapp.com/attachments/631288872814247968/748285428439973978/hellscube.jpg",
-    "snart": "https://cdn.discordapp.com/attachments/654835483771273218/809616000919797770/21e.png",
-    "eu": "https://cdn.discordapp.com/attachments/744779598503346278/747547380777484360/AmericaMoney.png",
+    "child": "https://lh3.googleusercontent.com/d/1HMehlq38vRDnM8VE-iNbvYcPdTecJKIp",
+    "snart": "https://lh3.googleusercontent.com/d/1B83mJZk--QVsDn0kmIUXDMfe41Nlzgw4",
+    "eu": "https://lh3.googleusercontent.com/d/110_dHCOUHC0lYuDR4oTLiwZJcg5gqxHF",
     "art": "Art matters is banned because it's generally vague and can cause arguments between players. (Except dreadmaw because funny)",
-    "rules": "https://media.discordapp.net/attachments/636013795507961892/1168702527198466119/image.png",
+    "rules": "https://lh3.googleusercontent.com/d/1dN9fdLXtLjS7RIF2zAhB954OGtZumFXA",
     "shut": "shut\nshut\nshut\nshut\nshut\nshut\nshut\nshut\nshut\nshut\nshut",
     "capital": "Capitalize the beginning of sentences, proper nouns, card names, subtypes, and each part of the cost in an activated ability. Don't capitalize keywords unless they begin a line.",
-    "skylions": "https://cdn.discordapp.com/attachments/636013910386016276/744772820550287411/sky_lions_meme.png",
+    "skylions": "https://lh3.googleusercontent.com/d/1-pChx-j_SfGYS5lGLAooiC1b4q9ayYYf",
     "bad2": "If the joke is that the the design is bad then the design is bad.",
     "long": "Cards with too much text tend to slow down draft and are overall bad for the cube, in general try to keep to 6 lines or less. Although this isn't a strict limit it's good to try not to make cards too long.",
     "pregnancy": 'If a card involves "pregnancy counters", it should be scrapped',
     "brainstorming": "most good cards should be funny to the average magic player, not just the average hellscube discord user",
     "clockwolf": 'You see, Hellsuser Zaxer2, the Hellscard called "Clockwolf", a wolf creature costing two white mana and two green mana with no abilities and power and toughness both equal to six, is a reference to the official card "Watchwolf", which casts for a white mana and a green mana, is a wolf creature with no abilities, and has power and toughness both equal to three (essentially, Clockwolf is a "doubled" Watchwolf). Watchwolf debuted in the 2005 Expert-Level expansion Ravnica: City of Guilds and saw extensive play in Type 2, as a 3/3 creature for only two mana was above rate at that time. The flavor text on the original printing of the card, which has remained unchanged throughout the card reprints as 2009 Friday Night Magic promotional card and as a Magic Online promotional card and in the expansions Archenemy and Masters 25 as well as in the Sylesnea Guild Kit for Guilds of Ravnica, reads, "Only in Ravnica do the wolves watch the flock". This is a reference to the common trope in fairy tales, folk tales, and other stories of wolves pursuing flocks of sheep. The flavor text of Watchwolf subverts this trope by asserting that, in the city of Ravnica, wolves do not hunt livestock but are trusted to guard them, though from what is not specified. (It was worth noting that the flavor text does not specify that Watchwolf guards sheep, however given the cultural context to which I alluded to earlier, this is likely). Compare the flavortext of Watchwolf to its Hellscounterpart, which reads simply, "Who watches the watch wolf?". Indeed, it is a valid question. The Watchwolf is likely more than capable of slaughtering the flock to which it is assigned, and while the people of Ravnica seem to trust it to perform its duties, what oversight is there actually over the Watchwolf\'s actions? Does the Watchwolf enjoy unchecked power over the flock, or is it just another brick in a larger pyramid of power?',
-    "dward": "https://cdn.discordapp.com/attachments/652255914220584984/829380779498668092/unknown.png",
+    "dward": "https://lh3.googleusercontent.com/d/1I5hd0_q6srILqfBvxp8UKbaP7pFZ3Nxh",
     "downvote": "I just downvoted your comment.\n\nFAQ\nWhat does this mean?\nThe amount of karma (points) on your comment and Reddit account has decreased by one.\n\nWhy did you do this?\nThere are several reasons I may deem a comment to be unworthy of positive or neutral karma. These include, but are not limited to:\n\nRudeness towards other Redditors,\n\nSpreading incorrect information,\n\nSarcasm not correctly flagged with a /s.\n\nAm I banned from the Reddit?\nNo - not yet. But you should refrain from making comments like this in the future. Otherwise I will be forced to issue an additional downvote, which may put your commenting and posting privileges in jeopardy.\n\nI don't believe my comment deserved a downvote. Can you un-downvote it?\nSure, mistakes happen. But only in exceedingly rare circumstances will I undo a downvote. If you would like to issue an appeal, shoot me a private message explaining what I got wrong. I tend to respond to Reddit PMs within several minutes. Do note, however, that over 99.9% of downvote appeals are rejected, and yours is likely no exception.\n\nHow can I prevent this from happening in the future?\nAccept the downvote and move on. But learn from this mistake: your behavior will not be tolerated on Reddit.com. I will continue to issue downvotes until you improve your conduct. Remember: Reddit is privilege, not a right.",
     "rng": "Too make a good random card there are a couple rules/guidelines you should keep in mind:\n1. Good random effects follow a bell curve, most of time the effect should be around balanced, and only a low percentage of the time should it be very weak or very good.\nSo 50/50 to no nothing or be broken is bad.\n2. Good randomness feels exiting when it does hit those low-odds high-/lowrolls, it should feel great for at least one of the players (preferably both but that's way harder) when something unlikely occurs.\n3. Random cards should be slightly better than normal cards on avarage, as randomness is a downside because you can't plan about it.",
     "flavor": "when using flavor with curly brackets in cardconjurer, the flavor text and previous line are all on the same line. flavor automatically adds a line break.",
@@ -215,7 +215,7 @@ macroList = {
     "hate": "I hhate @arg.  it..s so brken  yyou caannt  maake ebtterr; @arg",
     "rat": "If you @arg a rat, it will be @arged",
     "joke": "If the joke is that the card @arg, then the card @arg",
-    "jpeg": "https://cdn.discordapp.com/attachments/744779598503346278/1081655626322681871/671dfc99-c0ba-ed11-80fd-8e768415d29d.png",
+    "jpeg": "https://lh3.googleusercontent.com/d/1ASP1veuxGHT4HqIrQ8RLukEZ6y5LUvv_",
     "video": {
         "podcast": "https://www.youtube.com/watch?v=vwG0igxy2Do",
         "cardsmith": "https://www.youtube.com/watch?v=a8VLXlXRlIY",

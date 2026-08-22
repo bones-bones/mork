@@ -23,8 +23,6 @@ Requires:
 
 from __future__ import annotations
 
-import mork_repo_root  # noqa: E402
-
 import argparse
 import http.client
 import json
@@ -37,10 +35,12 @@ import threading
 import time
 from collections.abc import Callable
 from datetime import datetime, timezone
+from functools import partial
 from pathlib import Path
 from typing import TypeVar, cast
 from urllib.parse import quote, unquote, urlparse
 
+import mork_repo_root  # noqa: F401
 import requests
 import urllib3
 from google.cloud import storage
@@ -57,23 +57,22 @@ if _scripts in sys.path:
     sys.path.remove(_scripts)
 sys.path.insert(0, _scripts)
 
-import hc_constants
 from prepare_card_for_printing_stretch import prepare_card_for_printing_stretch
 from printable_image_qa import (
     cleanup_temp_paths,
     format_assessment_comment,
     resize_for_vision,
     review_image,
-    types_include_plane,
     supertypes_include_legendary,
+    types_include_plane,
 )
+
+import hc_constants
 from shared_vars import googleClient
 
 DEFAULT_CREDENTIALS = "./bot_secrets/client_secrets.json"
 DEFAULT_TOKEN_BUCKET = os.environ.get("GCS_TOKEN_BUCKET", "hellscube-token-images")
-DEFAULT_PRINTABLE_BUCKET = os.environ.get(
-    "GCS_PRINTABLE_BUCKET", "hellscube-printable-images"
-)
+DEFAULT_PRINTABLE_BUCKET = os.environ.get("GCS_PRINTABLE_BUCKET", "hellscube-printable-images")
 DEFAULT_OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 DEFAULT_VISION_MODEL = os.environ.get("OLLAMA_VISION_MODEL", "qwen2.5vl:7b")
 PRINTABLE_DB_SPREADSHEET_KEY = "1FdnGhkjxnOAbjBEeLGC_QDMVcmEjoOLiuEkM9MeiPFs"
@@ -183,8 +182,7 @@ def _safe_card_filename(
     suffix = f"_{side_tag}_{label}.png"
     prefix = f"{card_id}_"
     budget = LOCAL_FILENAME_MAX - len((prefix + suffix).encode("utf-8"))
-    if budget < 1:
-        budget = 1
+    budget = max(budget, 1)
     safe_name = _truncate_utf8(safe_name, budget)
     return f"{prefix}{safe_name}{suffix}"
 
@@ -218,7 +216,7 @@ def _is_plausible_image_url(url: str) -> bool:
     path = (parsed.path or "").rstrip("/")
     if path in ("", "/"):
         return False
-    if "googleusercontent.com" in parsed.netloc.lower() and path.endswith("/d"):
+    if "googleusercontent.com" in parsed.netloc.lower() and path.endswith("/d"):  # noqa: SIM103
         return False
     return True
 
@@ -384,7 +382,7 @@ def _token_is_from_scryfall(url: str, tags: str) -> bool:
 
 def _guess_extension_from_response(resp: requests.Response, url: str) -> str:
     cd = resp.headers.get("Content-Disposition") or ""
-    m = re.search(r'filename\*?=(?:UTF-8\'\')?"?([^";]+)', cd, re.I)
+    m = re.search(r'filename\*?=(?:UTF-8\'\')?"?([^";]+)', cd, re.IGNORECASE)
     if m:
         fname = unquote(m.group(1).strip('"'))
         if "." in fname:
@@ -416,15 +414,13 @@ def _content_type_for_ext(ext: str) -> str:
 
 
 def _download(url: str, dest_path: str, timeout: int = 120) -> tuple[str, str]:
-    headers = {
-        "User-Agent": "MorkTokenImageSync/1.0 (+https://github.com/hellscube/mork)"
-    }
+    headers = {"User-Agent": "MorkTokenImageSync/1.0 (+https://github.com/hellscube/mork)"}
     with requests.get(url, headers=headers, stream=True, timeout=timeout) as resp:
         resp.raise_for_status()
         ext = _guess_extension_from_response(resp, url)
-        ct = resp.headers.get("Content-Type", "").split(";")[
-            0
-        ].strip() or _content_type_for_ext(ext)
+        ct = resp.headers.get("Content-Type", "").split(";")[0].strip() or _content_type_for_ext(
+            ext
+        )
         with open(dest_path, "wb") as f:
             for chunk in resp.iter_content(chunk_size=65536):
                 if chunk:
@@ -438,9 +434,7 @@ def _download(url: str, dest_path: str, timeout: int = 120) -> tuple[str, str]:
 
 
 def _public_gcs_url(bucket_name: str, object_name: str) -> str:
-    return (
-        f"https://storage.googleapis.com/{bucket_name}/{quote(object_name, safe='/')}"
-    )
+    return f"https://storage.googleapis.com/{bucket_name}/{quote(object_name, safe='/')}"
 
 
 def _column_letter(n: int) -> str:
@@ -586,9 +580,7 @@ def run_tokens(
                 try:
                     with sheet_lock:
                         _google_call_with_retry(
-                            lambda: sheet.update_acell(
-                                f"{col_letter}{row_1based}", gcs_url
-                            ),
+                            partial(sheet.update_acell, f"{col_letter}{row_1based}", gcs_url),
                             what=f"token sheet write row {row_1based}",
                             log_tag=tag,
                         )
@@ -621,7 +613,7 @@ def _cell_values(worksheet, a1_range: str) -> list[str]:
 
 
 def _parse_side_num(side_name: str) -> int:
-    m = re.match(r"side\s*(\d+)", (side_name or "").strip(), re.I)
+    m = re.match(r"side\s*(\d+)", (side_name or "").strip(), re.IGNORECASE)
     return int(m.group(1)) if m else 1
 
 
@@ -652,8 +644,7 @@ def _printable_sides_to_sync(
     if it already exists (new back face usually means side 1 art changed too).
     """
     db_sidenames = [
-        f"side {side_idx + 1 if not uses_primary else 1}"
-        for *_rest, side_idx in side_entries
+        f"side {side_idx + 1 if not uses_primary else 1}" for *_rest, side_idx in side_entries
     ]
     missing = [s for s in db_sidenames if (card_id, s) not in printable_index]
     if not missing:
@@ -714,9 +705,7 @@ def run_printable(
     assess = args.assess != "off"
     if assess and not _ollama_reachable(args.ollama_host):
         if args.assess == "on":
-            raise RuntimeError(
-                f"--assess on but Ollama unreachable at {args.ollama_host}"
-            )
+            raise RuntimeError(f"--assess on but Ollama unreachable at {args.ollama_host}")
         _log(tag, f"Ollama unreachable at {args.ollama_host}; skipping assessment")
         assess = False
 
@@ -816,9 +805,7 @@ def run_printable(
         }
 
         for sidename in sorted(sides_to_sync, key=_parse_side_num):
-            side_url, side_type, side_supertype, side_idx = side_entry_by_name[
-                sidename
-            ]
+            side_url, side_type, side_supertype, side_idx = side_entry_by_name[sidename]
             side_num = _parse_side_num(sidename)
             printable_row = sides_to_sync[sidename]
             is_update = printable_row is not None
@@ -858,9 +845,7 @@ def run_printable(
                 paths_to_remove.append(work_path)
 
                 try:
-                    _download_printable_image(
-                        side_url, work_path, log_tag=tag, max_attempts=2
-                    )
+                    _download_printable_image(side_url, work_path, log_tag=tag, max_attempts=2)
                 except requests.RequestException as e:
                     _handle_bad_printable_url(
                         log_path=bad_url_log,
@@ -930,9 +915,7 @@ def run_printable(
                         last_col = 7 if assess and len(row_values) >= 7 else 4
                         col_end = _column_letter(last_col)
                         _google_call_with_retry(
-                            lambda rv=row_values,
-                            r=printable_row,
-                            ce=col_end: target_sheet.update(
+                            lambda rv=row_values, r=printable_row, ce=col_end: target_sheet.update(
                                 values=[rv],
                                 range_name=f"A{r}:{ce}",
                             ),
@@ -1134,7 +1117,10 @@ def main() -> None:
     if run_tokens_flow:
         t = threading.Thread(
             target=_wrap,
-            args=("tokens", lambda: run_tokens(args, sheet_lock=sheet_lock, storage_client=storage_client)),
+            args=(
+                "tokens",
+                lambda: run_tokens(args, sheet_lock=sheet_lock, storage_client=storage_client),
+            ),
             name="tokens-sync",
             daemon=True,
         )
@@ -1145,9 +1131,7 @@ def main() -> None:
             target=_wrap,
             args=(
                 "printable",
-                lambda: run_printable(
-                    args, sheet_lock=sheet_lock, storage_client=storage_client
-                ),
+                lambda: run_printable(args, sheet_lock=sheet_lock, storage_client=storage_client),
             ),
             name="printable-sync",
             daemon=True,
