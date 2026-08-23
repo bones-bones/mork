@@ -13,7 +13,9 @@ Closed all day **Tuesday and Saturday** in US Eastern (`America/New_York`, EST/E
 ```mermaid
 flowchart TD
   U["User: CardName by @author(s) + image attachment"] --> CLOSED{"Tue or Sat<br/>US Eastern?"}
-  CLOSED -->|yes| CLOSED_MSG["Post deleted<br/>#submissions-discussion · cooldown NOT consumed<br/>wait clock paused"]
+  CLOSED -->|yes| ADMIN{"Admin?"}
+  ADMIN -->|yes| ATT
+  ADMIN -->|no| CLOSED_MSG["Post deleted<br/>cooldown NOT consumed<br/>wait clock paused"]
   CLOSED -->|no| ATT{"Any attachment?"}
   ATT -->|no| MISS["Silent ignore — see validation"]
   ATT -->|yes| PING{"@ in card title?"}
@@ -52,7 +54,9 @@ flowchart TD
 ```mermaid
 flowchart TD
   POST["User posts in #submissions"] --> CLOSED{"Tue or Sat<br/>US Eastern?"}
-  CLOSED -->|yes| CL["Post deleted · #submissions-discussion<br/>cooldown NOT consumed"]
+  CLOSED -->|yes| ADMIN{"Admin?"}
+  ADMIN -->|yes| A
+  ADMIN -->|no| CL["Post deleted · cooldown NOT consumed"]
   CLOSED -->|no| A{"Any attachment?"}
 
   A -->|no| MI["Missing image<br/>No bot reply<br/>Post stays in channel<br/>Cooldown NOT consumed"]
@@ -67,7 +71,7 @@ flowchart TD
 
 | Case                     | Trigger                           | Bot response                                 | User post                  | Cooldown       |
 | ------------------------ | --------------------------------- | -------------------------------------------- | -------------------------- | -------------- |
-| **Closed day**           | Tuesday or Saturday, US Eastern | `@here` in `#submissions` and `#submissions-discussion`; post deleted | Deleted                    | Not written; clock paused |
+| **Closed day**           | Tuesday or Saturday, US Eastern (non-admins) | `@here` in `#submissions` and `#submissions-discussion`; post deleted | Deleted                    | Not written; clock paused |
 | **Missing image**        | No attachment                     | None (silent ignore)                         | **Kept** in `#submissions` | Not written    |
 | **Missing card name**    | Attachment present, empty/whitespace first line | `#submissions-discussion`: include card name + image returned | Deleted                    | Not written    |
 | **`@` in title**         | `@` in first line                 | DM: no `@` allowed                           | Kept                       | Not written    |
@@ -75,7 +79,7 @@ flowchart TD
 | **Non-image attachment** | e.g. PDF attached                 | Poll created anyway                          | Deleted (reposted as poll) | Consumed       |
 | **Magic skip**           | 1/4001 roll                       | Straight to veto (no poll)                   | Deleted                    | Consumed       |
 
-**Closed day:** Checked first. Any user post in `#submissions` on Tuesday or Saturday (US Eastern) is deleted and noted in `#submissions-discussion`. Cooldown timestamps are not written, and elapsed wait time ignores those days. At the start of each closed day Mork posts `@here THE GATES OF HELL ARE CLOSED` in `#submissions` and `#submissions-discussion`; at the start of Wednesday and Sunday (US Eastern) Mork posts `@here THE GATES OF HELL HAVE OPENED` in those channels.
+**Closed day:** Checked first. Non-admin posts in `#submissions` on Tuesday or Saturday (US Eastern) are deleted. Admins bypass the closed-day gate (same as cooldown). Cooldown timestamps are not written on closed days for blocked posts, and elapsed wait time ignores those days. At the start of each closed day Mork posts `@here THE GATES OF HELL ARE CLOSED` in `#submissions` and `#submissions-discussion`; at the start of Wednesday and Sunday (US Eastern) Mork posts `@here THE GATES OF HELL HAVE OPENED` in those channels.
 
 **Missing name:** Intake bails before cooldown write or repost. The card image is reattached in `#submissions-discussion` so the user can fix the title and resubmit. Whitespace-only first lines count as missing.
 
