@@ -74,7 +74,7 @@ def _get_scryfall_image(ob: dict[str, Any]) -> str | None:
     normal = uris.get("normal")
     if not normal:
         return
-    return normal[:-10]
+    return normal[:-11]
 
 
 async def get_image_from_json(json: dict[str, Any]):
