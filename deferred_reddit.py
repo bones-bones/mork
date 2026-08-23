@@ -123,6 +123,10 @@ def _is_reddit_media_upload_failed(exc: BaseException) -> bool:
     return "attempted media upload action has failed" in str(exc).lower()
 
 
+def _is_reddit_unsupported_media_type(exc: BaseException) -> bool:
+    return "expected a mimetype starting with 'image'" in str(exc).lower()
+
+
 def _manifest_filename(line: str) -> str | None:
     post = _parse_manifest_line(line)
     return post.filename if post else None
@@ -174,7 +178,11 @@ async def process_deferred_reddit_posts(count: int) -> tuple[int, list[str]]:
             posted += 1
             affected_batches.add(post.batch_dir)
         except Exception as e:
-            if _is_reddit_media_too_large(e) or _is_reddit_media_upload_failed(e):
+            if (
+                _is_reddit_media_too_large(e)
+                or _is_reddit_media_upload_failed(e)
+                or _is_reddit_unsupported_media_type(e)
+            ):
                 os.remove(post.image_path)
                 posted += 1
                 affected_batches.add(post.batch_dir)
