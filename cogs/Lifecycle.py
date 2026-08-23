@@ -666,16 +666,22 @@ class LifecycleCog(commands.Cog):
                 await message.delete()
 
             case hc_constants.SUBMISSIONS_CHANNEL:
-                if is_submissions_closed():
+                if is_submissions_closed() and not is_admin(
+                    cast(discord.Member, message.author)
+                ):
                     author_id = message.author.id
                     preview = (message.content or "").strip()
                     attachment_count = len(message.attachments)
                     await message.delete()
                     discussion = cast(
                         TextChannel,
-                        self.bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL),
+                        self.bot.get_channel(
+                            hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL
+                        ),
                     )
-                    parts = [f"<@{author_id}> tried to post in #submissions while it was closed."]
+                    parts = [
+                        f"<@{author_id}> tried to post in #submissions while it was closed."
+                    ]
                     if preview:
                         parts.append(preview[:500])
                     if attachment_count:
