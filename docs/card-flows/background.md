@@ -51,7 +51,7 @@ flowchart LR
   REP --> BOT["Bot replies on Reddit post<br/>(reddit says: only)"]
 ```
 
-Reply bridge only fires when the prior Mork message starts with `reddit says:` — not the shitpost prefix.
+Reply bridge only fires when the prior mirror message (Mork or mork-bridge webhook) starts with `reddit says:` — not the shitpost prefix.
 
 ---
 
