@@ -14,6 +14,11 @@ def is_mork(user_id: int):
     )
 
 
+def is_reddit_mirror_author(user_id: int) -> bool:
+    """Discord user that posted a Reddit mirror link in #reddit."""
+    return is_mork(user_id) or user_id == hc_constants.MORK_BRIDGE
+
+
 def reasonable_card():
     """This function is used to determine if a card gets auto-magically accepted. Be sure to add 1000 each time it happens"""
     return random.randint(0, 4000) == 69

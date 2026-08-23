@@ -60,7 +60,7 @@ from handle_veto_post import handle_veto_post
 from hellfall_fetcher import cardsExist, getExactCard, getSearchFromServer
 from image_response_filename import filename_from_image_response
 from is_admin import can_instaerrata, is_admin, is_veto
-from is_mork import is_mork, reasonable_card
+from is_mork import is_mork, is_reddit_mirror_author, reasonable_card
 from post_card_images import post_card_images
 from reddit_devvit import (
     reddit_cotd_via_devvit_enabled,
@@ -603,7 +603,7 @@ class LifecycleCog(commands.Cog):
                 lastTwo = [mess async for mess in message.channel.history(limit=2)]
                 if (
                     not is_mork(lastTwo[0].author.id)
-                    and is_mork(lastTwo[1].author.id)
+                    and is_reddit_mirror_author(lastTwo[1].author.id)
                     and "reddit says: " in lastTwo[1].content
                 ):
                     async with asyncpraw.Reddit(
