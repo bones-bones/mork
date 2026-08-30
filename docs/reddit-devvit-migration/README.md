@@ -183,13 +183,6 @@ Before or alongside the Devvit port, clean up the existing Reddit layer:
 
 ## Status
 
-- [x] Architecture investigation and plan (this doc)
-- [x] Scaffold `mork-devvit/` with `/external/post-card` (manifest + handler)
-- [x] Mork feature flag + asyncpraw fallback (`reddit_devvit.py`)
-- [x] External endpoint mod documentation (`docs/hellscube-bridge/external-endpoint.md`)
-- [ ] Reddit external endpoints access approved
-- [ ] Playtest + publish on r/HellsCube (or test sub)
-- [ ] Enable `REDDIT_ACCEPT_VIA_DEVVIT` in production
-- [ ] Phase 2: PostSubmit mirror
-- [ ] Phase 3: deferred queue + schedulers (card-of-the-day scheduler implemented in `mork-devvit`)
-- [ ] Install on r/HellsCube + Developer Funds application
+See **[CHECKLIST.md](CHECKLIST.md)** for the living cutover tracker (platform, prod flags, next steps).
+
+Summary (2026-08-29): app **installed** on r/HellsCube; **COTD live** on Devvit; **external endpoints pending** (acceptance + reply still on asyncpraw); mirror ready to flip without external endpoints.

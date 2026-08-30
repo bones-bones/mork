@@ -6,14 +6,14 @@ Devvit app that posts image submissions to a subreddit on behalf of an external 
 
 Production callers outside Reddit use [external endpoints](https://developers.reddit.com/docs/capabilities/server/external-endpoints):
 
-| | |
-|---|---|
-| **Manifest key** | `server.externalEndpoints.postCard` in `devvit.json` |
-| **Route** | `POST /external/post-card` |
-| **Scopes** | `global` (managed App Token) |
-| **Public URL** | `https://hellscube-bridge-{subreddit-id}-external.devvit.net/external/post-card` |
-| **Auth header** | `Authorization: Bearer devvit_at_…` |
-| **Mod docs** | [`docs/hellscube-bridge/external-endpoint.md`](../docs/hellscube-bridge/external-endpoint.md) |
+|                  |                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| **Manifest key** | `server.externalEndpoints.postCard` in `devvit.json`                                          |
+| **Route**        | `POST /external/post-card`                                                                    |
+| **Scopes**       | `global` (managed App Token)                                                                  |
+| **Public URL**   | `https://hellscube-bridge-{subreddit-id}-external.devvit.net/external/post-card`              |
+| **Auth header**  | `Authorization: Bearer devvit_at_…`                                                           |
+| **Mod docs**     | [`docs/hellscube-bridge/external-endpoint.md`](../docs/hellscube-bridge/external-endpoint.md) |
 
 Use the subreddit **t5 id without the `t5_` prefix** (e.g. `t5_21otlg` → `21otlg`).
 
@@ -48,18 +48,54 @@ Daily HC6 post at **10:00 UTC** via Devvit Scheduler when enabled. Reads the [He
 
 **Flag (pair with Discord):**
 
-| Path | `REDDIT_COTD_VIA_DEVVIT` (VM) | `cardOfTheDayViaDevvit` (app setting) |
-|------|-------------------------------|---------------------------------------|
-| Devvit | `1` | `true` |
-| Legacy Lifecycle/asyncpraw | off | `false` |
+| Path                       | `REDDIT_COTD_VIA_DEVVIT` (VM) | `cardOfTheDayViaDevvit` (app setting) |
+| -------------------------- | ----------------------------- | ------------------------------------- |
+| Devvit                     | `1`                           | `true`                                |
+| Legacy Lifecycle/asyncpraw | off                           | `false`                               |
 
-| | |
-|---|---|
-| **Cron** | `0 10 * * *` |
+|             |                                       |
+| ----------- | ------------------------------------- |
+| **Cron**    | `0 10 * * *`                          |
 | **Handler** | `/internal/scheduler/card-of-the-day` |
-| **Dedup** | Redis `cotd:lastDate` |
+| **Dedup**   | Redis `cotd:lastDate`                 |
 
 Details: [`docs/hellscube-bridge/scheduler.md`](../docs/hellscube-bridge/scheduler.md).
+
+## Reddit → Discord mirror (PostSubmit)
+
+When enabled, mirrors inbound submission flairs to `#reddit` via Discord webhook.
+
+|             |                                                      |
+| ----------- | ---------------------------------------------------- |
+| **Trigger** | `onPostSubmit` → `/internal/triggers/on-post-submit` |
+| **Dedup**   | Redis `mirror:posted:{postId}`                       |
+| **HTTP**    | `discord.com` (webhook)                              |
+
+Details: [`docs/hellscube-bridge/mirror.md`](../docs/hellscube-bridge/mirror.md).
+
+## Discord → Reddit reply
+
+|                  |                                                         |
+| ---------------- | ------------------------------------------------------- |
+| **Manifest key** | `server.externalEndpoints.replyToPost` in `devvit.json` |
+| **Route**        | `POST /external/reply-to-post`                          |
+| **Auth**         | Managed App Token (`Authorization: Bearer devvit_at_…`) |
+| **Body**         | `{ "postId": "abc123", "text": "…" }`                   |
+
+Details: [`reply.md`](reply.md).
+
+## Daily submissions gallery (scheduler prep)
+
+Reads the GCS manifest Mork writes at `#submissions` intake. **Multi-image gallery posts are blocked** until Reddit exposes a gallery API in Devvit.
+
+|             |                                                 |
+| ----------- | ----------------------------------------------- |
+| **Cron**    | `0 4 * * *`                                     |
+| **Handler** | `/internal/scheduler/daily-submissions-gallery` |
+| **Setting** | `dailyGalleryViaDevvit` (default `false`)       |
+| **Dedup**   | Redis `gallery:lastDate`                        |
+
+Details: [`gallery.md`](gallery.md).
 
 ## Readiness checklist
 
@@ -67,8 +103,11 @@ Config is in place for when Reddit enables external endpoints on your account:
 
 - [x] `devvit.json` declares `server.externalEndpoints.postCard` → `/external/post-card` with `scopes: ["global"]`
 - [x] Server handler at `src/server/routes/api.ts` (`external.post('/post-card', …)`)
-- [x] `permissions.reddit` (moderator) + `permissions.http` (`storage.googleapis.com`, `storage.cloud.google.com`, `lh3.googleusercontent.com`)
+- [x] `permissions.reddit` (moderator) + `permissions.http` (`storage.googleapis.com`, `lh3.googleusercontent.com`)
 - [x] Card-of-the-day scheduler (`card-of-the-day` cron + catalog fetch)
+- [x] Reddit → Discord mirror (`onPostSubmit` + webhook; default off)
+- [x] Discord → Reddit replies (`/external/reply-to-post`; default off on VM)
+- [x] Daily gallery scheduler + GCS manifest writer (multi-image blocked; default off)
 - [x] Mork client (`reddit_devvit.py`) validates external URL + managed token format
 - [x] Mod-facing endpoint documentation
 - [ ] Reddit [external endpoints access](https://developers.reddit.com/docs/capabilities/server/external-endpoints) approved for your account

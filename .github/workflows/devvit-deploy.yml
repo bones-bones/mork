@@ -28,7 +28,7 @@ jobs:
         run: npm run test:types && npm run build
 
       - name: Install Devvit CLI
-        run: npm install -g devvit@0.13.10
+        run: npm install -g devvit@0.14.1
 
       - name: Configure Devvit credentials
         env:
