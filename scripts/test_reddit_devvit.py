@@ -169,15 +169,17 @@ class PostReplyViaDevvitTests(unittest.IsolatedAsyncioTestCase):
         mock_session_cm.__aenter__.return_value = mock_session
         mock_session_cm.__aexit__.return_value = False
 
-        with patch.dict(os.environ, env, clear=False):
-            with patch(
+        with (
+            patch.dict(os.environ, env, clear=False),
+            patch(
                 "reddit_devvit.aiohttp.ClientSession",
                 return_value=mock_session_cm,
-            ):
-                result = await post_reply_via_devvit(
-                    post_id="abc123",
-                    text="hello from discord",
-                )
+            ),
+        ):
+            result = await post_reply_via_devvit(
+                post_id="abc123",
+                text="hello from discord",
+            )
 
         self.assertEqual(result["commentId"], "t1_abc")
         call_kwargs = mock_session.post.call_args.kwargs

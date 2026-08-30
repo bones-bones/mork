@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import Any
 
 from google.cloud import storage
 
@@ -128,7 +128,7 @@ def append_submission(
     return image_url
 
 
-def entries_last_24h(manifest: Optional[dict[str, Any]] = None) -> list[dict[str, Any]]:
+def entries_last_24h(manifest: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     data = manifest if manifest is not None else load_manifest()
     cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
     recent: list[dict[str, Any]] = []

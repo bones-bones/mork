@@ -1,9 +1,9 @@
 import os
 import random
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List
 from urllib.parse import urlparse
 
+import aiofiles
 import aiohttp
 
 import hc_constants
@@ -30,21 +30,23 @@ async def _download_image_to_temp(image_url: str, message_id: str) -> str:
     ext = os.path.splitext(parsed.path)[1] or ".png"
     os.makedirs("tempImages", exist_ok=True)
     path = f"tempImages/gallery_{message_id}{ext}"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(image_url) as resp:
-            resp.raise_for_status()
-            data = await resp.read()
-    with open(path, "wb") as out:
-        out.write(data)
+    async with (
+        aiohttp.ClientSession() as session,
+        session.get(image_url) as resp,
+    ):
+        resp.raise_for_status()
+        data = await resp.read()
+    async with aiofiles.open(path, "wb") as out:
+        await out.write(data)
     return path
 
 
-async def _gallery_images_from_manifest() -> List[Dict[str, str]]:
+async def _gallery_images_from_manifest() -> list[dict[str, str]]:
     entries = entries_last_24h()
     if not entries:
         return []
     picked = random.sample(entries, min(10, len(entries)))
-    images: List[Dict[str, str]] = []
+    images: list[dict[str, str]] = []
     for entry in picked:
         message_id = str(entry.get("messageId", "unknown"))
         image_url = str(entry.get("imageUrl", "")).strip()
@@ -55,7 +57,7 @@ async def _gallery_images_from_manifest() -> List[Dict[str, str]]:
     return images
 
 
-async def _gallery_images_from_discord(bot) -> List[Dict[str, str]]:
+async def _gallery_images_from_discord(bot) -> list[dict[str, str]]:
     from typing import cast
 
     import discord
@@ -71,15 +73,15 @@ async def _gallery_images_from_discord(bot) -> List[Dict[str, str]]:
         return []
 
     picked = random.sample(filtered, min(10, len(filtered)))
-    images: List[Dict[str, str]] = []
+    images: list[dict[str, str]] = []
     for message_entry in picked:
         file = await message_entry.attachments[0].to_file()
         file_data = file.fp.read()
         os.makedirs("tempImages", exist_ok=True)
         image_path = f"tempImages/{message_entry.id}{file.filename}"
         images.append({"image_path": image_path})
-        with open(image_path, "wb") as out:
-            out.write(file_data)
+        async with aiofiles.open(image_path, "wb") as out:
+            await out.write(file_data)
     return images
 
 
@@ -102,4 +104,4 @@ async def post_daily_submissions(bot):
         flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
     )
     for image_entry in images:
-        os.remove(list(image_entry.values())[0])
+        os.remove(next(iter(image_entry.values())))

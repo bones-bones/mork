@@ -129,21 +129,21 @@ def _devvit_headers(secret: str) -> dict[str, str]:
 async def _post_devvit_external(endpoint: str, payload: dict) -> dict:
     _, secret = _devvit_config()
     url = devvit_external_url(endpoint)
-    async with aiohttp.ClientSession() as session:
-        async with session.post(
-            url, json=payload, headers=_devvit_headers(secret)
-        ) as resp:
-            body = await resp.json(content_type=None)
-            if resp.status >= 400:
-                error = body.get("error") if isinstance(body, dict) else body
-                raise RuntimeError(
-                    f"Devvit {endpoint} failed ({resp.status}): {error}"
-                )
-            if not isinstance(body, dict) or not body.get("ok"):
-                raise RuntimeError(
-                    f"Devvit {endpoint} returned unexpected body: {body}"
-                )
-            return body
+    async with (
+        aiohttp.ClientSession() as session,
+        session.post(url, json=payload, headers=_devvit_headers(secret)) as resp,
+    ):
+        body = await resp.json(content_type=None)
+        if resp.status >= 400:
+            error = body.get("error") if isinstance(body, dict) else body
+            raise RuntimeError(
+                f"Devvit {endpoint} failed ({resp.status}): {error}"
+            )
+        if not isinstance(body, dict) or not body.get("ok"):
+            raise RuntimeError(
+                f"Devvit {endpoint} returned unexpected body: {body}"
+            )
+        return body
 
 
 async def post_accept_via_devvit(
