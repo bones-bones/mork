@@ -1,12 +1,15 @@
 import { redis } from '@devvit/web/server';
 import {
-  DEFAULT_SUBMISSIONS_GALLERY_MANIFEST_URL,
   GALLERY_TITLE,
   pickGalleryEntries,
   type SubmissionsGalleryManifest,
 } from '../shared/submissionsGallery.js';
 import { submitImagePost } from './postCard.js';
-import { getAppBooleanSetting, getOfficialHcRedditFlair } from './appSettings.js';
+import {
+  getAppBooleanSetting,
+  getOfficialHcRedditFlair,
+  getSubmissionsGalleryManifestUrl,
+} from './appSettings.js';
 import { DEFAULT_SUBREDDIT } from '../shared/constants.js';
 
 const DEFAULT_DAILY_GALLERY_VIA_DEVVIT = false;
@@ -23,12 +26,6 @@ export type DailyGalleryResult = {
   postId?: string;
   permalink?: string;
 };
-
-export async function getSubmissionsGalleryManifestUrl(): Promise<string> {
-  const value = await settings.get<string>('submissionsGalleryManifestUrl');
-  const trimmed = value?.trim();
-  return trimmed || DEFAULT_SUBMISSIONS_GALLERY_MANIFEST_URL;
-}
 
 export async function fetchSubmissionsGalleryManifest(
   manifestUrl: string,

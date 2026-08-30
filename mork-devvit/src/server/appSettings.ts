@@ -3,6 +3,7 @@ import {
   DEFAULT_CATALOG_URL,
   DEFAULT_OFFICIAL_HC_REDDIT_FLAIR,
 } from '../shared/constants.js';
+import { DEFAULT_SUBMISSIONS_GALLERY_MANIFEST_URL } from '../shared/submissionsGallery.js';
 
 /** Devvit CLI may return boolean settings as strings ("true" / "false"). */
 export function parseAppBoolean(
@@ -43,4 +44,10 @@ export async function getCatalogUrl(): Promise<string> {
   const value = await settings.get<string>('catalogUrl');
   const trimmed = value?.trim();
   return trimmed || DEFAULT_CATALOG_URL;
+}
+
+export async function getSubmissionsGalleryManifestUrl(): Promise<string> {
+  const value = await settings.get<string>('submissionsGalleryManifestUrl');
+  const trimmed = value?.trim();
+  return trimmed || DEFAULT_SUBMISSIONS_GALLERY_MANIFEST_URL;
 }
