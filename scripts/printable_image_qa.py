@@ -182,13 +182,19 @@ def supertypes_include_legendary(supertype_cell: str) -> bool:
 
 # Free-text cues mapped to defect tags (finalize_verdict + parse fallbacks)
 PROSE_DEFECT_PATTERNS: list[tuple[str, str]] = [
-    ("multi_card_in_one_file", r"\b(two|multiple|multi|double|split|side[- ]?by[- ]?side)\s+cards?\b"),
+    (
+        "multi_card_in_one_file",
+        r"\b(two|multiple|multi|double|split|side[- ]?by[- ]?side)\s+cards?\b",
+    ),
     ("multi_card_in_one_file", r"\bcollage\b"),
     ("multi_card_in_one_file", r"\bmore than one\b.*\bcard\b"),
     ("conversion_bleed", r"\b(bleed|smeared|garbage pixel|repeated edge|harsh seam)\b"),
     ("border_seam_lines", r"\b(faint|hair|scratch|thin).{0,30}\b(line|lines|seam)\b"),
     ("border_seam_lines", r"\b(line|lines).{0,30}\b(border|along)\b"),
-    ("corner_color_mismatch", r"\b(corner|corners).{0,40}\b(mismatch|different color|off[- ]?color|discolor)\b"),
+    (
+        "corner_color_mismatch",
+        r"\b(corner|corners).{0,40}\b(mismatch|different color|off[- ]?color|discolor)\b",
+    ),
     ("corner_color_mismatch", r"\bcolor mismatch\b"),
     ("corner_trim", r"\b(corner|corners|border|edge).{0,40}\b(trim|clip|clipp|cropp)\b"),
     ("corner_trim", r"\btrimmed corners?\b"),
@@ -394,15 +400,11 @@ def _color_dist(a: tuple[float, float, float], b: tuple[float, float, float]) ->
 def _rgb_spread(avgs: list[tuple[float, float, float]]) -> float:
     if not avgs:
         return 0.0
-    per_ch = [
-        max(a[i] for a in avgs) - min(a[i] for a in avgs) for i in range(3)
-    ]
+    per_ch = [max(a[i] for a in avgs) - min(a[i] for a in avgs) for i in range(3)]
     return sum(per_ch)
 
 
-def _corner_adjacent_dists(
-    im: Image.Image, w: int, h: int, band: int
-) -> list[float]:
+def _corner_adjacent_dists(im: Image.Image, w: int, h: int, band: int) -> list[float]:
     """Per-corner color distance to the border strip on the same side."""
     pairs = [
         ((0, 0, band * 2, band * 2), (band, 0, band * 4, band)),
@@ -456,9 +458,7 @@ def _detect_multi_card(im: Image.Image, w: int, h: int) -> bool:
     px = gray.load()
     if px is None:
         return False
-    col_sums = [
-        float(sum(px[x, y] for y in range(gh))) for x in range(gw)
-    ]
+    col_sums = [float(sum(px[x, y] for y in range(gh))) for x in range(gw)]
     if not col_sums or max(col_sums) <= 0:
         return False
     smooth = _smooth_1d(col_sums, max(5, gw // 25))
@@ -512,10 +512,7 @@ def _spikes_are_side_padding_junction(
     if not vertical_side or not spike_indices or len(spike_indices) > 4:
         return False
     junction_start = image_h - max(deep * 4, band * 5, (image_h * 26) // 100)
-    ys = [
-        int(i / max(1, profile_len - 1) * max(1, strip_height - 1))
-        for i in spike_indices
-    ]
+    ys = [int(i / max(1, profile_len - 1) * max(1, strip_height - 1)) for i in spike_indices]
     return all(y >= junction_start for y in ys)
 
 
@@ -558,10 +555,7 @@ def _border_seam_strip_spikes(
         cross = gh if along_long else gw
         profile: list[float] = []
         for i in range(length):
-            vals = [
-                float(px[i, j] if along_long else px[j, i])
-                for j in range(cross)
-            ]
+            vals = [float(px[i, j] if along_long else px[j, i]) for j in range(cross)]
             profile.append(max(vals) - min(vals))
         if not profile:
             continue
@@ -573,9 +567,7 @@ def _border_seam_strip_spikes(
             local = profile[i]
             if local < med + 14:
                 continue
-            neighbors = (
-                profile[i - 1] + profile[i - 2] + profile[i + 1] + profile[i + 2]
-            ) / 4
+            neighbors = (profile[i - 1] + profile[i - 2] + profile[i + 1] + profile[i + 2]) / 4
             if local > neighbors + 18 and local > 28:
                 spike_positions.append(i)
         if not spike_positions:
@@ -690,9 +682,7 @@ def _gray_percentile(gray: Image.Image, pct: float) -> int:
     return 255
 
 
-def _detect_wrong_silhouette(
-    w: int, h: int, *, landscape_ok: bool = False
-) -> bool:
+def _detect_wrong_silhouette(w: int, h: int, *, landscape_ok: bool = False) -> bool:
     """Canvas aspect is not a normal printable card silhouette.
 
     Portrait default: ~63×88 mm (w/h ≈ 0.72).
@@ -766,9 +756,7 @@ LEGENDARY_CROWN_SOFT_DEFECTS = frozenset(
 )
 
 
-def _drop_false_legendary_crown_defects(
-    tags: list[str], *, legendary_ok: bool
-) -> list[str]:
+def _drop_false_legendary_crown_defects(tags: list[str], *, legendary_ok: bool) -> list[str]:
     """Drop crown-related false positives on Legendary cards."""
     if not legendary_ok:
         return tags
@@ -804,8 +792,7 @@ def ollama_chat(
     if not resp.ok:
         detail = (resp.text or "").strip()[:400]
         raise requests.HTTPError(
-            f"{resp.status_code} {resp.reason} for {url}"
-            + (f": {detail}" if detail else ""),
+            f"{resp.status_code} {resp.reason} for {url}" + (f": {detail}" if detail else ""),
             response=resp,
         )
     return (resp.json().get("message") or {}).get("content") or ""
@@ -852,9 +839,7 @@ def applied_fixes_cleared(
         remaining = set(review.heuristic_flags)
     else:
         remaining = set(review.heuristic_flags) | set(review.issues)
-    targets = [
-        t for t in applied_fixes if t in fixable_tags and t in original_defects
-    ]
+    targets = [t for t in applied_fixes if t in fixable_tags and t in original_defects]
     still_bad = sorted(t for t in targets if t in remaining)
     if still_bad:
         return False, f"still present after fix: {', '.join(still_bad)}"
@@ -937,14 +922,10 @@ def review_image(
     image_paths = [image_path]
     with Image.open(image_path) as _im:
         _w, _h = _im.size
-    if use_corner_crops and suitable_for_corner_crops(
-        _w, _h, landscape_ok=landscape_ok
-    ):
+    if use_corner_crops and suitable_for_corner_crops(_w, _h, landscape_ok=landscape_ok):
         corner_temps, image_paths = extract_corner_crops(image_path)
 
-    silhouette_rule = (
-        SILHOUETTE_RULE_LANDSCAPE if landscape_ok else SILHOUETTE_RULE_PORTRAIT
-    )
+    silhouette_rule = SILHOUETTE_RULE_LANDSCAPE if landscape_ok else SILHOUETTE_RULE_PORTRAIT
     if legendary_ok:
         silhouette_rule = f"{silhouette_rule}. {LEGENDARY_CROWN_RULE}"
     heuristic_flags = heuristic_checks(
@@ -972,9 +953,7 @@ def review_image(
             step1_defects = _drop_false_legendary_crown_defects(
                 step1_defects, legendary_ok=legendary_ok
             )
-            step1_payload = json.dumps(
-                {"defects": step1_defects, "observations": obs1}
-            )
+            step1_payload = json.dumps({"defects": step1_defects, "observations": obs1})
             raw2 = ollama_chat(
                 host=host,
                 model=model,
@@ -1008,9 +987,7 @@ def review_image(
             )
             return ReviewResult(
                 verdict=verdict,
-                issues=sorted(
-                    set(step1_defects) | set(step2_issues) | set(heuristic_flags)
-                ),
+                issues=sorted(set(step1_defects) | set(step2_issues) | set(heuristic_flags)),
                 notes=notes or obs1,
                 step1_defects=step1_defects,
                 heuristic_flags=heuristic_flags,
@@ -1037,9 +1014,7 @@ def review_image(
         step2_issues = _drop_false_landscape_silhouette(
             step2_issues, landscape_ok=landscape_ok, w=_w, h=_h
         )
-        step2_issues = _drop_false_legendary_crown_defects(
-            step2_issues, legendary_ok=legendary_ok
-        )
+        step2_issues = _drop_false_legendary_crown_defects(step2_issues, legendary_ok=legendary_ok)
         notes = str(data2.get("notes") or "").strip()
         verdict, forced = finalize_verdict(
             step2_verdict=step2_verdict,

@@ -9,7 +9,7 @@ Mermaid diagrams for card-related workflows in Mork. Mork is mostly stateless, i
 | Doc                                  | Contents                                                                     |
 | ------------------------------------ | ---------------------------------------------------------------------------- |
 | [Overview](overview.md)              | End-to-end lifecycle                                                         |
-| [Submissions](submissions.md)        | Standard, masterpiece, token, design hell, validation, magic roll            |
+| [Submissions](submissions.md)        | Standard, masterpiece, token, scube lair, validation, magic roll            |
 | [Veto](veto.md)                      | Poll setup, triage, compile veto, hellpit resubmit                           |
 | [Errata](errata.md)                  | Errata channel, instaerrata, trusted sneak accept                            |
 | [Acceptance](acceptance.md)          | accept_card persistence pipeline                                             |

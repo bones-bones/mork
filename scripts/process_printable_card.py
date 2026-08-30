@@ -32,16 +32,14 @@ import os
 import sys
 from pathlib import Path
 
-import mork_repo_root  # noqa: F401  pylint: disable=unused-import  (repo root on sys.path)
-
 _scripts = str(Path(__file__).resolve().parent)
 if _scripts in sys.path:
     sys.path.remove(_scripts)
 sys.path.insert(0, _scripts)
 
+import mork_repo_root  # noqa: F401
 import requests
 from PIL import Image
-
 from prepare_card_for_printing_stretch import prepare_card_for_printing_stretch
 from printable_image_qa import (
     _detect_wrong_silhouette,
@@ -61,11 +59,7 @@ def _iter_inputs(raw_paths: list[str]) -> list[Path]:
     for raw in raw_paths:
         p = Path(raw)
         if p.is_dir():
-            out.extend(
-                sorted(
-                    f for f in p.iterdir() if f.suffix.lower() in IMAGE_EXTS
-                )
-            )
+            out.extend(sorted(f for f in p.iterdir() if f.suffix.lower() in IMAGE_EXTS))
         elif p.is_file():
             out.append(p)
         else:
@@ -85,9 +79,7 @@ def _ollama_ready(host: str, model: str) -> tuple[bool, str]:
     return True, ""
 
 
-def _assess(
-    prepared: Path, args: argparse.Namespace, *, landscape_ok: bool = False
-) -> dict:
+def _assess(prepared: Path, args: argparse.Namespace, *, landscape_ok: bool = False) -> dict:
     vision_path = str(prepared)
     scaled = ""
     if args.max_image_side > 0:
@@ -134,14 +126,8 @@ def process_one(src: Path, args: argparse.Namespace, *, do_assess: bool) -> dict
         w, h = im.size
     result["source_size"] = [w, h]
     if _detect_wrong_silhouette(w, h, landscape_ok=landscape_ok):
-        expected = (
-            "landscape ~1.16-1.67 w/h (Plane)"
-            if landscape_ok
-            else "portrait ~0.63-0.82 w/h"
-        )
-        result["shape_warning"] = (
-            f"source {w}x{h} is not card-shaped ({expected} expected)"
-        )
+        expected = "landscape ~1.16-1.67 w/h (Plane)" if landscape_ok else "portrait ~0.63-0.82 w/h"
+        result["shape_warning"] = f"source {w}x{h} is not card-shaped ({expected} expected)"
         print(f"  warning: {result['shape_warning']}")
 
     out_path = _output_path(src, args)
@@ -167,9 +153,7 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("inputs", nargs="+", help="Card image files and/or directories")
-    parser.add_argument(
-        "-o", "--output-dir", help="Output directory (default: beside each input)"
-    )
+    parser.add_argument("-o", "--output-dir", help="Output directory (default: beside each input)")
     parser.add_argument(
         "--suffix",
         default="_printable",
@@ -195,9 +179,7 @@ def main() -> int:
         action="store_true",
         help="Treat inputs as Plane cards (force landscape + landscape silhouette QA)",
     )
-    parser.add_argument(
-        "--json", action="store_true", help="Print a JSON summary at the end"
-    )
+    parser.add_argument("--json", action="store_true", help="Print a JSON summary at the end")
     args = parser.parse_args()
 
     inputs = _iter_inputs(args.inputs)
@@ -232,16 +214,10 @@ def main() -> int:
             failures += 1
         results.append(result)
 
-    passed = sum(
-        1 for r in results if r.get("assessment", {}).get("verdict") == "Y"
-    )
+    passed = sum(1 for r in results if r.get("assessment", {}).get("verdict") == "Y")
     print(
         f"\nDone: {len(results)} card(s), "
-        + (
-            f"{passed} pass / {failures} fail"
-            if do_assess
-            else "assessment skipped"
-        )
+        + (f"{passed} pass / {failures} fail" if do_assess else "assessment skipped")
     )
     if args.json:
         print(json.dumps(results, indent=2))

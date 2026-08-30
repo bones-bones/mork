@@ -1,3 +1,19 @@
+[tool.ruff]
+force-exclude = true
+line-length = 100
+
 [tool.ruff.lint]
 # Strict enough to catch broken imports / syntax issues; avoids style noise on legacy code.
-select = ["E9", "F821", "F822"]
+ignore = ["F841", "BLE001"]
+fixable = ["I", "UP045", "UP007", "F541", "UP018", "E713", "E402", "E711"]
+exclude = ["site-packages", "service_account.py"]
+extend-select = ["PLC2801", "E402", "E713", "E711"]
+# select = ["E9", "F821", "F822", "ISC"]
+preview = true
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 100
+
+[tool.ruff.lint.per-file-ignores]
+"Mork.py" = ["N999"]
+"scripts/*" = ["E402"]

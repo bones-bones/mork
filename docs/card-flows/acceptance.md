@@ -4,7 +4,7 @@
 
 ## accept_card (persistence)
 
-Called from compile-veto, graveyard fast-track, instaerrata, sneak accept, design hell, and errata flows.
+Called from compile-veto, graveyard fast-track, instaerrata, sneak accept, scube lair, and errata flows.
 
 ```mermaid
 flowchart TD
@@ -46,7 +46,7 @@ flowchart TD
 **Defaults:** set `ACTIVE_CUBE_ID` (`HC9.1`), card list `NINE_CARD_LIST`  
 **Design Hell:** mandatory Hellfall postcard sync
 
-**Reddit title:** `post_to_reddit` builds `"… was accepted into {set_id}"` (or `"… was vetoed from {set_id}"`) from the card's set — not `CUBE_NAME`. Design Hell gold uses the pinned set (e.g. `SCL.X`); compile-veto accepts use `ACTIVE_CUBE_ID`.
+**Reddit title:** `post_to_reddit` builds `"… was accepted into {set_id}"` (or `"… was vetoed from {set_id}"`) from the card's set — not `CUBE_NAME`. Scube Lair gold uses the pinned set (e.g. `SCL.X`); compile-veto accepts use `ACTIVE_CUBE_ID`.
 
 **Stage-1 Devvit (optional):** when `REDDIT_ACCEPT_VIA_DEVVIT=1`, immediate posts go to `mork-devvit` `/api/post-card` using the Hellfall GCS `imageUrl`; falls back to asyncpraw on failure. Deferred batches still use `deferred_reddit/` + asyncpraw.
 
@@ -56,7 +56,7 @@ flowchart TD
 
 ## IMG step (image upload + Hellfall sync)
 
-Runs after the sheet row is resolved (new append or errata update). Implemented in `acceptCard.py` → `_resolve_accepted_image_url`.
+Runs after the sheet row is resolved (new append or errata update). Implemented in `accept_card.py` → `_resolve_accepted_image_url`.
 
 ### Input
 
@@ -64,7 +64,7 @@ Callers download the Discord attachment **before** `accept_card` — the pipelin
 
 | Caller                                               | How bytes arrive                |
 | ---------------------------------------------------- | ------------------------------- |
-| compile-veto, instaerrata, sneak accept, Design Hell | `await attachment.to_file()`    |
+| compile-veto, instaerrata, sneak accept, Scube Lair | `await attachment.to_file()`    |
 | graveyard fast-track                                 | `attachment.read()` → `BytesIO` |
 
 Inside `accept_card`, bytes are written to `tempImages/{cardName}{ext}` (slashes in the name become `|`) and kept for Reddit posting until the end of the flow.
@@ -74,7 +74,7 @@ Inside `accept_card`, bytes are written to `tempImages/{cardName}{ext}` (slashes
 ```mermaid
 flowchart TD
   IN["Discord attachment bytes"] --> TMP["Write tempImages/…"]
-  TMP --> SYNC{"MORK_POSTCARD_SYNC on<br/>or Design Hell?"}
+  TMP --> SYNC{"MORK_POSTCARD_SYNC on<br/>or Scube Lair?"}
   SYNC -->|no| FAIL["Accept fails"]
   SYNC -->|yes| B64["POST /api/cards/postcard<br/>imageBase64"]
   B64 --> OK{"imageUrl returned?"}
@@ -91,7 +91,7 @@ Discord card-list attachments and deferred Reddit files use the extension from *
 
 ### Hellfall postcard sync
 
-Optional for most accepts; **mandatory** for Design Hell (`require_hellfall_postcard=True`).
+Optional for most accepts; **mandatory** for Scube Lair (`require_hellfall_postcard=True`).
 
 | Env var                     | Role                                                                                                     |
 | --------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -105,11 +105,11 @@ Payload includes `name`, `creators`, `set`, `kind: "card"`, `imageBase64`, and `
 
 **Response used:** `imageUrl`, `id` (Hellfall UUID → sheet col BB), `oracle_id` (→ col BC). On new cards only, UUID columns are written when sync succeeds.
 
-**Failure:** If anything after a successful postcard write throws, `POST …/postcard/rollback` runs before the error propagates. Design Hell aborts acceptance entirely if sync does not complete.
+**Failure:** If anything after a successful postcard write throws, `POST …/postcard/rollback` runs before the error propagates. Scube Lair aborts acceptance entirely if sync does not complete.
 
-### Default vs Design Hell
+### Default vs Scube Lair
 
-|                    | New card / errata (`MORK_POSTCARD_SYNC` on) | Design Hell                              |
+|                    | New card / errata (`MORK_POSTCARD_SYNC` on) | Scube Lair                              |
 | ------------------ | ------------------------------------------- | ---------------------------------------- |
 | Image path         | `imageBase64` → Hellfall uploads to GCS     | Same                                     |
 | Sync required?     | No — gated by `MORK_POSTCARD_SYNC`          | Yes — `require_sync=True`                |

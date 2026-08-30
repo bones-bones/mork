@@ -11,8 +11,6 @@ Example:
 
 from __future__ import annotations
 
-import mork_repo_root  # noqa: E402
-
 import argparse
 import os
 import random
@@ -22,17 +20,18 @@ import time
 from collections.abc import Callable
 from typing import TypeVar
 
+import mork_repo_root  # noqa: F401
 import requests
 from gspread.exceptions import APIError
-
 from printable_image_qa import (
-    benchmark_ground_truth,
     ReviewResult,
+    benchmark_ground_truth,
     cleanup_temp_paths,
     heuristic_checks,
     resize_for_vision,
     review_image,
 )
+
 from shared_vars import googleClient
 
 T = TypeVar("T")
@@ -160,9 +159,7 @@ def _resolve_image_path(
         return cached, False, "cache"
 
     if not need_sheet:
-        raise FileNotFoundError(
-            f"no cached image at {cached!r} and sheet not loaded"
-        )
+        raise FileNotFoundError(f"no cached image at {cached!r} and sheet not loaded")
 
     row = _row_by_id(rows, card_id)
     if row is None:
@@ -291,9 +288,7 @@ def main() -> None:
 
     ground_truth = benchmark_ground_truth()
     benchmark_ids = sorted(ground_truth.keys(), key=int)
-    need_sheet = any(
-        not os.path.isfile(_cached_image_path(cid)) for cid in benchmark_ids
-    )
+    need_sheet = any(not os.path.isfile(_cached_image_path(cid)) for cid in benchmark_ids)
 
     if need_sheet:
         if not os.path.isfile(args.credentials):
@@ -353,9 +348,7 @@ def main() -> None:
 
             vision_path = image_path
             if args.max_image_side > 0:
-                vision_path, delete_scaled = resize_for_vision(
-                    image_path, args.max_image_side
-                )
+                vision_path, delete_scaled = resize_for_vision(image_path, args.max_image_side)
                 scaled_path = vision_path if delete_scaled else ""
 
             if args.heuristics_only:

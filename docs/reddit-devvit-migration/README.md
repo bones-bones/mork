@@ -10,7 +10,7 @@ The Reddit layer is small (~400 lines) and lives inside the Discord bot — not 
 
 | Feature | How it works | Files |
 |---------|--------------|-------|
-| **Acceptance posts** | When veto council accepts/vetoes a card, posts image + title to r/HellsCube | `acceptCard.py`, `reddit_devvit.py`, `reddit_functions.py` |
+| **Acceptance posts** | When veto council accepts/vetoes a card, posts image + title to r/HellsCube | `accept_card.py`, `reddit_devvit.py`, `reddit_functions.py` |
 | **Deferred batch queue** | >20 cards in one round → filesystem queue; `!redditcatchup` drains it | `deferred_reddit.py` |
 | **Card of the day** | Daily ~10:00 UTC: HC6 card from Google Sheets → image post | `cogs/Lifecycle.py` |
 | **Daily gallery** | Daily ~04:00 UTC: random 10 Discord submission images → gallery post | `cogs/lifecycle/post_daily_submissions.py` |

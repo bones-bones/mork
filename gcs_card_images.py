@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Optional
 from urllib.parse import quote, unquote, urlparse
 
 from google.cloud import storage
+
 from image_response_filename import extension_from_image_bytes, with_image_extension
 
 DEFAULT_BUCKET = os.environ.get("GCS_CARD_IMAGE_BUCKET", "hellscube-images")
@@ -31,9 +31,7 @@ def public_gcs_url(bucket_name: str, object_key: str) -> str:
     return f"https://storage.googleapis.com/{bucket_name}/{encoded}"
 
 
-def parse_gcs_public_url(
-    url: str, expected_bucket: Optional[str] = None
-) -> Optional[tuple[str, str]]:
+def parse_gcs_public_url(url: str, expected_bucket: str | None = None) -> tuple[str, str] | None:
     try:
         parsed = urlparse(url.strip())
     except Exception:
@@ -66,9 +64,9 @@ def upload_card_image(
     path: str,
     *,
     object_name: str,
-    existing_url: Optional[str] = None,
-    bucket_name: Optional[str] = None,
-    credentials_path: Optional[str] = None,
+    existing_url: str | None = None,
+    bucket_name: str | None = None,
+    credentials_path: str | None = None,
 ) -> str:
     """Upload a local image to the card-image bucket; return its public HTTPS URL.
 
@@ -87,9 +85,7 @@ def upload_card_image(
         ext = sniffed
 
     parsed = (
-        parse_gcs_public_url(existing_url, expected_bucket=bucket_name)
-        if existing_url
-        else None
+        parse_gcs_public_url(existing_url, expected_bucket=bucket_name) if existing_url else None
     )
     if parsed:
         object_key = parsed[1]

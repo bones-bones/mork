@@ -1,31 +1,26 @@
-from datetime import datetime, timezone, timedelta
-
-
+from datetime import datetime, timedelta, timezone
 from typing import cast
 
+from discord import Member, TextChannel
+from discord.ext import commands
+from discord.utils import get
+
+import hc_constants
 from getters import (
     getSubmissionDiscussionChannel,
     getVetoChannel,
 )
-from handleVetoPost import handleVetoPost
-import hc_constants
-from discord.ext import commands
-from discord import Member, TextChannel
-
-from discord.utils import get
-
+from handle_veto_post import handle_veto_post
 from is_admin import is_admin
 from is_mork import is_mork
 
 
-async def checkMasterpieceSubmissions(bot: commands.Bot):
+async def check_masterpiece_submissions(bot: commands.Bot):
     print("checking masterpiece submissions")
     subChannel = cast(TextChannel, bot.get_channel(hc_constants.MASTERPIECE_CHANNEL))
     vetoChannel = getVetoChannel(bot)
     acceptedChannel = getSubmissionDiscussionChannel(bot)
-    logChannel = cast(
-        TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
-    )
+    logChannel = cast(TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
     timeNow = datetime.now(timezone.utc)
     oneWeek = timeNow + timedelta(weeks=-2)
     messages = subChannel.history(after=oneWeek, limit=None)
@@ -34,7 +29,6 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
 
     messages = [message async for message in messages]
     for messageEntry in messages:
-
         if (
             "@everyone" in messageEntry.content
             or "@here" in messageEntry.content
@@ -52,7 +46,6 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
             if (
                 upCount - downCount
             ) >= hc_constants.MASTERPIECE_THRESHOLD and messageAge >= timedelta(days=1):
-
                 if downCount == 1:
                     prettyValid = False
                     async for user in upvote.users():
@@ -77,7 +70,7 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                     else:
                         mention_name = str(mentionEntry)
                     accepted_message_no_mentions = accepted_message_no_mentions.replace(
-                        f"<@{str(mentionEntry)}>", mention_name
+                        f"<@{mentionEntry}>", mention_name
                     )
 
                 copy = await messageEntry.attachments[0].to_file()
@@ -88,11 +81,13 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                 )
 
                 # Submissions thread is not deleted with the message.
-                submission_thread = messageEntry.guild.get_channel_or_thread(
-                    messageEntry.id
+                submission_thread = (
+                    messageEntry.guild.get_channel_or_thread(messageEntry.id)
+                    if messageEntry.guild
+                    else None
                 )
 
-                await handleVetoPost(
+                await handle_veto_post(
                     vetoEntry,
                     bot,
                     None,
@@ -117,8 +112,8 @@ async def checkMasterpieceSubmissions(bot: commands.Bot):
                         ):
                             try:
                                 await rem_msg.delete()
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                print(f"Masterpiece error: {e}")
 
                 await messageEntry.delete()
                 continue

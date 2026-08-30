@@ -1,6 +1,6 @@
 import unittest
 
-from getCardMessage import submission_card_name
+from get_card_message import submission_card_name
 
 
 class SubmissionCardNameTests(unittest.TestCase):

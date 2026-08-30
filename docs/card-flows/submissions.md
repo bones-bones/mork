@@ -135,21 +135,21 @@ flowchart TD
 
 ---
 
-## Design Hell submission & acceptance
+## Scube Lair submission & acceptance
 
-**Entry:** `#design-hell-submissions` (scube-lair-submissions) · admin 🥇/🥈 reaction
+**Entry:** `#scube-lair-submissions` · admin 🥇/🥈 reaction
 
 ```mermaid
 flowchart TD
   U["User posts card name + image"] --> ATT{"Any attachment?"}
   ATT -->|no| MISS["Silent ignore"]
   ATT -->|yes| NAME{"First line has card name?"}
-  NAME -->|no| NONAME["Design hell discussion:<br/>include card name + image returned<br/>Post deleted"]
+  NAME -->|no| NONAME["Scube lair discussion:<br/>include card name + image returned<br/>Post deleted"]
   NAME -->|yes| V["Mork adds 👍👎"]
   V --> THREAD["Public thread on submission<br/>(card name)"]
   THREAD --> MED{"Admin reacts 🥇 or 🥈?"}
   MED -->|no| WAIT["Community votes only"]
-  MED -->|🥈| VETO["Accept as HCV.S → veto card list"]
+  MED -->|🥈| VETO["Accept as HCV.SCL → veto card list"]
   MED -->|🥇| TITLE{"First line has card name?"}
   TITLE -->|no| REJ["Reject acceptance<br/>(no ✅)"]
   TITLE -->|yes| PIN["Read Set: from pinned prompt"]
@@ -165,7 +165,7 @@ flowchart TD
 | --------------------- | --------------------------------- | -------------------------------------------- | --------- |
 | **Missing image**     | No attachment                     | None (silent ignore)                         | Kept      |
 | **Valid submission**  | Attachment + card name on first line | 👍👎 + public discussion thread (card name) | Kept      |
-| **Missing card name** | Attachment present, empty/whitespace first line | Design hell discussion channel: include card name + image returned | Deleted   |
+| **Missing card name** | Attachment present, empty/whitespace first line | Scube lair discussion channel: include card name + image returned | Deleted   |
 | **Missing set (gold)** | Admin 🥇, no pin or unparsable `Set:` on first pin | DM to admin | Kept      |
 
 ---

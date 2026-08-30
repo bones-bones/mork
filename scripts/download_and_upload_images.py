@@ -1,39 +1,33 @@
-import mork_repo_root  # noqa: E402
-
-from time import sleep
-from functools import reduce
 import os
 import re
+from functools import reduce
+from time import sleep
 from typing import cast
+
+import mork_repo_root  # noqa: F401
 import requests
-from is_mork import getDriveUrl
-from shared_vars import googleClient
+from googleapiclient.discovery import build
+from PIL import Image, ImageDraw
+
 import hc_constants
 from image_response_filename import filename_from_image_response
-from shared_vars import drive
-from PIL import Image, ImageDraw
-from shared_vars import creds
-
-
-from googleapiclient.discovery import build
+from is_mork import getDriveUrl
+from shared_vars import creds, drive, googleClient
 
 service = build("drive", "v3", credentials=creds)
 
 
 DRIVE_FOLDER_ID = "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"
 
-listing = drive.ListFile(
-    {"q": f"'{DRIVE_FOLDER_ID}' in parents and trashed=false"}
-).GetList()
+listing = drive.ListFile({"q": f"'{DRIVE_FOLDER_ID}' in parents and trashed=false"}).GetList()
 
-files = drive.ListFile({"q": f"'0AF2-ah4i2AWYUk9PVA' in parents"}).GetList()
+files = drive.ListFile({"q": "'0AF2-ah4i2AWYUk9PVA' in parents"}).GetList()
 print(files[1])
 files_sorted = sorted(files, key=lambda f: int(f.get("fileSize", 0)))[0:300]
 
 print(f"\n{'Name':<40} {'Size (bytes)':<15} {'Location (ID)':<40} {'Date':<15}")
 print("-" * 110)
 for f in files_sorted:
-
     name = f.get("title", "N/A")[:39]
     size = f.get("fileSize", "0")
     location = f.get("id", "N/A")[:39]
@@ -58,18 +52,14 @@ existingCardMappingObject = reduce(mergeObject, listing, {})
 
 def uploadToDrive(path: str, filename: str):
     existingId = (
-        existingCardMappingObject[filename]
-        if filename in existingCardMappingObject
-        else None
+        existingCardMappingObject[filename] if filename in existingCardMappingObject else None
     )
 
     if existingId:
         file = drive.CreateFile({"id": existingId})
 
     else:
-        file = drive.CreateFile(
-            {"parents": [{"id": "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"}]}
-        )
+        file = drive.CreateFile({"parents": [{"id": "1kLARqwx0D-8qdjO2IeOJVsz92uYNkLje"}]})
 
     file.SetContentFile(path)
     file.Upload()
@@ -196,7 +186,6 @@ def prepare_card_for_printing(image_path: str) -> str:
         < 35
         and color_diff(corners[0], top_center_for_bg) > 200
     ):
-
         # Draw equilateral triangles in each corner
         draw = ImageDraw.Draw(img)
         # Top-left
@@ -309,7 +298,6 @@ for id, name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip
     already_entered = current_printable_cards.count(id) == (sidesToPrint).__len__()
 
     if not already_entered:
-
         sleep(15)
         try:
             for i, sideUrl in enumerate(sidesToPrint):
@@ -354,7 +342,7 @@ for id, name, primaryUrl, side1Url, side2Url, side3Url, side4Url, cardSet in zip
                     if not already_entered:
                         print(f"appending to sheet: {parsedFileName}")
                         targetSheet.append_row(
-                            list((id, name, f"side {i+1}", getDriveUrl(uploaded)))
+                            list((id, name, f"side {i + 1}", getDriveUrl(uploaded)))
                         )
                     else:
                         ...

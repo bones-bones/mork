@@ -25,8 +25,6 @@ Example:
 
 from __future__ import annotations
 
-import mork_repo_root  # noqa: E402
-
 import argparse
 import os
 import random
@@ -36,15 +34,16 @@ import time
 from collections.abc import Callable
 from typing import TypeVar
 
+import mork_repo_root  # noqa: F401
 import requests
 from gspread.exceptions import APIError
-
 from printable_image_qa import (
     cleanup_temp_paths,
     format_assessment_comment,
     resize_for_vision,
     review_image,
 )
+
 from shared_vars import googleClient
 
 T = TypeVar("T")
@@ -369,9 +368,7 @@ def main() -> None:
 
             vision_path = tmp_raw
             if args.max_image_side > 0:
-                vision_path, scaled_extra = resize_for_vision(
-                    tmp_raw, args.max_image_side
-                )
+                vision_path, scaled_extra = resize_for_vision(tmp_raw, args.max_image_side)
                 if scaled_extra:
                     tmp_scaled = vision_path
 
