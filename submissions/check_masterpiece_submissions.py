@@ -118,7 +118,7 @@ async def check_masterpiece_submissions(bot: commands.Bot):
                 await messageEntry.delete()
                 continue
             elif (upCount - downCount) >= (
-                hc_constants.MASTERPIECE_THRESHOLD - 5
+                hc_constants.MASTERPIECE_THRESHOLD - 10
             ) and messageAge >= timedelta(days=12.5):
                 hasMork = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")

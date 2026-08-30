@@ -13,7 +13,7 @@ flowchart TD
     MAG -->|no| POLL["Mork reposts poll<br/>👍 👎 ❌ + thread"]
     POLL --> LOOP["Background check · 5 min"]
     LOOP -- no --> CHK{"Mork poll:<br/>up − down ≥ threshold<br/>age ≥ 1 day?"}
-    CHK -- no --> REMINDER_CHECK{"margin ≥ 55<br/>age ≥ 5.5 d"}
+    CHK -- no --> REMINDER_CHECK{"margin ≥ 50<br/>age ≥ 5.5 d"}
     REMINDER_CHECK -- yes --> REM["🕛 nearing-end ping"]
 
 

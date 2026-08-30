@@ -212,7 +212,7 @@ async def check_submissions(bot: commands.Bot):
                 await messageEntry.delete()
                 continue
             elif positiveMargin >= (
-                hc_constants.SUBMISSIONS_THRESHOLD - 5
+                hc_constants.SUBMISSIONS_THRESHOLD - 10
             ) and messageAge >= timedelta(days=5.5):
                 has_mork_marked_it = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")
