@@ -7,7 +7,7 @@ from urllib.parse import quote
 
 import aiohttp
 
-from hellfall_fetcher import getExactCard
+from hellfall_fetcher import getExactCard, getFuzzyCard
 from hellfall_shared import (
     get_api_key,
     get_api_url,
@@ -30,7 +30,13 @@ async def modifyTagWithServer(
         raise ChangesetError("HELLFALL_API_URL and HELLFALL_POSTCARD_API_KEY are required")
 
     timeout = get_request_timeout()
-    uuid = (await getExactCard(cardName)).id
+    card = await getExactCard(cardName)
+    if not card:
+        closest = await getFuzzyCard(cardName)
+        if not closest:
+            return "please include a card name"
+        return f"unable to find an exact match for {cardName}. did you mean: {closest.name}"
+    uuid = card.id
     payload: dict[str, str] = {
         "tag": tag,
         "change_type": change_type,

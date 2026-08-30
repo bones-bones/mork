@@ -119,7 +119,9 @@ async def getMultipleExactCards(cardNames: list[str]) -> list[SearchCard]:
     return []
 
 
-async def getFuzzyCard(cardName: str) -> SearchCard | None:
+async def getFuzzyCard(cardName: str | None) -> SearchCard | None:
+    if not cardName:
+        return None
     if STILL_USING_CACHE:
         return get_card_by_fuzzy_name(cardName)
     payload: dict[str, str] = {

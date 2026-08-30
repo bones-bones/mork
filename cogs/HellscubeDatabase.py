@@ -1,7 +1,7 @@
 import random
 from datetime import UTC, datetime, timedelta, timezone
 from random import randrange
-from typing import cast
+from typing import Annotated, cast
 
 import discord
 from discord.ext import commands
@@ -34,6 +34,13 @@ def getUnapprovedCardSheet():
     return googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
         hc_constants.DATABASE_UNAPPROVED
     )
+
+
+cleanText = Annotated[str, commands.clean_content(fix_channel_mentions=True)]
+
+
+def fixClean(text: str | None):
+    return None if text is None else text.lower()
 
 
 class HellscubeDatabaseCog(commands.Cog):
@@ -88,7 +95,7 @@ class HellscubeDatabaseCog(commands.Cog):
         await send_single_image_reply(url=img, cardname=name, text=ruling, message=ctx.message)
 
     @commands.command(name="random")
-    async def randomCard(self, ctx: commands.Context, query: str | None):
+    async def randomCard(self, ctx: commands.Context, *, query: cleanText | None = None):
         """
         Returns a random card image from the database.
         Can accept a search query to narrow the search.
@@ -99,8 +106,8 @@ class HellscubeDatabaseCog(commands.Cog):
         )
 
     @commands.command(aliases=["creators"])
-    async def creator(self, channel: discord.abc.Messageable, *cardName):
-        name = " ".join(cardName).lower()
+    async def creator(self, channel: discord.abc.Messageable, *, cardName: cleanText | None = None):
+        name = fixClean(cardName)
         card = await getFuzzyCard(name)
         message = "something went wrong!"
         if not card:
@@ -110,11 +117,11 @@ class HellscubeDatabaseCog(commands.Cog):
         await channel.send(message)
 
     @commands.command(aliases=["ruling"])
-    async def rulings(self, channel: discord.abc.Messageable, *cardName):
+    async def rulings(self, channel: discord.abc.Messageable, *, cardName: cleanText | None = None):
         """
         Returns the rulings for a given card.
         """
-        name = " ".join(cardName).lower()
+        name = fixClean(cardName)
         card = await getFuzzyCard(name)
         message = "something went wrong!"
         if not card:
@@ -163,7 +170,7 @@ class HellscubeDatabaseCog(commands.Cog):
         await ctx.send(f"ruling updated to:\n{newRuling}")
 
     @commands.command(rest_is_raw=True, aliases=["addtag"])
-    async def tag(self, ctx: commands.Context, *, args: str):
+    async def tag(self, ctx: commands.Context, *, args: cleanText):
         """Adds a tag. Uses the same process as on hellfall."""
         cardName = args.split("\n")[0].strip()
         splitLines = args.split("\n")
@@ -182,7 +189,7 @@ class HellscubeDatabaseCog(commands.Cog):
         await ctx.send(message)
 
     @commands.command(rest_is_raw=True)
-    async def removetag(self, ctx: commands.Context, *, args: str):
+    async def removetag(self, ctx: commands.Context, *, args: cleanText):
         """Removes a tag. Uses the same process as on hellfall."""
         cardName = args.split("\n")[0].strip()
         splitLines = args.split("\n")
@@ -197,9 +204,9 @@ class HellscubeDatabaseCog(commands.Cog):
         await ctx.send(message)
 
     @commands.command()
-    async def info(self, channel: discord.abc.Messageable, *cardName):
-        name = " ".join(cardName).lower()
-        card = await getFuzzyCard(cardName=name)
+    async def info(self, channel: discord.abc.Messageable, *, cardName: cleanText):
+        name = fixClean(cardName)
+        card = await getFuzzyCard(name)
         message = "something went wrong!"
         if not card:
             await channel.send(message)
@@ -208,7 +215,10 @@ class HellscubeDatabaseCog(commands.Cog):
         await channel.send(message)
 
     @commands.command()
-    async def search(self, ctx: commands.Context, query: str):
+    async def search(self, ctx: commands.Context, *, query: cleanText | None = None):
+        if not query:
+            await ctx.send("You need to include a query.")
+            return
         response = await getSearchFromServer(query)
 
         if response.total_cards > 100:
