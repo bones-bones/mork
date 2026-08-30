@@ -1,5 +1,7 @@
 # hellscube-bridge deploy checklist
 
+Migration tracker: [`CHECKLIST.md`](../reddit-devvit-migration/CHECKLIST.md).
+
 Current production target: **COTD via Devvit ON**, **acceptance / mirror / reply / gallery via Devvit OFF** until each path is configured and verified.
 
 ## 1. Devvit (`mork-devvit`)

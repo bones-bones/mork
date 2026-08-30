@@ -1,6 +1,9 @@
 {
     "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
     "name": "hellscube-bridge",
+    "marketingAssets": {
+        "icon": "assets/icon.png"
+    },
     "server": {
         "dir": "dist/server",
         "entry": "index.cjs",

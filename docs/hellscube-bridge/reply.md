@@ -39,7 +39,7 @@ Requires the same `DEVVIT_POST_CARD_URL` + `DEVVIT_POST_CARD_SECRET` as acceptan
 
 ## Prefix matching
 
-Triggers when the **prior** Mork message uses either mirror prefix:
+Triggers when the **prior** mirror message (Mork or mork-bridge webhook) uses either prefix:
 
 - `reddit says:`
 - `Reddit thinks Hellscube would love this:`
