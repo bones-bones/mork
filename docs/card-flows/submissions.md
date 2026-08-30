@@ -32,7 +32,7 @@ flowchart TD
 
   POLL --> LOOP["Background check · 5 min"]
   LOOP --> CHK{"Mork poll:<br/>up − down ≥ 60<br/>age ≥ 1 day?"}
-  CHK -->|no| REMINDER_CHECK{"margin ≥ 55<br/>age ≥ 5.5 d"}
+  CHK -->|no| REMINDER_CHECK{"margin ≥ 50<br/>age ≥ 5.5 d"}
   REMINDER_CHECK -->|yes| REM["🕛 nearing-end ping"]
   REM --> POLL
   REMINDER_CHECK -->|no| POLL
@@ -108,7 +108,7 @@ flowchart TD
   POLL --> CHK{"up − down ≥ 45<br/>age ≥ 1 day?"}
   CHK -->|yes| VP["#veto-polls"]
   VP --> HVP["Veto poll setup"]
-  CHK -->|no, margin ≥ 40<br/>age ≥ 5.5 d| REM["🕛 reminder"]
+  CHK -->|no, margin ≥ 35<br/>age ≥ 5.5 d| REM["🕛 reminder"]
   REM --> POLL
   CHK -->|no| POLL
 ```
