@@ -6,51 +6,51 @@ Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscub
 
 ## Platform
 
-| Item | Status | Notes |
-|------|--------|-------|
-| `hellscube-bridge` app scaffolded | ✅ | `mork-devvit/` |
-| Published on Devvit | ✅ | Required for r/HellsCube (>200 subs) |
-| Installed on r/HellsCube | ✅ | |
-| External endpoints access approved | ⏳ | **Current blocker** — GCP → Devvit POST not allowed yet |
-| Managed App Token on VM | ⏳ | `devvit_at_…` in `DEVVIT_POST_CARD_SECRET` after approval |
-| Developer Funds application | ⬜ | Optional |
+| Item                               | Status | Notes                                                     |
+| ---------------------------------- | ------ | --------------------------------------------------------- |
+| `hellscube-bridge` app scaffolded  | ✅     | `mork-devvit/`                                            |
+| Published on Devvit                | ✅     | Required for r/HellsCube (>200 subs)                      |
+| Installed on r/HellsCube           | ✅     |                                                           |
+| External endpoints access approved | ⏳     | **Current blocker** — GCP → Devvit POST not allowed yet   |
+| Managed App Token on VM            | ⏳     | `devvit_at_…` in `DEVVIT_POST_CARD_SECRET` after approval |
+| Developer Funds application        | ⬜     | Optional                                                  |
 
 ## Code (implemented)
 
-| Item | Status |
-|------|--------|
-| `/external/post-card` (acceptance/veto) | ✅ |
-| `/external/reply-to-post` (Discord → Reddit) | ✅ |
-| `PostSubmit` mirror → Discord webhook | ✅ |
-| Card-of-the-day scheduler (10:00 UTC) | ✅ |
-| Daily gallery scheduler prep (04:00 UTC) | ✅ (multi-image blocked) |
-| Mork feature flags + asyncpraw fallback (`reddit_devvit.py`) | ✅ |
-| Deferred queue on Devvit KV | ⬜ | Still `deferred_reddit.py` + `!redditcatchup` |
-| `scripts/verify_devvit_connectivity.py` | 🔄 | In progress (scripts branch) |
+| Item                                                         | Status                   |
+| ------------------------------------------------------------ | ------------------------ | --------------------------------------------- |
+| `/external/post-card` (acceptance/veto)                      | ✅                       |
+| `/external/reply-to-post` (Discord → Reddit)                 | ✅                       |
+| `PostSubmit` mirror → Discord webhook                        | ✅                       |
+| Card-of-the-day scheduler (10:00 UTC)                        | ✅                       |
+| Daily gallery scheduler prep (04:00 UTC)                     | ✅ (multi-image blocked) |
+| Mork feature flags + asyncpraw fallback (`reddit_devvit.py`) | ✅                       |
+| Deferred queue on Devvit KV                                  | ⬜                       | Still `deferred_reddit.py` + `!redditcatchup` |
+| `scripts/verify_devvit_connectivity.py`                      | 🔄                       | In progress (scripts branch)                  |
 
 ## Production cutover
 
-| Feature | Transport today | Devvit ready | VM flag | App setting |
-|---------|-----------------|--------------|---------|-------------|
-| **Card of the day** | Devvit scheduler | ✅ | `REDDIT_COTD_VIA_DEVVIT=1` | `cardOfTheDayViaDevvit=true` |
-| **Acceptance posts** | asyncpraw | ✅ | off | n/a |
-| **Reddit → Discord mirror** | `check_reddit.py` poll | ✅ | off | `redditMirrorViaDevvit=false` |
-| **Discord → Reddit reply** | asyncpraw | ✅ | off | n/a |
-| **Daily gallery** | asyncpraw + GCS manifest | partial | off | `dailyGalleryViaDevvit=false` |
+| Feature                     | Transport today          | Devvit ready | VM flag                    | App setting                   |
+| --------------------------- | ------------------------ | ------------ | -------------------------- | ----------------------------- |
+| **Card of the day**         | Devvit scheduler         | ✅           | `REDDIT_COTD_VIA_DEVVIT=1` | `cardOfTheDayViaDevvit=true`  |
+| **Acceptance posts**        | asyncpraw                | ✅           | off                        | n/a                           |
+| **Reddit → Discord mirror** | `check_reddit.py` poll   | ✅           | off                        | `redditMirrorViaDevvit=false` |
+| **Discord → Reddit reply**  | asyncpraw                | ✅           | off                        | n/a                           |
+| **Daily gallery**           | asyncpraw + GCS manifest | partial      | off                        | `dailyGalleryViaDevvit=false` |
 
 Legend: ✅ done · ⏳ waiting on external dependency · ⬜ not started · 🔄 in progress
 
 ## Devvit app settings (r/HellsCube)
 
-| Setting | Target | Done |
-|---------|--------|------|
-| `cardOfTheDayViaDevvit` | `true` | ✅ |
-| `catalogUrl` | Hellfall catalog | ⬜ optional |
-| `officialHcRedditFlair` | Official HC UUID | ⬜ optional |
-| `redditMirrorWebhookUrl` | Discord `#reddit` webhook | ⬜ required for mirror cutover |
-| `redditMirrorViaDevvit` | `false` until verified | ⬜ |
-| `dailyGalleryViaDevvit` | `false` | ⬜ blocked on gallery API |
-| `submissionsGalleryManifestUrl` | GCS manifest | ⬜ optional |
+| Setting                         | Target                    | Done                           |
+| ------------------------------- | ------------------------- | ------------------------------ |
+| `cardOfTheDayViaDevvit`         | `true`                    | ✅                             |
+| `catalogUrl`                    | Hellfall catalog          | ⬜ optional                    |
+| `officialHcRedditFlair`         | Official HC UUID          | ⬜ optional                    |
+| `redditMirrorWebhookUrl`        | Discord `#reddit` webhook | ⬜ required for mirror cutover |
+| `redditMirrorViaDevvit`         | `false` until verified    | ⬜                             |
+| `dailyGalleryViaDevvit`         | `false`                   | ⬜ blocked on gallery API      |
+| `submissionsGalleryManifestUrl` | GCS manifest              | ⬜ optional                    |
 
 ## VM `.env` (lil-mork)
 
@@ -61,7 +61,7 @@ REDDIT_COTD_VIA_DEVVIT=1
 REDDIT_GALLERY_USE_MANIFEST=1
 # REDDIT_GALLERY_VIA_DEVVIT=1
 # REDDIT_REPLY_VIA_DEVVIT=1
-# DEVVIT_POST_CARD_URL=https://hellscube-bridge-21otlg-external.devvit.net/external/post-card
+# DEVVIT_POST_CARD_URL=...
 # DEVVIT_POST_CARD_SECRET=devvit_at_…
 ```
 
