@@ -636,7 +636,11 @@ class GeneralCog(commands.Cog):
 
                         text = ""
                         if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin:
-                            text += f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards. While you wait, why don't you "
+                            text += (
+                                f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast} scubusiness hours. "
+                                f"You need to wait {hc_constants.SUBMISSION_COOLDOWN} scubusiness hours between submitting cards. "
+                                f"(Scubusiness hours exclude Saturday and Tuesday.) While you wait, why don't you "
+                            )
                             randomActivity = random.choice(possibleActivities)
                             text += randomActivity
 

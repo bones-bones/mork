@@ -84,18 +84,18 @@ Details: [`docs/hellscube-bridge/mirror.md`](../docs/hellscube-bridge/mirror.md)
 
 Details: [`reply.md`](reply.md).
 
-## Daily submissions gallery (scheduler prep)
+## Daily submissions gallery
 
-Reads the GCS manifest Mork writes at `#submissions` intake. **Multi-image gallery posts are blocked** until Reddit exposes a gallery API in Devvit.
+Mork POSTs picked `#submissions` picture URLs to Devvit. **Native multi-image gallery posts are blocked** until Reddit exposes a gallery API; Mork then falls back to asyncpraw.
 
-|             |                                                 |
-| ----------- | ----------------------------------------------- |
-| **Cron**    | `0 4 * * *`                                     |
-| **Handler** | `/internal/scheduler/daily-submissions-gallery` |
-| **Setting** | `dailyGalleryViaDevvit` (default `false`)       |
-| **Dedup**   | Redis `gallery:lastDate`                        |
+|                  |                                                         |
+| ---------------- | ------------------------------------------------------- |
+| **Manifest key** | `server.externalEndpoints.postGallery` in `devvit.json` |
+| **Route**        | `POST /external/post-gallery`                           |
+| **Auth**         | Managed App Token (`Authorization: Bearer devvit_at_…`) |
+| **Body**         | `{ "title"?: "…", "imageUrls": ["https://…"] }`         |
 
-Details: [`gallery.md`](gallery.md).
+Details: [`docs/hellscube-bridge/gallery.md`](../docs/hellscube-bridge/gallery.md).
 
 ## Readiness checklist
 
@@ -107,7 +107,7 @@ Config is in place for when Reddit enables external endpoints on your account:
 - [x] Card-of-the-day scheduler (`card-of-the-day` cron + catalog fetch)
 - [x] Reddit → Discord mirror (`onPostSubmit` + webhook; default off)
 - [x] Discord → Reddit replies (`/external/reply-to-post`; default off on VM)
-- [x] Daily gallery scheduler + GCS manifest writer (multi-image blocked; default off)
+- [x] Daily gallery `/external/post-gallery` (native multi-image blocked; default off on VM)
 - [x] Mork client (`reddit_devvit.py`) validates external URL + managed token format
 - [x] Mod-facing endpoint documentation
 - [ ] Reddit [external endpoints access](https://developers.reddit.com/docs/capabilities/server/external-endpoints) approved for your account

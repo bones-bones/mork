@@ -68,7 +68,6 @@ from post_card_images import post_card_images
 from reddit_devvit import (
     post_reply_via_devvit,
     reddit_cotd_via_devvit_enabled,
-    reddit_gallery_via_devvit_enabled,
     reddit_mirror_via_devvit_enabled,
     reddit_reply_via_devvit_enabled,
 )
@@ -299,7 +298,7 @@ class LifecycleCog(commands.Cog):
                 await post_reddit_card_of_the_day()
             except Exception:
                 traceback.print_exc()
-        if now.hour == 4 and is_first_minutes and not reddit_gallery_via_devvit_enabled():
+        if now.hour == 4 and is_first_minutes:
             try:
                 await post_daily_submissions(self.bot)
             except Exception:
@@ -750,7 +749,7 @@ class LifecycleCog(commands.Cog):
                             ):
                                 discussionChannel = getSubmissionDiscussionChannel(self.bot)
                                 await discussionChannel.send(
-                                    f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards"
+                                    f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} scubusiness hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} scubusiness hours between submitting cards. (Scubusiness hours exclude Saturday and Tuesday.)"
                                 )
                                 await message.delete()
                                 return
@@ -856,7 +855,7 @@ class LifecycleCog(commands.Cog):
                                             ),
                                         )
                                         await discussionChannel.send(
-                                            f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} hours between submitting cards"
+                                            f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} scubusiness hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} scubusiness hours between submitting cards. (Scubusiness hours exclude Saturday and Tuesday.)"
                                         )
                                         await message.delete()
                                         return
@@ -1419,7 +1418,7 @@ def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = 
 def reset_countdowns():
     print("reset")
     _reset_countdowns_for_file(hc_constants.SUBMISSIONS_STATE_FILE, pause_on_closed_days=True)
-    _reset_countdowns_for_file(hc_constants.MASTERPIECE_STATE_FILE)
+    _reset_countdowns_for_file(hc_constants.MASTERPIECE_STATE_FILE, pause_on_closed_days=True)
     print("end reset")
 
 

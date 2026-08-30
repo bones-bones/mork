@@ -1,5 +1,6 @@
 import os
 import random
+import traceback
 from datetime import UTC, datetime, timedelta
 from urllib.parse import urlparse
 
@@ -8,6 +9,7 @@ import aiohttp
 
 import hc_constants
 from cogs.lifecycle.submissions_day_markers import is_submissions_card
+from reddit_devvit import post_gallery_via_devvit, reddit_gallery_via_devvit_enabled
 from reddit_functions import post_gallery_to_reddit
 from submissions_gallery_manifest import entries_last_24h, manifest_url
 
@@ -23,6 +25,18 @@ def gallery_uses_manifest() -> bool:
         "false",
         "no",
     }
+
+
+def _gallery_urls_from_manifest() -> list[str]:
+    entries = entries_last_24h()
+    if not entries:
+        return []
+    picked = random.sample(entries, min(10, len(entries)))
+    return [
+        image_url
+        for entry in picked
+        if (image_url := str(entry.get("imageUrl", "")).strip())
+    ]
 
 
 async def _download_image_to_temp(image_url: str, message_id: str) -> str:
@@ -41,20 +55,16 @@ async def _download_image_to_temp(image_url: str, message_id: str) -> str:
     return path
 
 
-async def _gallery_images_from_manifest() -> list[dict[str, str]]:
-    entries = entries_last_24h()
-    if not entries:
-        return []
-    picked = random.sample(entries, min(10, len(entries)))
+async def _gallery_images_from_urls(urls: list[str]) -> list[dict[str, str]]:
     images: list[dict[str, str]] = []
-    for entry in picked:
-        message_id = str(entry.get("messageId", "unknown"))
-        image_url = str(entry.get("imageUrl", "")).strip()
-        if not image_url:
-            continue
-        path = await _download_image_to_temp(image_url, message_id)
+    for index, image_url in enumerate(urls):
+        path = await _download_image_to_temp(image_url, str(index))
         images.append({"image_path": path})
     return images
+
+
+async def _gallery_images_from_manifest() -> list[dict[str, str]]:
+    return await _gallery_images_from_urls(_gallery_urls_from_manifest())
 
 
 async def _gallery_images_from_discord(bot) -> list[dict[str, str]]:
@@ -86,6 +96,34 @@ async def _gallery_images_from_discord(bot) -> list[dict[str, str]]:
 
 
 async def post_daily_submissions(bot):
+    if gallery_uses_manifest() and reddit_gallery_via_devvit_enabled():
+        urls = _gallery_urls_from_manifest()
+        if not urls:
+            print(
+                "daily submissions gallery: no images "
+                f"(manifest={manifest_url()})"
+            )
+            return
+        try:
+            await post_gallery_via_devvit(
+                title=GALLERY_TITLE,
+                image_urls=urls,
+                flair_id=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+            )
+            return
+        except Exception:
+            traceback.print_exc()
+            print("daily submissions gallery: Devvit failed; falling back to asyncpraw")
+            images = await _gallery_images_from_urls(urls)
+            await post_gallery_to_reddit(
+                title=GALLERY_TITLE,
+                images=images,
+                flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+            )
+            for image_entry in images:
+                os.remove(next(iter(image_entry.values())))
+            return
+
     if gallery_uses_manifest():
         images = await _gallery_images_from_manifest()
     else:

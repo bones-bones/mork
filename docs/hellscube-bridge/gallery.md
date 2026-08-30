@@ -2,59 +2,63 @@
 
 Daily gallery of recent `#submissions` cards posted to r/HellsCube (~04:00 UTC).
 
-## Data layer (GCS manifest)
+## Flow
 
-Mork appends to a public JSON manifest when a card lands in `#submissions`:
+```mermaid
+sequenceDiagram
+  participant CH as #submissions
+  participant M as Mork VM
+  participant GCS as hellcube-images
+  participant D as hellscube-bridge
+  participant R as r/HellsCube
+
+  CH->>M: Card image at intake
+  M->>GCS: Store image + manifest entry
+  Note over M: Hour 4 UTC
+  M->>M: Pick up to 10 HTTPS URLs
+  M->>D: POST /external/post-gallery<br/>{ title, imageUrls }
+  D->>R: reddit.submitPost (image; native gallery TBD)
+  D-->>M: { ok, postId, permalink }
+  Note over M: On Devvit failure, asyncpraw gallery fallback
+```
+
+Mork still writes the GCS manifest so it has public HTTPS URLs to send. Devvit does **not** fetch that JSON.
+
+## Endpoint
 
 | | |
 |---|---|
-| **Object** | `mork/submissions-gallery-manifest.json` on `hellcube-images` |
-| **Default URL** | `https://storage.googleapis.com/hellcube-images/mork/submissions-gallery-manifest.json` |
-| **Writer** | `submissions_gallery_manifest.append_submission()` from `Lifecycle.py` |
-| **Entry shape** | `{ messageId, imageUrl, submittedAt, cardName? }` |
+| **Route** | `POST /external/post-gallery` |
+| **Auth** | Managed App Token (`Authorization: Bearer devvit_at_…`) |
+| **Body** | `{ "title"?: "…", "imageUrls": ["https://…"], "flairId"?: "…", "subredditName"?: "HellsCube" }` |
+| **Max images** | 10 |
 
-Images are stored under `submissions-gallery/{messageId}.{ext}` on GCS.
+`title` defaults to the usual gallery headline. `flairId` defaults to Official HC.
 
-## Posting (today)
+**Native multi-image gallery posts are not in Devvit yet** (`submitPost` `imageUrls` is a single-URL tuple). The endpoint still **accepts** up to 10 picture URLs. One image is posted; more than one returns `501` `{ "ok": false, "error": "reddit_gallery_api_unavailable" }` so Mork can fall back to asyncpraw.
 
-**Devvit cannot submit native Reddit gallery posts yet** (no multi-image `submitPost`). Until Reddit adds that API:
-
-| Path | Who posts | Transport |
-|------|-----------|-----------|
-| **Production default** | Mork VM hour-4 job | asyncpraw gallery from GCS manifest |
-| **Future** | Devvit scheduler | Blocked at `reddit_gallery_api_unavailable` when >1 image |
-
-### Mork flags
+## Feature flags
 
 | Switch | Where | Effect |
 |--------|-------|--------|
-| `REDDIT_GALLERY_USE_MANIFEST=1` | VM `.env` (default on) | Gallery reads GCS manifest, not Discord history |
-| `REDDIT_GALLERY_VIA_DEVVIT=0` | VM `.env` (default off) | Mork still posts gallery; skip when Devvit owns it |
+| `REDDIT_GALLERY_USE_MANIFEST=1` | VM `.env` (default on) | Gallery reads GCS image URLs, not Discord history |
+| `REDDIT_GALLERY_VIA_DEVVIT=1` | VM `.env` (default off) | Hour-4 POSTs to `/external/post-gallery`; asyncpraw fallback on failure |
+| *(none on Devvit)* | — | Mork chooses transport |
 
-### Devvit settings (prep / future)
+Requires the same `DEVVIT_POST_CARD_URL` + `DEVVIT_POST_CARD_SECRET` as acceptance posts (base URL is rewritten to `/external/post-gallery`).
 
-| Setting | Default | Role |
-|---------|---------|------|
-| `submissionsGalleryManifestUrl` | GCS default | Manifest fetch URL |
-| `dailyGalleryViaDevvit` | `false` | Scheduler runs; multi-image still skipped |
-| **Dedup** | Redis `gallery:lastDate` | One gallery attempt per UTC day |
+## Cutover
 
-| Task | Cron | Handler |
-|------|------|---------|
-| `daily-submissions-gallery` | `0 4 * * *` | `/internal/scheduler/daily-submissions-gallery` |
+```bash
+REDDIT_GALLERY_VIA_DEVVIT=1
+```
 
-## Cutover checklist (when gallery API exists)
-
-1. Implement `submitGalleryPost()` in `mork-devvit` once Devvit supports it
-2. `npx devvit settings set dailyGalleryViaDevvit` → `true`
-3. VM: `REDDIT_GALLERY_VIA_DEVVIT=1`
-4. Verify hour-4 gallery on Reddit; Mork hour-4 branch skipped
+Keep asyncpraw fallback until a native gallery `submitPost` exists (or a single-image smoke test succeeds).
 
 ## Rollback
 
 ```bash
 REDDIT_GALLERY_VIA_DEVVIT=0
-npx devvit settings set dailyGalleryViaDevvit   # → false
 ```
 
-Gallery resumes on Mork via manifest + asyncpraw.
+Gallery resumes on Mork via manifest + asyncpraw only.

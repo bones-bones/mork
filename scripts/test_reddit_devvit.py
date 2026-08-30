@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from reddit_devvit import (
     devvit_external_url,
     post_accept_via_devvit,
+    post_gallery_via_devvit,
     post_reply_via_devvit,
     reddit_accept_via_devvit_enabled,
     reddit_cotd_via_devvit_enabled,
@@ -60,6 +61,10 @@ class RedditDevvitTests(unittest.TestCase):
             self.assertEqual(
                 devvit_external_url("reply-to-post"),
                 "https://hellscube-bridge-21otlg-external.devvit.net/external/reply-to-post",
+            )
+            self.assertEqual(
+                devvit_external_url("post-gallery"),
+                "https://hellscube-bridge-21otlg-external.devvit.net/external/post-gallery",
             )
 
     def test_title_uses_set_id(self):
@@ -187,6 +192,57 @@ class PostReplyViaDevvitTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             mock_session.post.call_args.args[0],
             "https://hellscube-bridge-21otlg-external.devvit.net/external/reply-to-post",
+        )
+
+
+class PostGalleryViaDevvitTests(unittest.IsolatedAsyncioTestCase):
+    async def test_posts_gallery_payload(self):
+        env = {
+            "DEVVIT_POST_CARD_URL": EXTERNAL_URL,
+            "DEVVIT_POST_CARD_SECRET": MANAGED_TOKEN,
+        }
+
+        mock_resp = AsyncMock()
+        mock_resp.status = 200
+        mock_resp.json = AsyncMock(
+            return_value={"ok": True, "postId": "t3_gal", "permalink": "/r/HellsCube/"}
+        )
+
+        mock_post_cm = AsyncMock()
+        mock_post_cm.__aenter__.return_value = mock_resp
+        mock_post_cm.__aexit__.return_value = False
+
+        mock_session = MagicMock()
+        mock_session.post.return_value = mock_post_cm
+
+        mock_session_cm = AsyncMock()
+        mock_session_cm.__aenter__.return_value = mock_session
+        mock_session_cm.__aexit__.return_value = False
+
+        urls = [
+            "https://storage.googleapis.com/bucket/a.png",
+            "https://storage.googleapis.com/bucket/b.png",
+        ]
+
+        with (
+            patch.dict(os.environ, env, clear=False),
+            patch(
+                "reddit_devvit.aiohttp.ClientSession",
+                return_value=mock_session_cm,
+            ),
+        ):
+            result = await post_gallery_via_devvit(
+                title="Some of Today's Submissions",
+                image_urls=urls,
+                flair_id="flair-id",
+            )
+
+        self.assertEqual(result["postId"], "t3_gal")
+        call_kwargs = mock_session.post.call_args.kwargs
+        self.assertEqual(call_kwargs["json"]["imageUrls"], urls)
+        self.assertEqual(
+            mock_session.post.call_args.args[0],
+            "https://hellscube-bridge-21otlg-external.devvit.net/external/post-gallery",
         )
 
 
