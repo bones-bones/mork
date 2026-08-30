@@ -28,7 +28,7 @@ import os
 import sys
 from pathlib import Path
 
-import mork_repo_root  # noqa: E402
+import mork_repo_root  # noqa: F401
 
 _scripts = str(Path(__file__).resolve().parent)
 if _scripts in sys.path:
@@ -36,8 +36,6 @@ if _scripts in sys.path:
 sys.path.insert(0, _scripts)
 
 from PIL import Image, ImageDraw
-
-from printable_image_qa import _detect_border_seam_lines, inpaint_border_seam_lines
 from printable_image_fixes import (
     _color_distance,
     _corner_box,
@@ -50,6 +48,7 @@ from printable_image_fixes import (
     _wedge_offsets,
     _wedge_xy,
 )
+from printable_image_qa import _detect_border_seam_lines, inpaint_border_seam_lines
 
 _CORNERS = ("TL", "TR", "BL", "BR")
 
@@ -172,9 +171,7 @@ def _resolve_shared_corner_radius(
             mid = 0.5 * (lo + hi)
             low = [r for r in positive if r <= mid]
             # Outer print round is the small cluster, when plausible for this scale.
-            if low and max(low) <= max(float(ext + 4), 16.0) and (
-                len(low) >= 2 or max(low) >= 5.0
-            ):
+            if low and max(low) <= max(float(ext + 4), 16.0) and (len(low) >= 2 or max(low) >= 5.0):
                 return max(low), per, full_bleed
     return max(positive), per, full_bleed
 
@@ -203,9 +200,7 @@ def _arc_sample_inset(ext: int, radius: float, *, corner: str = "TL") -> float:
     return inset
 
 
-def _arc_center(
-    corner: str, ext: int, radius: float, w: int, h: int
-) -> tuple[float, float]:
+def _arc_center(corner: str, ext: int, radius: float, w: int, h: int) -> tuple[float, float]:
     """Center of the card frame's outer rounded corner (vertex at inner frame corner)."""
     r = _card_arc_radius(radius)
     if corner == "TL":
@@ -228,9 +223,7 @@ def _is_bright_registration(p: tuple[int, int, int]) -> bool:
     return _is_neutral_grey(p) and _brightness(p) >= 200
 
 
-def _is_arc_rim_fringe(
-    p: tuple[int, int, int], mat: tuple[int, int, int]
-) -> bool:
+def _is_arc_rim_fringe(p: tuple[int, int, int], mat: tuple[int, int, int]) -> bool:
     """
     Anti-aliased rim along the rounded frame edge — pale (or dark) fringe that
     must not be stretched into the corner wedge.
@@ -416,28 +409,21 @@ def _detect_padding_l_arm_rects(
 
     if corner == "TL":
         col_scores = [
-            _strip_line_score(px, range(x, x + 1), range(ext), w, h, ext)
-            for x in range(reach)
+            _strip_line_score(px, range(x, x + 1), range(ext), w, h, ext) for x in range(reach)
         ]
-        run, avg = _longest_bright_run(
-            col_scores, threshold=min_score, max_thickness=max_thick
-        )
+        run, avg = _longest_bright_run(col_scores, threshold=min_score, max_thickness=max_thick)
         if run and avg >= min_score:
             add_col_rect(run[0], run[1], 0, ext)
 
         row_scores = [
-            _strip_line_score(px, range(reach), range(y, y + 1), w, h, ext)
-            for y in range(ext)
+            _strip_line_score(px, range(reach), range(y, y + 1), w, h, ext) for y in range(ext)
         ]
-        run, avg = _longest_bright_run(
-            row_scores, threshold=min_score, max_thickness=max_thick
-        )
+        run, avg = _longest_bright_run(row_scores, threshold=min_score, max_thickness=max_thick)
         if run and avg >= min_score:
             add_row_rect(0, reach, run[0], run[1])
 
         side_row_scores = [
-            _strip_line_score(px, range(ext), range(y, y + 1), w, h, ext)
-            for y in range(ext, reach)
+            _strip_line_score(px, range(ext), range(y, y + 1), w, h, ext) for y in range(ext, reach)
         ]
         run, avg = _longest_bright_run(
             side_row_scores, threshold=min_score, max_thickness=max_thick
@@ -446,8 +432,7 @@ def _detect_padding_l_arm_rects(
             add_row_rect(0, ext, run[0] + ext, run[1] + ext)
 
         side_col_scores = [
-            _strip_line_score(px, range(x, x + 1), range(ext, reach), w, h, ext)
-            for x in range(ext)
+            _strip_line_score(px, range(x, x + 1), range(ext, reach), w, h, ext) for x in range(ext)
         ]
         run, avg = _longest_bright_run(
             side_col_scores, threshold=min_score, max_thickness=max_thick
@@ -460,9 +445,7 @@ def _detect_padding_l_arm_rects(
             _strip_line_score(px, range(x, x + 1), range(ext), w, h, ext)
             for x in range(w - reach, w)
         ]
-        run, avg = _longest_bright_run(
-            col_scores, threshold=min_score, max_thickness=max_thick
-        )
+        run, avg = _longest_bright_run(col_scores, threshold=min_score, max_thickness=max_thick)
         if run and avg >= min_score:
             x0 = w - reach + run[0]
             add_col_rect(x0, x0 + (run[1] - run[0]), 0, ext)
@@ -471,9 +454,7 @@ def _detect_padding_l_arm_rects(
             _strip_line_score(px, range(w - reach, w), range(y, y + 1), w, h, ext)
             for y in range(ext)
         ]
-        run, avg = _longest_bright_run(
-            row_scores, threshold=min_score, max_thickness=max_thick
-        )
+        run, avg = _longest_bright_run(row_scores, threshold=min_score, max_thickness=max_thick)
         if run and avg >= min_score:
             add_row_rect(w - reach, w, run[0], run[1])
 
@@ -488,9 +469,7 @@ def _detect_padding_l_arm_rects(
             add_row_rect(w - ext, w, run[0] + ext, run[1] + ext)
 
         side_col_scores = [
-            _strip_line_score(
-                px, range(x, x + 1), range(ext, reach), w, h, ext
-            )
+            _strip_line_score(px, range(x, x + 1), range(ext, reach), w, h, ext)
             for x in range(w - ext, w)
         ]
         run, avg = _longest_bright_run(
@@ -505,9 +484,7 @@ def _detect_padding_l_arm_rects(
             _strip_line_score(px, range(x, x + 1), range(h - ext, h), w, h, ext)
             for x in range(reach)
         ]
-        run, avg = _longest_bright_run(
-            col_scores, threshold=min_score, max_thickness=max_thick
-        )
+        run, avg = _longest_bright_run(col_scores, threshold=min_score, max_thickness=max_thick)
         if run and avg >= min_score:
             add_col_rect(run[0], run[1], h - ext, h)
 
@@ -515,9 +492,7 @@ def _detect_padding_l_arm_rects(
             _strip_line_score(px, range(reach), range(y, y + 1), w, h, ext)
             for y in range(h - ext, h)
         ]
-        run, avg = _longest_bright_run(
-            row_scores, threshold=min_score, max_thickness=max_thick
-        )
+        run, avg = _longest_bright_run(row_scores, threshold=min_score, max_thickness=max_thick)
         if run and avg >= min_score:
             add_row_rect(0, reach, run[0], run[1])
 
@@ -532,9 +507,7 @@ def _detect_padding_l_arm_rects(
             add_row_rect(0, ext, h - reach + run[0], h - reach + run[1])
 
         side_col_scores = [
-            _strip_line_score(
-                px, range(x, x + 1), range(h - reach, h - ext), w, h, ext
-            )
+            _strip_line_score(px, range(x, x + 1), range(h - reach, h - ext), w, h, ext)
             for x in range(ext)
         ]
         run, avg = _longest_bright_run(
@@ -548,9 +521,7 @@ def _detect_padding_l_arm_rects(
             _strip_line_score(px, range(x, x + 1), range(h - ext, h), w, h, ext)
             for x in range(w - reach, w)
         ]
-        run, avg = _longest_bright_run(
-            col_scores, threshold=min_score, max_thickness=max_thick
-        )
+        run, avg = _longest_bright_run(col_scores, threshold=min_score, max_thickness=max_thick)
         if run and avg >= min_score:
             x0 = w - reach + run[0]
             add_col_rect(x0, x0 + (run[1] - run[0]), h - ext, h)
@@ -559,9 +530,7 @@ def _detect_padding_l_arm_rects(
             _strip_line_score(px, range(w - reach, w), range(y, y + 1), w, h, ext)
             for y in range(h - ext, h)
         ]
-        run, avg = _longest_bright_run(
-            row_scores, threshold=min_score, max_thickness=max_thick
-        )
+        run, avg = _longest_bright_run(row_scores, threshold=min_score, max_thickness=max_thick)
         if run and avg >= min_score:
             add_row_rect(w - reach, w, run[0], run[1])
 
@@ -573,14 +542,10 @@ def _detect_padding_l_arm_rects(
             side_row_scores, threshold=min_score, max_thickness=max_thick
         )
         if run and avg >= min_score:
-            add_row_rect(
-                w - ext, w, h - reach + run[0], h - reach + run[1]
-            )
+            add_row_rect(w - ext, w, h - reach + run[0], h - reach + run[1])
 
         side_col_scores = [
-            _strip_line_score(
-                px, range(x, x + 1), range(h - reach, h - ext), w, h, ext
-            )
+            _strip_line_score(px, range(x, x + 1), range(h - reach, h - ext), w, h, ext)
             for x in range(w - ext, w)
         ]
         run, avg = _longest_bright_run(
@@ -673,9 +638,7 @@ def _fill_padding_l_marks(
             if key in seen:
                 continue
             seen.add(key)
-            changed += _paint_padding_rect(
-                px, x0, y0, x1, y1, w, h, ext, bg_rgb
-            )
+            changed += _paint_padding_rect(px, x0, y0, x1, y1, w, h, ext, bg_rgb)
 
         for axis, fixed, start, end in _corner_l_arm_segments(corner, w, h, ext):
             x0, y0, x1, y1 = _segment_to_rect(
@@ -690,9 +653,7 @@ def _fill_padding_l_marks(
             if total < 3 or bright / total < min_frac:
                 continue
             seen.add(key)
-            changed += _paint_padding_rect(
-                px, x0, y0, x1, y1, w, h, ext, bg_rgb
-            )
+            changed += _paint_padding_rect(px, x0, y0, x1, y1, w, h, ext, bg_rgb)
 
         changed += _mop_corner_l_pixels(px, corner, w, h, ext, reach, bg_rgb)
     return changed
@@ -757,9 +718,7 @@ def _sample_card_arc_point(
     x, y = _clamp_xy(*_wedge_xy(corner, u_pad, v_pad, w, h, ext), w, h)
     sample_r = _sample_arc_radius(radius, ext, corner=corner)
     theta = _clamp_theta_to_arc(corner, math.atan2(y - cy, x - cx))
-    sx, sy = _point_on_rounded_corner_arc(
-        corner, cx, cy, radius, theta, arc_radius=sample_r
-    )
+    sx, sy = _point_on_rounded_corner_arc(corner, cx, cy, radius, theta, arc_radius=sample_r)
     return _clamp_xy(sx, sy, w, h)
 
 
@@ -776,9 +735,7 @@ def _sample_card_arc_point_at_pixel(
     cx, cy = _arc_center(corner, ext, radius, w, h)
     sample_r = _sample_arc_radius(radius, ext, corner=corner)
     theta = _clamp_theta_to_arc(corner, math.atan2(y - cy, x - cx))
-    sx, sy = _point_on_rounded_corner_arc(
-        corner, cx, cy, radius, theta, arc_radius=sample_r
-    )
+    sx, sy = _point_on_rounded_corner_arc(corner, cx, cy, radius, theta, arc_radius=sample_r)
     return _clamp_xy(sx, sy, w, h)
 
 
@@ -830,9 +787,7 @@ def _sample_card_arc_colors(
     last = mat
     for sample_r in radii:
         sx, sy = _clamp_xy(
-            *_point_on_rounded_corner_arc(
-                corner, cx, cy, radius, theta, arc_radius=sample_r
-            ),
+            *_point_on_rounded_corner_arc(corner, cx, cy, radius, theta, arc_radius=sample_r),
             w,
             h,
         )
@@ -863,9 +818,7 @@ def _sample_card_arc_colors(
     return mat if _is_arc_rim_fringe(last, mat) or _is_bright_registration(last) else last
 
 
-def _mat_color_for_corner(
-    px, corner: str, w: int, h: int, ext: int
-) -> tuple[int, int, int] | None:
+def _mat_color_for_corner(px, corner: str, w: int, h: int, ext: int) -> tuple[int, int, int] | None:
     if corner in ("TL", "TR"):
         return _top_mat_color(px, corner, w, h, ext)
     if corner in ("BL", "BR"):
@@ -936,9 +889,7 @@ def _top_edge_ref_at_arc(
     return _top_row_inboard_color(px, sx, w, h, ext, corner=corner)
 
 
-def _top_stripe_color(
-    px, corner: str, w: int, h: int, ext: int
-) -> tuple[int, int, int]:
+def _top_stripe_color(px, corner: str, w: int, h: int, ext: int) -> tuple[int, int, int]:
     """Dominant top-edge stripe on full-bleed cards (skips white frame + gradients)."""
     y = ext
     skip = max(8, ext // 3)
@@ -985,9 +936,7 @@ def _top_band_color(
 
 def _is_flag_stripe_color(color: tuple[int, int, int]) -> bool:
     """Saturated flag-band stripe (Trans Rights), not muted corner art."""
-    return max(color) - min(color) > 50 and (
-        color[2] > 180 or (color[0] > 200 and color[1] > 130)
-    )
+    return max(color) - min(color) > 50 and (color[2] > 180 or (color[0] > 200 and color[1] > 130))
 
 
 def _top_arc_sample_needs_fallback(
@@ -1023,9 +972,7 @@ def _stretch_color_from_card_arc_pixel(
 ) -> tuple[int, int, int]:
     """Radial stretch from sampling arc inward past registration onto mat colour."""
     bleed = full_bleed or frozenset()
-    color = _sample_card_arc_colors(
-        px, corner, x, y, radius, w, h, ext, bg_rgb=bg_rgb
-    )
+    color = _sample_card_arc_colors(px, corner, x, y, radius, w, h, ext, bg_rgb=bg_rgb)
     if corner in ("TL", "TR") and corner in bleed:
         stripe = _top_stripe_color(px, corner, w, h, ext)
         if not _is_flag_stripe_color(stripe):
@@ -1034,9 +981,7 @@ def _stretch_color_from_card_arc_pixel(
             if _is_bright_registration(color):
                 color = _top_edge_ref_at_arc(px, corner, x, y, radius, w, h, ext)
             return color
-        ref = _top_edge_ref_at_arc(
-            px, corner, x, y, radius, w, h, ext
-        )
+        ref = _top_edge_ref_at_arc(px, corner, x, y, radius, w, h, ext)
         edge = _edge_stretch_color(px, corner, x, y, w, h, ext)
         if _top_arc_sample_needs_fallback(color, bg_rgb):
             color = ref
@@ -1044,10 +989,7 @@ def _stretch_color_from_card_arc_pixel(
             color = ref
         elif _color_distance(color, ref) > 55:
             color = ref
-        elif (
-            _color_distance(edge, stripe) < 40
-            and _color_distance(color, edge) > 55
-        ):
+        elif _color_distance(edge, stripe) < 40 and _color_distance(color, edge) > 55:
             color = edge
     if corner in ("BL", "BR") and corner in bleed:
         mat = _bottom_mat_color(px, corner, w, h, ext)
@@ -1057,9 +999,7 @@ def _stretch_color_from_card_arc_pixel(
             and color[0] < 130
         ):
             color = mat
-    color = _snap_arc_stretch_to_mat(
-        px, corner, color, w, h, ext, bg_rgb=bg_rgb, full_bleed=bleed
-    )
+    color = _snap_arc_stretch_to_mat(px, corner, color, w, h, ext, bg_rgb=bg_rgb, full_bleed=bleed)
     edge = _edge_stretch_color(px, corner, x, y, w, h, ext)
     mat = _mat_color_for_corner(px, corner, w, h, ext)
     # Do not prefer edge stretch when it is the pale AA rim — that recreates
@@ -1082,9 +1022,7 @@ def _on_pasted_card(x: int, y: int, w: int, h: int, ext: int) -> bool:
     return ext <= x < w - ext and ext <= y < h - ext
 
 
-def _in_padding_corner_zone(
-    corner: str, x: int, y: int, w: int, h: int, ext: int
-) -> bool:
+def _in_padding_corner_zone(corner: str, x: int, y: int, w: int, h: int, ext: int) -> bool:
     """Padding in the reach×reach corner box — never onto the pasted card."""
     if _on_pasted_card(x, y, w, h, ext):
         return False
@@ -1166,9 +1104,7 @@ def _corner_tip_xy(corner: str, w: int, h: int) -> tuple[int, int]:
     return w - 1, h - 1
 
 
-def _ray_hit_image_edge(
-    cx: float, cy: float, theta: float, w: int, h: int
-) -> tuple[int, int]:
+def _ray_hit_image_edge(cx: float, cy: float, theta: float, w: int, h: int) -> tuple[int, int]:
     """Project a ray from the arc center to the image boundary."""
     dx, dy = math.cos(theta), math.sin(theta)
     ts: list[float] = []
@@ -1242,13 +1178,9 @@ def _narrow_arc_wedge_polygon(
         if corner == "TL":
             pts.extend([(0, min(h - 1, band)), tip, (min(w - 1, band), 0)])
         elif corner == "TR":
-            pts.extend(
-                [(w - 1, min(h - 1, band)), tip, (max(0, w - 1 - band), 0)]
-            )
+            pts.extend([(w - 1, min(h - 1, band)), tip, (max(0, w - 1 - band), 0)])
         elif corner == "BL":
-            pts.extend(
-                [(0, max(0, h - 1 - band)), tip, (min(w - 1, band), h - 1)]
-            )
+            pts.extend([(0, max(0, h - 1 - band)), tip, (min(w - 1, band), h - 1)])
         else:
             pts.extend(
                 [
@@ -1403,9 +1335,7 @@ def _wedge_color_at_theta(
         w,
         h,
     )
-    color = _sample_card_arc_colors(
-        px, corner, pad_x, pad_y, radius, w, h, ext, bg_rgb=bg_rgb
-    )
+    color = _sample_card_arc_colors(px, corner, pad_x, pad_y, radius, w, h, ext, bg_rgb=bg_rgb)
     color = _snap_arc_stretch_to_mat(
         px,
         corner,
@@ -1416,9 +1346,7 @@ def _wedge_color_at_theta(
         bg_rgb=bg_rgb,
         full_bleed=full_bleed,
     )
-    if mat is not None and (
-        _is_arc_rim_fringe(color, mat) or _is_bright_registration(color)
-    ):
+    if mat is not None and (_is_arc_rim_fringe(color, mat) or _is_bright_registration(color)):
         return mat
     return color
 
@@ -1544,9 +1472,7 @@ def _draw_corner_arc_wedges(
     return changed
 
 
-def _bottom_mat_color(
-    px, corner: str, w: int, h: int, ext: int
-) -> tuple[int, int, int]:
+def _bottom_mat_color(px, corner: str, w: int, h: int, ext: int) -> tuple[int, int, int]:
     """Solid bottom-border colour for corner padding (avoids white frame corners)."""
     iy = h - ext - 1
     span = max(8, (w - 2 * ext) // 4)
@@ -1596,9 +1522,7 @@ def _cutout_radius_from_alpha(src: Image.Image, corner: str) -> float | None:
     return float(best) if best >= 3 else None
 
 
-def _baked_white_cutout_radius(
-    px, corner: str, w: int, h: int, ext: int
-) -> float | None:
+def _baked_white_cutout_radius(px, corner: str, w: int, h: int, ext: int) -> float | None:
     """
     Cutout radius for print rounds baked into the art as white pixels.
 
@@ -1771,9 +1695,7 @@ def _fan_fill_top_corner_rounds(
                 zone.add((x, y))
 
         for x, y in zone:
-            color = _fan_color_top(
-                px, corner, x, y, r_c, w, h, ext, full_bleed=full_bleed
-            )
+            color = _fan_color_top(px, corner, x, y, r_c, w, h, ext, full_bleed=full_bleed)
             if px[x, y][:3] != color:
                 px[x, y] = color
                 changed += 1
@@ -1827,9 +1749,7 @@ def _fan_sample_color(
     sr = _card_arc_radius(r_c) - 2.0
     while sr >= 1.0:
         sx, sy = _clamp_xy(
-            *_point_on_rounded_corner_arc(
-                corner, cx, cy, r_c, theta, arc_radius=sr
-            ),
+            *_point_on_rounded_corner_arc(corner, cx, cy, r_c, theta, arc_radius=sr),
             w,
             h,
         )
@@ -1927,8 +1847,12 @@ def _fan_fill_bottom_corner_rounds(
                 vert = ((ext + du, h - ext - 1 - dv) for dv in range(rim) for du in range(3))
                 horiz = ((ext + du, h - ext - 1 - dv) for du in range(rim) for dv in range(3))
             else:
-                vert = ((w - ext - 1 - du, h - ext - 1 - dv) for dv in range(rim) for du in range(3))
-                horiz = ((w - ext - 1 - du, h - ext - 1 - dv) for du in range(rim) for dv in range(3))
+                vert = (
+                    (w - ext - 1 - du, h - ext - 1 - dv) for dv in range(rim) for du in range(3)
+                )
+                horiz = (
+                    (w - ext - 1 - du, h - ext - 1 - dv) for du in range(rim) for dv in range(3)
+                )
             for x, y in (*vert, *horiz):
                 if _brightness(px[x, y][:3]) >= 80:
                     zone.add((x, y))
@@ -1948,9 +1872,7 @@ def _is_flag_card(px, w: int, h: int, ext: int) -> bool:
     return _is_flag_stripe_color(_top_stripe_color(px, "TL", w, h, ext))
 
 
-def _looks_like_footer(
-    color: tuple[int, int, int], mat: tuple[int, int, int]
-) -> bool:
+def _looks_like_footer(color: tuple[int, int, int], mat: tuple[int, int, int]) -> bool:
     return _color_distance(color, mat) < 25 or sum(color) < 35
 
 
@@ -2046,9 +1968,7 @@ def _bottom_wedge_stretch_color(
     return mat
 
 
-def _top_mat_color(
-    px, corner: str, w: int, h: int, ext: int
-) -> tuple[int, int, int]:
+def _top_mat_color(px, corner: str, w: int, h: int, ext: int) -> tuple[int, int, int]:
     """Title-bar strip colour for top corner padding (avoids white frame L-arms)."""
     iy = ext
     span = max(8, (w - 2 * ext) // 4)
@@ -2113,18 +2033,14 @@ def _stretch_color_from_card_arc(
 ) -> tuple[int, int, int]:
     """Colour sampled on the card corner arc, stretched out through the wedge."""
     x, y = _clamp_xy(*_wedge_xy(corner, u_pad, v_pad, w, h, ext), w, h)
-    return _stretch_color_from_card_arc_pixel(
-        px, corner, x, y, radius, w, h, ext, bg_rgb=bg_rgb
-    )
+    return _stretch_color_from_card_arc_pixel(px, corner, x, y, radius, w, h, ext, bg_rgb=bg_rgb)
 
 
 def _collect_corner_sample_points(
     px, w: int, h: int, ext: int
 ) -> tuple[dict[str, set[tuple[int, int]]], list[str]]:
     """Unique card-arc pixels used as stretch sources."""
-    by_corner: dict[str, set[tuple[int, int]]] = {
-        c: set() for c in ("TL", "TR", "BL", "BR")
-    }
+    by_corner: dict[str, set[tuple[int, int]]] = {c: set() for c in ("TL", "TR", "BL", "BR")}
     notes: list[str] = []
     shared_r, _per, full_bleed = _resolve_shared_corner_radius(px, w, h, ext)
     if shared_r <= 0:
@@ -2149,9 +2065,7 @@ def _collect_corner_sample_points(
                 uv = _wedge_offsets(corner, x, y, w, h, ext)
                 if uv is None:
                     continue
-                by_corner[corner].add(
-                    _sample_card_arc_point(corner, *uv, shared_r, w, h, ext)
-                )
+                by_corner[corner].add(_sample_card_arc_point(corner, *uv, shared_r, w, h, ext))
     return by_corner, notes
 
 
@@ -2199,9 +2113,7 @@ def _draw_card_corner_arc(
         theta = t0 + (i / 48.0) * (t1 - t0)
         pts.append(
             _clamp_xy(
-                *_point_on_rounded_corner_arc(
-                    corner, cx, cy, radius, theta, arc_radius=sample_r
-                ),
+                *_point_on_rounded_corner_arc(corner, cx, cy, radius, theta, arc_radius=sample_r),
                 w,
                 h,
             )
@@ -2217,9 +2129,7 @@ def _draw_card_corner_arc(
     else:
         apex_theta = _clamp_theta_to_arc(corner, math.atan2(h - 1 - cy, w - 1 - cx))
     fx, fy = _clamp_xy(
-        *_point_on_rounded_corner_arc(
-            corner, cx, cy, radius, apex_theta, arc_radius=sample_r
-        ),
+        *_point_on_rounded_corner_arc(corner, cx, cy, radius, apex_theta, arc_radius=sample_r),
         w,
         h,
     )
@@ -2314,16 +2224,12 @@ def _inner_corner_stretch_color(
             sy = max(h - ext - reach, min(h - ext - 1, h - ext - 1 - int(t_v * (reach - 1))))
     color = px[sx, sy][:3]
     mat = _mat_color_for_corner(px, corner, w, h, ext)
-    if mat is not None and (
-        _is_arc_rim_fringe(color, mat) or _is_bright_registration(color)
-    ):
+    if mat is not None and (_is_arc_rim_fringe(color, mat) or _is_bright_registration(color)):
         return mat
     return color
 
 
-def _gutter_mark_needs_recolor(
-    p: tuple[int, int, int], mat: tuple[int, int, int]
-) -> bool:
+def _gutter_mark_needs_recolor(p: tuple[int, int, int], mat: tuple[int, int, int]) -> bool:
     if not _is_neutral_grey(p):
         return False
     if _brightness(p) < 50:
@@ -2348,10 +2254,7 @@ def _fill_bottom_corner_marks(px, w: int, h: int, ext: int) -> int:
                 if not (on_seam or on_junction):
                     continue
                 p = px[x, y][:3]
-                if not (
-                    _gutter_mark_needs_recolor(p, mat)
-                    or _is_bright_registration(p)
-                ):
+                if not (_gutter_mark_needs_recolor(p, mat) or _is_bright_registration(p)):
                     continue
                 if p != mat:
                     px[x, y] = mat
@@ -2359,9 +2262,7 @@ def _fill_bottom_corner_marks(px, w: int, h: int, ext: int) -> int:
     return changed
 
 
-def _fill_top_corner_marks(
-    px, w: int, h: int, ext: int, *, full_bleed: frozenset[str]
-) -> int:
+def _fill_top_corner_marks(px, w: int, h: int, ext: int, *, full_bleed: frozenset[str]) -> int:
     """Recolour registration marks on top gutter seams and junctions."""
     changed = 0
     reach = _corner_reach(ext)
@@ -2381,10 +2282,7 @@ def _fill_top_corner_marks(
                 if not (on_seam or on_junction):
                     continue
                 p = px[x, y][:3]
-                if not (
-                    _gutter_mark_needs_recolor(p, mat)
-                    or _is_bright_registration(p)
-                ):
+                if not (_gutter_mark_needs_recolor(p, mat) or _is_bright_registration(p)):
                     continue
                 if p != mat:
                     px[x, y] = mat
@@ -2465,7 +2363,12 @@ def _fill_source_corner_rounds(
 
 
 def _fill_corner_padding(
-    px, w: int, h: int, ext: int, *, bg_rgb: tuple[int, int, int] | None = None,
+    px,
+    w: int,
+    h: int,
+    ext: int,
+    *,
+    bg_rgb: tuple[int, int, int] | None = None,
     full_bleed: frozenset[str] | None = None,
     shared_r: float | None = None,
     per_radii: dict[str, float] | None = None,
@@ -2524,9 +2427,7 @@ def _fill_corner_padding(
                         color = _bottom_mat_color(px, corner, w, h, ext)
                         n_arc += 1
                     elif corner in full_bleed:
-                        if _needs_arc_corner_fill(
-                            corner, x, y, w, h, ext, radius
-                        ):
+                        if _needs_arc_corner_fill(corner, x, y, w, h, ext, radius):
                             color = _stretch_color_from_card_arc_pixel(
                                 px,
                                 corner,
@@ -2541,18 +2442,12 @@ def _fill_corner_padding(
                             )
                             mat = _bottom_mat_color(px, corner, w, h, ext)
                             if _looks_like_footer(color, mat):
-                                color = _bottom_wedge_stretch_color(
-                                    px, corner, x, y, w, h, ext
-                                )
+                                color = _bottom_wedge_stretch_color(px, corner, x, y, w, h, ext)
                             n_arc += 1
                         else:
-                            color = _bottom_wedge_stretch_color(
-                                px, corner, x, y, w, h, ext
-                            )
+                            color = _bottom_wedge_stretch_color(px, corner, x, y, w, h, ext)
                             n_edge += 1
-                    elif _needs_arc_corner_fill(
-                        corner, x, y, w, h, ext, radius
-                    ):
+                    elif _needs_arc_corner_fill(corner, x, y, w, h, ext, radius):
                         color = _stretch_color_from_card_arc_pixel(
                             px,
                             corner,
@@ -2567,9 +2462,7 @@ def _fill_corner_padding(
                         )
                         n_arc += 1
                     else:
-                        color = _inner_corner_stretch_color(
-                            px, corner, x, y, w, h, ext
-                        )
+                        color = _inner_corner_stretch_color(px, corner, x, y, w, h, ext)
                         if _is_bright_registration(color):
                             color = _stretch_color_from_card_arc_pixel(
                                 px,
@@ -2599,9 +2492,7 @@ def _fill_corner_padding(
                     )
                     n_arc += 1
                 else:
-                    color = _inner_corner_stretch_color(
-                        px, corner, x, y, w, h, ext
-                    )
+                    color = _inner_corner_stretch_color(px, corner, x, y, w, h, ext)
                     if _is_bright_registration(color):
                         color = _stretch_color_from_card_arc_pixel(
                             px,
@@ -2620,9 +2511,7 @@ def _fill_corner_padding(
                     changed += 1
                 px[x, y] = color
 
-        notes.append(
-            f"{corner} arc r={radius:.0f}: {n_arc}px arc + {n_edge}px edge"
-        )
+        notes.append(f"{corner} arc r={radius:.0f}: {n_arc}px arc + {n_edge}px edge")
     return changed, notes, detected
 
 
@@ -2648,14 +2537,11 @@ def _border_for_width(width: int) -> int:
 
 def _in_any_padding_corner_zone(x: int, y: int, w: int, h: int, ext: int) -> bool:
     return any(
-        _in_padding_corner_zone(corner, x, y, w, h, ext)
-        for corner in ("TL", "TR", "BL", "BR")
+        _in_padding_corner_zone(corner, x, y, w, h, ext) for corner in ("TL", "TR", "BL", "BR")
     )
 
 
-def _nearest_opaque_rgb(
-    src_px, sx: int, sy: int, sw: int, sh: int
-) -> tuple[int, int, int] | None:
+def _nearest_opaque_rgb(src_px, sx: int, sy: int, sw: int, sh: int) -> tuple[int, int, int] | None:
     """Nearest opaque source pixel — horizontal first, then vertical."""
     for dx in range(1, max(sw, sh)):
         for ox in (sx + dx, sx - dx):
@@ -2675,9 +2561,7 @@ def _skip_bottom_corner_hole_fill(sx: int, sy: int, sw: int, sh: int, ext: int) 
     return sx < reach or sx >= sw - reach
 
 
-def _fill_transparent_card_holes(
-    px, src: Image.Image, ext: int, w: int, h: int
-) -> int:
+def _fill_transparent_card_holes(px, src: Image.Image, ext: int, w: int, h: int) -> int:
     """Fill transparent source holes on the pasted card from nearest opaque art."""
     src_px = src.load()
     if src_px is None:
@@ -2705,9 +2589,7 @@ _EDGE_CONTENT_TOL = 24
 _EDGE_CONTENT_MIN_RUN = 8
 
 
-def _edge_content_mask(
-    px, coords: list[tuple[int, int]], inboard: tuple[int, int]
-) -> list[bool]:
+def _edge_content_mask(px, coords: list[tuple[int, int]], inboard: tuple[int, int]) -> list[bool]:
     """
     Flag edge pixels that are card art rather than rim/registration artefacts.
 
@@ -2721,8 +2603,7 @@ def _edge_content_mask(
         color = px[x, y][:3]
         deep.append(
             all(
-                _color_distance(px[x + dx * s, y + dy * s][:3], color)
-                <= _EDGE_CONTENT_TOL
+                _color_distance(px[x + dx * s, y + dy * s][:3], color) <= _EDGE_CONTENT_TOL
                 for s in range(1, _EDGE_CONTENT_DEPTH + 1)
             )
         )
@@ -2841,9 +2722,7 @@ def _apply_stretch_fills(
         gutter_changed += _fill_source_corner_rounds(
             px, src, w, h, ext, shared_r, full_bleed=full_bleed, bg_rgb=bg_rgb
         )
-    gutter_changed += _fan_fill_bottom_corner_rounds(
-        px, src, w, h, ext, per_radii, shared_r
-    )
+    gutter_changed += _fan_fill_bottom_corner_rounds(px, src, w, h, ext, per_radii, shared_r)
     gutter_changed += _fan_fill_top_corner_rounds(
         px, src, w, h, ext, per_radii, shared_r, full_bleed=full_bleed
     )
@@ -2902,9 +2781,7 @@ def prepare_card_for_printing_stretch_highlight(
 
     corner_points, notes = _collect_corner_sample_points(px, new_w, new_h, ext)
     radii = {n.split()[0]: float(n.split("r=")[1]) for n in notes}
-    _draw_sample_highlights(
-        out, corner_points=corner_points, radii=radii, ext=ext
-    )
+    _draw_sample_highlights(out, corner_points=corner_points, radii=radii, ext=ext)
 
     counts = {c: len(pts) for c, pts in corner_points.items() if pts}
     if out_path is None:
@@ -2928,7 +2805,7 @@ def prepare_card_for_printing_stretch_highlight_arc(
     Red quarter-circle = sampling arc on the card (just inside the frame corner).
     Light red tint = padding L-corners filled by stretching the sampling arc.
     Brighter red = pixels rewritten by the arc pass.
-  """
+    """
     img = Image.open(image_path).convert("RGBA")
     width, height = img.size
     ext = _border_for_width(width)
@@ -2950,9 +2827,7 @@ def prepare_card_for_printing_stretch_highlight_arc(
     _, arc_changed, arc_notes, _ = _apply_stretch_fills(
         out, new_w, new_h, ext, bg_rgb=bg_rgb, src=img
     )
-    changed_pixels = {
-        (x, y) for (x, y) in wedge_pixels if px[x, y][:3] != before[(x, y)]
-    }
+    changed_pixels = {(x, y) for (x, y) in wedge_pixels if px[x, y][:3] != before[(x, y)]}
 
     highlighted = _overlay_arc_highlight(
         out,
@@ -2991,9 +2866,7 @@ def ensure_landscape_orientation(
         rotated = im.transpose(Image.Transpose.ROTATE_90)
         fmt = "PNG" if image_path.lower().endswith(".png") else (im.format or "PNG")
         rotated.save(image_path, fmt)
-    print(
-        f"[{log_tag}] rotated portrait {w}x{h} → landscape for Plane horizontal align"
-    )
+    print(f"[{log_tag}] rotated portrait {w}x{h} → landscape for Plane horizontal align")
     return True
 
 
@@ -3038,7 +2911,9 @@ def prepare_card_for_printing_stretch(
         out_path = f"{base}_stretch.png"
     out.save(out_path, "PNG")
     note_str = "; ".join(arc_notes) if arc_notes else "no arcs detected"
-    print(f"[{log_tag}] {os.path.basename(out_path)}  arcs={arc_changed}px edges={edge_changed}px ({note_str})")
+    print(
+        f"[{log_tag}] {os.path.basename(out_path)}  arcs={arc_changed}px edges={edge_changed}px ({note_str})"
+    )
     return out_path
 
 

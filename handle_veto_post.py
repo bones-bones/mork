@@ -1,16 +1,17 @@
-import random
 from typing import cast
-from discord import Emoji, Member, Message, Role
+
 import discord
+from discord import Emoji, Member, Message, Role
 from discord.ext import commands
 from discord.utils import get
 
 import hc_constants
+from utils import at
 
 portal_time = False
 
 
-async def handleVetoPost(
+async def handle_veto_post(
     message: Message,
     bot: commands.Bot,
     veto_council: int | None,
@@ -49,31 +50,27 @@ async def handleVetoPost(
         Role,
         get(cast(Member, message.author).guild.roles, id=veto_council),
     )
-    judgeRole = cast(
-        Role, get(cast(Member, message.author).guild.roles, id=hc_constants.JUDGES)
-    )
+    judgeRole = cast(Role, get(cast(Member, message.author).guild.roles, id=hc_constants.JUDGES))
 
     copy_for_discussion = await message.attachments[0].to_file()
 
     mentions = [role.mention, judgeRole.mention]
     splitted = message.content.rsplit(" by ", 1)
-    author_s = splitted[1] if splitted.__len__() > 1 else "NO AUTHOR"
+    author_s = at(splitted, 1, "NO AUTHOR")
     creator_mentions = author_s.split("; ")
 
     for ref in creator_mentions:
         tempUser = get(bot.users, name=ref)
         if tempUser:
-            mentions.append(f"<@{str(tempUser.id)}>")
+            mentions.append(f"<@{tempUser.id}>")
 
     hellpits_channel = bot.get_channel(hc_constants.VETO_HELLPITS)
 
-    hellpit_discussion_thread = await cast(
-        discord.TextChannel, hellpits_channel
-    ).create_thread(name=message.content[0:99], type=discord.ChannelType.private_thread)
-
-    await hellpit_discussion_thread.send(
-        file=copy_for_discussion, content=message.content[0:99]
+    hellpit_discussion_thread = await cast(discord.TextChannel, hellpits_channel).create_thread(
+        name=message.content[0:99], type=discord.ChannelType.private_thread
     )
+
+    await hellpit_discussion_thread.send(file=copy_for_discussion, content=message.content[0:99])
     await hellpit_discussion_thread.send(", ".join(mentions))
 
     await veto_poll_thread.send(hellpit_discussion_thread.jump_url)
@@ -84,4 +81,3 @@ async def handleVetoPost(
         await hellpit_discussion_thread.send(submission_thread_url)
 
     await veto_poll_thread.edit(locked=True)
-    return

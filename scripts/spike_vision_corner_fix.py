@@ -14,17 +14,17 @@ Writes:
 from __future__ import annotations
 
 import json
-import mork_repo_root  # noqa: E402
 import sys
 from pathlib import Path
 
+import mork_repo_root  # noqa: F401
 from printable_image_fixes import (
+    _border_band,
     apply_corner_arc_guides,
     apply_vision_corner_guides,
     extension_width,
     locate_corner_arcs,
     locate_corner_fixes,
-    _border_band,
 )
 
 
@@ -71,9 +71,7 @@ def main() -> None:
     w, h = img.size
     band = _border_band(w, h)
     ext = extension_width(w, h)
-    fixed, repainted, notes = apply_vision_corner_guides(
-        img, guides, band=band, ext=ext
-    )
+    fixed, repainted, notes = apply_vision_corner_guides(img, guides, band=band, ext=ext)
     print(f"Pass 1 repainted ~{repainted}px")
     for n in notes:
         print(f"  {n}")
@@ -108,9 +106,7 @@ def main() -> None:
             f"r={g.radius_inner:.0f}-{g.radius_outer:.0f}  {g.note!r}"
         )
 
-    fixed, arc_px, arc_notes = apply_corner_arc_guides(
-        fixed, arc_guides, band=band, ext=ext
-    )
+    fixed, arc_px, arc_notes = apply_corner_arc_guides(fixed, arc_guides, band=band, ext=ext)
     after_path = out_dir / f"{stem}_vision_after.png"
     fixed.save(after_path)
     print(f"\nPass 2 repainted ~{arc_px}px -> {after_path}")

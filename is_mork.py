@@ -1,5 +1,6 @@
 import random
-from typing import Optional, Any
+from typing import Any
+
 import hc_constants
 from shared_vars import drive
 
@@ -23,7 +24,7 @@ def reasonable_card():
     return random.randint(0, 4000) == 69
 
 
-def uploadToDrive(path: str, id: Optional[str] = None, folder_id: Optional[str] = None):
+def uploadToDrive(path: str, id: str | None = None, folder_id: str | None = None):
     folder = folder_id if folder_id else hc_constants.IMAGES_FOLDER
     file_to_upload: dict[str, Any] = {"parents": [{"id": folder}]}
     if id:

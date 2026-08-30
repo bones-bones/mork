@@ -1,18 +1,21 @@
-import pprint as pp
-from typing import cast, Optional
+import io
 import os
+import pprint as pp
+import random
+import re
+from datetime import datetime, timezone
+from typing import cast
+
+import aiofiles
+import aiohttp
 import discord
 from discord.ext import commands
-from cardNameRequest import cardNameRequest
-from shared_vars import drive
-import hc_constants
 from discord.utils import get
-import random
-from datetime import date, datetime, timezone, timedelta
+
+import hc_constants
 from cogs.lifecycle.submissions_closed import elapsed_open_hours
-import aiohttp
-import io
-import re
+from shared_vars import drive
+from utils import at
 
 BlueRed = False
 log = ""
@@ -28,17 +31,17 @@ class GeneralCog(commands.Cog):
     async def _dumplog(self, ctx: commands.Context):
         global log
         if ctx.author.id == hc_constants.LLLLLL:
-            with open("log.txt", "a", encoding="utf8") as file:
-                file.write(log)
+            async with aiofiles.open("log.txt", "a", encoding="utf8") as file:
+                await file.write(log)
                 log = ""
                 print("log dumped")
-    
-    #to use as a ping command and check if bot is online
+
+    # to use as a ping command and check if bot is online
     @commands.command()
     async def ai(self, ctx: commands.Context):
         await ctx.send("¡ai caramba!")
 
-    #for the funnies
+    # for the funnies
     @commands.command(name="ch!ai")
     async def chai(self, ctx: commands.Context):
         await ctx.send("¡chai caramba!")
@@ -46,7 +49,7 @@ class GeneralCog(commands.Cog):
     @commands.command()
     async def artrequest(self, ctx: commands.Context):
         await ctx.send("<@&819320922666041355>")
-    
+
     @commands.command()
     async def weight(self, ctx: commands.Context):
         if random.random() < 0.2:  # 20% chance to get 104.3 mwahaha
@@ -65,25 +68,26 @@ class GeneralCog(commands.Cog):
 
     @commands.command()
     async def waiy(self, ctx: commands.Context):
-        await ctx.send(f"<@467941798321324034>")
+        await ctx.send("<@467941798321324034>")
+
     # ping user biollante
 
     @commands.command()
     async def ping4cb(self, ctx: commands.Context):
-        await ctx.send(f"<@1528573435733872660>")
+        await ctx.send("<@1528573435733872660>")
 
     @commands.command()
     async def pingwanttodraft(self, ctx: commands.Context):
-        await ctx.send(f"<@661721357066698762>")
+        await ctx.send("<@661721357066698762>")
 
     @commands.command()
     async def pinghellsmander(self, ctx: commands.Context):
-        await ctx.send(f"<@720043670870425691>")
+        await ctx.send("<@720043670870425691>")
 
     @commands.command()
     async def pinghellstructed(self, ctx: commands.Context):
-        await ctx.send(f"<@856927890120769576>")
-    
+        await ctx.send("<@856927890120769576>")
+
     @commands.command()
     async def help(self, ctx: commands.Context):
         await ctx.send(
@@ -103,8 +107,8 @@ class GeneralCog(commands.Cog):
         }
 
         return is_admin or (is_judge and allowed_judge_channel)
-    
-    #allows admins and judges (in specific channels) to make mork say stuff. good for permanent announcements that will not be deleted if the user is hacked/leaves the server/is banned
+
+    # allows admins and judges (in specific channels) to make mork say stuff. good for permanent announcements that will not be deleted if the user is hacked/leaves the server/is banned
     @commands.command(name="echo")
     async def echo(self, ctx: commands.Context, *, message: str = ""):
         if not self._can_use_echo_command(ctx):
@@ -118,7 +122,7 @@ class GeneralCog(commands.Cog):
             except (discord.Forbidden, discord.HTTPException):
                 pass
 
-    #allows admins and judges (in specific channels) to edit things mork says, useful for gameplay rules advanced to have any judge be able to edit the rules.
+    # allows admins and judges (in specific channels) to edit things mork says, useful for gameplay rules advanced to have any judge be able to edit the rules.
     @commands.command(name="ecdit")
     async def ecdit(self, ctx: commands.Context, *, message: str = ""):
         if not self._can_use_echo_command(ctx):
@@ -198,20 +202,18 @@ class GeneralCog(commands.Cog):
             try:
                 url = str(emoji.url)
             except Exception:
-                url = (
-                    f"https://cdn.discordapp.com/emojis/{emoji.id}."
-                    + ("gif" if getattr(emoji, "animated", False) else "png")
+                url = f"https://cdn.discordapp.com/emojis/{emoji.id}." + (
+                    "gif" if getattr(emoji, "animated", False) else "png"
                 )
 
         # Fetch image bytes and send as a file
         try:
             headers = {"User-Agent": hc_constants.USER_AGENT}
-            async with aiohttp.ClientSession(headers=headers) as session:
-                async with session.get(url) as resp:
-                    if resp.status != 200:
-                        await ctx.send("Failed to fetch emoji image.")
-                        return
-                    data = await resp.read()
+            async with aiohttp.ClientSession(headers=headers).get(url) as resp:
+                if resp.status != 200:
+                    await ctx.send("Failed to fetch emoji image.")
+                    return
+                data = await resp.read()
         except Exception:
             await ctx.send("Failed to download the emoji image.")
             return
@@ -225,7 +227,7 @@ class GeneralCog(commands.Cog):
         # print(args)
         if thing == "help":
             message = "Macros are:\nJoke [word]\n"
-            for name in hc_constants.macroList.keys():
+            for name in hc_constants.macroList:
                 if type(hc_constants.macroList[name]) is str:
                     message += f"{name}\n"
                 else:
@@ -235,11 +237,9 @@ class GeneralCog(commands.Cog):
             await ctx.send(message)
             return
         lowerThing = thing.lower()
-        if lowerThing in hc_constants.macroList.keys():
+        if lowerThing in hc_constants.macroList:
             if type(hc_constants.macroList[lowerThing]) is str:
-                await ctx.send(
-                    hc_constants.macroList[lowerThing].replace("@arg", " ".join(args))
-                )
+                await ctx.send(hc_constants.macroList[lowerThing].replace("@arg", " ".join(args)))
             else:
                 pp.pprint(hc_constants.macroList[lowerThing])
                 await ctx.send(hc_constants.macroList[lowerThing][args[0].lower()])
@@ -259,18 +259,15 @@ class GeneralCog(commands.Cog):
                     i
                 ].content.lower().startswith("!start"):
                     break
-                if messages[i].content != "":
-                    if messages[i].content[0] != "(":
-                        card = messages[i].content + " " + card
+                if messages[i].content != "" and messages[i].content[0] != "(":
+                    card = messages[i].content + " " + card
             card = card.replace("/n", "\n")
-            cubeChannel = cast(
-                discord.TextChannel, self.bot.get_channel(hc_constants.CUBE_CHANNEL)
-            )
+            cubeChannel = cast(discord.TextChannel, self.bot.get_channel(hc_constants.CUBE_CHANNEL))
             await cubeChannel.send(card)
             await ctx.channel.send(card)
 
     @commands.command(name="eventStart")
-    async def eventStart(self, ctx: commands.Context, *, event_name: Optional[str] = None):
+    async def eventStart(self, ctx: commands.Context, *, event_name: str | None = None):
 
         guild = cast(discord.Guild, ctx.guild)
         if guild is None:
@@ -322,16 +319,13 @@ class GeneralCog(commands.Cog):
                             f"{event.name} is scheduled for {start}.\nThis command can only be run within one hour of the event start time."
                         )
                 else:
-                    results.append(
-                        f"{event.name} is {event.status.name}."
-                    )
+                    results.append(f"{event.name} is {event.status.name}.")
             except discord.NotFound:
                 results.append(f"Scheduled event {ev_id} not found.")
             except Exception as exc:
                 results.append(f"Error starting event {ev_id}: {exc}")
 
         await ctx.send("\n".join(results) if results else "No events checked.")
-
 
     @commands.command()
     async def gameNight(self, ctx: commands.Context, mode, game: str):
@@ -358,12 +352,10 @@ class GeneralCog(commands.Cog):
             for i in options:
                 if custom_deliminator in i:
                     try:
-                        user = await self.bot.fetch_user(
-                            int(i.split(custom_deliminator)[0])
-                        )
+                        user = await self.bot.fetch_user(int(i.split(custom_deliminator)[0]))
                         if game.lower() in user.name.lower():
                             userGames.append(i.split(custom_deliminator)[1])
-                    except:
+                    except Exception:
                         ...
             result = "User " + game.lower() + " has roles for the following games\n"
             for i in userGames:
@@ -383,7 +375,7 @@ class GeneralCog(commands.Cog):
         games = role_file_content.replace("\r", "").split("\n")
 
         if mode == "create":
-            if not game.lower() in games:
+            if game.lower() not in games:
                 role_file_content = role_file_content + game.lower() + "\n"
                 role_file.SetContentString(role_file_content)
                 role_file.Upload()
@@ -402,9 +394,8 @@ class GeneralCog(commands.Cog):
             for x in range(len(games)):
                 amount.append(0)
                 for i in users:
-                    if custom_deliminator in i:
-                        if i.split(custom_deliminator)[1] == games[x].lower():
-                            amount[x] += 1
+                    if at(i.split(custom_deliminator), 1) == games[x].lower():
+                        amount[x] += 1
             result = "Amount of users per game:\n"
             for i in range(len(amount)):
                 result += f"{games[i]: {str(amount[i])}}\n"
@@ -412,7 +403,7 @@ class GeneralCog(commands.Cog):
         if mode == "remove":
             role = get(
                 cast(discord.Member, ctx.message.author).guild.roles,
-                id=int(631288945044357141),
+                id=631288945044357141,
             )
             if role in cast(discord.Member, ctx.author).roles:
                 if game.lower() in games:
@@ -420,9 +411,8 @@ class GeneralCog(commands.Cog):
                     gnPeople = file2.GetContentString()
                     options = gnPeople.replace("\r", "").split("\n")
                     for i in options:
-                        if custom_deliminator in i:
-                            if i.split(custom_deliminator)[1] == game.lower():
-                                options.remove(i)
+                        if at(i.split(custom_deliminator), 1) == game.lower():
+                            options.remove(i)
                     update = "\n".join(options)
                     file2.SetContentString(update)
                     file2.Upload()
@@ -445,13 +435,7 @@ class GeneralCog(commands.Cog):
             if game.lower() in games:
                 file = drive.CreateFile({"id": hc_constants.GAME_NIGHT_PEOPLE})
                 gnPeople = file.GetContentString()
-                gnPeople = (
-                    gnPeople
-                    + str(ctx.author.id)
-                    + custom_deliminator
-                    + game.lower()
-                    + "\n"
-                )
+                gnPeople = gnPeople + str(ctx.author.id) + custom_deliminator + game.lower() + "\n"
                 file.SetContentString(gnPeople)
                 file.Upload()
                 await ctx.send('Gave you game role for game "' + game.lower() + '"')
@@ -463,18 +447,15 @@ class GeneralCog(commands.Cog):
                 gnPeople = file.GetContentString()
                 options = gnPeople.replace("\r", "").split("\n")
                 for i in options:
-                    if custom_deliminator in i:
-                        if (
-                            i.split(custom_deliminator)[1] == game.lower()
-                            and int(i.split(custom_deliminator)[0]) == ctx.author.id
-                        ):
-                            options.remove(i)
-                            update = "\n".join(options)
-                            file.SetContentString(update)
-                            file.Upload()
-                            await ctx.send(
-                                'Removed role "' + game.lower() + '" from you'
-                            )
+                    if (
+                        at(i.split(custom_deliminator), 1) == game.lower()
+                        and int(i.split(custom_deliminator)[0]) == ctx.author.id
+                    ):
+                        options.remove(i)
+                        update = "\n".join(options)
+                        file.SetContentString(update)
+                        file.Upload()
+                        await ctx.send('Removed role "' + game.lower() + '" from you')
             else:
                 await ctx.send("This game doesn't exist.")
         if mode == "tag":
@@ -487,9 +468,8 @@ class GeneralCog(commands.Cog):
                 )
                 userIds = []
                 for i in options:
-                    if custom_deliminator in i:
-                        if i.split(custom_deliminator)[1] == game.lower():
-                            userIds.append(i.split(custom_deliminator)[0])
+                    if at(i.split(custom_deliminator), 1) == game.lower():
+                        userIds.append(i.split(custom_deliminator)[0])
                 result = "Wanna play a game of " + game.lower() + "\n"
                 for i in userIds:
                     result += "<@" + i + ">\n"
@@ -506,20 +486,19 @@ class GeneralCog(commands.Cog):
                 )
                 userIds = []
                 for i in options:
-                    if custom_deliminator in i:
-                        if i.split(custom_deliminator)[1] == game.lower():
-                            userIds.append(i.split(custom_deliminator)[0])
+                    if at(i.split(custom_deliminator), 1) == game.lower():
+                        userIds.append(i.split(custom_deliminator)[0])
                 result = "All people who play " + game.lower() + " are:\n"
                 for i in userIds:
                     try:
                         g = await self.bot.fetch_user(i)
                         result += g.name + "\n"
-                    except:
+                    except Exception:
                         ...
                 await ctx.send(result)
             else:
                 await ctx.send("This game doesn't exist.")
-    
+
     @commands.command()
     async def wait(self, ctx: commands.Context):
         if ctx.channel.id != hc_constants.BOT_TEST_CHANNEL:
@@ -635,8 +614,8 @@ class GeneralCog(commands.Cog):
             else hc_constants.SUBMISSIONS_STATE_FILE
         )
         if os.path.exists(state_file):
-            with open(state_file, "r") as file:
-                lines = file.readlines()
+            async with aiofiles.open(state_file, "r") as file:
+                lines = await file.readlines()
                 for line in lines:
                     if line.startswith(f"{ctx.author.id}—"):
                         tempDate = datetime.strptime(
@@ -648,9 +627,7 @@ class GeneralCog(commands.Cog):
                             timeSinceLast = elapsed_open_hours(tempDate)
                         else:
                             timeSinceLast = (
-                                (
-                                    datetime.now(tz=timezone.utc) - tempDate
-                                ).total_seconds()
+                                (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
                             ) / (60 * 60)
 
                         # Check if user is admin
@@ -665,9 +642,7 @@ class GeneralCog(commands.Cog):
 
                             await ctx.send(text)
                             return
-        await ctx.send(
-            f"<@{ctx.author.id}>, you have no pending cards. You may submit a card"
-        )
+        await ctx.send(f"<@{ctx.author.id}>, you have no pending cards. You may submit a card")
         return
 
 

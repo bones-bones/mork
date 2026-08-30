@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from datetime import UTC, datetime, timedelta, timezone
 
 from discord import Message, TextChannel
 from discord.ext import commands
@@ -21,9 +20,7 @@ def day_marker_content(day: datetime) -> str:
 
 
 def utc_day_start(day: datetime) -> datetime:
-    return day.astimezone(timezone.utc).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    return day.astimezone(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
@@ -41,7 +38,7 @@ def has_image_attachment(message: Message) -> bool:
 
 
 def is_submissions_card(message: Message) -> bool:
-    """Mork-posted submission with an image attachment (same filter as checkSubmissions)."""
+    """Mork-posted submission with an image attachment (same filter as check_submissions)."""
     if not is_mork(message.author.id):
         return False
     if not has_image_attachment(message):
@@ -50,7 +47,7 @@ def is_submissions_card(message: Message) -> bool:
         return False
     if message.content.startswith(hc_constants.PREVIOUS_WEEK_PIN_PREFIX):
         return False
-    if "@everyone" in message.content or "@here" in message.content:
+    if "@everyone" in message.content or "@here" in message.content:  # noqa: SIM103
         return False
     return True
 
@@ -61,7 +58,7 @@ def is_submissions_day_marker(message: Message) -> bool:
     return message.content.startswith(hc_constants.SUBMISSIONS_DAY_MARKER_PREFIX)
 
 
-def day_marker_iso_date(message: Message) -> Optional[str]:
+def day_marker_iso_date(message: Message) -> str | None:
     if not is_submissions_day_marker(message):
         return None
     rest = message.content[len(hc_constants.SUBMISSIONS_DAY_MARKER_PREFIX) :].strip()
@@ -71,7 +68,7 @@ def day_marker_iso_date(message: Message) -> Optional[str]:
     return None
 
 
-def format_previous_week_body(markers: List[Message]) -> str:
+def format_previous_week_body(markers: list[Message]) -> str:
     lines = [hc_constants.PREVIOUS_WEEK_PIN_PREFIX, "", "Last 7 submission days:", ""]
     if not markers:
         lines.append("_No day markers yet._")
@@ -80,18 +77,16 @@ def format_previous_week_body(markers: List[Message]) -> str:
     for marker in markers:
         iso = day_marker_iso_date(marker) or "unknown date"
         try:
-            human = datetime.strptime(iso, "%Y-%m-%d").strftime("%A, %B %d, %Y")
+            human = datetime.strptime(iso, "%Y-%m-%d").astimezone(UTC).strftime("%A, %B %d, %Y")
         except ValueError:
             human = iso
         lines.append(f"**{human}** — {marker.jump_url}")
     return "\n".join(lines)
 
 
-async def collect_recent_day_markers(
-    channel: TextChannel, *, limit: int = 7
-) -> List[Message]:
+async def collect_recent_day_markers(channel: TextChannel, *, limit: int = 7) -> list[Message]:
     cutoff = datetime.now(timezone.utc) - timedelta(days=21)
-    found: List[Message] = []
+    found: list[Message] = []
     async for message in channel.history(after=cutoff, limit=None):
         if is_submissions_day_marker(message):
             found.append(message)
@@ -99,7 +94,7 @@ async def collect_recent_day_markers(
     return found[:limit]
 
 
-async def find_previous_week_message(channel: TextChannel) -> Optional[Message]:
+async def find_previous_week_message(channel: TextChannel) -> Message | None:
     for pin in await channel.pins():
         if pin.author.id != hc_constants.MORK_2:
             continue
@@ -113,9 +108,9 @@ async def find_previous_week_message(channel: TextChannel) -> Optional[Message]:
     return None
 
 
-async def find_most_recent_day_marker(channel: TextChannel) -> Optional[Message]:
+async def find_most_recent_day_marker(channel: TextChannel) -> Message | None:
     cutoff = datetime.now(timezone.utc) - timedelta(days=21)
-    latest: Optional[Message] = None
+    latest: Message | None = None
     async for message in channel.history(after=cutoff, limit=None):
         if not is_submissions_day_marker(message):
             continue
@@ -133,9 +128,7 @@ async def has_card_submissions_between(
     return False
 
 
-def submission_period_start(
-    now: datetime, last_marker: Optional[Message]
-) -> datetime:
+def submission_period_start(now: datetime, last_marker: Message | None) -> datetime:
     """Start of the open submission window to check before posting a new day marker."""
     yesterday_start = utc_day_start(now) - timedelta(days=1)
     if last_marker is None:

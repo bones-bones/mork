@@ -6,13 +6,12 @@ Target: clean, uniform outer border like the reference cards (e.g. Halvesies,
 Winter Cube, Pet Gravyard) — solid black border, no streaks or artifacts.
 """
 
-import mork_repo_root  # noqa: E402
-
 import os
 import tempfile
-from typing import Tuple, List
+from typing import List, Tuple
 
 import google.auth
+import mork_repo_root  # noqa: F401
 from google.cloud import storage
 from PIL import Image
 
@@ -24,7 +23,7 @@ GCS_BUCKET_NAME = "hellscube-printable-images"
 bucket = storage_client.bucket(GCS_BUCKET_NAME)
 
 # How much to consider "background" (black/grey/white) at edges
-BG_LUMINANCE_MIN = 5   # below this = black
+BG_LUMINANCE_MIN = 5  # below this = black
 BG_LUMINANCE_MAX = 250  # above this = white
 BG_SATURATION_MAX = 30  # low sat = grey
 
@@ -220,10 +219,17 @@ def download_blob(blob) -> str:
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Fix card border fuckups in GCS images")
     parser.add_argument("--prefix", default="", help="Only process blobs with this prefix")
-    parser.add_argument("--dry-run", action="store_true", help="Don't upload; save fixed images to a folder in this dir")
-    parser.add_argument("--limit", type=int, default=0, help="Max number of blobs to process (0 = all)")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Don't upload; save fixed images to a folder in this dir",
+    )
+    parser.add_argument(
+        "--limit", type=int, default=0, help="Max number of blobs to process (0 = all)"
+    )
     args = parser.parse_args()
 
     # Dry-run: save to folder in script/project dir
@@ -241,19 +247,25 @@ def main():
     def is_likely_image(name: str) -> bool:
         n = name.lower()
         return ".png" in n or ".jpg" in n or n.endswith(".jpeg")
+
     blobs = [b for b in blobs if is_likely_image(b.name)]
 
     print(f"Found {len(blobs)} image blob(s) to process.")
 
     for i, blob in enumerate(blobs):
         name = blob.name
-        print(f"[{i+1}/{len(blobs)}] {name}")
+        print(f"[{i + 1}/{len(blobs)}] {name}")
         try:
             path = download_blob(blob)
             try:
                 if args.dry_run:
                     # Safe filename ending in .png so PIL and filesystems are happy
-                    safe_name = name.replace("/", "_").replace("\\", "_").replace(":", "_").replace(" ", "_")
+                    safe_name = (
+                        name.replace("/", "_")
+                        .replace("\\", "_")
+                        .replace(":", "_")
+                        .replace(" ", "_")
+                    )
                     if not safe_name.lower().endswith(".png"):
                         safe_name = safe_name + ".png"
                     out_path = os.path.join(dry_run_dir, safe_name)

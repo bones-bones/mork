@@ -1,6 +1,6 @@
 ---
 description: Keep docs/card-flows in sync when card lifecycle behavior changes
-globs: cogs/Lifecycle.py,acceptCard.py,checkSubmissions.py,handleVetoPost.py,getCardMessage.py,submissions/**,cogs/lifecycle/**
+globs: cogs/Lifecycle.py,accept_card.py,check_submissions.py,handle_veto_post.py,get_card_message.py,submissions/**,cogs/lifecycle/**
 alwaysApply: false
 ---
 
@@ -10,13 +10,13 @@ When you change card lifecycle behavior, update the matching docs in the same ch
 
 ## When this applies
 
-Behavior changes in submission intake, polls, veto, acceptance, errata, tokens, design hell, or background submission checks.
+Behavior changes in submission intake, polls, veto, acceptance, errata, tokens, scube lair, or background submission checks.
 
 ## What to update
 
 | Code area | Doc |
 |-----------|-----|
-| `#submissions`, `#pause-projects`, tokens, design hell | `docs/card-flows/submissions.md` |
+| `#submissions`, `#pause-projects`, tokens, scube lair | `docs/card-flows/submissions.md` |
 | Veto polls, `!compileveto`, hellpit | `docs/card-flows/veto.md` |
 | `accept_card`, postcard, persistence | `docs/card-flows/acceptance.md` |
 | Errata channel, instaerrata | `docs/card-flows/errata.md` |

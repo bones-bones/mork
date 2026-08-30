@@ -1,4 +1,5 @@
 from typing import cast
+
 from discord import TextChannel
 from discord.ext import commands
 
@@ -10,15 +11,11 @@ def getVetoChannel(bot: commands.Bot):
 
 
 def getSubmissionDiscussionChannel(bot: commands.Bot):
-    return cast(
-        TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL)
-    )
+    return cast(TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_DISCUSSION_CHANNEL))
 
 
-def getDesignHellDiscussionChannel(bot: commands.Bot):
-    return cast(
-        TextChannel, bot.get_channel(hc_constants.DESIGN_HELL_DISCUSSION_CHANNEL)
-    )
+def getScubeLairDiscussionChannel(bot: commands.Bot):
+    return cast(TextChannel, bot.get_channel(hc_constants.SCUBE_LAIR_DISCUSSION_CHANNEL))
 
 
 def getErrataTrackingChannel(bot: commands.Bot):
@@ -46,9 +43,7 @@ def getGraveyardChannel(bot: commands.Bot):
 
 
 def getMorkSubmissionsLoggingChannel(bot: commands.Bot):
-    return cast(
-        TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL)
-    )
+    return cast(TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
 
 
 def getVetoDiscussionChannel(bot: commands.Bot):

@@ -17,7 +17,7 @@ def parseCardNameAndAuthor(acceptanceMessage: str) -> tuple[str, str]:
     return dbname, card_author
 
 
-def getCardMessage(acceptanceMessage: str):
+def get_card_message(acceptanceMessage: str):
     dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
 
     resolvedName = dbname if dbname != "" else "Crazy card with no name"
