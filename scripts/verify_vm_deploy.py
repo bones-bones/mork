@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import compileall
 import importlib
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -47,11 +48,14 @@ def check_required_imports() -> None:
         raise SystemExit(f"Missing pip packages: {', '.join(missing)}")
 
 
+SKIP_PATH_RX = re.compile(r"(?:^|/)(\.git|\.worktrees|mork-devvit|node_modules|\.venv)(?:/|$)")
+
+
 def check_syntax() -> None:
     ok = compileall.compile_dir(
         REPO_ROOT,
         quiet=1,
-        rx=r"/(\.git|\.worktrees|mork-devvit|node_modules|\.venv)/",
+        rx=SKIP_PATH_RX,
     )
     if not ok:
         raise SystemExit("Syntax errors found (compileall failed)")
