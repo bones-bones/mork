@@ -8,12 +8,12 @@ from typing import Any
 
 import aiohttp
 
+from database_cache import database as card_database
 from database_cache.catalog_cache import (
     DEFAULT_CATALOG_URL,
     DEFAULT_SETS_URL,
     catalog_to_cache,
 )
-from database_cache import database as card_database
 from database_cache.database import (
     SearchCard,
     build_database,
@@ -86,10 +86,7 @@ async def getDatabaseCache() -> dict[str, dict[str, Any]]:
     ):
         catalog_data = await read_response_json(catalog_resp)
         sets_data = await read_response_json(sets_resp)
-        print(
-            f"[db] catalog HTTP {catalog_resp.status}, "
-            f"sets HTTP {sets_resp.status}"
-        )
+        print(f"[db] catalog HTTP {catalog_resp.status}, sets HTTP {sets_resp.status}")
         if catalog_resp.status != 200:
             raise CommandError(f"catalog HTTP {catalog_resp.status}")
         if sets_resp.status != 200:
@@ -98,27 +95,18 @@ async def getDatabaseCache() -> dict[str, dict[str, Any]]:
         print(f"[db] catalog response type: {type(catalog_data).__name__}")
         raise CommandError("catalog_invalid")
     if "nameMap" in catalog_data:
-        print(
-            "[db] using pre-built cache payload "
-            f"({len(catalog_data.get('idMap', {}))} cards)"
-        )
+        print(f"[db] using pre-built cache payload ({len(catalog_data.get('idMap', {}))} cards)")
         return catalog_data
     cards = catalog_data.get("data")
     if not isinstance(cards, list):
-        print(
-            "[db] catalog missing data list; keys: "
-            f"{list(catalog_data.keys())[:10]}"
-        )
+        print(f"[db] catalog missing data list; keys: {list(catalog_data.keys())[:10]}")
         raise CommandError("catalog_invalid")
     if not isinstance(sets_data, dict):
         print(f"[db] sets response type: {type(sets_data).__name__}")
         raise CommandError("sets_invalid")
     sets = sets_data.get("data")
     if not isinstance(sets, list):
-        print(
-            "[db] sets missing data list; keys: "
-            f"{list(sets_data.keys())[:10]}"
-        )
+        print(f"[db] sets missing data list; keys: {list(sets_data.keys())[:10]}")
         raise CommandError("sets_invalid")
     print(f"[db] building cache from {len(cards)} cards, {len(sets)} sets")
     cache = catalog_to_cache(cards, sets=sets)
@@ -339,8 +327,7 @@ async def getMultipleRandomFromServer(query: str | None, num: int) -> list[Searc
         return [await getRandomFromServer(query)]
     if STILL_USING_CACHE and not query:
         cards = [
-            get_card_by_id(random.choice(list(card_database.idMap.keys())))
-            for i in range(num)
+            get_card_by_id(random.choice(list(card_database.idMap.keys()))) for i in range(num)
         ]
         if not cards[0]:
             raise CommandError("random_failed")

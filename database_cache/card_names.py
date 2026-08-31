@@ -27,7 +27,9 @@ def _combine_face_names(face_names: list[list[str]]) -> list[str]:
         return []
     combinations = list(face_names[0])
     for current_face in face_names[1:]:
-        combinations = [f"{prefix} // {name}" for prefix, name in product(combinations, current_face)]
+        combinations = [
+            f"{prefix} // {name}" for prefix, name in product(combinations, current_face)
+        ]
     return combinations
 
 
@@ -75,7 +77,7 @@ def get_all_names(card: dict[str, Any], *, drop_faces: bool = False) -> list[str
         if isinstance(card_faces, list):
             for i in range(len(card_faces)):
                 for j in range(i + 1, len(card_faces)):
-                    for combined in _combine_face_names(face_names[i : j]):
+                    for combined in _combine_face_names(face_names[i:j]):
                         add_name(combined)
 
     if code:
