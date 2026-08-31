@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import UTC, datetime, timedelta
 
 from attr import dataclass
 from discord import Message

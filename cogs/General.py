@@ -3,7 +3,7 @@ import os
 import pprint as pp
 import random
 import re
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime
 from typing import cast
 
 import aiofiles

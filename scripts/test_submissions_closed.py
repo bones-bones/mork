@@ -1,7 +1,7 @@
 """Smoke tests for #submissions closed days (no Discord)."""
 
 import sys
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 

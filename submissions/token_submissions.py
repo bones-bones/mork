@@ -1,6 +1,6 @@
 import base64
 import re
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 from discord import Message

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 SUBMISSIONS_TZ = ZoneInfo("America/New_York")

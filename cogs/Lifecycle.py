@@ -3,7 +3,7 @@ import os
 import random
 import re
 import traceback
-from datetime import UTC, date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from typing import cast
 
 import aiofiles

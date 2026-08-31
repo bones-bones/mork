@@ -1,7 +1,7 @@
 """Smoke tests for submissions day marker helpers (no Discord)."""
 
 import sys
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 

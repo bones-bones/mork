@@ -34,7 +34,7 @@ import tempfile
 import threading
 import time
 from collections.abc import Callable
-from datetime import datetime, timezone, UTC
+from datetime import UTC, datetime
 from functools import partial
 from pathlib import Path
 from typing import TypeVar, cast

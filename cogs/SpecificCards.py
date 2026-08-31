@@ -2,7 +2,7 @@ import asyncio
 import json
 import pprint as pp
 import random
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from operator import itemgetter
 from random import choice, choices, sample
 from typing import Any, cast

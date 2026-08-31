@@ -1,5 +1,5 @@
 import random
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from random import randrange
 from typing import cast
 

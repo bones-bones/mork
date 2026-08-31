@@ -1,6 +1,6 @@
 import asyncio
 import io
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 from discord import File, Guild, Member, Message, TextChannel

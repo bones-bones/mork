@@ -1,6 +1,6 @@
 import os
 import random
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlparse
 
 import aiofiles
