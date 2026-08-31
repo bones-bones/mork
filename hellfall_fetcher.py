@@ -57,14 +57,16 @@ async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]
 
 async def getDatabaseCache() -> dict[str, dict[str, Any]]:
     timeout = get_request_timeout()
-    async with aiohttp.ClientSession() as session:
-        async with session.get(
+    async with (
+        aiohttp.ClientSession() as session,
+        session.get(
             DEFAULT_CATALOG_URL,
             timeout=timeout,
-        ) as resp:
-            data = await read_response_json(resp)
-            if resp.status != 200:
-                raise CommandError(f"catalog HTTP {resp.status}")
+        ) as resp,
+    ):
+        data = await read_response_json(resp)
+        if resp.status != 200:
+            raise CommandError(f"catalog HTTP {resp.status}")
     if not isinstance(data, dict):
         raise CommandError("catalog_invalid")
     if "nameMap" in data:

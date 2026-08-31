@@ -12,7 +12,7 @@ target-version = "py312"
 ignore = ["F841", "BLE001"]
 fixable = ["I", "UP045", "UP007", "UP017", "F401", "F541", "UP018", "E713", "E402", "E711"]
 exclude = ["site-packages", "service_account.py"]
-extend-select = ["PLC2801", "E402", "E713", "E711"]
+extend-select = ["PLC2801", "E402", "E713", "E711", "SIM117"]
 # select = ["E9", "F821", "F822", "ISC"]
 preview = true
 
