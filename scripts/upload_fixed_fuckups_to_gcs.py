@@ -37,6 +37,7 @@ import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 from functools import partial
+from typing import TypeVar
 from urllib.parse import unquote, urlparse
 
 import mork_repo_root  # noqa: F401
@@ -45,6 +46,8 @@ from gspread.exceptions import APIError
 from PIL import Image
 
 from shared_vars import drive, googleClient
+
+T = TypeVar("T")
 
 DEFAULT_CREDENTIALS = "./bot_secrets/client_secrets.json"
 DEFAULT_BUCKET = os.environ.get("GCS_PRINTABLE_BUCKET", "hellscube-printable-images")
@@ -138,7 +141,7 @@ def _is_retryable_google_error(exc: BaseException) -> bool:
     )
 
 
-def _google_call_with_retry[T](
+def _google_call_with_retry(
     fn: Callable[[], T],
     *,
     what: str,
