@@ -5,7 +5,7 @@ repos:
       - id: ruff
       # the excluded files have errors that I can't deal with right now
         exclude: |
-          (?x)^scripts/(printable_image[^\.]+|download_and_upload_images|fix_borders_gcs|prepare_card_for_printing_stretch).py$
+          (?x)^hellfall_fetcher|scripts/(printable_image[^\.]+|download_and_upload_images|fix_borders_gcs|prepare_card_for_printing_stretch).py$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:

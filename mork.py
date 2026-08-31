@@ -4,6 +4,7 @@ import sys
 from discord.ext import commands
 from dotenv import load_dotenv
 
+from hellfall_fetcher import STILL_USING_CACHE, bootstrap_card_cache
 from shared_vars import intents
 
 # systemd redirects stdout to a file, which makes Python block-buffer it (~8KB),
@@ -25,6 +26,8 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         print("This is asynchronous!")
+        if STILL_USING_CACHE:
+            await bootstrap_card_cache()
 
         initial_extensions = [
             "cogs.General",

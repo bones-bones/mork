@@ -1,5 +1,6 @@
 import io
 import re
+import traceback
 from collections.abc import Sequence
 
 import aiohttp
@@ -7,13 +8,15 @@ import discord
 from discord.message import Message
 
 import hc_constants
+from database_cache import database as card_database
 from database_cache.database import SearchCard
-from hellfall_fetcher import getMultipleFuzzyCards
+from hellfall_fetcher import getMultipleFuzzyCards, is_card_cache_loaded
 from image_response_filename import filename_from_image_response
 
 FISH_FROM_GO_FISH_SEARCH = "the fish from go fish"
 
-nameRegex = re.compile(r"{{([^}]+)}}")
+# Supports both `{{card name}}` and unclosed `{{card name`.
+nameRegex = re.compile(r"{{([^}\n]+?)(?:}}|$)")
 
 
 async def send_single_image_reply(
@@ -99,8 +102,19 @@ async def send_multiple_card_reply(message: Message, cards: list[SearchCard]):
 
 
 async def post_card_images(message: Message):
-    print(message.author)
-    message_text: list[str] = nameRegex.findall(message.clean_content)
+    message_text = [name.strip() for name in nameRegex.findall(message.content) if name.strip()]
+    print(
+        f"[card-images] {message.author} names={message_text} "
+        f"cache_cards={len(card_database.idMap)}"
+    )
+    if not message_text:
+        return
+    if not is_card_cache_loaded():
+        await message.reply(
+            "Card database is still loading, try again in a few seconds.",
+            mention_author=False,
+        )
+        return
     if len(message_text) > 10:
         await message.reply(
             "Don't call more than 10 cards per message, final warning, keep trying and you get blacklisted from the bot."
@@ -108,9 +122,19 @@ async def post_card_images(message: Message):
         return
     if message.author.id == hc_constants.LLLLLL:
         for i, name in enumerate(message_text):
-            if name.strip() == "fish":
+            if name == "fish":
                 message_text[i] = FISH_FROM_GO_FISH_SEARCH
-    requestedCards = await getMultipleFuzzyCards(message_text)
+    try:
+        requestedCards = await getMultipleFuzzyCards(message_text)
+    except Exception:
+        print("[card-images] lookup failed:")
+        traceback.print_exc()
+        await message.reply(
+            "Something went wrong looking up those cards.",
+            mention_author=False,
+        )
+        return
     if not requestedCards:
         await message.reply("No Matches Found!", mention_author=False)
+        return
     await send_multiple_card_reply(message, requestedCards)

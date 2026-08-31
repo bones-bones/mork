@@ -87,15 +87,34 @@ oracleMap: dict[str, list[str]] = {}
 def build_database(serverJSON: dict[str, dict[str, Any]]):
     """Builds mork's local database using data from the server."""
     global nameMap, aliasMap, hcidMap, idMap, oracleMap
+    print(
+        "[db] build_database starting; payload keys: "
+        f"{list(serverJSON.keys())}"
+    )
+    try:
+        name_map_data = serverJSON["nameMap"]
+        alias_map_data = serverJSON["aliasMap"]
+        hcid_map_data = serverJSON["hcidMap"]
+        id_map_data = serverJSON["idMap"]
+        oracle_map_data = serverJSON["oracleMap"]
+    except KeyError as exc:
+        print(f"[db] build_database missing key: {exc}")
+        raise
+
     nameMap = {}
-    for name, lookup in serverJSON["nameMap"].items():
+    for name, lookup in name_map_data.items():
         nameMap[name] = LookupCard(**lookup)
-    aliasMap = serverJSON["aliasMap"]
-    hcidMap = serverJSON["hcidMap"]
+    aliasMap = alias_map_data
+    hcidMap = hcid_map_data
     idMap = {}
-    for id, card in serverJSON["idMap"].items():
+    for id, card in id_map_data.items():
         idMap[id] = SearchCard(**card)
-    oracleMap = serverJSON["oracleMap"]
+    oracleMap = oracle_map_data
+    print(
+        "[db] build_database complete: "
+        f"{len(idMap)} cards, {len(nameMap)} names, "
+        f"{len(aliasMap)} aliases, {len(hcidMap)} hcids"
+    )
 
 
 def _get_id_by_set_and_num(

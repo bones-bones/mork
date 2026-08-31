@@ -7,13 +7,12 @@ import discord
 from discord.ext import commands
 
 import hc_constants
-from database_cache.database import build_database
 from hellfall_changesets import modifyTagWithServer
 from hellfall_fetcher import (
     STILL_USING_CACHE,
     SearchCard,
     SearchResponse,
-    getDatabaseCache,
+    bootstrap_card_cache,
     getExactCard,
     getFuzzyCard,
     getRandomFromServer,
@@ -21,6 +20,7 @@ from hellfall_fetcher import (
 )
 from post_card_images import send_single_image_reply
 from shared_vars import googleClient, intents
+from username_mappings import set_username_mappings
 
 databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
 
@@ -49,15 +49,20 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        if STILL_USING_CACHE:
-            build_database(await getDatabaseCache())
+        usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
+        set_username_mappings(usernameMappingSheet.get_all_values()[1:])
 
     @commands.command(aliases=["synccache"])
     async def syncDb(self, ctx: commands.Context):
         if ctx.author.id == hc_constants.LLLLLL:
             if STILL_USING_CACHE:
-                build_database(await getDatabaseCache())
-                await ctx.send("done")
+                print("[db] manual cache sync requested")
+                try:
+                    await bootstrap_card_cache(force=True)
+                    await ctx.send("done")
+                except Exception as exc:
+                    print(f"[db] manual cache sync failed: {exc}")
+                    await ctx.send(f"sync failed: {exc}")
             else:
                 await ctx.send("cache is currently turned off")
 
