@@ -23,9 +23,9 @@ jobs:
       - name: pre-commit
         run: pre-commit run --all-files --show-diff-on-failure
 
-  vm-smoke-3_11:
   # Production VM (Debian Bookworm) runs 3.11. Full pre-commit on 3.11 fails on
-  # 3.12-only f-string syntax elsewhere; this job checks parse + deps on 3.11 only.
+  # 3.12-only f-string syntax elsewhere; vm-smoke checks parse + deps on 3.11 only.
+  vm-smoke-3_11:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
