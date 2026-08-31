@@ -8,6 +8,7 @@ from typing import Any
 
 import aiohttp
 
+from database_cache.catalog_cache import DEFAULT_CATALOG_URL, catalog_to_cache
 from database_cache.database import (
     SearchCard,
     card_name_exists,
@@ -55,10 +56,23 @@ async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]
 
 
 async def getDatabaseCache() -> dict[str, dict[str, Any]]:
-    payload: dict[str, str] = {
-        "command": "get_cache",
-    }
-    return await getDataFromServer(payload)
+    timeout = get_request_timeout()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            DEFAULT_CATALOG_URL,
+            timeout=timeout,
+        ) as resp:
+            data = await read_response_json(resp)
+            if resp.status != 200:
+                raise CommandError(f"catalog HTTP {resp.status}")
+    if not isinstance(data, dict):
+        raise CommandError("catalog_invalid")
+    if "nameMap" in data:
+        return data
+    cards = data.get("data")
+    if not isinstance(cards, list):
+        raise CommandError("catalog_invalid")
+    return catalog_to_cache(cards)
 
 
 async def getCardById(uuid: str) -> SearchCard | None:
