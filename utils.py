@@ -1,4 +1,4 @@
-from typing import overload, TypeVar
+from typing import TypeVar, overload
 
 T = TypeVar("T")
 D = TypeVar("D")
