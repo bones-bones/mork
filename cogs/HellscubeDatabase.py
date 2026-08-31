@@ -7,13 +7,12 @@ import discord
 from discord.ext import commands
 
 import hc_constants
-from database_cache.database import build_database
 from hellfall_changesets import modifyTagWithServer
 from hellfall_fetcher import (
     STILL_USING_CACHE,
     SearchCard,
     SearchResponse,
-    getDatabaseCache,
+    bootstrap_card_cache,
     getExactCard,
     getFuzzyCard,
     getRandomFromServer,
@@ -45,15 +44,18 @@ class HellscubeDatabaseCog(commands.Cog):
     async def on_ready(self):
         usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
         set_username_mappings(usernameMappingSheet.get_all_values()[1:])
-        if STILL_USING_CACHE:
-            build_database(await getDatabaseCache())
 
     @commands.command(aliases=["synccache"])
     async def syncDb(self, ctx: commands.Context):
         if ctx.author.id == hc_constants.LLLLLL:
             if STILL_USING_CACHE:
-                build_database(await getDatabaseCache())
-                await ctx.send("done")
+                print("[db] manual cache sync requested")
+                try:
+                    await bootstrap_card_cache(force=True)
+                    await ctx.send("done")
+                except Exception as exc:
+                    print(f"[db] manual cache sync failed: {exc}")
+                    await ctx.send(f"sync failed: {exc}")
             else:
                 await ctx.send("cache is currently turned off")
 

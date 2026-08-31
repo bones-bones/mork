@@ -99,7 +99,9 @@ def catalog_to_cache(
     sets: list[dict[str, Any]] | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Convert Hellfall catalog cards into the get_cache payload shape."""
+    print(f"[db] catalog_to_cache: {len(cards)} cards")
     if sets is not None:
+        print(f"[db] catalog_to_cache: loading {len(sets)} sets")
         loadSets(sets)
 
     id_map: dict[str, dict[str, Any]] = {}
@@ -122,4 +124,7 @@ def catalog_to_cache(
     cache = lookup.to_dict()
     cache["idMap"] = id_map
     cache["oracleMap"] = dict(oracle_map)
+    skipped = len(cards) - len(id_map)
+    if skipped:
+        print(f"[db] catalog_to_cache: skipped {skipped} cards without id")
     return cache

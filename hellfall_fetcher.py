@@ -13,13 +13,14 @@ from database_cache.catalog_cache import (
     DEFAULT_SETS_URL,
     catalog_to_cache,
 )
+from database_cache import database as card_database
 from database_cache.database import (
     SearchCard,
+    build_database,
     card_name_exists,
     get_card_by_fuzzy_name,
     get_card_by_id,
     get_card_by_name,
-    idMap,
 )
 from hellfall_shared import (
     get_api_url,
@@ -34,6 +35,21 @@ class CommandError(Exception):
 
 
 STILL_USING_CACHE = True
+
+
+def is_card_cache_loaded() -> bool:
+    return bool(card_database.idMap)
+
+
+async def bootstrap_card_cache(*, force: bool = False) -> None:
+    """Fetch catalog and build in-memory lookup maps. Call before handling messages."""
+    if is_card_cache_loaded() and not force:
+        print("[db] card cache already loaded, skipping bootstrap")
+        return
+    print("[db] bootstrapping card cache")
+    cache = await getDatabaseCache()
+    build_database(cache)
+    print("[db] card cache bootstrap complete")
 
 
 async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]):
@@ -61,6 +77,8 @@ async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]
 
 async def getDatabaseCache() -> dict[str, dict[str, Any]]:
     timeout = get_request_timeout()
+    print(f"[db] fetching catalog from {DEFAULT_CATALOG_URL}")
+    print(f"[db] fetching sets from {DEFAULT_SETS_URL}")
     async with (
         aiohttp.ClientSession() as session,
         session.get(DEFAULT_CATALOG_URL, timeout=timeout) as catalog_resp,
@@ -68,23 +86,48 @@ async def getDatabaseCache() -> dict[str, dict[str, Any]]:
     ):
         catalog_data = await read_response_json(catalog_resp)
         sets_data = await read_response_json(sets_resp)
+        print(
+            f"[db] catalog HTTP {catalog_resp.status}, "
+            f"sets HTTP {sets_resp.status}"
+        )
         if catalog_resp.status != 200:
             raise CommandError(f"catalog HTTP {catalog_resp.status}")
         if sets_resp.status != 200:
             raise CommandError(f"sets HTTP {sets_resp.status}")
     if not isinstance(catalog_data, dict):
+        print(f"[db] catalog response type: {type(catalog_data).__name__}")
         raise CommandError("catalog_invalid")
     if "nameMap" in catalog_data:
+        print(
+            "[db] using pre-built cache payload "
+            f"({len(catalog_data.get('idMap', {}))} cards)"
+        )
         return catalog_data
     cards = catalog_data.get("data")
     if not isinstance(cards, list):
+        print(
+            "[db] catalog missing data list; keys: "
+            f"{list(catalog_data.keys())[:10]}"
+        )
         raise CommandError("catalog_invalid")
     if not isinstance(sets_data, dict):
+        print(f"[db] sets response type: {type(sets_data).__name__}")
         raise CommandError("sets_invalid")
     sets = sets_data.get("data")
     if not isinstance(sets, list):
+        print(
+            "[db] sets missing data list; keys: "
+            f"{list(sets_data.keys())[:10]}"
+        )
         raise CommandError("sets_invalid")
-    return catalog_to_cache(cards, sets=sets)
+    print(f"[db] building cache from {len(cards)} cards, {len(sets)} sets")
+    cache = catalog_to_cache(cards, sets=sets)
+    print(
+        "[db] built cache: "
+        f"{len(cache.get('idMap', {}))} cards, "
+        f"{len(cache.get('nameMap', {}))} names"
+    )
+    return cache
 
 
 async def getCardById(uuid: str) -> SearchCard | None:
@@ -263,7 +306,7 @@ async def getSearchFromServer(query: str) -> SearchResponse:
 
 async def getRandomFromServer(query: str | None) -> SearchCard:
     if STILL_USING_CACHE and not query:
-        card = get_card_by_id(random.choice(list(idMap.keys())))
+        card = get_card_by_id(random.choice(list(card_database.idMap.keys())))
         if not card:
             raise CommandError("random_failed")
         return card
@@ -293,7 +336,10 @@ async def getMultipleRandomFromServer(query: str | None, num: int) -> list[Searc
     if num <= 1:
         return [await getRandomFromServer(query)]
     if STILL_USING_CACHE and not query:
-        cards = [get_card_by_id(random.choice(list(idMap.keys()))) for i in range(num)]
+        cards = [
+            get_card_by_id(random.choice(list(card_database.idMap.keys())))
+            for i in range(num)
+        ]
         if not cards[0]:
             raise CommandError("random_failed")
         return [card for card in cards if card]
