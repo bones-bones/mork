@@ -37,7 +37,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from functools import partial
 from pathlib import Path
-from typing import TypeVar, cast
+from typing import cast
 from urllib.parse import quote, unquote, urlparse
 
 import mork_repo_root  # noqa: F401
@@ -48,8 +48,6 @@ from gspread.exceptions import APIError
 from PIL import Image
 
 from image_response_filename import extension_from_image_bytes
-
-T = TypeVar("T")
 
 # Prefer scripts/ over any repo-root shadow copies of sibling modules.
 _scripts = str(Path(__file__).resolve().parent)
@@ -133,7 +131,7 @@ def _is_retryable_google_error(exc: BaseException) -> bool:
     )
 
 
-def _google_call_with_retry(
+def _google_call_with_retry[T](
     fn: Callable[[], T],
     *,
     what: str,

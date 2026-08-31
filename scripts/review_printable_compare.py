@@ -20,7 +20,6 @@ import tempfile
 import time
 from collections import Counter
 from collections.abc import Callable
-from typing import TypeVar
 
 import mork_repo_root  # noqa: F401
 import requests
@@ -28,8 +27,6 @@ from gspread.exceptions import APIError
 from printable_image_qa import cleanup_temp_paths, resize_for_vision, review_image
 
 from shared_vars import googleClient
-
-T = TypeVar("T")
 
 DEFAULT_CREDENTIALS = "./bot_secrets/client_secrets.json"
 PRINTABLE_DB_SPREADSHEET_KEY = "1FdnGhkjxnOAbjBEeLGC_QDMVcmEjoOLiuEkM9MeiPFs"
@@ -65,7 +62,7 @@ def _is_retryable_google_error(exc: BaseException) -> bool:
     )
 
 
-def _google_call_with_retry(
+def _google_call_with_retry[T](
     fn: Callable[[], T],
     *,
     what: str,
