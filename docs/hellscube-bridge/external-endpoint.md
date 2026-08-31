@@ -83,9 +83,33 @@ Error (`4xx`/`5xx`):
 
 Mork enables this path with `REDDIT_REPLY_VIA_DEVVIT=1` (default off). See [`reply.md`](reply.md).
 
+## Gallery endpoint (`/external/post-gallery`)
+
+|                |                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------- |
+| **Method**     | `POST`                                                                                |
+| **Path**       | `/external/post-gallery`                                                              |
+| **Public URL** | `https://hellscube-bridge-{subreddit-id}-external.devvit.net/external/post-gallery`   |
+| **Auth**       | Managed App Token (`Authorization: Bearer devvit_at_…`)                               |
+
+**Request body:**
+
+```json
+{
+  "title": "optional gallery title",
+  "imageUrls": ["https://storage.googleapis.com/.../card.png"],
+  "flairId": "optional-flair-uuid",
+  "subredditName": "HellsCube"
+}
+```
+
+Up to 10 HTTPS picture URLs. Native multi-image gallery submit is not available yet; more than one URL returns `501` `reddit_gallery_api_unavailable`. See [`gallery.md`](gallery.md).
+
+Mork enables this path with `REDDIT_GALLERY_VIA_DEVVIT=1` (default off).
+
 ## Data handling
 
-- **Inbound:** title, image URL, flair id, target subreddit — from the authorized backend only.
+- **Inbound:** title, image URL(s), flair id, target subreddit — from the authorized backend only.
 - **Outbound HTTP:** fetches the provided `imageUrl` from allow-listed hosts (`storage.googleapis.com`, `lh3.googleusercontent.com`) to submit the Reddit post.
 - **No** end-user signup, ads, or sale of data.
 

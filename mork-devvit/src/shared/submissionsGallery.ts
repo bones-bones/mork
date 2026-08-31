@@ -1,42 +1,50 @@
-/** GCS JSON manifest written by Mork at #submissions intake. */
-
-export type SubmissionsGalleryEntry = {
-  messageId: string;
-  imageUrl: string;
-  submittedAt: string;
-  cardName?: string;
-};
-
-export type SubmissionsGalleryManifest = {
-  updatedAt: string;
-  entries: SubmissionsGalleryEntry[];
-};
-
-export const DEFAULT_SUBMISSIONS_GALLERY_MANIFEST_URL =
-  'https://storage.googleapis.com/hellcube-images/mork/submissions-gallery-manifest.json';
+/** Daily submissions gallery posted via POST /external/post-gallery. */
 
 export const GALLERY_TITLE =
   "Some of Today's Submissions: Have any strong opinions on these cards? Join the discord to share them!";
 
-export const GALLERY_LOOKBACK_MS = 24 * 60 * 60 * 1000;
 export const GALLERY_MAX_IMAGES = 10;
 
-export function pickGalleryEntries(
-  entries: SubmissionsGalleryEntry[],
-  nowMs: number = Date.now(),
-): SubmissionsGalleryEntry[] {
-  const cutoff = nowMs - GALLERY_LOOKBACK_MS;
-  const recent = entries.filter((entry) => {
-    const ts = Date.parse(entry.submittedAt);
-    return Number.isFinite(ts) && ts >= cutoff && entry.imageUrl?.trim();
-  });
-  if (recent.length === 0) {
+export const GALLERY_API_UNAVAILABLE = 'reddit_gallery_api_unavailable';
+
+export type PostGalleryRequest = {
+  title?: string;
+  imageUrls: string[];
+  flairId?: string;
+  subredditName?: string;
+};
+
+export type PostGalleryResponse = {
+  ok: true;
+  postId: string;
+  permalink: string;
+};
+
+export type PostGalleryErrorResponse = {
+  ok: false;
+  error: string;
+};
+
+export function normalizeGalleryImageUrls(raw: unknown): string[] {
+  if (!Array.isArray(raw)) {
     return [];
   }
-  const shuffled = [...recent];
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  const urls: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'string') {
+      continue;
+    }
+    const trimmed = item.trim();
+    if (trimmed) {
+      urls.push(trimmed);
+    }
   }
-  return shuffled.slice(0, Math.min(GALLERY_MAX_IMAGES, shuffled.length));
+  return urls;
+}
+
+export function galleryImageUrlError(url: string): string | undefined {
+  if (!/^https:\/\//i.test(url)) {
+    return 'imageUrls must be https URLs';
+  }
+  return undefined;
 }

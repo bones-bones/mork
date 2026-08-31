@@ -19,6 +19,12 @@
                 "scopes": [
                     "global"
                 ]
+            },
+            "postGallery": {
+                "endpoint": "/external/post-gallery",
+                "scopes": [
+                    "global"
+                ]
             }
         }
     },
@@ -30,10 +36,6 @@
             "card-of-the-day": {
                 "endpoint": "/internal/scheduler/card-of-the-day",
                 "cron": "0 10 * * *"
-            },
-            "daily-submissions-gallery": {
-                "endpoint": "/internal/scheduler/daily-submissions-gallery",
-                "cron": "0 4 * * *"
             }
         }
     },
@@ -75,14 +77,14 @@
             },
             "submissionsGalleryManifestUrl": {
                 "type": "string",
-                "label": "Submissions gallery manifest URL",
-                "helpText": "GCS JSON manifest for daily gallery. Set via devvit settings set."
+                "label": "Submissions gallery manifest URL (unused)",
+                "helpText": "Unused. Gallery pictures are POSTed to /external/post-gallery."
             },
             "dailyGalleryViaDevvit": {
                 "type": "boolean",
-                "label": "Daily submissions gallery via Devvit",
+                "label": "Daily submissions gallery via Devvit (unused)",
                 "defaultValue": false,
-                "helpText": "Scheduler reads manifest; multi-image gallery blocked until Reddit API supports it. Pair with REDDIT_GALLERY_VIA_DEVVIT=1 on VM when ready."
+                "helpText": "Unused. Mork posts via /external/post-gallery when REDDIT_GALLERY_VIA_DEVVIT=1."
             }
         }
     },

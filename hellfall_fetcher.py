@@ -8,12 +8,12 @@ from typing import Any
 
 import aiohttp
 
+from database_cache import database as card_database
 from database_cache.catalog_cache import (
     DEFAULT_CATALOG_URL,
     DEFAULT_SETS_URL,
     catalog_to_cache,
 )
-from database_cache import database as card_database
 from database_cache.database import (
     SearchCard,
     build_database,

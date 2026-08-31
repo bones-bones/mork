@@ -19,7 +19,7 @@ flowchart TD
 
   LOOP --> T0{"Is <= the 4th minute of the hour?"}
   T0 -->|yes| RC["Redditcatchup — 1 deferred post"]
-  LOOP --> T1{"Is it the <=4th minute of the 4th hour<br/>and REDDIT_GALLERY_VIA_DEVVIT off?"}
+  LOOP --> T1{"Is it the <=4th minute of the 4th hour?"}
   T1 -->|yes| GAL["Daily submissions gallery → Reddit"]
   LOOP --> T2{"Is it the <=4th minute of the 10th hour<br/>and REDDIT_COTD_VIA_DEVVIT off?"}
   T2 -->|yes| COTD["HC6 card-of-the-day → Reddit (asyncpraw)"]
@@ -27,7 +27,9 @@ flowchart TD
 
 Flag `REDDIT_COTD_VIA_DEVVIT=1` skips the hour-10 branch here; Devvit scheduler handles COTD instead (when `cardOfTheDayViaDevvit` app setting is on).
 
-`reset_countdowns` keeps `#submissions` cooldown rows until 22 **open** hours have passed (Tuesday and Saturday in US Eastern do not count). Masterpiece cooldowns still use wall-clock hours.
+Hour-4 gallery always runs here. With `REDDIT_GALLERY_VIA_DEVVIT=1`, Mork POSTs picture URLs to `/external/post-gallery` and falls back to asyncpraw on failure.
+
+`reset_countdowns` keeps cooldown rows until 22 **open** hours have passed (Tuesday and Saturday in US Eastern do not count) for both `#submissions` and `#pause-projects`.
 
 ---
 
@@ -69,16 +71,24 @@ Stage 1 Devvit migration: **immediate acceptance/veto posts only** can route thr
 flowchart TD
   subgraph immediate["Immediate accept/veto (accept_card)"]
     ACC["Card acceptance / veto<br/>(≤ 5 cards in compile batch)"] --> FLAG{"REDDIT_ACCEPT_VIA_DEVVIT?"}
-    FLAG -->|yes| DEV["mork-devvit /api/post-card"]
+    FLAG -->|yes| DEV["mork-devvit /external/post-card"]
     FLAG -->|no| PRAW1["asyncpraw post_to_reddit"]
     DEV -->|fail| PRAW1
     DEV --> RED["r/HellsCube · Official HC flair"]
     PRAW1 --> RED
   end
 
+  subgraph gallery["Daily gallery (hour 4)"]
+    GAL["Daily submissions gallery"] --> GFLAG{"REDDIT_GALLERY_VIA_DEVVIT?"}
+    GFLAG -->|yes| GDEV["mork-devvit /external/post-gallery"]
+    GFLAG -->|no| PRAWG["asyncpraw post_gallery_to_reddit"]
+    GDEV -->|fail| PRAWG
+    GDEV --> RED
+    PRAWG --> RED
+  end
+
   subgraph asyncpraw_only["asyncpraw only (not yet ported)"]
     RC["Redditcatchup / deferred_reddit"] --> PRAW2["asyncpraw"]
-    GAL["Daily submissions gallery"] --> PRAW2
     COTD_FLAG{"REDDIT_COTD_VIA_DEVVIT off?"} -->|yes| COTD["HC6 card-of-the-day"] --> PRAW2
     PRAW2 --> RED
   end
@@ -93,7 +103,7 @@ flowchart TD
 | ------------- | --------- | ------------ |
 | Immediate accept/veto | Devvit (optional) → asyncpraw fallback | Hellfall GCS URL or `tempImages/` |
 | Deferred batch (`> 5` cards) | asyncpraw | `deferred_reddit/` files |
-| Daily gallery | asyncpraw from GCS manifest (`REDDIT_GALLERY_USE_MANIFEST=1`); Devvit scheduler prep when `REDDIT_GALLERY_VIA_DEVVIT=1` (default off; multi-image blocked) |
+| Daily gallery | GCS HTTPS URLs (`REDDIT_GALLERY_USE_MANIFEST=1`); optional Devvit `/external/post-gallery` when `REDDIT_GALLERY_VIA_DEVVIT=1` (default off; native multi-image 501 → asyncpraw fallback) |
 | Card of the day (Devvit) | Devvit scheduler when `REDDIT_COTD_VIA_DEVVIT=1` + app setting | [Hellfall catalog](https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json) |
 | Card of the day (legacy) | Lifecycle/asyncpraw when flag off | HC6 sheet image URL → temp file |
 | Discord → Reddit reply | asyncpraw; optional Devvit when `REDDIT_REPLY_VIA_DEVVIT=1` (default off) | — |
