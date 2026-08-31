@@ -1,4 +1,5 @@
 idna
+aiofiles
 discord.py==2.3.2
 python-dotenv
 dnspython==1.16.0

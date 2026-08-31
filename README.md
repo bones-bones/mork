@@ -4,7 +4,7 @@ I have no idea what is going on, I think Exalted and Cirion built this. (and Zax
 
 # Setting up for local development
 1. Install VSCode and Python plugin
-1. Get Python >=3.9
+1. Get Python 3.11+ (VM uses 3.11; CI uses 3.12 — see [docs/python-version.md](docs/python-version.md))
 1. Install dependencies via `pip install -r requirements.txt`
 1. Optional: install dev hooks via `pip install -r requirements-dev.txt` and `pre-commit install` (runs Ruff + a Python syntax check on commit)
 1. Copy `.env.template` to `.env` and fill in your credentials (Discord token, Reddit API creds). See https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki for Reddit setup.
