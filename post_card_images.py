@@ -15,7 +15,8 @@ from image_response_filename import filename_from_image_response
 
 FISH_FROM_GO_FISH_SEARCH = "the fish from go fish"
 
-nameRegex = re.compile(r"{{([^}]+)}}")
+# Supports both `{{card name}}` and unclosed `{{card name`.
+nameRegex = re.compile(r"{{([^}\n]+?)(?:}}|$)")
 
 
 async def send_single_image_reply(
