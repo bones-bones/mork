@@ -25,8 +25,8 @@ npx devvit install r/HellsCube hellscube-bridge@latest
 | `officialHcRedditFlair` | Official HC UUID | `npx devvit settings set officialHcRedditFlair` (optional) |
 | `redditMirrorWebhookUrl` | Discord webhook | `npx devvit settings set redditMirrorWebhookUrl` (required for mirror) |
 | `redditMirrorViaDevvit` | `false` until cutover | `npx devvit settings set redditMirrorViaDevvit` → `true` when ready |
-| `dailyGalleryViaDevvit` | `false` | blocked at multi-image until Reddit gallery API exists |
-| `submissionsGalleryManifestUrl` | GCS default | optional override via CLI |
+| `dailyGalleryViaDevvit` | unused (leave `false`) | leftover; gallery is `/external/post-gallery` |
+| `submissionsGalleryManifestUrl` | unused | leftover; Mork still writes GCS for HTTPS URLs |
 
 **Acceptance posts** and **Discord replies** are not gated by Devvit booleans — Mork chooses transport via VM env below.
 
@@ -43,7 +43,7 @@ REDDIT_COTD_VIA_DEVVIT=1
 # Reddit → Discord mirror — OFF until webhook + app setting enabled
 # REDDIT_MIRROR_VIA_DEVVIT=1
 
-# Daily gallery manifest writer (on) + posting still on Mork asyncpraw
+# Daily gallery: Mork still writes GCS URLs; posting asyncpraw unless:
 REDDIT_GALLERY_USE_MANIFEST=1
 # REDDIT_GALLERY_VIA_DEVVIT=1
 
@@ -62,4 +62,4 @@ Redeploy / restart Mork after editing `.env`.
 - No double COTD posts (both `REDDIT_COTD_VIA_DEVVIT=1` and Devvit flag on)
 - Mirror: after cutover, new inbound-flair posts appear in `#reddit` without `check_reddit` running
 - Reply: with `REDDIT_REPLY_VIA_DEVVIT=1`, `#reddit` replies use `/external/reply-to-post` (asyncpraw fallback on failure)
-- Gallery: hour-4 still Mork asyncpraw; Devvit scheduler skips until `dailyGalleryViaDevvit=true` and gallery API exists
+- Gallery: hour-4 still Mork asyncpraw; with `REDDIT_GALLERY_VIA_DEVVIT=1`, POSTs `/external/post-gallery` (asyncpraw fallback while native multi-image is 501)

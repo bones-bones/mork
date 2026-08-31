@@ -46,7 +46,7 @@ def reddit_reply_via_devvit_enabled() -> bool:
 
 
 def reddit_gallery_via_devvit_enabled() -> bool:
-    """When true, daily gallery is handled by hellscube-bridge scheduler (not Lifecycle)."""
+    """When true, daily gallery POSTs to hellscube-bridge /external/post-gallery."""
     return os.environ.get("REDDIT_GALLERY_VIA_DEVVIT", "").strip().lower() in {
         "1",
         "true",
@@ -172,5 +172,24 @@ async def post_reply_via_devvit(*, post_id: str, text: str) -> dict:
         {
             "postId": post_id,
             "text": text,
+        },
+    )
+
+
+async def post_gallery_via_devvit(
+    *,
+    title: str,
+    image_urls: list[str],
+    flair_id: str,
+    subreddit_name: str = DEFAULT_DEVVIT_SUBREDDIT,
+) -> dict:
+    """POST gallery image URLs to Devvit /external/post-gallery."""
+    return await _post_devvit_external(
+        "post-gallery",
+        {
+            "title": title,
+            "imageUrls": image_urls,
+            "flairId": flair_id,
+            "subredditName": subreddit_name,
         },
     )

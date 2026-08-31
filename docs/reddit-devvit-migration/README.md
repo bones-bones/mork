@@ -80,7 +80,7 @@ flowchart LR
 
 - Image + gallery posting via `context.reddit` (replaces asyncpraw)
 - `PostSubmit` trigger for mirroring — replaces the 5-min flair search poll; fires on new submissions with target flairs
-- Scheduler for card-of-the-day and daily gallery
+- Scheduler for card-of-the-day
 - Dedup state in Devvit KV/Redis instead of scanning Discord history
 
 **Keep in Discord bot:**
@@ -116,7 +116,7 @@ mork-devvit/
 | Reddit → Discord mirror | `PostSubmit` trigger + flair filter | **Easy** — better than current polling |
 | Discord → Reddit replies | Discord webhook → Devvit → `comment.reply()` | Medium |
 | Card of the day | Scheduler + GCP proxy for sheet data | Medium |
-| Daily gallery | Scheduler + GCP endpoint listing recent Discord submission URLs | Hard — needs image pipeline outside Discord |
+| Daily gallery | Mork → Devvit `/external/post-gallery` with HTTPS picture URLs | Medium — native multi-image still blocked |
 
 **Rough total:** ~2–4 weeks for the core loop (acceptance posts + mirroring + replies). Gallery + card-of-the-day add another week.
 

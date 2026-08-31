@@ -91,7 +91,7 @@ flowchart TD
 
 ## Masterpiece / Pause Projects submission
 
-Same intake validation as standard submission (attachment, `@` in title, card name, cooldown); different channel, poll threshold, and cooldown state file. Tuesday/Saturday closures apply only to `#submissions`.
+Same intake validation as standard submission (attachment, `@` in title, card name, cooldown); different channel, poll threshold, and cooldown state file. Tuesday/Saturday **intake closures** apply only to `#submissions`; masterpiece cooldowns use the same scubusiness-hour clock (Tue/Sat excluded from the 22h wait).
 
 ```mermaid
 flowchart TD

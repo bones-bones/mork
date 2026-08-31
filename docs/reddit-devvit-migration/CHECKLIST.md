@@ -23,7 +23,7 @@ Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscub
 | `/external/reply-to-post` (Discord → Reddit)                 | ✅                       |
 | `PostSubmit` mirror → Discord webhook                        | ✅                       |
 | Card-of-the-day scheduler (10:00 UTC)                        | ✅                       |
-| Daily gallery scheduler prep (04:00 UTC)                     | ✅ (multi-image blocked) |
+| `/external/post-gallery` (Mork → pictures)                   | ✅                       | Native multi-image still 501; asyncpraw fallback |
 | Mork feature flags + asyncpraw fallback (`reddit_devvit.py`) | ✅                       |
 | Deferred queue on Devvit KV                                  | ⬜                       | Still `deferred_reddit.py` + `!redditcatchup` |
 | `scripts/verify_devvit_connectivity.py`                      | 🔄                       | In progress (scripts branch)                  |
@@ -36,7 +36,7 @@ Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscub
 | **Acceptance posts**        | asyncpraw                | ✅           | off                        | n/a                           |
 | **Reddit → Discord mirror** | `check_reddit.py` poll   | ✅           | off                        | `redditMirrorViaDevvit=false` |
 | **Discord → Reddit reply**  | asyncpraw                | ✅           | off                        | n/a                           |
-| **Daily gallery**           | asyncpraw + GCS manifest | partial      | off                        | `dailyGalleryViaDevvit=false` |
+| **Daily gallery**           | asyncpraw + GCS URLs     | partial      | off                        | n/a (Mork POSTs `/external/post-gallery`) |
 
 Legend: ✅ done · ⏳ waiting on external dependency · ⬜ not started · 🔄 in progress
 
@@ -49,8 +49,8 @@ Legend: ✅ done · ⏳ waiting on external dependency · ⬜ not started · �
 | `officialHcRedditFlair`         | Official HC UUID          | ⬜ optional                    |
 | `redditMirrorWebhookUrl`        | Discord `#reddit` webhook | ⬜ required for mirror cutover |
 | `redditMirrorViaDevvit`         | `false` until verified    | ⬜                             |
-| `dailyGalleryViaDevvit`         | `false`                   | ⬜ blocked on gallery API      |
-| `submissionsGalleryManifestUrl` | GCS manifest              | ⬜ optional                    |
+| `dailyGalleryViaDevvit`         | unused                    | leftover setting; do not enable               |
+| `submissionsGalleryManifestUrl` | unused                    | leftover setting                              |
 
 ## VM `.env` (lil-mork)
 
@@ -70,7 +70,7 @@ REDDIT_GALLERY_USE_MANIFEST=1
 1. **Mirror** — no external endpoints needed; set webhook + flip both mirror flags
 2. **Acceptance** — after external endpoints approved; set token + `REDDIT_ACCEPT_VIA_DEVVIT=1`; smoke via `verify_devvit_connectivity.py --post-smoke`
 3. **Reply** — same token; `REDDIT_REPLY_VIA_DEVVIT=1`
-4. **Gallery** — wait for Devvit multi-image API, or keep asyncpraw
+4. **Gallery** — same token; `REDDIT_GALLERY_VIA_DEVVIT=1`; native multi-image still 501 so expect asyncpraw fallback until Reddit adds a gallery `submitPost`
 5. **Deferred queue** — port to Devvit KV + mod menu
 
 ## Verify after each flip
@@ -80,3 +80,4 @@ REDDIT_GALLERY_USE_MANIFEST=1
 - [ ] Mirror: `#reddit` gets new flair posts without `check_reddit` running
 - [ ] Reply: `#reddit` reply reaches Reddit comment (mork-bridge webhook author recognized)
 - [ ] Acceptance: veto council accept/veto creates r/HellsCube image post
+- [ ] Gallery: with `REDDIT_GALLERY_VIA_DEVVIT=1`, hour-4 POSTs `/external/post-gallery` (asyncpraw fallback until native multi-image works)
