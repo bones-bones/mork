@@ -1,4 +1,4 @@
-username_mappings: dict[str, str]
+username_mappings: dict[str, str] = {}
 
 
 def set_username_mappings(mappings: list[list[str]]) -> None:

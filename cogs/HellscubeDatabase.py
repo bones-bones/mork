@@ -21,6 +21,7 @@ from hellfall_fetcher import (
 )
 from post_card_images import send_single_image_reply
 from shared_vars import googleClient, intents
+from username_mappings import set_username_mappings
 
 databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
 
@@ -42,6 +43,8 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
+        set_username_mappings(usernameMappingSheet.get_all_values()[1:])
         if STILL_USING_CACHE:
             build_database(await getDatabaseCache())
 
