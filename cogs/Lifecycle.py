@@ -137,7 +137,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
     channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
     if not channel:
         return
-    time_now = datetime.now(timezone.utc)
+    time_now = datetime.now(UTC)
     two_weeks_ago = time_now - timedelta(days=14)
     messages = [m async for m in channel.history(after=two_weeks_ago, limit=200)]
     veto_channel = cast(TextChannel, bot.get_channel(hc_constants.VETO_POLLS_CHANNEL))
@@ -756,7 +756,7 @@ class LifecycleCog(commands.Cog):
                                 return
                 async with aiofiles.open(hc_constants.SUBMISSIONS_STATE_FILE, "a") as file:
                     await file.write(
-                        f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
+                        f"{message.author.id}—{datetime.now(tz=UTC).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                     )
 
                 file = await message.attachments[0].to_file()
@@ -842,7 +842,7 @@ class LifecycleCog(commands.Cog):
                                     )
 
                                     timeSinceLast = (
-                                        (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
+                                        (datetime.now(tz=UTC) - tempDate).total_seconds()
                                     ) / (60 * 60)
 
                                     if (
@@ -862,7 +862,7 @@ class LifecycleCog(commands.Cog):
                                         return
                     async with aiofiles.open(hc_constants.MASTERPIECE_STATE_FILE, "a") as file:
                         await file.write(
-                            f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
+                            f"{message.author.id}—{datetime.now(tz=UTC).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                         )
                     file = await message.attachments[0].to_file()
                     if reasonable_card():
@@ -1059,7 +1059,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send("Count must be a positive number")
             return
         guild = cast(Guild, ctx.guild)
-        timeNow = datetime.now(timezone.utc)
+        timeNow = datetime.now(UTC)
         epicCatchphrases = [
             "it begins",
             "and on this day, it started",
@@ -1393,7 +1393,7 @@ async def setup(bot: commands.Bot):
 def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = False):
     if not os.path.exists(state_file):
         return
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     lines_to_write = ""
     with open(state_file, "r") as file:
         lines = file.readlines()

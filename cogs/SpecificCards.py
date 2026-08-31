@@ -458,7 +458,7 @@ class SpecificCardsCog(commands.Cog):
         """get a random card from #this-isnt-magic"""
         chan = cast(discord.TextChannel, self.bot.get_channel(hc_constants.THIS_IS_NOT_MAGIC))
         subStart = datetime.strptime("7/4/2024 2:30 PM", "%m/%d/%Y %I:%M %p").astimezone(UTC)
-        timeNow = datetime.now(timezone.utc)
+        timeNow = datetime.now(UTC)
         timeNow = timeNow.replace(tzinfo=None)
         messages = chan.history(after=subStart)  # 07/04/2024 2:00 PM
         messages = [message async for message in messages]

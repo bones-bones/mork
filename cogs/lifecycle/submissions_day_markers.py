@@ -20,7 +20,7 @@ def day_marker_content(day: datetime) -> str:
 
 
 def utc_day_start(day: datetime) -> datetime:
-    return day.astimezone(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    return day.astimezone(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
@@ -85,7 +85,7 @@ def format_previous_week_body(markers: list[Message]) -> str:
 
 
 async def collect_recent_day_markers(channel: TextChannel, *, limit: int = 7) -> list[Message]:
-    cutoff = datetime.now(timezone.utc) - timedelta(days=21)
+    cutoff = datetime.now(UTC) - timedelta(days=21)
     found: list[Message] = []
     async for message in channel.history(after=cutoff, limit=None):
         if is_submissions_day_marker(message):
@@ -109,7 +109,7 @@ async def find_previous_week_message(channel: TextChannel) -> Message | None:
 
 
 async def find_most_recent_day_marker(channel: TextChannel) -> Message | None:
-    cutoff = datetime.now(timezone.utc) - timedelta(days=21)
+    cutoff = datetime.now(UTC) - timedelta(days=21)
     latest: Message | None = None
     async for message in channel.history(after=cutoff, limit=None):
         if not is_submissions_day_marker(message):
@@ -137,7 +137,7 @@ def submission_period_start(now: datetime, last_marker: Message | None) -> datet
 
 
 async def has_day_marker_for_date(channel: TextChannel, iso_date: str) -> bool:
-    day_start = datetime.strptime(iso_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    day_start = datetime.strptime(iso_date, "%Y-%m-%d").replace(tzinfo=UTC)
     async for message in channel.history(after=day_start, limit=100):
         if day_marker_iso_date(message) == iso_date:
             return True
@@ -159,7 +159,7 @@ async def update_previous_week_pin(channel: TextChannel) -> None:
 async def ensure_submissions_day_marker(bot: commands.Bot) -> None:
     """On first lifecycle run each UTC day, post today's marker and refresh the pin."""
     channel = getSubmissionsChannel(bot)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     iso_today = now.strftime("%Y-%m-%d")
 
     if await has_day_marker_for_date(channel, iso_today):

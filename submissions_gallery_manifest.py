@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from typing import Any
 
 from google.cloud import storage
@@ -40,7 +40,7 @@ def _storage_client() -> storage.Client:
 
 def _empty_manifest() -> dict[str, Any]:
     return {
-        "updatedAt": datetime.now(timezone.utc).isoformat(),
+        "updatedAt": datetime.now(UTC).isoformat(),
         "entries": [],
     }
 
@@ -58,7 +58,7 @@ def load_manifest() -> dict[str, Any]:
 
 
 def _prune_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    cutoff = datetime.now(timezone.utc) - timedelta(days=MANIFEST_RETENTION_DAYS)
+    cutoff = datetime.now(UTC) - timedelta(days=MANIFEST_RETENTION_DAYS)
     kept: list[dict[str, Any]] = []
     for entry in entries:
         submitted_at = entry.get("submittedAt")
@@ -69,7 +69,7 @@ def _prune_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         except ValueError:
             continue
         if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.replace(tzinfo=UTC)
         if ts >= cutoff:
             kept.append(entry)
     return kept
@@ -111,12 +111,12 @@ def append_submission(
         {
             "messageId": str(message_id),
             "imageUrl": image_url,
-            "submittedAt": datetime.now(timezone.utc).isoformat(),
+            "submittedAt": datetime.now(UTC).isoformat(),
             "cardName": card_name.strip(),
         }
     )
     manifest["entries"] = entries
-    manifest["updatedAt"] = datetime.now(timezone.utc).isoformat()
+    manifest["updatedAt"] = datetime.now(UTC).isoformat()
 
     manifest_blob = bucket.blob(_manifest_object_key())
     manifest_blob.upload_from_string(
@@ -130,7 +130,7 @@ def append_submission(
 
 def entries_last_24h(manifest: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     data = manifest if manifest is not None else load_manifest()
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    cutoff = datetime.now(UTC) - timedelta(hours=24)
     recent: list[dict[str, Any]] = []
     for entry in data.get("entries", []):
         submitted_at = entry.get("submittedAt")
@@ -142,7 +142,7 @@ def entries_last_24h(manifest: dict[str, Any] | None = None) -> list[dict[str, A
         except ValueError:
             continue
         if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.replace(tzinfo=UTC)
         if ts >= cutoff:
             recent.append(entry)
     return recent

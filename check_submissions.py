@@ -1,6 +1,6 @@
 import asyncio
 import io
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from typing import cast
 
 from discord import File, Guild, Member, Message, TextChannel
@@ -26,7 +26,7 @@ async def check_submissions(bot: commands.Bot):
     vetoChannel = getVetoChannel(bot)
     acceptedChannel = getSubmissionDiscussionChannel(bot)
     logChannel = cast(TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
-    timeNow = datetime.now(timezone.utc)
+    timeNow = datetime.now(UTC)
     oneWeek = timeNow + timedelta(weeks=-1)
     messages = subChannel.history(after=oneWeek, limit=None)
     if messages is None:

@@ -34,7 +34,7 @@ import tempfile
 import threading
 import time
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from functools import partial
 from pathlib import Path
 from typing import TypeVar, cast
@@ -234,7 +234,7 @@ def _append_bad_url_log(
 ) -> None:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     entry = {
-        "ts": datetime.now(timezone.utc).isoformat(),
+        "ts": datetime.now(UTC).isoformat(),
         "card_id": str(card_id),
         "name": name,
         "side": side_num,

@@ -50,7 +50,7 @@ import shutil
 import sys
 import tempfile
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote
@@ -551,7 +551,7 @@ class FixReassessLedger:
             "side_name": side_name,
             "printable_row": printable_row,
             "outcome": outcome,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
         }
         entry.update({k: v for k, v in fields.items() if v is not None and v != ""})
         self.entries[key] = entry

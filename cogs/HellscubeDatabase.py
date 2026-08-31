@@ -63,7 +63,7 @@ class HellscubeDatabaseCog(commands.Cog):
         Filters out messages without attachments, then chooses a random message from that history.
         """
         subStart = datetime.strptime("5/13/2021 1:30 PM", "%m/%d/%Y %I:%M %p").astimezone(UTC)
-        timeNow = datetime.now(timezone.utc)
+        timeNow = datetime.now(UTC)
         timeNow = timeNow.replace(tzinfo=None)
         delta = timeNow - subStart
         intDelta = (delta.days * 24 * 60 * 60) + delta.seconds

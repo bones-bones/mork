@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from typing import Any
 
 from discord import TextChannel
@@ -55,7 +55,7 @@ def _save_state(state: dict[str, Any]) -> None:
 
 async def ensure_submissions_gates(bot: commands.Bot) -> None:
     """Post today's gate message once per lifecycle day in submissions channels."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     local = now.astimezone(SUBMISSIONS_TZ)
     message = gate_announcement_for(now)
     if message is None:
