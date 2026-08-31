@@ -3,7 +3,7 @@ import os
 import pprint as pp
 import random
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import cast
 
 import aiofiles
@@ -301,7 +301,7 @@ class GeneralCog(commands.Cog):
         else:
             event_ids = default_event_ids
 
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         results: list[str] = []
 
         for ev_id in event_ids:
@@ -627,7 +627,7 @@ class GeneralCog(commands.Cog):
                             timeSinceLast = elapsed_open_hours(tempDate)
                         else:
                             timeSinceLast = (
-                                (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
+                                (datetime.now(tz=UTC) - tempDate).total_seconds()
                             ) / (60 * 60)
 
                         # Check if user is admin

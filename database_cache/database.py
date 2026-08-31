@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Any
 
-from database_utils import fixName
-from get_closest_name import get_closest_name
-from setHandling import splitCardName
+from database_cache.database_utils import fixName
+from database_cache.get_closest_name import get_closest_name
+from database_cache.setHandling import splitCardName
 
 
 @dataclass

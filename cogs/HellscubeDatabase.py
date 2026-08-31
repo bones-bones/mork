@@ -1,5 +1,5 @@
 import random
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from random import randrange
 from typing import Annotated, cast
 
@@ -70,7 +70,7 @@ class HellscubeDatabaseCog(commands.Cog):
         Filters out messages without attachments, then chooses a random message from that history.
         """
         subStart = datetime.strptime("5/13/2021 1:30 PM", "%m/%d/%Y %I:%M %p").astimezone(UTC)
-        timeNow = datetime.now(timezone.utc)
+        timeNow = datetime.now(UTC)
         timeNow = timeNow.replace(tzinfo=None)
         delta = timeNow - subStart
         intDelta = (delta.days * 24 * 60 * 60) + delta.seconds
@@ -133,7 +133,8 @@ class HellscubeDatabaseCog(commands.Cog):
             message = f"There are no rulings for {name}"
         else:
             rulingsList = rulings.split("\\\\\\")
-            message = f"rulings for {name}:{''.join([f'\n```{r}```' for r in rulingsList])}"
+            ruling_blocks = "".join(f"\n```{r}```" for r in rulingsList)
+            message = f"rulings for {name}:{ruling_blocks}"
         await channel.send(message)
 
     @commands.command(rest_is_raw=True)
@@ -160,7 +161,10 @@ class HellscubeDatabaseCog(commands.Cog):
             return
         currentRuling = cardSheetUnapproved.cell(cell.row, 8)
 
-        newRuling = f"{f'{currentRuling}\n' if currentRuling != '' else ''}{ruling}- {ctx.author.name} {datetime.now(UTC).strftime('%Y-%m-%d')}"
+        prefix = f"{currentRuling}\n" if currentRuling != "" else ""
+        newRuling = (
+            f"{prefix}{ruling}- {ctx.author.name} {datetime.now(UTC).strftime('%Y-%m-%d')}"
+        )
         cardSheetUnapproved.update_cell(
             cell.row,
             8,

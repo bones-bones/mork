@@ -1,13 +1,13 @@
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from submissions_gallery_manifest import _prune_entries, entries_last_24h
 
 
 class SubmissionsGalleryManifestTests(unittest.TestCase):
     def test_prune_entries_drops_old(self):
-        old = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
-        recent = datetime.now(timezone.utc).isoformat()
+        old = (datetime.now(UTC) - timedelta(days=10)).isoformat()
+        recent = datetime.now(UTC).isoformat()
         entries = [
             {"messageId": "1", "submittedAt": old, "imageUrl": "https://x/1.png"},
             {"messageId": "2", "submittedAt": recent, "imageUrl": "https://x/2.png"},
@@ -17,7 +17,7 @@ class SubmissionsGalleryManifestTests(unittest.TestCase):
         self.assertEqual(pruned[0]["messageId"], "2")
 
     def test_entries_last_24h(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         manifest = {
             "entries": [
                 {

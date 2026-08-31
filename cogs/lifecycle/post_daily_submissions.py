@@ -1,6 +1,6 @@
 import os
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlparse
 
 import aiofiles
@@ -65,7 +65,7 @@ async def _gallery_images_from_discord(bot) -> list[dict[str, str]]:
     sub_channel = cast(
         discord.TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL)
     )
-    time_now = datetime.now(timezone.utc)
+    time_now = datetime.now(UTC)
     one_day = time_now + timedelta(days=-1)
     messages = [message async for message in sub_channel.history(after=one_day, limit=None)]
     filtered = [m for m in messages if is_submissions_card(m)]

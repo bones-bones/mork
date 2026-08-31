@@ -22,3 +22,17 @@ jobs:
           key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}-${{ hashFiles('pyproject.toml') }}
       - name: pre-commit
         run: pre-commit run --all-files --show-diff-on-failure
+
+  # Production VM (Debian Bookworm) runs 3.11. Full pre-commit on 3.11 fails on
+  # 3.12-only f-string syntax elsewhere; vm-smoke checks parse + deps on 3.11 only.
+  vm-smoke-3_11:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install runtime deps
+        run: pip install -r requirements.txt
+      - name: VM deploy smoke test
+        run: python scripts/verify_vm_deploy.py

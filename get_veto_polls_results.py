@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from attr import dataclass
 from discord import Message
@@ -16,7 +16,7 @@ This function groups previous poll results. It's used in two ways: for the compi
 
 async def get_veto_polls_results(bot: commands.Bot, ctx: commands.Context):
     vetoChannel = getVetoChannel(bot)
-    timeNow = datetime.now(timezone.utc)
+    timeNow = datetime.now(UTC)
     sixWeeksAgo = timeNow + timedelta(weeks=-6)
     epicCatchphrases = [
         "If processing lasts more than 5 minutes, consult your doctor.",
