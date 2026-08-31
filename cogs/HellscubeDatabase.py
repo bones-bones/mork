@@ -126,7 +126,8 @@ class HellscubeDatabaseCog(commands.Cog):
             message = f"There are no rulings for {name}"
         else:
             rulingsList = rulings.split("\\\\\\")
-            message = f"rulings for {name}:{''.join([f'\n```{r}```' for r in rulingsList])}"
+            ruling_blocks = "".join(f"\n```{r}```" for r in rulingsList)
+            message = f"rulings for {name}:{ruling_blocks}"
         await channel.send(message)
 
     @commands.command(rest_is_raw=True)
@@ -153,7 +154,10 @@ class HellscubeDatabaseCog(commands.Cog):
             return
         currentRuling = cardSheetUnapproved.cell(cell.row, 8)
 
-        newRuling = f"{f'{currentRuling}\n' if currentRuling != '' else ''}{ruling}- {ctx.author.name} {datetime.now(UTC).strftime('%Y-%m-%d')}"
+        prefix = f"{currentRuling}\n" if currentRuling != "" else ""
+        newRuling = (
+            f"{prefix}{ruling}- {ctx.author.name} {datetime.now(UTC).strftime('%Y-%m-%d')}"
+        )
         cardSheetUnapproved.update_cell(
             cell.row,
             8,

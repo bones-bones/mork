@@ -51,7 +51,7 @@ def check_syntax() -> None:
     ok = compileall.compile_dir(
         REPO_ROOT,
         quiet=1,
-        rx=r"/(\.git|mork-devvit|node_modules|\.venv)/",
+        rx=r"/(\.git|\.worktrees|mork-devvit|node_modules|\.venv)/",
     )
     if not ok:
         raise SystemExit("Syntax errors found (compileall failed)")

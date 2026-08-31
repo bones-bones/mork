@@ -596,7 +596,8 @@ class SpecificCardsCog(commands.Cog):
             mapped = [x["oracle_text"] for x in response["data"]]
             modes = [line for lines in mapped for line in lines.split("\n")[1:]]
             results = random.sample(population=modes, k=4)
-            await ctx.send(f"Choose two —\n{'\n'.join(results)}")
+            choices = "\n".join(results)
+            await ctx.send(f"Choose two —\n{choices}")
             await session.close()
 
     @commands.command()

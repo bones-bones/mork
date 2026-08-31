@@ -1221,31 +1221,38 @@ class LifecycleCog(commands.Cog):
 
         # had to use format because python doesn't like \n inside template brackets
         if len(acceptedCards) > 0:
-            acceptedMessage = f"||\u200b||\nACCEPTED CARDS: \n{'\n'.join(acceptedCards)}"
+            accepted_body = "\n".join(acceptedCards)
+            acceptedMessage = f"||\u200b||\nACCEPTED CARDS: \n{accepted_body}"
             for i in range(0, len(acceptedMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
-            errataMessage = f"||\u200b||\nNEEDS ERRATA: \n{'\n'.join(needsErrataCards)}"
+            errata_body = "\n".join(needsErrataCards)
+            errataMessage = f"||\u200b||\nNEEDS ERRATA: \n{errata_body}"
             for i in range(0, len(errataMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
-            vetoMessage = f"||\u200b||\nVETOED: \n{'\n'.join(vetoedCards)}"
+            veto_body = "\n".join(vetoedCards)
+            vetoMessage = f"||\u200b||\nVETOED: \n{veto_body}"
             for i in range(0, len(vetoMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
-            hellMessage = f"||\u200b||\nVETO HELL: \n{'\n'.join(vetoHellCards)}"
+            hell_body = "\n".join(vetoHellCards)
+            hellMessage = f"||\u200b||\nVETO HELL: \n{hell_body}"
             for i in range(0, len(hellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
-            mysteryHellMessage = f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{'\n'.join(mysteryVetoHellCards)}"
+            mystery_body = "\n".join(mysteryVetoHellCards)
+            mysteryHellMessage = (
+                f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{mystery_body}"
+            )
             for i in range(0, len(mysteryHellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]

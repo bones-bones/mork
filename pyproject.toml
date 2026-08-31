@@ -5,6 +5,7 @@ requires-python = ">=3.11"
 [tool.ruff]
 force-exclude = true
 line-length = 100
+target-version = "py312"
 
 [tool.ruff.lint]
 # Strict enough to catch broken imports / syntax issues; avoids style noise on legacy code.
@@ -20,4 +21,5 @@ max-line-length = 100
 
 [tool.ruff.lint.per-file-ignores]
 "Mork.py" = ["N999"]
+"utils.py" = ["UP047"]
 "scripts/*" = ["E402"]
