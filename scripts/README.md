@@ -12,6 +12,7 @@ Each script starts with `import mork_repo_root`, which adds the repo root to `sy
 | Script | Purpose |
 |--------|---------|
 | `mork_repo_root.py` | Not run directly; adjusts `sys.path` for other scripts |
+| `verify_vm_deploy.py` | Post-deploy smoke test: Python version, pip deps, syntax, cog imports — `python scripts/verify_vm_deploy.py` |
 | `download_and_upload_images.py` | Sheet → download art → process borders → Google Drive / printable sheet flow |
 | `download_and_upload_images_gcs.py` | **Default:** Tokens tab + Database → printable GCS in parallel. Tokens: [Tokens Database](https://docs.google.com/spreadsheets/d/1qqGCedHmQ8bwi-YFjmv-pNKKMjubZQUAaF7ItJN5d1g/edit?gid=2123813197) → token bucket. Printable: Database → arc-aware border prep → optional Ollama assess (`--assess auto\|on\|off`, verdict in cols E–G) → `hellscube-printable-images` → [Printable DB](https://docs.google.com/spreadsheets/d/1FdnGhkjxnOAbjBEeLGC_QDMVcmEjoOLiuEkM9MeiPFs). `--tokens-only` / `--printable-only` |
 | `process_printable_card.py` | Local one-stop pipeline: card image(s) → arc-aware border transform → Ollama vision assessment. `python scripts/process_printable_card.py card.png -o out/`; exit 1 if any card fails |

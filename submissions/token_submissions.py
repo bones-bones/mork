@@ -1,6 +1,6 @@
 import base64
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 from discord import Message
@@ -50,7 +50,7 @@ async def checkTokenSubmissions(bot: commands.Bot):
     print("checking token submissions")
     subChannel = getTokenSubmissionChannel(bot)
 
-    timeNow = datetime.now(timezone.utc)
+    timeNow = datetime.now(UTC)
     fourWeek = timeNow + timedelta(weeks=-2)
     messages = subChannel.history(after=fourWeek, limit=None)
     if messages is None:

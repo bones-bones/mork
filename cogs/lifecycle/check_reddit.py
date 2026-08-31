@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 import asyncpraw
@@ -20,7 +20,7 @@ NAME = os.environ["REDDIT_NAME"]
 
 async def check_reddit(bot: commands.Bot):
     print("checking reddit")
-    timeNow = datetime.now(timezone.utc)
+    timeNow = datetime.now(UTC)
     oneHour = timeNow + timedelta(hours=-2)
     async with asyncpraw.Reddit(
         client_id=ID,

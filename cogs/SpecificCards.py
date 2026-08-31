@@ -2,7 +2,7 @@ import asyncio
 import json
 import pprint as pp
 import random
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from operator import itemgetter
 from random import choice, choices, sample
 from typing import Any, cast
@@ -458,7 +458,7 @@ class SpecificCardsCog(commands.Cog):
         """get a random card from #this-isnt-magic"""
         chan = cast(discord.TextChannel, self.bot.get_channel(hc_constants.THIS_IS_NOT_MAGIC))
         subStart = datetime.strptime("7/4/2024 2:30 PM", "%m/%d/%Y %I:%M %p").astimezone(UTC)
-        timeNow = datetime.now(timezone.utc)
+        timeNow = datetime.now(UTC)
         timeNow = timeNow.replace(tzinfo=None)
         messages = chan.history(after=subStart)  # 07/04/2024 2:00 PM
         messages = [message async for message in messages]
@@ -596,7 +596,8 @@ class SpecificCardsCog(commands.Cog):
             mapped = [x["oracle_text"] for x in response["data"]]
             modes = [line for lines in mapped for line in lines.split("\n")[1:]]
             results = random.sample(population=modes, k=4)
-            await ctx.send(f"Choose two —\n{'\n'.join(results)}")
+            choices = "\n".join(results)
+            await ctx.send(f"Choose two —\n{choices}")
             await session.close()
 
     @commands.command()

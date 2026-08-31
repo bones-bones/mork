@@ -3,7 +3,7 @@ import os
 import random
 import re
 import traceback
-from datetime import UTC, date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from typing import cast
 
 import aiofiles
@@ -137,7 +137,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
     channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
     if not channel:
         return
-    time_now = datetime.now(timezone.utc)
+    time_now = datetime.now(UTC)
     two_weeks_ago = time_now - timedelta(days=14)
     messages = [m async for m in channel.history(after=two_weeks_ago, limit=200)]
     veto_channel = cast(TextChannel, bot.get_channel(hc_constants.VETO_POLLS_CHANNEL))
@@ -756,7 +756,7 @@ class LifecycleCog(commands.Cog):
                                 return
                 async with aiofiles.open(hc_constants.SUBMISSIONS_STATE_FILE, "a") as file:
                     await file.write(
-                        f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
+                        f"{message.author.id}—{datetime.now(tz=UTC).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                     )
 
                 file = await message.attachments[0].to_file()
@@ -842,7 +842,7 @@ class LifecycleCog(commands.Cog):
                                     )
 
                                     timeSinceLast = (
-                                        (datetime.now(tz=timezone.utc) - tempDate).total_seconds()
+                                        (datetime.now(tz=UTC) - tempDate).total_seconds()
                                     ) / (60 * 60)
 
                                     if (
@@ -862,7 +862,7 @@ class LifecycleCog(commands.Cog):
                                         return
                     async with aiofiles.open(hc_constants.MASTERPIECE_STATE_FILE, "a") as file:
                         await file.write(
-                            f"{message.author.id}—{datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
+                            f"{message.author.id}—{datetime.now(tz=UTC).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
                         )
                     file = await message.attachments[0].to_file()
                     if reasonable_card():
@@ -1059,7 +1059,7 @@ class LifecycleCog(commands.Cog):
             await ctx.send("Count must be a positive number")
             return
         guild = cast(Guild, ctx.guild)
-        timeNow = datetime.now(timezone.utc)
+        timeNow = datetime.now(UTC)
         epicCatchphrases = [
             "it begins",
             "and on this day, it started",
@@ -1221,31 +1221,38 @@ class LifecycleCog(commands.Cog):
 
         # had to use format because python doesn't like \n inside template brackets
         if len(acceptedCards) > 0:
-            acceptedMessage = f"||\u200b||\nACCEPTED CARDS: \n{'\n'.join(acceptedCards)}"
+            accepted_body = "\n".join(acceptedCards)
+            acceptedMessage = f"||\u200b||\nACCEPTED CARDS: \n{accepted_body}"
             for i in range(0, len(acceptedMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=acceptedMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(needsErrataCards) > 0:
-            errataMessage = f"||\u200b||\nNEEDS ERRATA: \n{'\n'.join(needsErrataCards)}"
+            errata_body = "\n".join(needsErrataCards)
+            errataMessage = f"||\u200b||\nNEEDS ERRATA: \n{errata_body}"
             for i in range(0, len(errataMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=errataMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoedCards) > 0:
-            vetoMessage = f"||\u200b||\nVETOED: \n{'\n'.join(vetoedCards)}"
+            veto_body = "\n".join(vetoedCards)
+            vetoMessage = f"||\u200b||\nVETOED: \n{veto_body}"
             for i in range(0, len(vetoMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=vetoMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(vetoHellCards) > 0:
-            hellMessage = f"||\u200b||\nVETO HELL: \n{'\n'.join(vetoHellCards)}"
+            hell_body = "\n".join(vetoHellCards)
+            hellMessage = f"||\u200b||\nVETO HELL: \n{hell_body}"
             for i in range(0, len(hellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=hellMessage[i : i + hc_constants.LITERALLY_1984]
                 )
         if len(mysteryVetoHellCards) > 0:
-            mysteryHellMessage = f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{'\n'.join(mysteryVetoHellCards)}"
+            mystery_body = "\n".join(mysteryVetoHellCards)
+            mysteryHellMessage = (
+                f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{mystery_body}"
+            )
             for i in range(0, len(mysteryHellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
@@ -1386,7 +1393,7 @@ async def setup(bot: commands.Bot):
 def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = False):
     if not os.path.exists(state_file):
         return
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     lines_to_write = ""
     with open(state_file, "r") as file:
         lines = file.readlines()

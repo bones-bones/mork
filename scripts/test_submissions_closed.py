@@ -1,7 +1,7 @@
 """Smoke tests for #submissions closed days (no Discord)."""
 
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -33,8 +33,8 @@ def test_closed_weekdays():
 
 def test_closed_uses_eastern_not_utc():
     # 03:00 UTC Tue = 23:00 EDT Mon. 04:30 UTC Tue = 00:30 EDT Tue.
-    assert not is_submissions_closed(datetime(2026, 8, 18, 3, 0, tzinfo=timezone.utc))
-    assert is_submissions_closed(datetime(2026, 8, 18, 4, 30, tzinfo=timezone.utc))
+    assert not is_submissions_closed(datetime(2026, 8, 18, 3, 0, tzinfo=UTC))
+    assert is_submissions_closed(datetime(2026, 8, 18, 4, 30, tzinfo=UTC))
 
 
 def test_elapsed_skips_saturday():

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 from discord import Member, TextChannel
@@ -21,7 +21,7 @@ async def check_masterpiece_submissions(bot: commands.Bot):
     vetoChannel = getVetoChannel(bot)
     acceptedChannel = getSubmissionDiscussionChannel(bot)
     logChannel = cast(TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
-    timeNow = datetime.now(timezone.utc)
+    timeNow = datetime.now(UTC)
     oneWeek = timeNow + timedelta(weeks=-2)
     messages = subChannel.history(after=oneWeek, limit=None)
     if messages is None:
