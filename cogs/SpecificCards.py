@@ -11,8 +11,10 @@ import aiohttp
 import discord
 from discord.ext import commands
 from discord.utils import get
-from get_podcast_output import get_podcast_output
-from specific_output import (
+
+import hc_constants
+from cogs.get_podcast_output import get_podcast_output
+from cogs.specific_output import (
     balls_sheets,
     blueCards,
     channelFireball,
@@ -31,8 +33,6 @@ from specific_output import (
     wildMagic,
     wizardSpells,
 )
-
-import hc_constants
 from hellfall_fetcher import getCardById, getMultipleCardsByIds, getMultipleRandomFromServer
 from post_card_images import (
     send_multiple_card_reply,
