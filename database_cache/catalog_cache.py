@@ -5,39 +5,17 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from database_cache.card_names import get_all_names
 from database_cache.database_utils import fixName
+from database_cache.setHandling import getCollectorNumSets, getGroupSets, loadSets
 
 DEFAULT_CATALOG_URL = (
     "https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json"
 )
-
-_KIND_PRIORITY = {
-    "card": 0,
-    "front": 1,
-    "token": 2,
-    "scryfall": 3,
-}
-
-
-def _accepted_order_key(card: dict[str, Any]) -> tuple[int, str]:
-    raw = card.get("accepted_order", "")
-    try:
-        return (int(str(raw)), str(raw))
-    except (TypeError, ValueError):
-        return (10**9, str(raw))
-
-
-def _card_sort_key(card: dict[str, Any]) -> tuple[int, int, str]:
-    kind = str(card.get("kind", "card"))
-    return (
-        _KIND_PRIORITY.get(kind, 99),
-        _accepted_order_key(card)[0],
-        str(card.get("id", "")),
-    )
-
-
-def _preferred_card(cards: list[dict[str, Any]]) -> dict[str, Any]:
-    return min(cards, key=_card_sort_key)
+DEFAULT_SETS_URL = (
+    "https://raw.githubusercontent.com/bones-bones/hellfall/main/"
+    "packages/shared/src/data/sets.json"
+)
 
 
 def _catalog_card_to_search_card(card: dict[str, Any]) -> dict[str, Any]:
@@ -58,13 +36,75 @@ def _catalog_card_to_search_card(card: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def catalog_to_cache(cards: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+class _CardLookupObject:
+    def __init__(self, card: dict[str, Any]) -> None:
+        self.set_num_map: dict[str, dict[str, str]] = defaultdict(dict)
+        self.set_map: dict[str, list[str]] = defaultdict(list)
+        self.default_id = card["id"]
+        self.add_card(card)
+
+    def add_card(self, card: dict[str, Any]) -> None:
+        card_id = card["id"]
+        collector_number = str(card.get("collector_number", "")).lower()
+        for set_code in getCollectorNumSets(card["set"]):
+            if collector_number:
+                self.set_num_map[set_code][collector_number] = card_id
+        for set_code in getGroupSets(card["set"]):
+            if card_id not in self.set_map[set_code]:
+                self.set_map[set_code].append(card_id)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "setNumMap": {code: dict(nums) for code, nums in self.set_num_map.items()},
+            "setMap": dict(self.set_map),
+            "defaultId": self.default_id,
+        }
+
+
+class _CardLookupMap:
+    def __init__(self) -> None:
+        self.name_map: dict[str, _CardLookupObject] = {}
+        self.alias_map: dict[str, str] = {}
+        self.hcid_map: dict[str, str] = {}
+
+    def add_card(self, card: dict[str, Any]) -> None:
+        name = fixName(card["name"])
+        hcid = fixName(str(card.get("hcid", "")))
+        if hcid:
+            self.hcid_map[hcid] = card["id"]
+
+        existing = self.name_map.get(name)
+        if existing:
+            existing.add_card(card)
+        else:
+            self.name_map[name] = _CardLookupObject(card)
+            self.alias_map.pop(name, None)
+
+        for alias in get_all_names(card):
+            if alias in self.name_map or alias in self.alias_map or alias in self.hcid_map:
+                continue
+            self.alias_map[alias] = name
+
+    def to_dict(self) -> dict[str, dict[str, Any]]:
+        return {
+            "nameMap": {name: lookup.to_dict() for name, lookup in self.name_map.items()},
+            "aliasMap": dict(self.alias_map),
+            "hcidMap": dict(self.hcid_map),
+        }
+
+
+def catalog_to_cache(
+    cards: list[dict[str, Any]],
+    *,
+    sets: list[dict[str, Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Convert Hellfall catalog cards into the get_cache payload shape."""
+    if sets is not None:
+        loadSets(sets)
+
     id_map: dict[str, dict[str, Any]] = {}
     oracle_map: dict[str, list[str]] = defaultdict(list)
-    hcid_candidates: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    name_groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    alias_map: dict[str, str] = {}
+    lookup = _CardLookupMap()
 
     for card in cards:
         card_id = card.get("id")
@@ -74,50 +114,12 @@ def catalog_to_cache(cards: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
         id_map[card_id] = _catalog_card_to_search_card(card)
 
         oracle_id = card.get("oracle_id")
-        if oracle_id:
+        if oracle_id and card_id not in oracle_map[str(oracle_id)]:
             oracle_map[str(oracle_id)].append(card_id)
 
-        hcid = card.get("hcid")
-        if hcid not in (None, ""):
-            hcid_candidates[str(hcid)].append(card)
+        lookup.add_card(card)
 
-        name = card.get("name")
-        if name:
-            name_groups[fixName(name)].append(card)
-
-        flavor_name = card.get("flavor_name")
-        if flavor_name and name:
-            alias_map[fixName(str(flavor_name))] = fixName(name)
-
-    hcid_map: dict[str, str] = {}
-    for hcid, group in hcid_candidates.items():
-        hcid_map[fixName(hcid)] = _preferred_card(group)["id"]
-
-    name_map: dict[str, dict[str, Any]] = {}
-    for fixed_name, group in name_groups.items():
-        preferred = _preferred_card(group)
-        set_num_map: dict[str, dict[str, str]] = defaultdict(dict)
-        set_map: dict[str, list[str]] = defaultdict(list)
-
-        for card in sorted(group, key=_card_sort_key):
-            card_id = card["id"]
-            set_code = str(card.get("set", ""))
-            collector_number = str(card.get("collector_number", ""))
-            if set_code:
-                set_map[set_code].append(card_id)
-                if collector_number:
-                    set_num_map[set_code][collector_number] = card_id
-
-        name_map[fixed_name] = {
-            "setNumMap": {code: dict(nums) for code, nums in set_num_map.items()},
-            "setMap": dict(set_map),
-            "defaultId": preferred["id"],
-        }
-
-    return {
-        "nameMap": name_map,
-        "aliasMap": alias_map,
-        "hcidMap": hcid_map,
-        "idMap": id_map,
-        "oracleMap": dict(oracle_map),
-    }
+    cache = lookup.to_dict()
+    cache["idMap"] = id_map
+    cache["oracleMap"] = dict(oracle_map)
+    return cache

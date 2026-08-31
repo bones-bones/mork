@@ -8,7 +8,11 @@ from typing import Any
 
 import aiohttp
 
-from database_cache.catalog_cache import DEFAULT_CATALOG_URL, catalog_to_cache
+from database_cache.catalog_cache import (
+    DEFAULT_CATALOG_URL,
+    DEFAULT_SETS_URL,
+    catalog_to_cache,
+)
 from database_cache.database import (
     SearchCard,
     card_name_exists,
@@ -59,22 +63,28 @@ async def getDatabaseCache() -> dict[str, dict[str, Any]]:
     timeout = get_request_timeout()
     async with (
         aiohttp.ClientSession() as session,
-        session.get(
-            DEFAULT_CATALOG_URL,
-            timeout=timeout,
-        ) as resp,
+        session.get(DEFAULT_CATALOG_URL, timeout=timeout) as catalog_resp,
+        session.get(DEFAULT_SETS_URL, timeout=timeout) as sets_resp,
     ):
-        data = await read_response_json(resp)
-        if resp.status != 200:
-            raise CommandError(f"catalog HTTP {resp.status}")
-    if not isinstance(data, dict):
+        catalog_data = await read_response_json(catalog_resp)
+        sets_data = await read_response_json(sets_resp)
+        if catalog_resp.status != 200:
+            raise CommandError(f"catalog HTTP {catalog_resp.status}")
+        if sets_resp.status != 200:
+            raise CommandError(f"sets HTTP {sets_resp.status}")
+    if not isinstance(catalog_data, dict):
         raise CommandError("catalog_invalid")
-    if "nameMap" in data:
-        return data
-    cards = data.get("data")
+    if "nameMap" in catalog_data:
+        return catalog_data
+    cards = catalog_data.get("data")
     if not isinstance(cards, list):
         raise CommandError("catalog_invalid")
-    return catalog_to_cache(cards)
+    if not isinstance(sets_data, dict):
+        raise CommandError("sets_invalid")
+    sets = sets_data.get("data")
+    if not isinstance(sets, list):
+        raise CommandError("sets_invalid")
+    return catalog_to_cache(cards, sets=sets)
 
 
 async def getCardById(uuid: str) -> SearchCard | None:

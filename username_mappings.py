@@ -3,7 +3,16 @@ username_mappings: dict[str, str] = {}
 
 def set_username_mappings(mappings: list[list[str]]) -> None:
     global username_mappings
-    username_mappings = {v.lower(): key for key, value in mappings for v in value.split(";")}
+    result: dict[str, str] = {}
+    for row in mappings:
+        if len(row) < 2 or not row[0].strip():
+            continue
+        key = row[0]
+        for alias in ";".join(row[1:]).split(";"):
+            alias = alias.strip()
+            if alias:
+                result[alias.lower()] = key
+    username_mappings = result
 
 
 def resolve_username(raw: str) -> str:
