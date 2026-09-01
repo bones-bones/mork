@@ -477,7 +477,13 @@ class LifecycleCog(commands.Cog):
                         "prompt with `Set: …` in #scube-lair-submissions."
                     )
                     return
-                list_channel = hc_constants.SECRET_LAIR
+                list_channel = (
+                    hc_constants.TOKEN_LIST
+                    if set_id.lower().startswith("hct")
+                    else hc_constants.HDH_CARD_LIST
+                    if set_id.lower().startswith("hdh")
+                    else hc_constants.SECRET_LAIR
+                )
 
             file = await message.attachments[0].to_file()
             dbname, card_author = card_name_and_author_from_scube_lair_message(
@@ -1255,9 +1261,7 @@ class LifecycleCog(commands.Cog):
                 )
         if len(mysteryVetoHellCards) > 0:
             mystery_body = "\n".join(mysteryVetoHellCards)
-            mysteryHellMessage = (
-                f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{mystery_body}"
-            )
+            mysteryHellMessage = f"||\u200b||\nMYSTERY VETO HELL (Veto hell but the bot can't see the thread for some reason): \n{mystery_body}"
             for i in range(0, len(mysteryHellMessage), hc_constants.LITERALLY_1984):
                 await veto_announcement_channel.send(
                     content=mysteryHellMessage[i : i + hc_constants.LITERALLY_1984]
