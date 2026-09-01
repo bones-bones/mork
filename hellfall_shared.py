@@ -21,8 +21,9 @@ def get_auth_headers(api_key: str | None = None) -> dict[str, str]:
     headers = {
         "Content-Type": "application/json",
     }
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
+    key = api_key or get_api_key()
+    if key:
+        headers["Authorization"] = f"Bearer {key}"
     return headers
 
 

@@ -166,7 +166,7 @@ async def sync_accepted_card(
         aiohttp.ClientSession().post(
             f"{api_url}/api/cards/postcard",
             json=payload,
-            headers=get_auth_headers(),
+            headers=get_auth_headers(api_key),
             timeout=timeout,
         ) as resp,
     ):
@@ -230,7 +230,7 @@ async def rollback_postcard_write(write: PostcardWrite) -> None:
         aiohttp.ClientSession().post(
             f"{api_url}/api/cards/postcard/rollback",
             json=payload,
-            headers=get_auth_headers(),
+            headers=get_auth_headers(api_key),
             timeout=aiohttp.ClientTimeout(total=30),
         ) as resp,
     ):
