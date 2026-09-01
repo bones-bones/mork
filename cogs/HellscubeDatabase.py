@@ -74,20 +74,26 @@ class HellscubeDatabaseCog(commands.Cog):
         Chooses a random date between the start of submissions and now, then gets history near that date.
         Filters out messages without attachments, then chooses a random message from that history.
         """
-        subStart = datetime.strptime("5/13/2021 1:30 PM", "%m/%d/%Y %I:%M %p").astimezone(UTC)
+        subStart = datetime.strptime("5/13/2021 1:30 PM", "%m/%d/%Y %I:%M %p").replace(tzinfo=UTC)
         timeNow = datetime.now(UTC)
-        timeNow = timeNow.replace(tzinfo=None)
         delta = timeNow - subStart
-        intDelta = (delta.days * 24 * 60 * 60) + delta.seconds
-        randomSecond = randrange(intDelta)
-        randomDate = subStart + timedelta(seconds=randomSecond)
-        subChannel = self.bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL)
-        subHistory = cast(discord.TextChannel, subChannel).history(around=randomDate)
-        subHistory = [message async for message in subHistory if message.attachments]
-        randomNum = randrange(1, len(subHistory)) - 1
-        file = await subHistory[randomNum].attachments[0].to_file()
-        sentMessage = await ctx.reply(content="", file=file, mention_author=False)
-        await sentMessage.add_reaction(hc_constants.DELETE)
+        intDelta = int(delta.total_seconds())
+        for i in range(10):
+            randomSecond = randrange(intDelta)
+            randomDate = subStart + timedelta(seconds=randomSecond)
+            subChannel = self.bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL)
+            subHistory = []
+            async for message in cast(discord.TextChannel, subChannel).history(around=randomDate):
+                if message.attachments:
+                    subHistory.append(message)
+            if not subHistory:
+                continue
+            randomNum = randrange(len(subHistory))
+            file = await subHistory[randomNum].attachments[0].to_file()
+            sentMessage = await ctx.reply(content="", file=file, mention_author=False)
+            await sentMessage.add_reaction(hc_constants.DELETE)
+            return
+        await ctx.send("Sorry, no cards were found.")
 
     @commands.command()
     async def notMagic(self, ctx: commands.Context):
@@ -167,9 +173,7 @@ class HellscubeDatabaseCog(commands.Cog):
         currentRuling = cardSheetUnapproved.cell(cell.row, 8)
 
         prefix = f"{currentRuling}\n" if currentRuling != "" else ""
-        newRuling = (
-            f"{prefix}{ruling}- {ctx.author.name} {datetime.now(UTC).strftime('%Y-%m-%d')}"
-        )
+        newRuling = f"{prefix}{ruling}- {ctx.author.name} {datetime.now(UTC).strftime('%Y-%m-%d')}"
         cardSheetUnapproved.update_cell(
             cell.row,
             8,
