@@ -10,7 +10,7 @@ from discord.message import Message
 import hc_constants
 from database_cache import database as card_database
 from database_cache.database import SearchCard
-from hellfall_fetcher import getMultipleFuzzyCards, is_card_cache_loaded
+from hellfall_fetcher import DisplayOptions, getMultipleFuzzyCards, is_card_cache_loaded
 from image_response_filename import filename_from_image_response
 
 FISH_FROM_GO_FISH_SEARCH = "the fish from go fish"
@@ -101,6 +101,20 @@ async def send_multiple_card_reply(message: Message, cards: list[SearchCard]):
     await send_multiple_image_reply(message, [(card.image, card.name) for card in cards])
 
 
+async def send_multiple_card_reply_with_options(
+    message: Message, cards: list[tuple[SearchCard, DisplayOptions]]
+):
+    await send_multiple_image_reply(
+        message,
+        [
+            (card.print_image or card.image, card.name)
+            if op.get("full_image")
+            else (card.image, card.name)
+            for (card, op) in cards
+        ],
+    )
+
+
 async def post_card_images(message: Message):
     message_text = [name.strip() for name in nameRegex.findall(message.content) if name.strip()]
     print(
@@ -137,4 +151,4 @@ async def post_card_images(message: Message):
     if not requestedCards:
         await message.reply("No Matches Found!", mention_author=False)
         return
-    await send_multiple_card_reply(message, requestedCards)
+    await send_multiple_card_reply_with_options(message, requestedCards)

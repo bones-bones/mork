@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypedDict
 
 import aiohttp
 
@@ -52,7 +52,9 @@ async def bootstrap_card_cache(*, force: bool = False) -> None:
     print("[db] card cache bootstrap complete")
 
 
-async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]):
+async def getDataFromServer(
+    payload: dict[str, str] | dict[str, str | list[str]] | dict[str, str | list[str] | bool],
+):
     api_url = get_api_url()
     if not api_url:
         raise CommandError("HELLFALL_API_URL is required")
@@ -192,18 +194,35 @@ async def getFuzzyCard(cardName: str | None) -> SearchCard | None:
         return None
 
 
-async def getMultipleFuzzyCards(cardNames: list[str]) -> list[SearchCard]:
+class DisplayOptions(TypedDict, total=False):
+    full_image: bool
+
+
+def splitOptions(cardName: str) -> tuple[str, DisplayOptions]:
+    if cardName.startswith("!") and not cardName.lower().startswith("!macro"):
+        return (cardName[1:], {"full_image": True})
+    return (cardName, {})
+
+
+async def getMultipleFuzzyCards(
+    cardNames: list[str],
+) -> list[tuple[SearchCard, DisplayOptions]]:
     if STILL_USING_CACHE:
-        cards = [get_card_by_fuzzy_name(cardName) for cardName in cardNames]
-        return [card for card in cards if card]
+        splitNames = [splitOptions(cardName) for cardName in cardNames]
+        cards = [(get_card_by_fuzzy_name(cardName), op) for (cardName, op) in splitNames]
+        return [(card, ops) for (card, ops) in cards if card]
     try:
-        payload: dict[str, str | list[str]] = {
+        payload: dict[str, str | list[str] | bool] = {
             "command": "multiple_fuzzy",
             "card_names": cardNames,
+            "include_options": True,
         }
-        data = (await getDataFromServer(payload)).get("data")
-        if isinstance(data, list):
-            return [SearchCard(**card) for card in data]
+        res = await getDataFromServer(payload)
+        data = res.get("data")
+        options = res.get("options")
+
+        if isinstance(data, list) and isinstance(options, list) and len(data) == len(options):
+            return [(SearchCard(**data[i]), options[i]) for i in range(len(data))]
     except CommandError:
         return []
     return []

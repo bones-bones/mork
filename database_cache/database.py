@@ -60,6 +60,7 @@ class SearchCard:
     collector_number: str
     accepted_order: str
     image: str
+    print_image: str | None
     legalities: dict[str, str]
     creators: list[str]
     artists: list[str] | None
