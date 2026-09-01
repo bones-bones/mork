@@ -61,9 +61,12 @@ async def get_card_json(targetUrl: str, query: str = "") -> dict[str, Any]:
     Get json of a card from scryfall. it's important to use the header so they know to block us lol.
     """
     headers = {"User-Agent": hc_constants.USER_AGENT}
-    async with aiohttp.ClientSession().get(
-        targetUrl, params={"q": query} if query else None, headers=headers
-    ) as resp:
+    async with (
+        aiohttp.ClientSession() as session,
+        session.get(
+            targetUrl, params={"q": query} if query else None, headers=headers
+        ) as resp,
+    ):
         return await resp.json()
 
 

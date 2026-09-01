@@ -59,7 +59,8 @@ async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]
     timeout = get_request_timeout()
 
     async with (
-        aiohttp.ClientSession().get(
+        aiohttp.ClientSession() as session,
+        session.get(
             f"{api_url}/api/mork",
             json=payload,
             headers=get_auth_headers(),
@@ -244,7 +245,8 @@ async def cardsExist(cardNames: list[str]):
     }
 
     async with (
-        aiohttp.ClientSession().get(
+        aiohttp.ClientSession() as session,
+        session.get(
             f"{api_url}/api/mork",
             json=payload,
             headers=get_auth_headers(),
@@ -274,7 +276,8 @@ async def getSearchFromServer(query: str) -> SearchResponse:
     timeout = get_request_timeout()
 
     async with (
-        aiohttp.ClientSession().get(
+        aiohttp.ClientSession() as session,
+        session.get(
             f"{api_url}/api/cards/search/",
             params={"q": query, "format": "json"},
             headers=get_auth_headers(),
@@ -316,7 +319,8 @@ async def getRandomFromServer(query: str | None) -> SearchCard:
     timeout = get_request_timeout()
 
     async with (
-        aiohttp.ClientSession().get(
+        aiohttp.ClientSession() as session,
+        session.get(
             f"{api_url}/api/cards/random/",
             params={"q": query} if query else None,
             headers=get_auth_headers(),
@@ -349,7 +353,8 @@ async def getMultipleRandomFromServer(query: str | None, num: int) -> list[Searc
     timeout = get_request_timeout()
 
     async with (
-        aiohttp.ClientSession().get(
+        aiohttp.ClientSession() as session,
+        session.get(
             f"{api_url}/api/cards/random/",
             params={"q": query} if query else None,
             json={"num": num},

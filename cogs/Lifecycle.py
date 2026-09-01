@@ -161,7 +161,10 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
             img_url = card.image
             try:
                 headers = {"User-Agent": hc_constants.USER_AGENT}
-                async with aiohttp.ClientSession(headers=headers).get(img_url) as resp:
+                async with (
+                    aiohttp.ClientSession(headers=headers) as session,
+                    session.get(img_url) as resp,
+                ):
                     if resp.status != 200:
                         continue
                     data_bytes = await resp.read()
@@ -928,7 +931,10 @@ class LifecycleCog(commands.Cog):
                     return
                 img_url = card.image
                 headers = {"User-Agent": hc_constants.USER_AGENT}
-                async with aiohttp.ClientSession(headers=headers).get(img_url) as resp:
+                async with (
+                    aiohttp.ClientSession(headers=headers) as session,
+                    session.get(img_url) as resp,
+                ):
                     if resp.status != 200:
                         await message.channel.send(
                             f"<@{message.author.id}>, couldn't fetch the card image."

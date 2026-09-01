@@ -37,7 +37,8 @@ async def modifyTagWithServer(
     }
 
     async with (
-        aiohttp.ClientSession().post(
+        aiohttp.ClientSession() as session,
+        session.post(
             f"{api_url}/api/cards/{quote(uuid)}/tags",
             json=payload,
             headers=get_auth_headers(api_key),
