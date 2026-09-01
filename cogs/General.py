@@ -209,7 +209,10 @@ class GeneralCog(commands.Cog):
         # Fetch image bytes and send as a file
         try:
             headers = {"User-Agent": hc_constants.USER_AGENT}
-            async with aiohttp.ClientSession(headers=headers).get(url) as resp:
+            async with (
+                aiohttp.ClientSession(headers=headers) as session,
+                session.get(url) as resp,
+            ):
                 if resp.status != 200:
                     await ctx.send("Failed to fetch emoji image.")
                     return
