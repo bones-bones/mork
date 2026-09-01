@@ -702,6 +702,12 @@ class SpecificCardsCog(commands.Cog):
         await fetch_random_from_scryfall(ctx, quality_queries[quality])
 
     @commands.command()
+    async def thing(self, ctx: commands.Context):
+        """for the card "The Deck of Some Things" """
+        await fetch_random_from_scryfall(ctx, "thing+%28game%3Apaper%29+prefer%3Abest+-otag%3Aunset-mechanics+-type%3Astickers&unique=cards")
+
+    
+    @commands.command()
     async def grunch(self, ctx: commands.Context):
         """for cards that grunch"""
         # Original: https://zaxer2.github.io/howtogrunch
