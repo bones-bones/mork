@@ -117,7 +117,7 @@ async def post_card_images(message: Message):
         return
     if len(message_text) > 10:
         await message.reply(
-            "Don't call more than 10 cards per message, final warning, keep trying and you get blacklisted from the bot."
+            "Don't call more than 10 cards per message. Discord only allows 10 images per message."
         )
         return
     if message.author.id == hc_constants.LLLLLL:
