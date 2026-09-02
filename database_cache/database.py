@@ -60,6 +60,7 @@ class SearchCard:
     collector_number: str
     accepted_order: str
     image: str
+    print_image: str | None
     legalities: dict[str, str]
     creators: list[str]
     artists: list[str] | None
@@ -87,10 +88,7 @@ oracleMap: dict[str, list[str]] = {}
 def build_database(serverJSON: dict[str, dict[str, Any]]):
     """Builds mork's local database using data from the server."""
     global nameMap, aliasMap, hcidMap, idMap, oracleMap
-    print(
-        "[db] build_database starting; payload keys: "
-        f"{list(serverJSON.keys())}"
-    )
+    print(f"[db] build_database starting; payload keys: {list(serverJSON.keys())}")
     try:
         name_map_data = serverJSON["nameMap"]
         alias_map_data = serverJSON["aliasMap"]

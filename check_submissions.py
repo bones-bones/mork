@@ -39,7 +39,7 @@ async def check_submissions(bot: commands.Bot):
         await asyncio.sleep(1)
         messageEntry = cast(Message, messageEntry)
 
-        # This block is to filter out non-card entiers in submissions
+        # This block is to filter out non-card entries in submissions
         if (
             "@everyone" in messageEntry.content
             or "@here" in messageEntry.content

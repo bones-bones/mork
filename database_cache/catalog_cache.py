@@ -9,12 +9,9 @@ from database_cache.card_names import get_all_names
 from database_cache.database_utils import fixName
 from database_cache.setHandling import getCollectorNumSets, getGroupSets, loadSets
 
-DEFAULT_CATALOG_URL = (
-    "https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json"
-)
+DEFAULT_CATALOG_URL = "https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json"
 DEFAULT_SETS_URL = (
-    "https://raw.githubusercontent.com/bones-bones/hellfall/main/"
-    "packages/shared/src/data/sets.json"
+    "https://raw.githubusercontent.com/bones-bones/hellfall/main/packages/shared/src/data/sets.json"
 )
 
 

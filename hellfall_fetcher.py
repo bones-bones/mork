@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypedDict
 
 import aiohttp
 
@@ -52,7 +52,9 @@ async def bootstrap_card_cache(*, force: bool = False) -> None:
     print("[db] card cache bootstrap complete")
 
 
-async def getDataFromServer(payload: dict[str, str] | dict[str, str | list[str]]):
+async def getDataFromServer(
+    payload: dict[str, str] | dict[str, str | list[str]] | dict[str, str | list[str] | bool],
+):
     api_url = get_api_url()
     if not api_url:
         raise CommandError("HELLFALL_API_URL is required")
@@ -87,10 +89,7 @@ async def getDatabaseCache() -> dict[str, dict[str, Any]]:
     ):
         catalog_data = await read_response_json(catalog_resp)
         sets_data = await read_response_json(sets_resp)
-        print(
-            f"[db] catalog HTTP {catalog_resp.status}, "
-            f"sets HTTP {sets_resp.status}"
-        )
+        print(f"[db] catalog HTTP {catalog_resp.status}, sets HTTP {sets_resp.status}")
         if catalog_resp.status != 200:
             raise CommandError(f"catalog HTTP {catalog_resp.status}")
         if sets_resp.status != 200:
@@ -99,27 +98,18 @@ async def getDatabaseCache() -> dict[str, dict[str, Any]]:
         print(f"[db] catalog response type: {type(catalog_data).__name__}")
         raise CommandError("catalog_invalid")
     if "nameMap" in catalog_data:
-        print(
-            "[db] using pre-built cache payload "
-            f"({len(catalog_data.get('idMap', {}))} cards)"
-        )
+        print(f"[db] using pre-built cache payload ({len(catalog_data.get('idMap', {}))} cards)")
         return catalog_data
     cards = catalog_data.get("data")
     if not isinstance(cards, list):
-        print(
-            "[db] catalog missing data list; keys: "
-            f"{list(catalog_data.keys())[:10]}"
-        )
+        print(f"[db] catalog missing data list; keys: {list(catalog_data.keys())[:10]}")
         raise CommandError("catalog_invalid")
     if not isinstance(sets_data, dict):
         print(f"[db] sets response type: {type(sets_data).__name__}")
         raise CommandError("sets_invalid")
     sets = sets_data.get("data")
     if not isinstance(sets, list):
-        print(
-            "[db] sets missing data list; keys: "
-            f"{list(sets_data.keys())[:10]}"
-        )
+        print(f"[db] sets missing data list; keys: {list(sets_data.keys())[:10]}")
         raise CommandError("sets_invalid")
     print(f"[db] building cache from {len(cards)} cards, {len(sets)} sets")
     cache = catalog_to_cache(cards, sets=sets)
@@ -189,7 +179,9 @@ async def getMultipleExactCards(cardNames: list[str]) -> list[SearchCard]:
     return []
 
 
-async def getFuzzyCard(cardName: str) -> SearchCard | None:
+async def getFuzzyCard(cardName: str | None) -> SearchCard | None:
+    if not cardName:
+        return None
     if STILL_USING_CACHE:
         return get_card_by_fuzzy_name(cardName)
     payload: dict[str, str] = {
@@ -203,18 +195,35 @@ async def getFuzzyCard(cardName: str) -> SearchCard | None:
         return None
 
 
-async def getMultipleFuzzyCards(cardNames: list[str]) -> list[SearchCard]:
+class DisplayOptions(TypedDict, total=False):
+    full_image: bool
+
+
+def splitOptions(cardName: str) -> tuple[str, DisplayOptions]:
+    if cardName.startswith("!") and not cardName.lower().startswith("!macro"):
+        return (cardName[1:], {"full_image": True})
+    return (cardName, {})
+
+
+async def getMultipleFuzzyCards(
+    cardNames: list[str],
+) -> list[tuple[SearchCard, DisplayOptions]]:
     if STILL_USING_CACHE:
-        cards = [get_card_by_fuzzy_name(cardName) for cardName in cardNames]
-        return [card for card in cards if card]
+        splitNames = [splitOptions(cardName) for cardName in cardNames]
+        cards = [(get_card_by_fuzzy_name(cardName), op) for (cardName, op) in splitNames]
+        return [(card, ops) for (card, ops) in cards if card]
     try:
-        payload: dict[str, str | list[str]] = {
+        payload: dict[str, str | list[str] | bool] = {
             "command": "multiple_fuzzy",
             "card_names": cardNames,
+            "include_options": True,
         }
-        data = (await getDataFromServer(payload)).get("data")
-        if isinstance(data, list):
-            return [SearchCard(**card) for card in data]
+        res = await getDataFromServer(payload)
+        data = res.get("data")
+        options = res.get("options")
+
+        if isinstance(data, list) and isinstance(options, list) and len(data) == len(options):
+            return [(SearchCard(**data[i]), options[i]) for i in range(len(data))]
     except CommandError:
         return []
     return []
@@ -341,8 +350,7 @@ async def getMultipleRandomFromServer(query: str | None, num: int) -> list[Searc
         return [await getRandomFromServer(query)]
     if STILL_USING_CACHE and not query:
         cards = [
-            get_card_by_id(random.choice(list(card_database.idMap.keys())))
-            for i in range(num)
+            get_card_by_id(random.choice(list(card_database.idMap.keys()))) for i in range(num)
         ]
         if not cards[0]:
             raise CommandError("random_failed")

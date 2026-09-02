@@ -87,11 +87,20 @@ async def get_image_from_json(json: dict[str, Any]):
     )
 
 
-async def send_image(ctx: commands.Context, url: str | None):
+async def get_oracle_from_json(json: dict[str, Any]) -> str:
+    """get oracle text from scryfall json"""
+    return (
+        json.get("oracle_text") or json["card_faces"][0].get("oracle_text")
+        if "card_faces" in json
+        else ""
+    )
+
+
+async def send_image(ctx: commands.Context, url: str | None, text: str | None = None):
     """send card image to channel"""
     if not url:
         return
-    await send_single_image_reply(ctx.message, url)
+    await send_single_image_reply(ctx.message, url, None, text)
 
 
 async def send_images(ctx: commands.Context, urls: list[str] | None):
@@ -108,11 +117,17 @@ async def send_drive_image(ctx: commands.Context, url: str):
     await send_single_image_reply(ctx.message, url, url.rsplit("/", 1)[-1] or "image")
 
 
-async def fetchAndSendScryfallCard(ctx: commands.Context, url: str, query: str = ""):
+async def fetchAndSendScryfallCard(
+    ctx: commands.Context, url: str, query: str = "", include_oracle: bool | None = None
+):
     """helper function for fetching and sending scryfall cards from a URL"""
     cardJson = await get_card_json(url, query)
     try:
-        await send_image(ctx, await get_image_from_json(cardJson))
+        await send_image(
+            ctx,
+            await get_image_from_json(cardJson),
+            await get_oracle_from_json(cardJson) if include_oracle else None,
+        )
     except Exception:
         pp.pprint(cardJson)
 
@@ -133,9 +148,9 @@ async def fetch_random_from_hellfall(ctx: commands.Context, query: str = "", num
     await send_multiple_card_reply(ctx.message, response)
 
 
-async def fetch_scryfall_by_id(ctx: commands.Context, id: str):
+async def fetch_scryfall_by_id(ctx: commands.Context, id: str, include_oracle: bool | None = None):
     """helper function to fetch and send card from scryfall by card id"""
-    await fetchAndSendScryfallCard(ctx, scryfallApiForCard(id))
+    await fetchAndSendScryfallCard(ctx, scryfallApiForCard(id), "", include_oracle)
 
 
 async def fetch_multiple_scryfall_by_id(ctx: commands.Context, ids: list[str]):
@@ -268,7 +283,7 @@ class SpecificCardsCog(commands.Cog):
     @commands.command(aliases=["path", "degen", "ptd"])
     async def degeneracy(self, ctx: commands.Context):
         """for the card "Path Towards Degeneracy" """
-        await fetch_scryfall_by_id(ctx, choice(femaleWarWalkers))
+        await fetch_scryfall_by_id(ctx, choice(femaleWarWalkers), True)
 
     @commands.command(aliases=["blue"])
     async def bluecard(self, ctx: commands.Context):
