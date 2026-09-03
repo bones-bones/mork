@@ -70,7 +70,7 @@ class SearchCard:
     def __init__(self, **kwargs):
         # Only assign fields that exist, since python will throw a fit otherwise
         for field in self.__dataclass_fields__:
-            setattr(self, field, kwargs.get(field, ""))
+            setattr(self, field, kwargs.get(field))
 
 
 nameMap: dict[str, LookupCard] = {}
