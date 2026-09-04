@@ -659,7 +659,7 @@ class LifecycleCog(commands.Cog):
                         await post.reply(body=reply_text)
 
             case hc_constants.TOKEN_SUBMISSIONS:
-                wholeMessage = message.clean_content.split("\n")
+                wholeMessage = message.content.split("\n")
                 submissionDiscussion = getSubmissionDiscussionChannel(self.bot)
                 if len(wholeMessage) != 2:
                     await submissionDiscussion.send(
