@@ -127,13 +127,13 @@ async def accept_card(
             newCard = False
             index = cell.row
     else:
+        index = len(cardSheetUnapproved.get_all_values()) + 1
         allHCIDs = [
             int(c)
             for c in cardSheetUnapproved.col_values(1)
             if c and isinstance(c, int) or (isinstance(c, str) and c.isdigit())
         ]
         if allHCIDs:
-            index = len(allHCIDs) + 1
             next_id = str(max(allHCIDs) + 1)
 
     if cardName == "" and newCard:

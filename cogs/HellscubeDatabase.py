@@ -267,7 +267,7 @@ def getInfo(card: SearchCard):
     lines: list[str] = [
         f"id: {card.hcid}",
         f"creator{'' if len(card.creators) == 1 else 's'}: {', '.join(card.creators)}",
-        f"set: {card.set.replace('_', '.')} #{card.collector_number} (AO: ${card.accepted_order})",
+        f"set: {card.set.replace('_', '.')} #{card.collector_number} (AO: {card.accepted_order})",
     ]
     for format, legality in card.legalities.items():
         lines.append(f"{format}: {legality}")
