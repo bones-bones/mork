@@ -92,7 +92,7 @@ async def checkTokenSubmissions(bot: commands.Bot):
 
 async def acceptTokenSubmission(bot: commands.Bot, message: Message):
     tokenListChannel = getTokenListChannel(bot)
-    accepted_message_no_mentions = message.clean_content
+    accepted_message_no_mentions = message.content
 
     for index, mentionEntry in enumerate(message.raw_mentions):
         accepted_message_no_mentions = accepted_message_no_mentions.replace(
