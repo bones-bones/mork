@@ -133,6 +133,13 @@ flowchart TD
   ACC --> SH[("Tokens Database (Unapproved)")]
 ```
 
+| Case                  | Trigger                           | Bot response                                 | User post |
+| --------------------- | --------------------------------- | -------------------------------------------- | --------- |
+| **Missing image**     | No attachment                     | None (silent ignore)                         | Kept      |
+| **Valid submission**  | Attachment + two-line format      | Mork poll 👍👎❌                              | Deleted (reposted as poll) |
+| **Invalid format**    | Attachment but not two lines      | Ping in #submissions-discussion              | Kept      |
+| **Unknown card**      | Related card not found            | Ping in #submissions-discussion              | Deleted   |
+
 ---
 
 ## Scube Lair submission & acceptance

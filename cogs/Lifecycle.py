@@ -659,12 +659,15 @@ class LifecycleCog(commands.Cog):
                         await post.reply(body=reply_text)
 
             case hc_constants.TOKEN_SUBMISSIONS:
+                if len(message.attachments) == 0:
+                    return
                 wholeMessage = message.content.split("\n")
                 submissionDiscussion = getSubmissionDiscussionChannel(self.bot)
                 if len(wholeMessage) != 2:
                     await submissionDiscussion.send(
                         content=f"<@{message.author.id}>, make sure to include the name of your token and at least one card it is for on a new line"
                     )
+                    return
                 forCards = re.split(r"; ?", wholeMessage[1])
 
                 if not await cardsExist(forCards):
