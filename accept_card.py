@@ -41,13 +41,26 @@ _ACCEPTED_ORDER_COL = 23
 
 
 def _next_accepted_order_for_set(set_id: str) -> str:
-    """Return the next accepted order for ``set_id`` (max leading digits in W + 1)."""
-    condition = r"SCL\.\d+" if set_id.startswith("SCL") else set_id.replace("_", ".")
-    rows = [c.row for c in cardSheetUnapproved.findall(condition, in_column=5)]
-    cells = [cardSheetUnapproved.cell(row, _ACCEPTED_ORDER_COL) for row in rows]
-    nums = [int(cell.value) for cell in cells if cell.value and cell.value.isdigit()]
-    max_num = max(nums, default=0)
-    return str(max_num + 1)
+    """Return the next accepted order for ``set_id`` (max leading digits in W + 1).
+
+    Uses two column reads instead of findall + per-row ``cell()`` calls, which
+    burned Sheets quota and broke subsequent Scube Lair 🥈 accepts.
+    """
+    set_values = cardSheetUnapproved.col_values(5)
+    order_values = cardSheetUnapproved.col_values(_ACCEPTED_ORDER_COL)
+    if set_id.startswith("SCL"):
+        pattern = re.compile(r"SCL\.\d+")
+        matched = [i for i, v in enumerate(set_values) if v and pattern.search(v)]
+    else:
+        needle = set_id.replace("_", ".")
+        matched = [i for i, v in enumerate(set_values) if v == needle]
+
+    nums = [
+        int(order_values[i])
+        for i in matched
+        if i < len(order_values) and order_values[i] and order_values[i].isdigit()
+    ]
+    return str(max(nums, default=0) + 1)
 
 
 async def _resolve_accepted_image_url(
