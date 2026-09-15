@@ -71,7 +71,7 @@ allSetsList = [
     "HC8_1",
     "HCV_8",
     "HKL",
-    "HBB_L",
+    "HBB_HKL",
     "HCV_HKL",
     "HC9",
     "HC9_0",
@@ -85,12 +85,15 @@ allSetsList = [
     "HDH",
     "HCV_HDH",
     "SCL_4",
-    "HBB_S",
+    "HBB_SCL",
     "SCL_5",
     "SOH",
     "HCV_SOH",
     "SCL_6",
     "SCL_7",
+    "SCL_8",
+    "HC9_1",
+    "SCL_9",
     "HCV",
     "HCT",
     "HBB",
@@ -163,6 +166,44 @@ def getParentSetCode(code: str):
     curSet = getParentSet(code)
     if curSet:
         return curSet.code
+
+
+def _getChildVeto(set: cardSet):
+    if set.child_set_codes:
+        for child in set.child_set_codes:
+            childSet = getSet(child)
+            if childSet and childSet.set_type == "veto":
+                return childSet
+
+
+def getVetoSet(code: str):
+    """Gets the set that is the veto set for another set"""
+    curSet = getSet(code)
+    if not curSet or curSet.set_type == "veto":
+        return
+    veto = _getChildVeto(curSet)
+    while not veto and curSet.parent_set_code:
+        curSet = getSet(curSet.parent_set_code)
+        if not curSet:
+            return
+        veto = _getChildVeto(curSet)
+    return veto
+
+
+def getVetoSetCode(code: str):
+    """Gets the set code that is the veto set code for another set
+
+    Also correctly handles sets that are missing from/not yet added to the db"""
+    curSet = getVetoSet(code)
+    if curSet:
+        return curSet.code
+    if not getSet(code):
+        start = fixSetCode(code).split("_")[0]
+        if start.startswith("HCV"):
+            return
+        if start.startswith("HC"):
+            return f"HCV_{start[2:]}"
+        return f"HCV_{start}"
 
 
 def getChildSets(code: str) -> list[str] | None:
