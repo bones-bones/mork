@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import io
 import os
@@ -30,6 +31,10 @@ from username_mappings import resolve_authors
 
 cardSheetUnapproved = getUnapprovedCardSheet()
 
+# Serialize unapproved-sheet row/HCID/AO allocation + write. Concurrent medal
+# accepts otherwise race across the postcard await and reuse the same index.
+_unapproved_sheet_lock = asyncio.Lock()
+
 # Column BB (header UUID) — Hellfall card ``id`` from postcard response
 _HELLFALL_ID_COL = 54
 
@@ -39,14 +44,43 @@ _ORACLE_ID_COL = 55
 # Column W — accepted order
 _ACCEPTED_ORDER_COL = 23
 
+# Hellfall getAcceptedOrderSet: all SCL drops share one AO pool under parent SCL.
+# Must include SCL.X (and any SCL.*), not only SCL.<digits>.
+_SCL_AO_POOL = re.compile(r"^SCL([._].+)?$", re.IGNORECASE)
+
+
+def _normalize_set_code(set_id: str) -> str:
+    return set_id.replace("_", ".")
+
 
 def _next_accepted_order_for_set(set_id: str) -> str:
-    """Return the next accepted order for ``set_id`` (max leading digits in W + 1)."""
-    condition = r"SCL\.\d+" if set_id.startswith("SCL") else set_id.replace("_", ".")
-    rows = [c.row for c in cardSheetUnapproved.findall(condition, in_column=5)]
-    cells = [cardSheetUnapproved.cell(row, _ACCEPTED_ORDER_COL) for row in rows]
-    nums = [int(cell.value) for cell in cells if cell.value and cell.value.isdigit()]
-    max_num = max(nums, default=0)
+    """Return the next accepted order for ``set_id`` (max leading digits in W + 1).
+
+    Uses two column reads instead of findall + per-row ``cell()`` calls, which
+    burned Sheets quota and broke subsequent Scube Lair 🥈 accepts.
+
+    SCL drops (SCL.1, SCL.X, …) share one counter; HCV.SCL is its own set.
+    """
+    set_values = cardSheetUnapproved.col_values(5)
+    order_values = cardSheetUnapproved.col_values(_ACCEPTED_ORDER_COL)
+    needle = _normalize_set_code(set_id)
+    scl_pool = bool(_SCL_AO_POOL.match(needle))
+
+    max_num = 0
+    for i, sheet_set in enumerate(set_values):
+        if not sheet_set:
+            continue
+        normalized = _normalize_set_code(sheet_set)
+        if scl_pool:
+            if not _SCL_AO_POOL.match(normalized):
+                continue
+        elif normalized != needle:
+            continue
+        if i >= len(order_values):
+            continue
+        match = re.match(r"^(\d+)", str(order_values[i]))
+        if match:
+            max_num = max(max_num, int(match.group(1)))
     return str(max_num + 1)
 
 
@@ -119,76 +153,80 @@ async def accept_card(
 
     async with aiofiles.open(image_path, "wb") as out:
         await out.write(file_data)
-    index = 0
-    next_id: str | None = None
-    if errataId:
-        cell = cardSheetUnapproved.find(errataId, in_column=1)
-        if cell and cardName:
-            newCard = False
-            index = cell.row
-    else:
-        index = len(cardSheetUnapproved.get_all_values()) + 1
-        allHCIDs = [
-            int(c)
-            for c in cardSheetUnapproved.col_values(1)
-            if c and isinstance(c, int) or (isinstance(c, str) and c.isdigit())
-        ]
-        if allHCIDs:
-            next_id = str(max(allHCIDs) + 1)
 
-    if cardName == "" and newCard:
-        cardName = "NO NAME"
-    if index == 0:
-        raise IndexError("index not found")
-    firestore_hcid = errataId or next_id
-    postcard_write = None
-    try:
-        imageUrl, postcard_write = await _resolve_accepted_image_url(
-            file_data=file_data,
-            card_name=cardName,
-            author_name=authorName,
-            set_id=setId,
-            hcid=firestore_hcid,
-            require_hellfall_postcard=require_hellfall_postcard,
-        )
-
-        cardSheetUnapproved.update_cell(index, 3, imageUrl)
-
-        if newCard:
-            new_card_cells = [
-                Cell(row=index, col=1, value=str(next_id)),
-                Cell(row=index, col=2, value=cardName),
-                Cell(row=index, col=4, value=authorName),
-                Cell(row=index, col=5, value=setId.replace("_", ".")),
-                Cell(
-                    row=index,
-                    col=_ACCEPTED_ORDER_COL,
-                    value=_next_accepted_order_for_set(setId),
-                ),
+    # Hold the lock across allocate → postcard → sheet write so concurrent
+    # accepts cannot reuse the same row / HCID / accepted order.
+    async with _unapproved_sheet_lock:
+        index = 0
+        next_id: str | None = None
+        if errataId:
+            cell = cardSheetUnapproved.find(errataId, in_column=1)
+            if cell and cardName:
+                newCard = False
+                index = cell.row
+        else:
+            index = len(cardSheetUnapproved.get_all_values()) + 1
+            allHCIDs = [
+                int(c)
+                for c in cardSheetUnapproved.col_values(1)
+                if c and isinstance(c, int) or (isinstance(c, str) and c.isdigit())
             ]
-            if postcard_write is not None and postcard_write.hellfall_id:
-                new_card_cells.append(
+            if allHCIDs:
+                next_id = str(max(allHCIDs) + 1)
+
+        if cardName == "" and newCard:
+            cardName = "NO NAME"
+        if index == 0:
+            raise IndexError("index not found")
+        firestore_hcid = errataId or next_id
+        postcard_write = None
+        try:
+            imageUrl, postcard_write = await _resolve_accepted_image_url(
+                file_data=file_data,
+                card_name=cardName,
+                author_name=authorName,
+                set_id=setId,
+                hcid=firestore_hcid,
+                require_hellfall_postcard=require_hellfall_postcard,
+            )
+
+            cardSheetUnapproved.update_cell(index, 3, imageUrl)
+
+            if newCard:
+                new_card_cells = [
+                    Cell(row=index, col=1, value=str(next_id)),
+                    Cell(row=index, col=2, value=cardName),
+                    Cell(row=index, col=4, value=authorName),
+                    Cell(row=index, col=5, value=setId.replace("_", ".")),
                     Cell(
                         row=index,
-                        col=_HELLFALL_ID_COL,
-                        value=postcard_write.hellfall_id,
+                        col=_ACCEPTED_ORDER_COL,
+                        value=_next_accepted_order_for_set(setId),
+                    ),
+                ]
+                if postcard_write is not None and postcard_write.hellfall_id:
+                    new_card_cells.append(
+                        Cell(
+                            row=index,
+                            col=_HELLFALL_ID_COL,
+                            value=postcard_write.hellfall_id,
+                        )
                     )
-                )
-            if postcard_write is not None and postcard_write.oracle_id:
-                new_card_cells.append(
-                    Cell(
-                        row=index,
-                        col=_ORACLE_ID_COL,
-                        value=postcard_write.oracle_id,
+                if postcard_write is not None and postcard_write.oracle_id:
+                    new_card_cells.append(
+                        Cell(
+                            row=index,
+                            col=_ORACLE_ID_COL,
+                            value=postcard_write.oracle_id,
+                        )
                     )
-                )
-            cardSheetUnapproved.update_cells(new_card_cells)
-    except Exception:
-        if postcard_write is not None:
-            await rollback_postcard_write(postcard_write)
-        if os.path.exists(image_path):
-            os.remove(image_path)
-        raise
+                cardSheetUnapproved.update_cells(new_card_cells)
+        except Exception:
+            if postcard_write is not None:
+                await rollback_postcard_write(postcard_write)
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            raise
 
     card_list_channel = cast(discord.TextChannel, bot.get_channel(channelIdForCard))
     await card_list_channel.send(file=file_copy_for_cardlist, content=cardMessage)

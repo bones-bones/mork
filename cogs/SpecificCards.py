@@ -719,7 +719,10 @@ class SpecificCardsCog(commands.Cog):
     @commands.command()
     async def thing(self, ctx: commands.Context):
         """for the card "The Deck of Some Things" """
-        await fetch_random_from_scryfall(ctx, "thing+%28game%3Apaper%29+prefer%3Abest+-otag%3Aunset-mechanics+-type%3Astickers&unique=cards")
+        await fetch_random_from_scryfall(
+            ctx,
+            "thing (game:paper) prefer:best -otag:unset-mechanics -type:stickers unique:cards",
+        )
 
     
     @commands.command()
