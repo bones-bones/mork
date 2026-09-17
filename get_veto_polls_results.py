@@ -61,6 +61,7 @@ async def get_veto_polls_results(bot: commands.Bot, ctx: commands.Context):
         "wassup",
         "eye of newt, head of cabbage, process these cards faster than I can think of something that rhymes with cabbage",
         "opinions on geese",
+        "now with 50% less nutrients",
     ]
 
     await ctx.send(random.choice(epicCatchphrases))
