@@ -50,8 +50,17 @@ async def get_veto_polls_results(bot: commands.Bot, ctx: commands.Context):
         "fine... if i must",
         "just doin my job",
         "lemme grab my stabbing knife",
-        "this guy again?",
+        "this person again?",
         "its actually pronounced hell, not hell",
+        "yes?",
+        "what",
+        "oof thats a lot of cards",
+        "don't tell anyone but I'm secretly evil mork",
+        "can *your* bot do this?",
+        "who are you and what am I doing again",
+        "wassup",
+        "eye of newt, head of cabbage, process these cards faster than I can think of something that rhymes with cabbage",
+        "opinions on geese",
     ]
 
     await ctx.send(random.choice(epicCatchphrases))
