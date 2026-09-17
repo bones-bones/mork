@@ -590,6 +590,9 @@ class LifecycleCog(commands.Cog):
             else:
                 await message.channel.send("no i ain't")
 
+        if "mork unbork" in message.content.lower():
+            await message.channel.send("yes i am")
+
         # Hello single coolest thing about python
         match message.channel.id:
             case hc_constants.SCUBE_LAIR_SUBMISSION_CHANNEL:
