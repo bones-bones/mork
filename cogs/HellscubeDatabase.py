@@ -15,7 +15,7 @@ from hellfall_fetcher import (
     bootstrap_card_cache,
     getExactCard,
     getFuzzyCard,
-    getFuzzyPrints,
+    getInfoCards,
     getRandomFromServer,
     getSearchFromServer,
 )
@@ -220,12 +220,13 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.command()
     async def info(self, channel: discord.abc.Messageable, *, cardName: cleanText):
         name = fixClean(cardName)
-        cards = await getFuzzyPrints(name)
+        res = await getInfoCards(name)
         message = "something went wrong!"
-        if not cards:
+        if not res:
             await channel.send(message)
             return
-        message = getInfo(cards)
+        (card, prints) = res
+        message = getInfo(card, prints)
         await channel.send(message)
 
     @commands.command()
@@ -262,25 +263,27 @@ def formatSearchResults(response: SearchResponse):
     return returnString
 
 
-def getInfo(cards: list[SearchCard]):
-    if cards[0].oracle_id == "f90c6ef4-a631-49fd-b191-6e004b59a570":
+def getInfo(card: SearchCard, prints: list[SearchCard]):
+    if card.oracle_id == "f90c6ef4-a631-49fd-b191-6e004b59a570":
         return "no card found"
-    lines: list[str] = []
-    for card in cards:
-        lines.append(f"id: {card.hcid}")
-        lines.append(f"creator{'' if len(card.creators) == 1 else 's'}: {', '.join(card.creators)}")
-        lines.append(
-            f"set: {card.set.replace('_', '.')} #{card.collector_number} (AO: {card.accepted_order})"
-        )
-        for format, legality in card.legalities.items():
-            lines.append(f"{format}: {legality}")
-
-        if card.artists:
+    lines: list[str] = [
+        f"id: {card.hcid}",
+        f"creator{'' if len(card.creators) == 1 else 's'}: {', '.join(card.creators)}",
+        f"set: {card.set.replace('_', '.')} #{card.collector_number} (AO: {card.accepted_order})",
+    ]
+    for print in prints:
+        if print.id != card.id:
             lines.append(
-                f"artist{'' if len(card.artists) == 1 else 's'}: {', '.join(card.artists)}"
+                f"set: {print.set.replace('_', '.')} #{print.collector_number} (AO: {print.accepted_order})"
             )
-        if card.base_tags:
-            lines.append(f"tags: {', '.join(card.base_tags)}")
-        if card.rulings:
-            lines.append(f"rulings: \n{card.rulings}")
+    for format, legality in card.legalities.items():
+        lines.append(f"{format}: {legality}")
+
+    if card.artists:
+        lines.append(f"artist{'' if len(card.artists) == 1 else 's'}: {', '.join(card.artists)}")
+    if card.base_tags:
+        lines.append(f"tags: {', '.join(card.base_tags)}")
+    if card.rulings:
+        lines.append(f"rulings: \n{card.rulings}")
+
     return "\n".join(lines)

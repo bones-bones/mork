@@ -18,7 +18,7 @@ from pathlib import Path
 import mork_repo_root  # noqa: F401
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-MIN_PYTHON = (3, 11)
+MIN_PYTHON = (3, 12)
 REQUIRED_IMPORTS = (
     "aiofiles",
     "aiohttp",

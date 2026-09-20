@@ -201,6 +201,14 @@ def get_all_prints_by_fuzzy_name(name: str):
         return get_all_prints(card.oracle_id)
 
 
+def get_info_by_fuzzy_name(name: str):
+    card = get_card_by_fuzzy_name(name)
+    if card:
+        prints = get_all_prints(card.oracle_id)
+        if prints:
+            return (card, prints)
+
+
 def card_name_exists(name: str):
     fixed = fixName(name)
     exact = _get_id_by_set_and_num(*splitCardName(fixed))

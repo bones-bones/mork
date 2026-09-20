@@ -22,6 +22,7 @@ from database_cache.database import (
     get_card_by_fuzzy_name,
     get_card_by_id,
     get_card_by_name,
+    get_info_by_fuzzy_name,
 )
 from hellfall_shared import (
     get_api_url,
@@ -210,6 +211,26 @@ async def getFuzzyPrints(cardName: str | None) -> list[SearchCard] | None:
         data = (await getDataFromServer(payload)).get("data")
         if isinstance(data, list):
             return [SearchCard(**card) for card in data]
+    except CommandError:
+        return None
+
+
+async def getInfoCards(cardName: str | None) -> tuple[SearchCard, list[SearchCard]] | None:
+    if not cardName:
+        return None
+    if STILL_USING_CACHE:
+        return get_info_by_fuzzy_name(cardName)
+
+    payload: dict[str, str] = {
+        "command": "info",
+        "card_name": cardName,
+    }
+    try:
+        raw_data = await getDataFromServer(payload)
+        data = raw_data.get("data")
+        card = raw_data.get("card")
+        if isinstance(data, list) and isinstance(card, dict):
+            return (SearchCard(**card), [SearchCard(**card) for card in data])
     except CommandError:
         return None
 
