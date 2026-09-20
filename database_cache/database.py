@@ -3,13 +3,13 @@ from typing import Any
 
 from database_cache.database_utils import fixName
 from database_cache.get_closest_name import get_closest_name
-from database_cache.setHandling import splitCardName
+from database_cache.setHandling import SetCode, splitCardName
 
 
 @dataclass
 class LookupCard:
-    setNumMap: dict[str, dict[str, str]]
-    setMap: dict[str, list[str]]
+    setNumMap: dict[SetCode, dict[str, str]]
+    setMap: dict[SetCode, list[str]]
     defaultId: str
 
     def __init__(self, **kwargs):
@@ -19,7 +19,7 @@ class LookupCard:
 
     def get(
         self,
-        code: str | None = None,
+        code: SetCode | None = None,
         collector_number: str | None = None,
         noDefault: bool | None = None,
     ):
@@ -56,7 +56,7 @@ class SearchCard:
     oracle_id: str
     hcid: str
     name: str
-    set: str
+    set: SetCode
     collector_number: str
     accepted_order: str
     image: str
@@ -117,7 +117,7 @@ def build_database(serverJSON: dict[str, dict[str, Any]]):
 
 def _get_id_by_set_and_num(
     name: str,
-    code: str | None = None,
+    code: SetCode | None = None,
     collector_number: str | None = None,
     noDefault: bool | None = None,
 ):
@@ -163,6 +163,10 @@ def get_card_by_id(uuid: str):
     return idMap.get(uuid)
 
 
+def get_cards_by_ids(uuids: list[str]):
+    return [idMap[uuid] for uuid in uuids if uuid in idMap]
+
+
 def get_card_by_name(name: str):
     uuid = get_id_by_name(name)
     if uuid:
@@ -173,6 +177,28 @@ def get_card_by_fuzzy_name(name: str):
     uuid = get_id_by_fuzzy_name(name)
     if uuid:
         return get_card_by_id(uuid)
+
+
+def get_all_print_ids(oracle_id: str):
+    return oracleMap.get(oracle_id)
+
+
+def get_all_prints(oracle_id: str):
+    uuids = get_all_print_ids(oracle_id)
+    if uuids:
+        return get_cards_by_ids(uuids)
+
+
+def get_all_prints_by_name(name: str):
+    card = get_card_by_name(name)
+    if card:
+        return get_all_prints(card.oracle_id)
+
+
+def get_all_prints_by_fuzzy_name(name: str):
+    card = get_card_by_fuzzy_name(name)
+    if card:
+        return get_all_prints(card.oracle_id)
 
 
 def card_name_exists(name: str):

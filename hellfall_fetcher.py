@@ -18,6 +18,7 @@ from database_cache.database import (
     SearchCard,
     build_database,
     card_name_exists,
+    get_all_prints_by_fuzzy_name,
     get_card_by_fuzzy_name,
     get_card_by_id,
     get_card_by_name,
@@ -191,6 +192,24 @@ async def getFuzzyCard(cardName: str | None) -> SearchCard | None:
     try:
         data = await getDataFromServer(payload)
         return SearchCard(**data)
+    except CommandError:
+        return None
+
+
+async def getFuzzyPrints(cardName: str | None) -> list[SearchCard] | None:
+    if not cardName:
+        return None
+    if STILL_USING_CACHE:
+        return get_all_prints_by_fuzzy_name(cardName)
+
+    payload: dict[str, str] = {
+        "command": "fuzzy_prints",
+        "card_name": cardName,
+    }
+    try:
+        data = (await getDataFromServer(payload)).get("data")
+        if isinstance(data, list):
+            return [SearchCard(**card) for card in data]
     except CommandError:
         return None
 

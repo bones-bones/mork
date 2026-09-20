@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import re
 from itertools import product
-from typing import Any
+from typing import Any, cast
 
 from database_cache.database_utils import fixName
-from database_cache.setHandling import fixSetCode, isSetCode
+from database_cache.setHandling import toSetCode
 
 _ANGLE_SET_CODE_RE = re.compile(r"^(.*) <([^>]+)>$")
 
@@ -16,9 +16,10 @@ def split_angle_set_code(text: str) -> tuple[str, str | None]:
     match = _ANGLE_SET_CODE_RE.match(text)
     if not match:
         return text, None
-    name, raw_code = (part.strip() for part in match.groups())
-    if raw_code.upper() == "HC" or isSetCode(raw_code):
-        return name, fixSetCode(raw_code)
+    (name, code) = (part.strip() for part in cast(tuple[str, str], match.groups()))
+    code = code.upper() if code.upper() == "HC" else toSetCode(code)
+    if code:
+        return name, code
     return text, None
 
 

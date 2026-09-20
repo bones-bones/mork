@@ -15,6 +15,7 @@ from hellfall_fetcher import (
     bootstrap_card_cache,
     getExactCard,
     getFuzzyCard,
+    getFuzzyPrints,
     getRandomFromServer,
     getSearchFromServer,
 )
@@ -219,12 +220,12 @@ class HellscubeDatabaseCog(commands.Cog):
     @commands.command()
     async def info(self, channel: discord.abc.Messageable, *, cardName: cleanText):
         name = fixClean(cardName)
-        card = await getFuzzyCard(name)
+        cards = await getFuzzyPrints(name)
         message = "something went wrong!"
-        if not card:
+        if not cards:
             await channel.send(message)
             return
-        message = getInfo(card)
+        message = getInfo(cards)
         await channel.send(message)
 
     @commands.command()
@@ -261,21 +262,25 @@ def formatSearchResults(response: SearchResponse):
     return returnString
 
 
-def getInfo(card: SearchCard):
-    if card.oracle_id == "f90c6ef4-a631-49fd-b191-6e004b59a570":
+def getInfo(cards: list[SearchCard]):
+    if cards[0].oracle_id == "f90c6ef4-a631-49fd-b191-6e004b59a570":
         return "no card found"
-    lines: list[str] = [
-        f"id: {card.hcid}",
-        f"creator{'' if len(card.creators) == 1 else 's'}: {', '.join(card.creators)}",
-        f"set: {card.set.replace('_', '.')} #{card.collector_number} (AO: {card.accepted_order})",
-    ]
-    for format, legality in card.legalities.items():
-        lines.append(f"{format}: {legality}")
+    lines: list[str] = []
+    for card in cards:
+        lines.append(f"id: {card.hcid}")
+        lines.append(f"creator{'' if len(card.creators) == 1 else 's'}: {', '.join(card.creators)}")
+        lines.append(
+            f"set: {card.set.replace('_', '.')} #{card.collector_number} (AO: {card.accepted_order})"
+        )
+        for format, legality in card.legalities.items():
+            lines.append(f"{format}: {legality}")
 
-    if card.artists:
-        lines.append(f"artist{'' if len(card.artists) == 1 else 's'}: {', '.join(card.artists)}")
-    if card.base_tags:
-        lines.append(f"tags: {', '.join(card.base_tags)}")
-    if card.rulings:
-        lines.append(f"rulings: \n{card.rulings}")
+        if card.artists:
+            lines.append(
+                f"artist{'' if len(card.artists) == 1 else 's'}: {', '.join(card.artists)}"
+            )
+        if card.base_tags:
+            lines.append(f"tags: {', '.join(card.base_tags)}")
+        if card.rulings:
+            lines.append(f"rulings: \n{card.rulings}")
     return "\n".join(lines)
