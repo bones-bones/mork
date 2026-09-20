@@ -1,8 +1,8 @@
 import re
 from dataclasses import dataclass
-from typing import Any, Literal, TypeIs, cast, get_args
+from typing import Any, Literal, TypeAlias, TypeIs, cast, get_args
 
-type SetCode = Literal[
+SetCode: TypeAlias = Literal[  # noqa: UP040 until we fix the vm issues
     "HLC",
     "HLC_0",
     "HCV_1_0",

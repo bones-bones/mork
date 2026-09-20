@@ -1,8 +1,8 @@
-from typing import Any, cast
+from typing import Any, TypeAlias, cast
 
 from database_cache.setHandling import SetCode, allSetsList, getAcceptedOrderSet, getSet, isSetCode
 
-type _CacheCard = dict[str, Any]
+_CacheCard: TypeAlias = dict[str, Any]  # noqa: UP040 until we fix the vm issues
 
 
 def _set_type_is_not_extra(set_type: str | None):
