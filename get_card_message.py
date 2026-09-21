@@ -3,18 +3,15 @@ def submission_card_name(content: str) -> str:
 
 
 def parseCardNameAndAuthor(acceptanceMessage: str) -> tuple[str, str]:
-    dbname = ""
-    card_author = ""
-    if (len(acceptanceMessage)) == 0 or ("by " not in acceptanceMessage):
-        ...  # This is really the case of setting both to "", but due to scoping i got lazy
-    elif acceptanceMessage[0:3] == "by ":
-        card_author = str((acceptanceMessage.split("by "))[1])
-    else:
-        firstPart, secondPart = acceptanceMessage.rsplit(" by ", 1)
-        dbname = str(firstPart)
-        card_author = str(secondPart)
-
-    return dbname, card_author
+    message = acceptanceMessage or ""
+    if not message:
+        return "", ""
+    if message.startswith("by "):
+        return "", str(message.split("by ", 1)[1])
+    if " by " in message:
+        firstPart, secondPart = message.rsplit(" by ", 1)
+        return str(firstPart), str(secondPart)
+    return message, ""
 
 
 def get_card_message(acceptanceMessage: str):
