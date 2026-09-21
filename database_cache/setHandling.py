@@ -160,6 +160,7 @@ def toSetCode(value: str) -> SetCode | None:
         return code
 
     splitCode = code.split("_")
+    # the `or "0"` doesn't do anything right now, but it's futureproofing.
     splitCode[0] = splitCode[0].lstrip("0") or "0"
     if len(splitCode[0]) == 1:
         splitCode[0] = "HLC" if splitCode[0] == "1" else f"HC{splitCode[0]}"
