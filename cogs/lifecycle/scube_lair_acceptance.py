@@ -5,9 +5,6 @@ from __future__ import annotations
 import re
 
 import discord
-from discord.ext import commands
-
-from accept_card import accept_card
 
 SCUBE_LAIR_SET_PATTERN = re.compile(
     r"Set:\s*(?:\*\*)?\s*([A-Za-z0-9._]+)",
@@ -32,26 +29,3 @@ async def get_current_scube_lair_set_id(channel: discord.TextChannel) -> str | N
     if not pins:
         return None
     return parse_set_id_from_scube_lair_prompt(pins[0].content)
-
-
-async def accept_scube_lair_card(
-    bot: commands.Bot,
-    *,
-    cardMessage: str,
-    file: discord.File,
-    cardName: str,
-    authorName: str,
-    setId: str,
-    channelIdForCard: int,
-) -> None:
-    """Accept a Scube Lair card via GCS/sheet/Discord and POST /api/cards/postcard."""
-    await accept_card(
-        bot=bot,
-        file=file,
-        cardMessage=cardMessage,
-        cardName=cardName,
-        authorName=authorName,
-        setId=setId,
-        channelIdForCard=channelIdForCard,
-        require_hellfall_postcard=True,
-    )

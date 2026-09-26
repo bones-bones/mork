@@ -33,7 +33,6 @@ from cogs.lifecycle.post_daily_submissions import (
     post_daily_submissions,
 )
 from cogs.lifecycle.scube_lair_acceptance import (
-    accept_scube_lair_card,
     card_name_and_author_from_scube_lair_message,
     get_current_scube_lair_set_id,
 )
@@ -429,7 +428,7 @@ class LifecycleCog(commands.Cog):
                 cardMessage=cardMessage,
                 cardName=dbname,
                 authorName=card_author,
-                setId=set_to_add_to,
+                message_set_id=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
             )
 
@@ -459,31 +458,29 @@ class LifecycleCog(commands.Cog):
                 return
             if not message.attachments:
                 return
-
-            if str(reaction.emoji) == hc_constants.SCLAIR_SECOND_PLACE:
-                set_id = "HCV.SCL"
-                list_channel = hc_constants.VETO_CARD_LIST
-            else:
-                if not submission_card_name(message.content):
-                    print(
-                        f"Scube Lair gold react rejected: missing card title on "
-                        f"message {reaction.message_id}"
-                    )
-                    return
-                set_id = await get_current_scube_lair_set_id(channelAsText)
-                if not set_id:
-                    await cast(Member, member).send(
-                        "No set was found for your Scube Lair gold react — pin a "
-                        "prompt with `Set: …` in #scube-lair-submissions."
-                    )
-                    return
-                list_channel = (
-                    hc_constants.TOKEN_LIST
-                    if set_id.lower().startswith("hct")
-                    else hc_constants.HDH_CARD_LIST
-                    if set_id.lower().startswith("hdh")
-                    else hc_constants.SECRET_LAIR
+            wasVetoed = str(reaction.emoji) == hc_constants.SCLAIR_SECOND_PLACE
+            if not submission_card_name(message.content):
+                print(
+                    f"Scube Lair {'silver' if wasVetoed else 'gold'} react rejected: missing card title on "
+                    f"message {reaction.message_id}"
                 )
+                return
+            message_set_id = await get_current_scube_lair_set_id(channelAsText)
+            if not message_set_id:
+                await cast(Member, member).send(
+                    f"No set was found for your Scube Lair {'silver' if wasVetoed else 'gold'} react — pin a "
+                    "prompt with `Set: …` in #scube-lair-submissions."
+                )
+                return
+            list_channel = (
+                hc_constants.VETO_CARD_LIST
+                if wasVetoed
+                else hc_constants.TOKEN_LIST
+                if message_set_id.lower().startswith("hct")
+                else hc_constants.HDH_CARD_LIST
+                if message_set_id.lower().startswith("hdh")
+                else hc_constants.SECRET_LAIR
+            )
 
             file = await message.attachments[0].to_file()
             dbname, card_author = card_name_and_author_from_scube_lair_message(
@@ -493,14 +490,16 @@ class LifecycleCog(commands.Cog):
             resolved_author = card_author if card_author != "" else "no author"
             card_message = f"**{resolved_name}** by **{resolved_author}**"
 
-            await accept_scube_lair_card(
+            await accept_card(
                 self.bot,
                 cardMessage=card_message,
                 file=file,
                 cardName=dbname,
                 authorName=card_author,
-                setId=set_id,
+                message_set_id=message_set_id,
                 channelIdForCard=list_channel,
+                wasVetoed=wasVetoed,
+                require_hellfall_postcard=True,
             )
             await message.add_reaction(hc_constants.ACCEPT)
             return
@@ -1145,7 +1144,7 @@ class LifecycleCog(commands.Cog):
                 cardMessage=cardMessage,
                 cardName=resolvedName,
                 authorName=card_author,
-                setId=set_to_add_to,
+                message_set_id=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
                 errata=errata_id is not None,
                 errataId=errata_id,
@@ -1168,6 +1167,7 @@ class LifecycleCog(commands.Cog):
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
+            set_to_add_to = hc_constants.ACTIVE_CUBE_ID
 
             vetoedCards.append(get_card_message(messageEntry.content))
 
@@ -1178,7 +1178,7 @@ class LifecycleCog(commands.Cog):
                 cardName=dbname,
                 channelIdForCard=hc_constants.VETO_CARD_LIST,
                 authorName=card_author,
-                setId="HCV",
+                message_set_id=set_to_add_to,
                 wasVetoed=True,
                 skip_reddit=skip_reddit,
                 deferred_reddit_dir=deferred_reddit_dir,
@@ -1236,7 +1236,6 @@ class LifecycleCog(commands.Cog):
 
         await veto_announcement_channel.send(content="!! VETO POLLS HAVE BEEN PROCESSED !!")
 
-        # had to use format because python doesn't like \n inside template brackets
         if len(acceptedCards) > 0:
             accepted_body = "\n".join(acceptedCards)
             acceptedMessage = f"||\u200b||\nACCEPTED CARDS: \n{accepted_body}"
@@ -1328,7 +1327,7 @@ class LifecycleCog(commands.Cog):
             cardMessage=cardMessage,
             cardName=dbname,
             authorName=card_author,
-            setId=set_id,
+            message_set_id=set_id,
             channelIdForCard=list_channel,
             errata=True,
             errataId=errata_id_clean,

@@ -13,6 +13,7 @@ import importlib
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import mork_repo_root  # noqa: F401
@@ -98,7 +99,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    checks: list[tuple[str, callable]] = [
+    checks: list[tuple[str, Callable]] = [
         ("python version", check_python_version),
         ("pip dependencies", check_required_imports),
         ("syntax (compileall)", check_syntax),

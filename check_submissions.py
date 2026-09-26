@@ -118,7 +118,7 @@ async def check_submissions(bot: commands.Bot):
                         await accept_card(
                             bot=bot,
                             channelIdForCard=hc_constants.GRAVEYARD_CARD_LIST,
-                            setId="HCV",
+                            message_set_id="HCV",
                             file=File(
                                 fp=io.BytesIO(attachment_data),
                                 filename=attachment_filename,

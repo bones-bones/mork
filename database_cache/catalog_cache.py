@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+from database_cache.cacheCompare import shouldSwap
 from database_cache.card_names import get_all_names
 from database_cache.database_utils import fixName
 from database_cache.setHandling import getCollectorNumSets, getGroupSets, loadSets
@@ -15,22 +16,24 @@ DEFAULT_SETS_URL = (
 )
 
 
-def _catalog_card_to_search_card(card: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "id": card["id"],
-        "oracle_id": card.get("oracle_id", ""),
-        "hcid": str(card.get("hcid", "")),
-        "name": card.get("name", ""),
-        "set": card.get("set", ""),
-        "collector_number": str(card.get("collector_number", "")),
-        "accepted_order": str(card.get("accepted_order", "")),
-        "image": card.get("image", ""),
-        "legalities": card.get("legalities", {}),
-        "creators": card.get("creators", []),
-        "artists": card.get("artists"),
-        "rulings": card.get("rulings", ""),
-        "base_tags": card.get("base_tags"),
-    }
+# there's no real reason to do this at this point rather than later
+
+# def _catalog_card_to_search_card(card: dict[str, Any]) -> dict[str, Any]:
+#     return {
+#         "id": card["id"],
+#         "oracle_id": card.get("oracle_id", ""),
+#         "hcid": str(card.get("hcid", "")),
+#         "name": card.get("name", ""),
+#         "set": card.get("set", ""),
+#         "collector_number": str(card.get("collector_number", "")),
+#         "accepted_order": str(card.get("accepted_order", "")),
+#         "image": card.get("image", ""),
+#         "legalities": card.get("legalities", {}),
+#         "creators": card.get("creators", []),
+#         "artists": card.get("artists"),
+#         "rulings": card.get("rulings", ""),
+#         "base_tags": card.get("base_tags"),
+#     }
 
 
 class _CardLookupObject:
@@ -38,10 +41,12 @@ class _CardLookupObject:
         self.set_num_map: dict[str, dict[str, str]] = defaultdict(dict)
         self.set_map: dict[str, list[str]] = defaultdict(list)
         self.default_id = card["id"]
-        self.add_card(card)
+        self.add_card(card, False)
 
-    def add_card(self, card: dict[str, Any]) -> None:
+    def add_card(self, card: dict[str, Any], shouldChangeDefault: bool) -> None:
         card_id = card["id"]
+        if shouldChangeDefault:
+            self.default_id = card_id
         collector_number = str(card.get("collector_number", "")).lower()
         for set_code in getCollectorNumSets(card["set"]):
             if collector_number:
@@ -58,38 +63,6 @@ class _CardLookupObject:
         }
 
 
-class _CardLookupMap:
-    def __init__(self) -> None:
-        self.name_map: dict[str, _CardLookupObject] = {}
-        self.alias_map: dict[str, str] = {}
-        self.hcid_map: dict[str, str] = {}
-
-    def add_card(self, card: dict[str, Any]) -> None:
-        name = fixName(card["name"])
-        hcid = fixName(str(card.get("hcid", "")))
-        if hcid:
-            self.hcid_map[hcid] = card["id"]
-
-        existing = self.name_map.get(name)
-        if existing:
-            existing.add_card(card)
-        else:
-            self.name_map[name] = _CardLookupObject(card)
-            self.alias_map.pop(name, None)
-
-        for alias in get_all_names(card):
-            if alias in self.name_map or alias in self.alias_map or alias in self.hcid_map:
-                continue
-            self.alias_map[alias] = name
-
-    def to_dict(self) -> dict[str, dict[str, Any]]:
-        return {
-            "nameMap": {name: lookup.to_dict() for name, lookup in self.name_map.items()},
-            "aliasMap": dict(self.alias_map),
-            "hcidMap": dict(self.hcid_map),
-        }
-
-
 def catalog_to_cache(
     cards: list[dict[str, Any]],
     *,
@@ -103,24 +76,43 @@ def catalog_to_cache(
 
     id_map: dict[str, dict[str, Any]] = {}
     oracle_map: dict[str, list[str]] = defaultdict(list)
-    lookup = _CardLookupMap()
+    name_map: dict[str, _CardLookupObject] = {}
+    alias_map: dict[str, str] = {}
+    hcid_map: dict[str, str] = {}
 
     for card in cards:
         card_id = card.get("id")
         if not card_id:
             continue
 
-        id_map[card_id] = _catalog_card_to_search_card(card)
+        id_map[card_id] = card
 
         oracle_id = card.get("oracle_id")
-        if oracle_id and card_id not in oracle_map[str(oracle_id)]:
-            oracle_map[str(oracle_id)].append(card_id)
+        if isinstance(oracle_id, str) and card_id not in oracle_map[oracle_id]:
+            oracle_map[oracle_id].append(card_id)
+        name = fixName(card["name"])
+        hcid = fixName(str(card.get("hcid", "")))
+        if hcid:
+            hcid_map[hcid] = card_id
 
-        lookup.add_card(card)
+        existing = name_map.get(name)
+        if existing:
+            existing.add_card(card, shouldSwap(card, id_map.get(existing.default_id)))
+        else:
+            name_map[name] = _CardLookupObject(card)
+            alias_map.pop(name, None)
 
-    cache = lookup.to_dict()
+        for alias in get_all_names(card):
+            if alias in name_map or alias in alias_map or alias in hcid_map:
+                continue
+            alias_map[alias] = name
+
+    cache = {}
     cache["idMap"] = id_map
     cache["oracleMap"] = dict(oracle_map)
+    cache["nameMap"] = ({name: lookup.to_dict() for name, lookup in name_map.items()},)
+    cache["aliasMap"] = (dict(alias_map),)
+    cache["hcidMap"] = (dict(hcid_map),)
     skipped = len(cards) - len(id_map)
     if skipped:
         print(f"[db] catalog_to_cache: skipped {skipped} cards without id")
