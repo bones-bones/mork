@@ -7,6 +7,7 @@ import discord
 from discord.ext import commands
 
 import hc_constants
+from database_cache.database import format_card_oracle_text
 from hellfall_changesets import modifyTagWithServer
 from hellfall_fetcher import (
     STILL_USING_CACHE,
@@ -149,6 +150,21 @@ class HellscubeDatabaseCog(commands.Cog):
             message = f"rulings for {name}:{ruling_blocks}"
         await channel.send(message)
 
+    @commands.command()
+    async def oracle(self, channel: discord.abc.Messageable, *, cardName: cleanText | None = None):
+        """Returns the oracle text for a given card."""
+        name = fixClean(cardName)
+        card = await getFuzzyCard(name)
+        if not card:
+            await channel.send("something went wrong!")
+            return
+        oracle_text = format_card_oracle_text(card)
+        if not oracle_text:
+            await channel.send(f"There is no oracle text for {card.name}")
+            return
+        for message in formatOracleMessages(card.name, oracle_text):
+            await channel.send(message)
+
     @commands.command(rest_is_raw=True)
     async def judgement(self, ctx: commands.Context, *, args: str):
         """
@@ -251,6 +267,18 @@ class HellscubeDatabaseCog(commands.Cog):
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(HellscubeDatabaseCog(bot))
+
+
+def formatOracleMessages(card_name: str, oracle_text: str) -> list[str]:
+    header = f"oracle text for {card_name}:\n"
+    max_chunk = 2000
+    if len(header) + len(oracle_text) <= max_chunk:
+        return [header + oracle_text]
+    messages = [header + oracle_text[: max_chunk - len(header)]]
+    remaining = oracle_text[max_chunk - len(header) :]
+    for i in range(0, len(remaining), max_chunk):
+        messages.append(remaining[i : i + max_chunk])
+    return messages
 
 
 def formatSearchResults(response: SearchResponse):

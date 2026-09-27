@@ -3,7 +3,8 @@ repos:
     rev: v0.16.3
     hooks:
       - id: ruff
-      # the excluded files have errors that I can't deal with right now
+        args: [--fix]
+        # the excluded files have errors that I can't deal with right now
         exclude: |
           (?x)^scripts/(printable_image[^\.]+|download_and_upload_images|fix_borders_gcs|prepare_card_for_printing_stretch).py$
   - repo: https://github.com/pre-commit/pre-commit-hooks
