@@ -164,7 +164,7 @@ Required for publish (HTTP fetch). Host from repo `docs/` via GitHub Pages:
 - [`docs/hellscube-bridge/privacy.html`](../docs/hellscube-bridge/privacy.html)
 - [`docs/hellscube-bridge/terms.html`](../docs/hellscube-bridge/terms.html)
 
-URLs: `https://hellscube.github.io/mork/hellscube-bridge/privacy.html` (and `terms.html`).
+URLs: `https://bones-bones.github.io/mork/hellscube-bridge/privacy.html` (and `terms.html`).
 
 ## CI
 
