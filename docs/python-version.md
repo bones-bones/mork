@@ -11,7 +11,7 @@
 - **CI and developers** run 3.12 (Ruff, pre-commit, GitHub Actions).
 - **The GCP VM** ships Python 3.11.2; upgrading requires pyenv or a third-party backport (not in Debian Bookworm apt).
 
-Code must parse and run on **3.11+**. Use `typing.TypeVar` instead of PEP 695 generic functions until the VM is on 3.12.
+Code must parse and run on **3.11+**. Use `typing.TypeVar` instead of PEP 695 generic functions until the VM is on 3.12. For `TypeIs` and other newer typing helpers, import from `typing_extensions` (not `typing`) until the VM is on 3.13+.
 
 ## Checks
 

@@ -24,7 +24,8 @@ jobs:
         run: pre-commit run --all-files --show-diff-on-failure
 
   # Production VM (Debian Bookworm) runs 3.11. Full pre-commit on 3.11 fails on
-  # 3.12-only f-string syntax elsewhere; vm-smoke checks parse + deps on 3.11 only.
+  # 3.12-only f-string syntax elsewhere; vm-smoke imports the bot startup chain
+  # on 3.11 so typing/import regressions fail before deploy.
   vm-smoke-3_11:
     runs-on: ubuntu-latest
     steps:

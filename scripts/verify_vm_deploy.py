@@ -29,6 +29,14 @@ REQUIRED_IMPORTS = (
     "pandas",
     "PIL",
     "asyncpraw",
+    "typing_extensions",
+)
+
+# Import chain exercised before mork.py (which needs DISCORD_ACCESS_TOKEN at import).
+STARTUP_MODULES = (
+    "database_cache.setHandling",
+    "database_cache.database",
+    "hellfall_fetcher",
 )
 
 
@@ -70,6 +78,11 @@ def check_utils_import() -> None:
     assert at([1, 2, 3], 9, default=0) == 0
 
 
+def check_startup_imports() -> None:
+    for name in STARTUP_MODULES:
+        importlib.import_module(name)
+
+
 def check_cog_imports() -> None:
     # Import top-level cog modules without starting the bot (no token, no bot.run).
     importlib.import_module("cogs.General")
@@ -104,6 +117,7 @@ def main() -> None:
         ("pip dependencies", check_required_imports),
         ("syntax (compileall)", check_syntax),
         ("utils.at", check_utils_import),
+        ("startup imports", check_startup_imports),
     ]
     if args.with_cogs:
         checks.append(("cog imports", check_cog_imports))
