@@ -66,6 +66,8 @@ class SearchCard:
     artists: list[str] | None
     rulings: str
     base_tags: list[str] | None
+    oracle_text: str
+    card_faces: list[dict[str, Any]] | None
 
     def __init__(self, **kwargs):
         # Only assign fields that exist, since python will throw a fit otherwise
@@ -83,6 +85,24 @@ idMap: dict[str, SearchCard] = {}
 """ Maps card ids to their cards """
 oracleMap: dict[str, list[str]] = {}
 """ Maps oracle ids to the card ids they are associated with """
+
+
+def format_card_oracle_text(card: SearchCard) -> str:
+    if card.oracle_text:
+        return card.oracle_text
+    if not card.card_faces:
+        return ""
+    parts: list[str] = []
+    for face in card.card_faces:
+        face_text = face.get("oracle_text") or ""
+        if not face_text:
+            continue
+        face_name = face.get("name")
+        if face_name and face_name != card.name:
+            parts.append(f"{face_name}\n{face_text}")
+        else:
+            parts.append(face_text)
+    return "\n\n".join(parts)
 
 
 def build_database(serverJSON: dict[str, dict[str, Any]]):

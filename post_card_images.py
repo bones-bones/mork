@@ -44,12 +44,12 @@ async def send_single_image_reply(
         )
 
         data = io.BytesIO(data_bytes)
-        sentMessage = await message.reply(
+        sent_message = await message.reply(
             content=text,
             file=discord.File(data, parsedFilename),
             mention_author=False,
         )
-        await sentMessage.add_reaction(hc_constants.DELETE)
+        await sent_message.add_reaction(hc_constants.DELETE)
         await session.close()
 
 
