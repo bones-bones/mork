@@ -7,8 +7,8 @@ import discord
 from discord.ext import commands
 
 import hc_constants
-from hellfall_changesets import modifyTagWithServer
 from database_cache.database import format_card_oracle_text
+from hellfall_changesets import modifyTagWithServer
 from hellfall_fetcher import (
     STILL_USING_CACHE,
     SearchCard,
