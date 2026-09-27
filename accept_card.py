@@ -13,6 +13,7 @@ from gspread import Cell
 
 import hc_constants
 from cogs.HellscubeDatabase import getUnapprovedCardSheet
+from database_cache.setHandling import getVetoSetCode
 from deferred_reddit import format_deferred_manifest_entry, safe_card_filename
 from hellfall_postcard import (
     PostcardSyncError,
@@ -68,7 +69,7 @@ def _next_accepted_order_for_set(set_id: str) -> str:
 
     max_num = 0
     for i, sheet_set in enumerate(set_values):
-        if not sheet_set:
+        if not sheet_set or not isinstance(sheet_set, str):
             continue
         normalized = _normalize_set_code(sheet_set)
         if scl_pool:
@@ -126,7 +127,7 @@ async def accept_card(
     cardName: str,
     authorName: str,
     channelIdForCard: int = hc_constants.NINE_CARD_LIST,
-    setId: str = hc_constants.ACTIVE_CUBE_ID,
+    message_set_id: str = hc_constants.ACTIVE_CUBE_ID,
     errata: bool = False,
     errataId: str | None = None,
     wasVetoed: bool = False,
@@ -134,7 +135,12 @@ async def accept_card(
     deferred_reddit_dir: str | None = None,
     require_hellfall_postcard: bool = False,
 ):
-    """Accepts a card into the DB. This also includes posting it to reddit and the appropriate card list channel."""
+    """Accepts a card into the DB. This also includes posting it to reddit and the appropriate card list channel.
+
+    If the card was vetoed, the set id should be the id of the set it was vetoed from, not the set it goes to."""
+    set_id = (
+        (getVetoSetCode(message_set_id) or message_set_id) if wasVetoed else message_set_id
+    )  # The set id in the db
     authorName = ";".join(resolve_authors(authorName))
     ext_match = re.search(r"(\.[^.]+)$", file.filename or "")
     os.makedirs("tempImages", exist_ok=True)
@@ -185,7 +191,7 @@ async def accept_card(
                 file_data=file_data,
                 card_name=cardName,
                 author_name=authorName,
-                set_id=setId,
+                set_id=set_id,
                 hcid=firestore_hcid,
                 require_hellfall_postcard=require_hellfall_postcard,
             )
@@ -197,11 +203,11 @@ async def accept_card(
                     Cell(row=index, col=1, value=str(next_id)),
                     Cell(row=index, col=2, value=cardName),
                     Cell(row=index, col=4, value=authorName),
-                    Cell(row=index, col=5, value=setId.replace("_", ".")),
+                    Cell(row=index, col=5, value=set_id.replace("_", ".")),
                     Cell(
                         row=index,
                         col=_ACCEPTED_ORDER_COL,
-                        value=_next_accepted_order_for_set(setId),
+                        value=_next_accepted_order_for_set(set_id),
                     ),
                 ]
                 if postcard_write is not None and postcard_write.hellfall_id:
@@ -234,7 +240,7 @@ async def accept_card(
     if not errata and not errataId:
         card_message_for_reddit = cardMessage.replace("\n", " ").replace("\t", " ")
         reddit_title = reddit_title_for_acceptance(
-            card_message_for_reddit, setId, was_vetoed=wasVetoed
+            card_message_for_reddit, message_set_id, was_vetoed=wasVetoed
         )
         if skip_reddit and deferred_reddit_dir:
             os.makedirs(deferred_reddit_dir, exist_ok=True)
@@ -246,7 +252,7 @@ async def accept_card(
                     format_deferred_manifest_entry(
                         new_file_name,
                         card_message_for_reddit,
-                        setId,
+                        message_set_id,
                         wasVetoed,
                     )
                     + "\n"
@@ -267,7 +273,7 @@ async def accept_card(
                 try:
                     await post_to_reddit(
                         image_path=image_path,
-                        set_id=setId,
+                        set_id=message_set_id,
                         card_message=card_message_for_reddit,
                         was_vetoed=wasVetoed,
                         flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,

@@ -228,6 +228,7 @@ macroList = {
         "bears": "https://www.youtube.com/watch?v=pP-q8C-wp2Q",
         "progression": "https://www.youtube.com/watch?v=zfJUrKfjaNQ",
     },
+    "emdash": "In rules text, whether to use spaces around em dashes (—/{-}/--) depends on how they're used. For ability words (like landfall), you always need spaces around them. For keywords, if the keyword itself normally has a cost associated with it, you don't use spaces, but if the keyword modifies an ability that follows it (like with exhaust or max speed), you do use spaces.\nFor example, *Landfall* — [effect] and Exhaust — [cost]: [effect] use spaces, but Evoke—[cost] and Suspend N—[cost] don't.",
 }
 
 statusList = [

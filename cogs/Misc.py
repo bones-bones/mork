@@ -62,7 +62,7 @@ class MiscCog(commands.Cog):
                 cardMessage=cardMessage,
                 cardName=dbname,
                 authorName=card_author,
-                setId=set_to_add_to,
+                message_set_id=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
             )
 

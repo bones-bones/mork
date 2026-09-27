@@ -18,9 +18,11 @@ from database_cache.database import (
     SearchCard,
     build_database,
     card_name_exists,
+    get_all_prints_by_fuzzy_name,
     get_card_by_fuzzy_name,
     get_card_by_id,
     get_card_by_name,
+    get_info_by_fuzzy_name,
 )
 from hellfall_shared import (
     get_api_url,
@@ -191,6 +193,44 @@ async def getFuzzyCard(cardName: str | None) -> SearchCard | None:
     try:
         data = await getDataFromServer(payload)
         return SearchCard(**data)
+    except CommandError:
+        return None
+
+
+async def getFuzzyPrints(cardName: str | None) -> list[SearchCard] | None:
+    if not cardName:
+        return None
+    if STILL_USING_CACHE:
+        return get_all_prints_by_fuzzy_name(cardName)
+
+    payload: dict[str, str] = {
+        "command": "fuzzy_prints",
+        "card_name": cardName,
+    }
+    try:
+        data = (await getDataFromServer(payload)).get("data")
+        if isinstance(data, list):
+            return [SearchCard(**card) for card in data]
+    except CommandError:
+        return None
+
+
+async def getInfoCards(cardName: str | None) -> tuple[SearchCard, list[SearchCard]] | None:
+    if not cardName:
+        return None
+    if STILL_USING_CACHE:
+        return get_info_by_fuzzy_name(cardName)
+
+    payload: dict[str, str] = {
+        "command": "info",
+        "card_name": cardName,
+    }
+    try:
+        raw_data = await getDataFromServer(payload)
+        data = raw_data.get("data")
+        card = raw_data.get("card")
+        if isinstance(data, list) and isinstance(card, dict):
+            return (SearchCard(**card), [SearchCard(**card) for card in data])
     except CommandError:
         return None
 

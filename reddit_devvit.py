@@ -72,7 +72,12 @@ def reddit_title_for_acceptance(
     *,
     was_vetoed: bool = False,
 ) -> str:
-    verb = "was vetoed from" if was_vetoed else "was accepted into"
+    is_lair = set_id.startswith("SCL")
+    verb = (
+        ("was runner-up for" if is_lair else "was vetoed from")
+        if was_vetoed
+        else ("won" if is_lair else "was accepted into")
+    )
     return f"{card_message.replace('**', '')} {verb} {set_id}"
 
 
@@ -136,13 +141,9 @@ async def _post_devvit_external(endpoint: str, payload: dict) -> dict:
         body = await resp.json(content_type=None)
         if resp.status >= 400:
             error = body.get("error") if isinstance(body, dict) else body
-            raise RuntimeError(
-                f"Devvit {endpoint} failed ({resp.status}): {error}"
-            )
+            raise RuntimeError(f"Devvit {endpoint} failed ({resp.status}): {error}")
         if not isinstance(body, dict) or not body.get("ok"):
-            raise RuntimeError(
-                f"Devvit {endpoint} returned unexpected body: {body}"
-            )
+            raise RuntimeError(f"Devvit {endpoint} returned unexpected body: {body}")
         return body
 
 

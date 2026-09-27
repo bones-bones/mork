@@ -20,7 +20,12 @@ def reddit_title_for_acceptance(
     *,
     was_vetoed: bool = False,
 ) -> str:
-    verb = "was vetoed from" if was_vetoed else "was accepted into"
+    is_lair = set_id.startswith("SCL")
+    verb = (
+        ("was runner-up for" if is_lair else "was vetoed from")
+        if was_vetoed
+        else ("won" if is_lair else "was accepted into")
+    )
     return f"{card_message.replace('**', '')} {verb} {set_id}"
 
 
