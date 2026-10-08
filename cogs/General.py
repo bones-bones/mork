@@ -69,8 +69,23 @@ class GeneralCog(commands.Cog):
     @commands.command()
     async def waiy(self, ctx: commands.Context):
         await ctx.send("<@467941798321324034>")
-
     # ping user biollante
+
+    @commands.command()
+    async def waiy2(self, ctx: commands.Context):
+        await ctx.send("<@794677189287215125>")
+    #ping user im_a_megaman_now (biollante 2)
+
+    @commands.command()
+    async def wair(self, ctx: commands.Context):
+            await ctx.send("<@565124513738522624>")
+    #ping user multiloquent
+
+    @commands.command()
+    async def eait(self, ctx: commands.Context):
+        await ctx.send("<@178966456057200641>")
+    #ping user nefola
+    #ok thats enough i will not add any more commands to ping users even if they request it
 
     @commands.command()
     async def ping4cb(self, ctx: commands.Context):
