@@ -32,8 +32,8 @@ from username_mappings import resolve_authors
 
 cardSheetUnapproved = getUnapprovedCardSheet()
 
-# Serialize unapproved-sheet row/HCID/AO allocation + write. Concurrent medal
-# accepts otherwise race across the postcard await and reuse the same index.
+# Serialize unapproved-sheet row/AO allocation + write. Concurrent accepts
+# otherwise race across the postcard await and reuse the same row index.
 _unapproved_sheet_lock = asyncio.Lock()
 
 # Column BB (header UUID) — Hellfall card ``id`` from postcard response
@@ -160,11 +160,10 @@ async def accept_card(
     async with aiofiles.open(image_path, "wb") as out:
         await out.write(file_data)
 
-    # Hold the lock across allocate → postcard → sheet write so concurrent
-    # accepts cannot reuse the same row / HCID / accepted order.
+    # Hold the lock across postcard → sheet write so concurrent accepts cannot
+    # reuse the same row or accepted-order slot.
     async with _unapproved_sheet_lock:
         index = 0
-        next_id: str | None = None
         if errataId:
             cell = cardSheetUnapproved.find(errataId, in_column=1)
             if cell and cardName:
@@ -172,19 +171,11 @@ async def accept_card(
                 index = cell.row
         else:
             index = len(cardSheetUnapproved.get_all_values()) + 1
-            allHCIDs = [
-                int(c)
-                for c in cardSheetUnapproved.col_values(1)
-                if c and isinstance(c, int) or (isinstance(c, str) and c.isdigit())
-            ]
-            if allHCIDs:
-                next_id = str(max(allHCIDs) + 1)
 
         if cardName == "" and newCard:
             cardName = "NO NAME"
         if index == 0:
             raise IndexError("index not found")
-        firestore_hcid = errataId or next_id
         postcard_write = None
         try:
             imageUrl, postcard_write = await _resolve_accepted_image_url(
@@ -192,15 +183,18 @@ async def accept_card(
                 card_name=cardName,
                 author_name=authorName,
                 set_id=set_id,
-                hcid=firestore_hcid,
+                hcid=errataId,
                 require_hellfall_postcard=require_hellfall_postcard,
             )
 
             cardSheetUnapproved.update_cell(index, 3, imageUrl)
 
             if newCard:
+                sheet_hcid = errataId or (postcard_write.hcid if postcard_write else None)
+                if not sheet_hcid:
+                    raise PostcardSyncError("hellfall did not return hcid")
                 new_card_cells = [
-                    Cell(row=index, col=1, value=str(next_id)),
+                    Cell(row=index, col=1, value=str(sheet_hcid)),
                     Cell(row=index, col=2, value=cardName),
                     Cell(row=index, col=4, value=authorName),
                     Cell(row=index, col=5, value=set_id.replace("_", ".")),

@@ -42,6 +42,16 @@ class PostcardPayloadTests(unittest.TestCase):
         )
         self.assertEqual(payload["imageMimeType"], "image/png")
 
+    def test_omits_hcid_when_not_provided(self):
+        payload = build_postcard_payload(
+            name="Cool Card",
+            creators="Author",
+            set_id="SOH",
+            kind="card",
+            image_base64=base64.b64encode(PNG).decode("ascii"),
+        )
+        self.assertNotIn("hcid", payload)
+
     def test_image_url_path_omits_mime(self):
         payload = build_postcard_payload(
             name="Cool Card",

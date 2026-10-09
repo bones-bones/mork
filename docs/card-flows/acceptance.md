@@ -101,9 +101,9 @@ Optional for most accepts; **mandatory** for Scube Lair (`require_hellfall_postc
 
 **Endpoint:** `POST {HELLFALL_API_URL}/api/cards/postcard`
 
-Payload includes `name`, `creators`, `set`, `kind: "card"`, `imageBase64`, and `imageMimeType` (`image/png`, `image/gif`, `image/jpeg`, or `image/webp` when sniffable). Errata and new cards both send `hcid` (existing id or next numeric id).
+Payload includes `name`, `creators`, `set`, `kind: "card"`, `imageBase64`, and `imageMimeType` (`image/png`, `image/gif`, `image/jpeg`, or `image/webp` when sniffable). Errata sends existing `hcid`; new cards omit `hcid` so Hellfall assigns the next numeric id.
 
-**Response used:** `imageUrl`, `id` (Hellfall UUID → sheet col BB), `oracle_id` (→ col BC). On new cards only, UUID columns are written when sync succeeds.
+**Response used:** `hcid` (sheet col A on new cards), `imageUrl`, `id` (Hellfall UUID → sheet col BB), `oracle_id` (→ col BC). On new cards only, UUID columns are written when sync succeeds.
 
 **Failure:** If anything after a successful postcard write throws, `POST …/postcard/rollback` runs before the error propagates. Scube Lair aborts acceptance entirely if sync does not complete.
 
@@ -119,7 +119,7 @@ Payload includes `name`, `creators`, `set`, `kind: "card"`, `imageBase64`, and `
 
 |                    | New card                           | Errata                                |
 | ------------------ | ---------------------------------- | ------------------------------------- |
-| `hcid` to Hellfall | Next numeric id                    | Existing `errataId`                   |
+| `hcid` to Hellfall | Omitted (Hellfall assigns)         | Existing `errataId`                   |
 | Image upload       | Hellfall via `imageBase64`         | Hellfall via `imageBase64`            |
 | Sheet write        | Cols A, B, C, D, E + BB/BC on sync | **Col C only** (image URL)            |
 | Reddit             | Posted (unless batch deferred)     | Skipped                               |
