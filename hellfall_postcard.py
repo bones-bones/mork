@@ -29,6 +29,7 @@ class PostcardWrite:
     doc_id: str
     was_create: bool
     previous: dict[str, Any] | None
+    hcid: str | None = None
     image_url: str | None = None
     # Hellfall card UUID from response ``id`` (sheet BB / token L). Not always
     # equal to ``doc_id`` on updates — use this for sheet UUID columns.
@@ -186,6 +187,8 @@ async def sync_accepted_card(
 
         previous = data.get("previous")
         image_url = data.get("imageUrl")
+        hcid_raw = data.get("hcid")
+        hcid = str(hcid_raw).strip() if hcid_raw is not None and str(hcid_raw).strip() else None
         # postcard.ts returns ``id`` (Hellfall UUID). Fall back to docId for
         # older responses where create used the same value for both.
         raw_id = data.get("id") or data.get("cardId") or data.get("docId")
@@ -208,6 +211,7 @@ async def sync_accepted_card(
             doc_id=str(data["docId"]),
             was_create=bool(data["wasCreate"]),
             previous=previous if isinstance(previous, dict) else None,
+            hcid=hcid,
             image_url=str(image_url) if image_url else None,
             hellfall_id=hellfall_id,
             oracle_id=oracle_id,
