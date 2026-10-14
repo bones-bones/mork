@@ -17,9 +17,7 @@ flowchart TD
     REMINDER_CHECK -- yes --> REM["🕛 nearing-end ping"]
 
 
-    CHK -- yes --> GRAVE_CHECK["Has admin has 🪦 reacted?"]
-    GRAVE_CHECK -- yes --> GRAVE_ACCEPT["accept → HCV graveyard"]
-    GRAVE_CHECK -- no --> ADMIN_SAFEGUARD{"Has an admin 👍 or is there at least one downvote"}
+    CHK -- yes --> ADMIN_SAFEGUARD{"Has an admin 👍 or is there at least one downvote"}
 
     ADMIN_SAFEGUARD -- no --> ADM["DM admin to verify"]
   end
@@ -40,9 +38,8 @@ flowchart TD
   end
 
   subgraph persist["3 · Persistence"]
-    L --> Q[("Database (Unapproved)<br/>+ GCS + Hellfall postcard")]
+    L --> Q[("Database (Unapproved)<br/>+ Hellfall postcard")]
     M --> Q
-    G --> Q
     Q --> R["Manual mod copy → Database"]
     R --> S["Search / Hellfall / print scripts"]
   end

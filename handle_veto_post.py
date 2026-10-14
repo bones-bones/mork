@@ -11,11 +11,25 @@ from utils import at
 portal_time = False
 
 
+def parse_hcid_from_veto_poll_messages(contents: list[str]) -> str | None:
+    """Second message in the veto poll thread is the numeric hcid (after hellpit link)."""
+    if len(contents) < 2:
+        return None
+    second = contents[1].strip()
+    return second if second.isdigit() else None
+
+
+async def hcid_from_veto_poll_thread(thread: discord.Thread) -> str | None:
+    messages = [message async for message in thread.history(limit=5, oldest_first=True)]
+    return parse_hcid_from_veto_poll_messages([message.content for message in messages])
+
+
 async def handle_veto_post(
     message: Message,
     bot: commands.Bot,
     veto_council: int | None,
     submission_thread_url: str | None = None,
+    hcid: str | None = None,
 ):
     if portal_time:
         veto_council = hc_constants.VETO_COUNCIL_PORTAL
@@ -74,6 +88,8 @@ async def handle_veto_post(
     await hellpit_discussion_thread.send(", ".join(mentions))
 
     await veto_poll_thread.send(hellpit_discussion_thread.jump_url)
+    if hcid:
+        await veto_poll_thread.send(str(hcid))
 
     await hellpit_discussion_thread.send(message.jump_url)
 

@@ -83,7 +83,7 @@ flowchart TD
 
   UPD --> PC
   NEW --> PC
-  PC["POST /api/cards/postcard<br/>imageBase64 → Hellfall uploads GCS<br/>require_sync = true"]
+  PC["POST /api/cards/postcard<br/>imageBase64 → Hellfall uploads GCS"]
   PC --> OK{"ok?"}
   OK -->|no| RB["POST /api/cards/postcard/rollback"]
   RB --> FAIL["Accept fails — no Discord card-list post"]

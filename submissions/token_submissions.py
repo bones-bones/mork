@@ -141,7 +141,6 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
             set_id="HCT",
             hcid=final_card_name,
             kind="token",
-            require_sync=True,
         )
         if not postcard_write or not postcard_write.image_url:
             raise PostcardSyncError("hellfall did not return imageUrl")

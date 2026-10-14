@@ -36,17 +36,15 @@ flowchart TD
   REMINDER_CHECK -->|yes| REM["🕛 nearing-end ping"]
   REM --> POLL
   REMINDER_CHECK -->|no| POLL
-  CHK -->|yes| GRAVE_CHECK{"Admin 🪦 reacted?"}
-  GRAVE_CHECK -->|yes| GY["accept → HCV graveyard"]
-  GRAVE_CHECK -->|no| ADMIN_SAFEGUARD{"Admin 👍 among upvotes<br/>or downvotes ≠ 1?"}
+  CHK -->|yes| ADMIN_SAFEGUARD{"Admin 👍 among upvotes<br/>or downvotes ≠ 1?"}
   ADMIN_SAFEGUARD -->|no| ADM["DM admin to verify"]
   ADM --> POLL
-  ADMIN_SAFEGUARD -->|yes| VP2["#veto-polls"]
-  VP2 --> HVP["Veto poll setup"]
+  ADMIN_SAFEGUARD -->|yes| PROMO["promote_from_submissions<br/>official in database"]
+  PROMO --> VP2["#veto-polls"]
+  VP2 --> HVP["Veto poll setup<br/>thread line 2 = hcid"]
   VP --> HVP
   HVP --> ANN["#submissions-discussion + log"]
   ANN --> DEL2["Delete submission poll"]
-  GY --> DEL2
 ```
 
 ### Missing / invalid submission cases

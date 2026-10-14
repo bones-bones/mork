@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import base64
 import binascii
-import os
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -36,15 +35,6 @@ class PostcardWrite:
     hellfall_id: str | None = None
     # Oracle card UUID from response ``oracle_id`` (sheet BC / token M).
     oracle_id: str | None = None
-
-
-def postcard_sync_enabled() -> bool:
-    return os.environ.get("MORK_POSTCARD_SYNC", "1").strip().lower() not in {
-        "0",
-        "false",
-        "no",
-        "off",
-    }
 
 
 def _postcard_debug(msg: str) -> None:
@@ -125,11 +115,7 @@ async def sync_accepted_card(
     image_mime_type: str | None = None,
     hcid: str | None = None,
     kind: Literal["card", "token"] = "card",
-    require_sync: bool = False,
-) -> PostcardWrite | None:
-    if not require_sync and not postcard_sync_enabled():
-        return None
-
+) -> PostcardWrite:
     api_url = get_api_url()
     api_key = get_api_key()
     if not api_url or not api_key:

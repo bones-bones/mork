@@ -25,7 +25,7 @@ from discord.utils import get
 from dotenv import load_dotenv
 
 import hc_constants
-from accept_card import accept_card
+from accept_card import accept_card, promote_from_submissions
 from check_submissions import check_submissions
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import (
@@ -58,7 +58,7 @@ from getters import (
     # getVetoDiscussionChannel,
     getVetoHellpitsChannel,
 )
-from handle_veto_post import handle_veto_post
+from handle_veto_post import handle_veto_post, hcid_from_veto_poll_thread
 from hellfall_fetcher import cardsExist, getExactCard, getSearchFromServer
 from image_response_filename import filename_from_image_response
 from is_admin import can_instaerrata, is_admin, is_veto
@@ -405,38 +405,6 @@ class LifecycleCog(commands.Cog):
                     )
                     await errata_submission_message.add_reaction("☑️")
 
-        # The sneaky errata case for HC8
-        if (
-            reaction.emoji.id == hc_constants.SYMBOL_UNTAP
-            and reaction.user_id == hc_constants.TRUSTED_USER
-        ):
-            file = await message.attachments[0].to_file()
-            acceptanceMessage = message.content
-            # consider putting most of this into accept_card
-            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
-            resolvedName = dbname if dbname != "" else "Crazy card with no name"
-            resolvedAuthor = card_author if card_author != "" else "no author"
-            cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
-
-            set_to_add_to = "HC8.1"
-
-            channel_to_add_to = hc_constants.HC_EIGHT_LIST
-
-            await accept_card(
-                bot=self.bot,
-                file=file,
-                cardMessage=cardMessage,
-                cardName=dbname,
-                authorName=card_author,
-                message_set_id=set_to_add_to,
-                channelIdForCard=channel_to_add_to,
-            )
-
-            await message.add_reaction(hc_constants.ACCEPT)
-            thread = cast(Thread, guild.get_channel_or_thread(message.id))
-            if thread:
-                await thread.edit(archived=True)
-
         # Scube Lair: admin medal reactions accept cards into set card lists
         if reaction.channel_id == hc_constants.SCUBE_LAIR_SUBMISSION_CHANNEL and str(
             reaction.emoji
@@ -499,7 +467,6 @@ class LifecycleCog(commands.Cog):
                 message_set_id=message_set_id,
                 channelIdForCard=list_channel,
                 wasVetoed=wasVetoed,
-                require_hellfall_postcard=True,
             )
             await message.add_reaction(hc_constants.ACCEPT)
             return
@@ -775,21 +742,31 @@ class LifecycleCog(commands.Cog):
 
                 file = await message.attachments[0].to_file()
                 if reasonable_card():
-                    veto_channel = getVetoChannel(bot=self.bot)
                     acceptedChannel = getSubmissionDiscussionChannel(self.bot)
                     logChannel = getMorkSubmissionsLoggingChannel(self.bot)
                     acceptContent = f"{card_name} by {author} was accepted"
-                    accepted_message_no_mentions = acceptContent
-                    for index, mentionEntry in enumerate(message.raw_mentions):
-                        accepted_message_no_mentions = accepted_message_no_mentions.replace(
-                            f"<@{mentionEntry}>",
-                            message.mentions[index].name,
+                    veto_content = f"{card_name} by {message.author.name}"
+                    attachment = message.attachments[0]
+                    attachment_data = await attachment.read()
+                    attachment_filename = attachment.filename or "card.png"
+                    try:
+                        await promote_from_submissions(
+                            bot=self.bot,
+                            veto_content=veto_content,
+                            file=discord.File(
+                                fp=io.BytesIO(attachment_data),
+                                filename=attachment_filename,
+                            ),
+                            cardName=card_name,
+                            authorName=author,
                         )
-                    copy = await message.attachments[0].to_file()
-                    await veto_channel.send(
-                        content=card_name + " by " + message.author.name, file=copy
+                    except Exception as e:
+                        print(f"reasonable_card promote_from_submissions failed: {e}")
+                        return
+                    copy2 = discord.File(
+                        fp=io.BytesIO(attachment_data),
+                        filename=attachment_filename,
                     )
-                    copy2 = await message.attachments[0].to_file()
                     logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
                     await acceptedChannel.send(content=f"✨✨ {acceptContent} ✨✨")
                     await acceptedChannel.send(content="", file=file)
@@ -1043,6 +1020,15 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = hc_constants.ACTIVE_CUBE_ID
                 channel_to_add_to = hc_constants.NINE_CARD_LIST
 
+            existing_hcid = None
+            if not errata_id:
+                poll_thread = cast(
+                    Thread | None,
+                    guild.get_channel_or_thread(messageEntry.id),
+                )
+                if poll_thread:
+                    existing_hcid = await hcid_from_veto_poll_thread(poll_thread)
+
             await accept_card(
                 bot=self.bot,
                 file=file,
@@ -1055,6 +1041,7 @@ class LifecycleCog(commands.Cog):
                 errataId=errata_id,
                 skip_reddit=skip_reddit,
                 deferred_reddit_dir=deferred_reddit_dir,
+                existing_hcid=existing_hcid,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)
@@ -1076,6 +1063,14 @@ class LifecycleCog(commands.Cog):
 
             vetoedCards.append(get_card_message(messageEntry.content))
 
+            existing_hcid = None
+            poll_thread = cast(
+                Thread | None,
+                guild.get_channel_or_thread(messageEntry.id),
+            )
+            if poll_thread:
+                existing_hcid = await hcid_from_veto_poll_thread(poll_thread)
+
             await accept_card(
                 bot=self.bot,
                 file=file,
@@ -1087,6 +1082,7 @@ class LifecycleCog(commands.Cog):
                 wasVetoed=True,
                 skip_reddit=skip_reddit,
                 deferred_reddit_dir=deferred_reddit_dir,
+                existing_hcid=existing_hcid,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md

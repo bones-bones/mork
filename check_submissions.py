@@ -8,14 +8,12 @@ from discord.ext import commands
 from discord.utils import get
 
 import hc_constants
-from accept_card import accept_card
+from accept_card import promote_from_submissions
 from get_card_message import parseCardNameAndAuthor
 from getters import (
     getSubmissionDiscussionChannel,
     getSubmissionsChannel,
-    getVetoChannel,
 )
-from handle_veto_post import handle_veto_post
 from is_admin import is_admin
 from is_mork import is_mork
 
@@ -23,7 +21,6 @@ from is_mork import is_mork
 async def check_submissions(bot: commands.Bot):
     print("checking submissions")
     subChannel = getSubmissionsChannel(bot)
-    vetoChannel = getVetoChannel(bot)
     acceptedChannel = getSubmissionDiscussionChannel(bot)
     logChannel = cast(TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
     timeNow = datetime.now(UTC)
@@ -101,74 +98,26 @@ async def check_submissions(bot: commands.Bot):
                 resolvedName = dbname if dbname != "" else "Crazy card with no name"
                 print(f"Processing submission: {resolvedName}")
 
-                # The spooky block is to determine if cards should automatically go to the graveyard channel
-                tombstone = get(messageEntry.reactions, emoji=hc_constants.TOMBSTONE)
-                if tombstone:
-                    spooky = False
-                    await asyncio.sleep(1)
-                    async for user in tombstone.users():
-                        if guild.get_member(user.id) is not None and (
-                            is_admin(cast(Member, user)) or is_mork(user.id)
-                        ):
-                            spooky = True
-                    if spooky:
-                        resolvedAuthor = card_author if card_author != "" else "no author"
-                        cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
-                        await asyncio.sleep(1)
-                        await accept_card(
-                            bot=bot,
-                            channelIdForCard=hc_constants.GRAVEYARD_CARD_LIST,
-                            message_set_id="HCV",
-                            file=File(
-                                fp=io.BytesIO(attachment_data),
-                                filename=attachment_filename,
-                            ),
-                            cardMessage=cardMessage,
-                            authorName=card_author,
-                            cardName=dbname,
-                            errata=False,
-                        )
-                        await asyncio.sleep(1)
-                        # If this submission was previously marked with a time reminder,
-                        # delete the bot's reminder ping message in the submissions channel.
-                        time_reacts = get(messageEntry.reactions, emoji="🕛")
-                        if time_reacts:
-                            await asyncio.sleep(1)
-                            async for rem_msg in subChannel.history(limit=200):
-                                if (
-                                    rem_msg.author == bot.user
-                                    and messageEntry.jump_url in rem_msg.content
-                                ):
-                                    try:
-                                        await asyncio.sleep(1)
-                                        await rem_msg.delete()
-                                    except Exception as e:
-                                        print(f"submissions check error: {e}")
-
-                        await messageEntry.delete()
-                        continue  # and then stop processing the card
-
-                await asyncio.sleep(1)
-                vetoEntry = await vetoChannel.send(
-                    content=accepted_message_no_mentions,
-                    file=File(
-                        fp=io.BytesIO(attachment_data),
-                        filename=attachment_filename,
-                    ),
-                )
-
-                # Submissions thread is not deleted with the message.
                 submission_thread = guild.get_channel_or_thread(messageEntry.id)
+                try:
+                    await promote_from_submissions(
+                        bot=bot,
+                        veto_content=accepted_message_no_mentions,
+                        file=File(
+                            fp=io.BytesIO(attachment_data),
+                            filename=attachment_filename,
+                        ),
+                        cardName=dbname,
+                        authorName=card_author,
+                        submission_thread_url=(
+                            submission_thread.jump_url if submission_thread else None
+                        ),
+                    )
+                except Exception as e:
+                    print(f"promote_from_submissions failed for {resolvedName}: {e}")
+                    continue
 
                 await asyncio.sleep(1)
-                await handle_veto_post(
-                    message=vetoEntry,
-                    bot=bot,
-                    veto_council=None,
-                    submission_thread_url=(
-                        submission_thread.jump_url if submission_thread else None
-                    ),
-                )
 
                 logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
                 await asyncio.sleep(1)
