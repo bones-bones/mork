@@ -247,10 +247,15 @@ def splitOptions(cardName: str) -> tuple[str, DisplayOptions]:
 
 async def getMultipleFuzzyCards(
     cardNames: list[str],
+    *,
+    prefer_oldest: bool = False,
 ) -> list[tuple[SearchCard, DisplayOptions]]:
     if STILL_USING_CACHE:
         splitNames = [splitOptions(cardName) for cardName in cardNames]
-        cards = [(get_card_by_fuzzy_name(cardName), op) for (cardName, op) in splitNames]
+        cards = [
+            (get_card_by_fuzzy_name(cardName, prefer_oldest=prefer_oldest), op)
+            for (cardName, op) in splitNames
+        ]
         return [(card, ops) for (card, ops) in cards if card]
     try:
         payload: dict[str, str | list[str] | bool] = {
