@@ -56,7 +56,7 @@ def _postcard_request_context(
     kind: str,
     name: str,
     set_id: str,
-    hcid: str | None,
+    hcid: str | None, # Hellfall card ID, should only be present on EXISTING cards. New cards get hcid minted on hellfall.
     image: str | None,
     image_base64: str | None,
     image_mime_type: str | None,
