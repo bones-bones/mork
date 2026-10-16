@@ -25,7 +25,7 @@ from discord.utils import get
 from dotenv import load_dotenv
 
 import hc_constants
-from accept_card import accept_card, promote_from_submissions
+from accept_card import accept_card, promote_card_to_database, promote_from_submissions
 from check_submissions import check_submissions
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import (
@@ -373,10 +373,34 @@ class LifecycleCog(commands.Cog):
                     int(link_message.content.split("/").pop())
                 )
                 attachment_reference = message.attachments[0]
+                attachment_bytes = await attachment_reference.read()
 
                 copy_of_file_for_veto_channel = await attachment_reference.to_file()
                 copy2 = await attachment_reference.to_file()
                 if copy_of_file_for_veto_channel and copy2:
+                    resubmit_hcid: str | None = None
+                    og_thread = cast(
+                        Thread | None,
+                        guild.get_channel_or_thread(ogMessage.id),
+                    )
+                    if og_thread:
+                        resubmit_hcid = await hcid_from_veto_poll_thread(og_thread)
+
+                    if resubmit_hcid:
+                        resubmit_name, resubmit_author = parseCardNameAndAuthor(
+                            first_message.content
+                        )
+                        try:
+                            await promote_card_to_database(
+                                file_data=attachment_bytes,
+                                cardName=resubmit_name,
+                                authorName=resubmit_author,
+                                existing_hcid=resubmit_hcid,
+                            )
+                        except Exception as e:
+                            print(f"hellpit resubmit promote_card_to_database failed: {e}")
+                            return
+
                     vetoChannel = getVetoChannel(bot=self.bot)
                     vetoEntry = await vetoChannel.send(
                         content=first_message.content,
@@ -384,19 +408,11 @@ class LifecycleCog(commands.Cog):
                     )
 
                     veto_council_to_notify = hc_constants.VETO_COUNCIL
-                    # (
-                    #     hc_constants.VETO_COUNCIL_PORTAL
-                    #     if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
-                    #     else (
-                    #         hc_constants.VETO_COUNCIL_2
-                    #         if get(ogMessage.reactions, emoji=hc_constants.WOLF)
-                    #         else None
-                    #     )
-                    # )
                     await handle_veto_post(
                         message=vetoEntry,
                         bot=self.bot,
                         veto_council=veto_council_to_notify,
+                        hcid=resubmit_hcid,
                     )
                     await ogMessage.add_reaction(hc_constants.DELETE)
                     errata_submissions_channel = getErrataTrackingChannel(bot=self.bot)
