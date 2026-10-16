@@ -153,7 +153,6 @@ DELETE = "❌"
 BAD = "🤮"
 UNSURE = "🤔"
 
-TOMBSTONE = "🪦"
 CLOCK = "⏰"
 WOLF = "🐺"
 
