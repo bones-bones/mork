@@ -20,10 +20,11 @@ flowchart TD
     CHK -- yes --> ADMIN_SAFEGUARD{"Has an admin 👍 or is there at least one downvote"}
 
     ADMIN_SAFEGUARD -- no --> ADM["DM admin to verify"]
+    ADMIN_SAFEGUARD -->|yes| PROMO["promote_from_submissions<br/>Hellfall + unapproved sheet"]
   end
 
   MAG -->|yes| VETO_FLOW
-  ADMIN_SAFEGUARD -->|yes| VETO_FLOW
+  PROMO --> VETO_FLOW
 
   subgraph veto["2 · Veto council"]
     VETO_FLOW["Post to #veto-polls"] --> H["Veto poll setup<br/>reactions + locked thread + hellpit"]
@@ -38,8 +39,11 @@ flowchart TD
   end
 
   subgraph persist["3 · Persistence"]
-    L --> Q[("Database (Unapproved)<br/>+ Hellfall postcard")]
-    M --> Q
+    L --> FIN["accept_card finalize<br/>set + accepted order · no 2nd postcard"]
+    M --> FIN
+    N --> ACC_ERR["accept_card + postcard<br/>(errata — no early promote)"]
+    FIN --> Q[("Unapproved sheet row")]
+    ACC_ERR --> Q
     Q --> R["Manual mod copy → Database"]
     R --> S["Search / Hellfall / print scripts"]
   end

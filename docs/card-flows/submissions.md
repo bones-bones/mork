@@ -127,7 +127,7 @@ flowchart TD
   CHK -->|no| POLL
   CHK -->|yes| ACC["Accept token"]
   ACC --> CL["Post #token-list"]
-  ACC --> DRV["Upload to token folder"]
+  ACC --> HF["Hellfall postcard (kind=token)"]
   ACC --> SH[("Tokens Database (Unapproved)")]
 ```
 

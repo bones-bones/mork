@@ -141,8 +141,12 @@ See [Acceptance → Reddit posting](acceptance.md#reddit-posting-immediate-accep
 ```mermaid
 flowchart TD
   RX["✅ in hellpit thread"] --> READ["Follow link → original veto-poll message"]
-  READ --> REPOST["Repost fixed card to #veto-polls"]
-  REPOST --> HVP["Veto poll setup (new poll)"]
+  READ --> HCID{"Original poll thread<br/>has numeric hcid?"}
+  HCID -->|yes| PROMO["promote_card_to_database<br/>postcard update + sheet"]
+  HCID -->|no| LEG["Legacy: veto only at compile"]
+  PROMO --> REPOST["Repost fixed card to #veto-polls"]
+  LEG --> REPOST
+  REPOST --> HVP["Veto poll setup<br/>thread line 2 = hcid when known"]
   READ --> MARK["Mark original veto poll ❌"]
   MARK --> ERR["Copy to #errata-submissions with ☑️"]
 ```

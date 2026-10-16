@@ -98,7 +98,7 @@ Discord card-list attachments and deferred Reddit files use the extension from *
 
 ### Hellfall postcard sync
 
-**Required** for every card/token ingest path except compile-veto **finalize** (`existing_hcid` — already promoted).
+**Required** for every card/token ingest path except compile-veto **accept finalize** (`existing_hcid` — already promoted; sheet + card-list only). **Veto finalize** with `existing_hcid` still postcards to move the print to the HCV set in Hellfall.
 
 | Env var                     | Role                         |
 | --------------------------- | ---------------------------- |
