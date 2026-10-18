@@ -407,7 +407,7 @@ class SpecificCardsCog(commands.Cog):
         """for the card "Illusionary GF" """
         await fetch_random_from_scryfall(ctx, "t:chandra t:planeswalker")
 
-    @commands.command()
+    @commands.command(aliases=["curvetopper"])
     async def topper(self, ctx: commands.Context, amount):
         """for the card "Ballsjr's Ultimate Curvetopper" """
         if int(amount) > 10:
