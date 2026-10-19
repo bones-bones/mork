@@ -21,6 +21,8 @@ from cogs.specific_output import (
     femaleWarWalkers,
     grunch_flavor_text_options,
     grunch_rules_text_options,
+    prunch_flavor_text_options,
+    prunch_rules_text_options,
     hell_locus_ids,
     iconicHands,
     obscureModes,
@@ -771,6 +773,37 @@ class SpecificCardsCog(commands.Cog):
 
         await ctx.send("\n".join(message_parts))
 
+    @commands.command()
+    async def prunch(self, ctx: commands.Context):
+        """for cards that prunch"""
+        # Original: https://g0m.github.io/howtoPRUNCH/
+
+        default_prunch_image = "https://g0m.github.io/howtoPRUNCH/images/prunch.png"
+        prunch_image_options = [
+            "https://g0m.github.io/howtoPRUNCH/images/prunch.png",
+            "https://g0m.github.io/howtoPRUNCH/images/prunch.png",
+            # look, i'm future-proofing things here,
+        ]
+
+        random_rules_text = random.choice(prunch_rules_text_options)
+        random_flavor_text = random.choice(prunch_flavor_text_options)
+
+        chosen_image = default_prunch_image
+        random_image_chance = random.random()
+
+        if random_image_chance >= 0.3:
+            chosen_image = random.choice(prunch_image_options)
+
+        message_parts = [
+            f"# [How to Prunch]({chosen_image} \"Secret Prunch rules text: '?' is not a number until it can be determined, either by the static CDA text on this website or the triggered Grunch ability. If '?' remains undefined, it is not zero. A Grunch with no P/T cannot die to damage or as a result of having 'zero toughness'. If '?' changes after it has been determined to be a number, it changes globally for all creatures with a '?' in their P/T box.\")",
+            f"So you want to learn how to deal with this wacky little {random_rules_text[0]}? Well here's how!",
+        ]
+
+        message_parts.extend(f"## {line}" for line in random_rules_text[1].split("\n"))
+        message_parts.extend(f"### *{line}*" for line in random_flavor_text.split("\n"))
+        message_parts.append("-# [original](https://g0m.github.io/howtoPRUNCH/)")
+
+        await ctx.send("\n".join(message_parts))
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(SpecificCardsCog(bot))
