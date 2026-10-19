@@ -683,3 +683,125 @@ grunch_flavor_text_options = [
     "Grunch Pro Tip: Hover your mouse over Grunch for his sage words of wisdom.",
     "It's grunchin' time.",
 ]
+
+prunch_rules_text_options = [
+    (
+        "troubled genius",
+        "To Prunch, add a target card from your sideboard to your hand. Its colored mana pips perpetually become twobrid.\n'?' becomes equal to its new mana value.",
+    ),
+    (
+        "chubby funster",
+        "To Prunch, exile any number of cards from your hand, and then add that many plus one cards from your sideboard to your hand.\n'?' becomes equal to the number of cards exiled by this effect.",
+    ),
+    (
+        "UB staple",
+        "To Prunch, add an additional beginning phase at the start of your next end phase. *(After your end phase, untap, upkeep, and draw a card.)*\n'?' is equal to 5 *(The number of phases in most turns)*."),
+    (
+        "purple man (not the marvel one)",
+        "To Prunch, you may draft a card into your hand from the battlefield. *(Return it to its owner at the end of the game.)*\n'?' becomes equal to its mana value.",
+    ),
+    (
+        "noun",
+        "To Prunch, target player mills three cards, then you may put any number of purple permanents from your graveyard onto the battlefield, tapped, and any number of purple nonpermanent spells from your graveyard into your hand.\n'?' is equal to double your devotion to purple.",
+    ),
+    (
+        "homunculus",
+        "To Prunch, destroy up to two of the following game objects (you may choose the same mode twice): a conspiracy, an emblem, a dungeon, a counter, a designation, a perpetual effect, a link between two or more objects. *(Designations include monstrous, renowned, goaded, city’s blessing, commander, day/night, monarch, and level. Links include attached cards, soulbound effects, oblivion ring effects, etc. If you’re playing an EDH variant, you can’t destroy the commander designation.)*\n'?' is equal to 4.",
+    ),
+    (
+        "S-rank pull",
+        "To Prunch, roll 2d5. Select one result, and draw that many + 1 cards.\n'?' becomes equal to the other result + 1.",
+    ),
+    (
+        "Creature — Prunch",
+        "To Prunch, place \"trample\" and \"this card is legal in all formats\" counters on all creatures you control. Creatures your opponent control become limited in vintage.\n'?' is equal to 5.",
+    ),
+    (
+        "ex-SOLDIER",
+        "To Prunch, Prunch becomes your commander.\n'?' is equal to your commander tax + 4, for the rest of the game, and cannot be redefined.",
+    ),
+    (
+        "proxy",
+        "To Prunch, Prunch again, and in addition to its effects, draw ? cards and discard ? cards.\n'?' is equal to NaN.",
+    ),
+    (
+        "insect",
+        "To Prunch, draw a card. Then, fateseal 2, then that opponent reveals the top card of their library. *(To fateseal 2, look at the top 2 cards of an opponent's library, then put any number of them on the bottom of that player's library and the rest on top in any order.)*\n'?' becomes equal to its mana value.",
+    ),
+    (
+        "bad guy from LOST",
+        "To Prunch, target opponent reveals their hand. You may choose a target nonland card from it and put it into your hand.\n'?' is equal to the number of cards in that opponent's hand.",
+    ),
+    (
+        "historic villain",
+        "To Prunch, turn target permanent controlled by an opponent face down. It becomes a battle under your protection with defence equal to its mana value + 1. *(They get it back if they defeat it.)*</i>\n'?' is also equal to its mana value + 1.",
+    ),
+    (
+        "time lord",
+        "To Prunch, move up to one card from your sideboard to your hand, then move any number of nonbasic cards from your sideboard to your graveyard.\n'?' is equal to the number of cards in your graveyard plus one.",
+    ),
+    (
+        "symbol of good",
+        "To Prunch, search your library for the basic land of your choice, put it onto the battlefield, then shuffle your library. (It came from Homelands).\n'?' becomes equal to the amount of upvotes Prunch received in submissions divided by 10 (rounded down). (7)",
+    ),
+    (
+        "fallen soul",
+        "To Prunch, exile cards from the top of target opponent's library until there are 4 or more total cards in exile. Then, draw a card of your choice from exile or HELL.\n'?' is equal to the amount of cards in exile and HELL plus one.",
+    ),
+    (
+        "wad",
+        "To Prunch, draw four cards, then put two cards from your hand on top of your whammy deck. *(Your whammy deck starts as a Plains, Island, Swamp, Mountain, and Forest.)*.\n'?' is equal to the number of cards in your hand.",
+    ),
+    (
+        "Prunch from the future",
+        "To Prunch, return Prunch to your hand. It gains flash and costs 0 mana to cast until the start of your next turn.\n'?' will be defined shortly."
+    ),
+]
+
+prunch_flavor_text_options = [
+  "'Prunch.' -Prunch",
+  "'Grunch. I mean Prunch. Shit, shit, what'd I say?' -Prunch",
+  "Prunch is a purple version of Grunch.",
+  "Did you know? Prunch was actually released before Grunch in Japan.",
+  "The P in Prunch stands for Purple — and frankly, that's the colour that Prunch is.",
+  "I can't wait to humanely euthanize Prunch.",
+  "I've typed Prunch so much that it barely seems like a real word anymore. But it is",
+  "There's a section on Prunch's wikipedia page of people who've claimed to meet it in real life.",
+  "Prunch sucks! I HATE Prunch!!!!!",
+  "They didn't let me include 'To Prunch, flip Prunch onto the battlefield from a height of at least one foot. If it turns over completely at least once during the flip, destroy all nontoken permanents it touches. '?' is equal to how many permaments it destroyed.'",
+  "If you pump air into Prunch between its skin and fat before rendering, you end up with an almost shatteringly crisp texture.",
+  "Prunch is the world's only correct solipsist.",
+  "LEGAL IN HISTORIC - BANNED IN VINTAGE",
+  "It's weird that it's purple.",
+  "If you bite down on Prunch it pops like a gum bubble.",
+  "Prunch is extremely popular with women in Japan for the same reason that Twin Peaks: Fire Walk With Me was.",
+  "Prunch dated a 19 year old when it was 25, which was definitely a big enough gap that we all felt weird about it but not so much that we said anything.",
+  "'I'll be here. I'll be waiting for you. If you come here, you'll find me. I promise.' -Prunch",
+  "An online conspiracy theory known as the 'Two Prunch' theory postulates that there are actually two Prunches.",
+  "Not really funny, kind of underpowered for vintage cube.",
+  "!bot-test in #prunch or go to tinyurl.com/howtoBOTTEST",
+  "There are two funny cards in hellscube. Prunch is one and the other is that card where you can reveal a red card from your hand to exile a creature from the match.",
+  "VEGAN IMITATION PRUNCH 'WE REPLACED THE ORGANS WITH A BUNCH OF BEANS AND SHIT' 'AWFUL'",
+  "I don't know guys. I don't think it's that purple.",
+  "You may read this flavour text as if it had flash.",
+  "It seems as if the people have contracted 'Prunch Fever' and they love Prunch.",
+  "Yeah, I scoop. No. No, I don't want to have to deal with a million Prunch triggers.",
+  "Don't get me wrong, I love hellscube. I just wish the cards were more like ones WOTC would've printed.",
+  "BASED ON A TRUE STORY",
+  "ANY RESEMBLANCE TO GRUNCH IS ENTIRELY COINCIDENTAL",
+  "This isn't an echoverse thing. Prunch is actually from the Star Trek mirror universe",
+  "Prunch is short for Pruple Ounch.",
+  "I like Prunch.",
+  "When not being played as a game object, you can find Prunch scrolling through YouTube shorts of The Big Bang Theory and crying at the emotional parts.",
+  "BRING PRUNCH TO THE PRERELEASE — GET YOUR SHIT ROCKED",
+  "This year will be the 'Year of Prunch'.",
+  "Yell at Prunch! Scream at Prunch! Call for its death!!",
+  "You would veto Prunch? Iconic beloved hellscube mainstay Prunch???",
+  "'Any fool can know. The point is to understand.' -Prunch",
+  "One Prunch Man.",
+  "Kind of funny to see Prunch.",
+  "Deeply upsetting to see Prunch.",
+  "Please do not show me Prunch at this time.",
+  "Fuck... accidentally called my teacher Prunch :pensive:",
+  "Prunch? Entirely hollow. Filled with bees",
+]
