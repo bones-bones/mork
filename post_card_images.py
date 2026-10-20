@@ -139,7 +139,7 @@ async def post_card_images(message: Message):
             if name == "fish":
                 message_text[i] = FISH_FROM_GO_FISH_SEARCH
     try:
-        requestedCards = await getMultipleFuzzyCards(message_text)
+        requestedCards = await getMultipleFuzzyCards(message_text, prefer_oldest=True)
     except Exception:
         print("[card-images] lookup failed:")
         traceback.print_exc()
