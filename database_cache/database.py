@@ -135,11 +135,42 @@ def build_database(serverJSON: dict[str, dict[str, Any]]):
     )
 
 
+def _accepted_order_sort_key(card: SearchCard) -> tuple[int, str]:
+    accepted_order = str(card.accepted_order or "")
+    return (
+        int(accepted_order) if accepted_order.isdigit() else 10**9,
+        card.id,
+    )
+
+
+def _oldest_id_for_lookup(lookup: LookupCard) -> str:
+    all_ids: set[str] = {lookup.defaultId}
+    for id_list in lookup.setMap.values():
+        all_ids.update(id_list)
+
+    default_card = idMap.get(lookup.defaultId)
+    if not default_card:
+        return lookup.defaultId
+
+    oracle_id = default_card.oracle_id
+    candidates = [
+        card_id
+        for card_id in all_ids
+        if (card := idMap.get(card_id)) and card.oracle_id == oracle_id
+    ]
+    if not candidates:
+        return lookup.defaultId
+
+    return min(candidates, key=lambda card_id: _accepted_order_sort_key(idMap[card_id]))
+
+
 def _get_id_by_set_and_num(
     name: str,
     code: SetCode | None = None,
     collector_number: str | None = None,
     noDefault: bool | None = None,
+    *,
+    prefer_oldest: bool = False,
 ):
     if not name:
         return
@@ -150,6 +181,8 @@ def _get_id_by_set_and_num(
             lookup = nameMap[name]
         except KeyError:
             lookup = nameMap[aliasMap[name]]
+        if not code and prefer_oldest:
+            return _oldest_id_for_lookup(lookup)
         return lookup.get(code, collector_number, noDefault)
     except KeyError:
         return
@@ -167,12 +200,15 @@ def get_id_by_name(text: str):
     return _get_id_by_set_and_num(*splitCardName(fixName(text)))
 
 
-def get_id_by_fuzzy_name(text: str):
+def get_id_by_fuzzy_name(text: str, *, prefer_oldest: bool = False):
     fixed = fixName(text)
-    exact = _get_id_by_set_and_num(*splitCardName(fixed))
+    exact = _get_id_by_set_and_num(*splitCardName(fixed), prefer_oldest=prefer_oldest)
     if exact:
         return exact
-    return _get_id_by_set_and_num(*splitCardName(get_closest_name(fixed, yieldAllNames())))
+    return _get_id_by_set_and_num(
+        *splitCardName(get_closest_name(fixed, yieldAllNames())),
+        prefer_oldest=prefer_oldest,
+    )
 
 
 def get_id_by_hcid(hcid: str):
@@ -193,8 +229,8 @@ def get_card_by_name(name: str):
         return get_card_by_id(uuid)
 
 
-def get_card_by_fuzzy_name(name: str):
-    uuid = get_id_by_fuzzy_name(name)
+def get_card_by_fuzzy_name(name: str, *, prefer_oldest: bool = False):
+    uuid = get_id_by_fuzzy_name(name, prefer_oldest=prefer_oldest)
     if uuid:
         return get_card_by_id(uuid)
 
