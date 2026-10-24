@@ -26,7 +26,6 @@ creds = ServiceAccountCredentials.from_json_keyfile_name(
 )
 gauth.credentials = creds
 drive = GoogleDrive(gauth)
-about = drive.GetAbout()
 
 googleClient = gspread.authorize(creds)  # type: ignore
 

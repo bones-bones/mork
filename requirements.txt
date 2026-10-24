@@ -4,8 +4,7 @@ aiofiles
 discord.py==2.3.2
 python-dotenv
 dnspython>=2.6.1
-cryptography>=49.0.0
-pyOpenSSL>=26.0.0
+pyopenssl>=23.0.0,<24.2.0  # oauth2client JWT signing needs OpenSSL.crypto.sign
 PyNaCl
 async-timeout==3.0.1
 pandas
