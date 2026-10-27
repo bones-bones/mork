@@ -41,7 +41,7 @@ flowchart TD
   ADM --> POLL
   ADMIN_SAFEGUARD -->|yes| PROMO["promote_from_submissions<br/>official in database"]
   PROMO --> VP2["#veto-polls"]
-  VP2 --> HVP["Veto poll setup<br/>thread line 2 = hcid"]
+  VP2 --> HVP["Veto poll setup<br/>thread line 2 = uuid: …"]
   VP --> HVP
   HVP --> ANN["#submissions-discussion + log"]
   ANN --> DEL2["Delete submission poll"]

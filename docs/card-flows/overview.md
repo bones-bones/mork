@@ -42,9 +42,11 @@ flowchart TD
     L --> FIN["accept_card finalize<br/>set + accepted order · no 2nd postcard"]
     M --> FIN
     N --> ACC_ERR["accept_card + postcard<br/>(errata — no early promote)"]
-    FIN --> Q[("Unapproved sheet row")]
+    FIN --> Q[("Hellfall catalog<br/>(postcard SoR)")]
     ACC_ERR --> Q
-    Q --> R["Manual mod copy → Database"]
-    R --> S["Search / Hellfall / print scripts"]
+    FIN --> Q2[("Unapproved sheet<br/>optional dual-write")]
+    ACC_ERR --> Q2
+    Q --> S["Search / Hellfall / print scripts"]
+    Q2 -.->|"legacy export only"| S
   end
 ```

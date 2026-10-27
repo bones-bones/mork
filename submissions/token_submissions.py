@@ -22,6 +22,7 @@ from hellfall_postcard import (
 from image_response_filename import content_type_for_ext, extension_from_image_bytes
 from is_mork import is_mork
 from shared_vars import googleClient
+from sheet_dual_write import sheet_dual_write_enabled
 
 tokenUnapproved = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE).worksheet(
     hc_constants.TOKEN_UNAPPROVED
@@ -173,7 +174,8 @@ async def acceptTokenSubmission(bot: commands.Bot, message: Message):
                     value=postcard_write.oracle_id,
                 )
             )
-        tokenUnapproved.update_cells(token_cells)
+        if sheet_dual_write_enabled():
+            tokenUnapproved.update_cells(token_cells)
         await tokenListChannel.send(
             content=cardName + " by " + creator + "\n" + relatedCards,
             file=copy,

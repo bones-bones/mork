@@ -4,7 +4,7 @@
 
 ## Veto poll setup
 
-**Entry:** Any new message in `#veto-polls` · also called from submission checks, errata flows, hellpit resubmit
+**Entry:** Any new message in `#veto-polls` runs **`intake_veto_poll_message`** (postcard + poll setup) for bot posts, human posts, masterpiece, and submissions. Errata **channel** auto-promote posts with **`skip_postcard`** (compile accept only).
 
 ```mermaid
 flowchart TD
@@ -146,7 +146,7 @@ flowchart TD
   HCID -->|no| LEG["Legacy: veto only at compile"]
   PROMO --> REPOST["Repost fixed card to #veto-polls"]
   LEG --> REPOST
-  REPOST --> HVP["Veto poll setup<br/>thread line 2 = hcid when known"]
+  REPOST --> HVP["Veto poll setup<br/>thread line 2 = uuid: … when known"]
   READ --> MARK["Mark original veto poll ❌"]
   MARK --> ERR["Copy to #errata-submissions with ☑️"]
 ```

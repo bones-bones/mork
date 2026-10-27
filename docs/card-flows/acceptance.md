@@ -6,7 +6,8 @@
 
 | Function | Meaning |
 | -------- | ------- |
-| `promote_from_submissions` | Card is **officially in the database** (Hellfall + unapproved sheet), then veto intake |
+| `intake_veto_poll_message` | **#veto-polls intake:** Hellfall postcard + unapproved sheet, then poll setup (`uuid:` line) |
+| `promote_from_submissions` | Post to veto channel, then intake (submissions / untap / magic skip) |
 | `accept_card` | Card is **official in the cube or vetoed** (card-list, Reddit, set + accepted order on sheet) |
 
 ## accept_card
@@ -109,7 +110,7 @@ Discord card-list attachments and deferred Reddit files use the extension from *
 
 Payload includes `name`, `creators`, `set`, `kind: "card"`, `imageBase64`, and `imageMimeType` (`image/png`, `image/gif`, `image/jpeg`, or `image/webp` when sniffable). Errata sends existing `hcid`; new cards omit `hcid` so Hellfall assigns the next numeric id.
 
-**Response used:** `hcid` (sheet col A on new cards), `imageUrl`, `id` (Hellfall UUID → sheet col BB), `oracle_id` (→ col BC). On new cards only, UUID columns are written when sync succeeds.
+**Response used:** `hcid` (sheet col A on new cards), `imageUrl`, `printId` / `id` (Hellfall print UUID → sheet col BB and veto thread `uuid: …`), `docId` (rollback only), `oracle_id` (→ col BC). On new cards only, UUID columns are written when sync succeeds.
 
 **Failure:** If anything after a successful postcard write throws, `POST …/postcard/rollback` runs before the error propagates.
 

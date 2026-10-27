@@ -22,6 +22,7 @@ class PromoteCardToDatabaseTests(unittest.IsolatedAsyncioTestCase):
                 previous=None,
                 hcid="9001",
                 image_url="https://example.com/card.png",
+                hellfall_id="550e8400-e29b-41d4-a716-446655440000",
             ),
         )
 
@@ -50,6 +51,7 @@ class PromoteCardToDatabaseTests(unittest.IsolatedAsyncioTestCase):
                 previous={"hcid": "123"},
                 hcid="123",
                 image_url="https://example.com/new.png",
+                hellfall_id="550e8400-e29b-41d4-a716-446655440001",
             ),
         )
 
@@ -72,11 +74,15 @@ class PromoteCardToDatabaseTests(unittest.IsolatedAsyncioTestCase):
 
 
 class PromoteFromSubmissionsTests(unittest.IsolatedAsyncioTestCase):
-    @patch("accept_card.handle_veto_post", new_callable=AsyncMock)
+    @patch("accept_card.intake_veto_poll_message", new_callable=AsyncMock)
     @patch("accept_card.getVetoChannel")
-    @patch("accept_card.promote_card_to_database", new_callable=AsyncMock)
-    async def test_posts_veto_with_hcid(self, mock_promote_db, mock_get_veto, mock_hvp):
-        mock_promote_db.return_value = MagicMock(hcid="555", image_url="https://x", sheet_row=2)
+    async def test_posts_veto_then_intake(self, mock_get_veto, mock_intake):
+        mock_intake.return_value = MagicMock(
+            hcid="555",
+            image_url="https://x",
+            sheet_row=2,
+            hellfall_id="550e8400-e29b-41d4-a716-446655440000",
+        )
         veto_ch = MagicMock()
         veto_ch.send = AsyncMock(return_value=MagicMock())
         mock_get_veto.return_value = veto_ch
@@ -94,12 +100,15 @@ class PromoteFromSubmissionsTests(unittest.IsolatedAsyncioTestCase):
         ).hcid
 
         self.assertEqual(hcid, "555")
-        mock_hvp.assert_awaited_once()
-        self.assertEqual(mock_hvp.await_args.kwargs["hcid"], "555")
+        mock_intake.assert_awaited_once()
 
-    @patch("accept_card.promote_card_to_database", new_callable=AsyncMock)
-    async def test_propagates_postcard_failure(self, mock_promote_db):
-        mock_promote_db.side_effect = PostcardSyncError("nope")
+    @patch("accept_card.intake_veto_poll_message", new_callable=AsyncMock)
+    @patch("accept_card.getVetoChannel")
+    async def test_propagates_intake_failure(self, mock_get_veto, mock_intake):
+        mock_intake.side_effect = PostcardSyncError("nope")
+        veto_ch = MagicMock()
+        veto_ch.send = AsyncMock(return_value=MagicMock())
+        mock_get_veto.return_value = veto_ch
         bot = MagicMock()
         file = discord.File(fp=io.BytesIO(b"img"), filename="c.png")
 

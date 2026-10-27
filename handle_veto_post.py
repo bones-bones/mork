@@ -10,9 +10,22 @@ from utils import at
 
 portal_time = False
 
+VETO_POLL_UUID_PREFIX = "uuid: "
+
+
+def parse_hellfall_uuid_from_veto_poll_messages(contents: list[str]) -> str | None:
+    """Second thread message: ``uuid: <hellfall print id>`` (after hellpit link)."""
+    if len(contents) < 2:
+        return None
+    second = contents[1].strip()
+    if not second.lower().startswith("uuid:"):
+        return None
+    uuid_value = second.split(":", 1)[1].strip()
+    return uuid_value or None
+
 
 def parse_hcid_from_veto_poll_messages(contents: list[str]) -> str | None:
-    """Second message in the veto poll thread is the numeric hcid (after hellpit link)."""
+    """Legacy second line: numeric hcid only."""
     if len(contents) < 2:
         return None
     second = contents[1].strip()
@@ -21,7 +34,13 @@ def parse_hcid_from_veto_poll_messages(contents: list[str]) -> str | None:
 
 async def hcid_from_veto_poll_thread(thread: discord.Thread) -> str | None:
     messages = [message async for message in thread.history(limit=5, oldest_first=True)]
-    return parse_hcid_from_veto_poll_messages([message.content for message in messages])
+    contents = [message.content for message in messages]
+    uuid_value = parse_hellfall_uuid_from_veto_poll_messages(contents)
+    if uuid_value:
+        from accept_card import hcid_from_unapproved_hellfall_id
+
+        return hcid_from_unapproved_hellfall_id(uuid_value)
+    return parse_hcid_from_veto_poll_messages(contents)
 
 
 async def handle_veto_post(
@@ -29,7 +48,7 @@ async def handle_veto_post(
     bot: commands.Bot,
     veto_council: int | None,
     submission_thread_url: str | None = None,
-    hcid: str | None = None,
+    hellfall_uuid: str | None = None,
 ):
     if portal_time:
         veto_council = hc_constants.VETO_COUNCIL_PORTAL
@@ -88,8 +107,8 @@ async def handle_veto_post(
     await hellpit_discussion_thread.send(", ".join(mentions))
 
     await veto_poll_thread.send(hellpit_discussion_thread.jump_url)
-    if hcid:
-        await veto_poll_thread.send(str(hcid))
+    if hellfall_uuid:
+        await veto_poll_thread.send(f"{VETO_POLL_UUID_PREFIX}{hellfall_uuid}")
 
     await hellpit_discussion_thread.send(message.jump_url)
 

@@ -175,9 +175,14 @@ async def sync_accepted_card(
         image_url = data.get("imageUrl")
         hcid_raw = data.get("hcid")
         hcid = str(hcid_raw).strip() if hcid_raw is not None and str(hcid_raw).strip() else None
-        # postcard.ts returns ``id`` (Hellfall UUID). Fall back to docId for
-        # older responses where create used the same value for both.
-        raw_id = data.get("id") or data.get("cardId") or data.get("docId")
+        # ``printId`` / ``id`` = Hellfall print UUID (veto ``uuid:`` line, sheet BB).
+        # ``docId`` = Firestore doc id for rollback only.
+        raw_id = (
+            data.get("printId")
+            or data.get("id")
+            or data.get("cardId")
+            or data.get("docId")
+        )
         hellfall_id = str(raw_id) if raw_id else None
         oracle_id_raw = data.get("oracle_id")
         if oracle_id_raw is None:

@@ -4,7 +4,7 @@
 
 Target architecture once card data lives in **Hellfall** (via postcard API + catalog) instead of Google Sheets. Discord submission and veto flows stay the same; only the persistence and lookup layers change.
 
-**Status:** acceptance uploads images via Hellfall postcard only (`imageBase64`); unapproved/approved sheets are still written and bot search still loads from the approved sheet.
+**Status:** Phase 1–4 landed on `cards-into-db-sooner`. Acceptance uses Hellfall postcard (`imageBase64`); bot search loads the Hellfall catalog at startup / `!syncDb` (never the approved sheet). Unapproved/token sheets are optional dual-writes (`SHEET_DUAL_WRITE`, default on). Printables: `--printable-source catalog` (sheet scan remains available).
 
 ---
 
@@ -36,7 +36,7 @@ flowchart LR
 | HC numeric id | Sheet col A (increment) | `hcid` passed to postcard; Hellfall assigns UUID |
 | Bot `!search`, `!info`, etc. | Load approved **Database** sheet at startup | Load Hellfall catalog (or API) |
 | Mod percolation | Manual sheet copy | **Removed** — postcard write is approval |
-| Rulings / tags | Unapproved sheet columns | Hellfall fields or dedicated API (TBD) |
+| Rulings / tags | Unapproved sheet columns (dual-write) | Tags: Hellfall changesets API. Rulings: catalog read; sheet col H write while `SHEET_DUAL_WRITE=1`; Hellfall write API future work |
 | Tokens | Unapproved token sheet + postcard | Postcard only |
 | Printable pipeline | Reads Database / Printable DB sheets | Reads Hellfall catalog + GCS |
 | Rollback on failed accept | Postcard rollback + no sheet commit if error mid-flight | Postcard rollback (Hellfall may revert GCS object); no sheet step |
@@ -121,11 +121,12 @@ flowchart TD
   CACHE --> BR
 ```
 
-**Open questions for implementation:**
+**Phase 3 decisions:**
 
-- Rulings and tags: extend postcard API, separate Hellfall admin endpoints, or keep a thin metadata store
-- Username mappings: today a sheet tab; move to config file or Hellfall creator normalization
-- Errata submission validation: resolve card by hcid via catalog instead of approved sheet
+- **Tags:** Hellfall `modifyTagWithServer` (`!tag` / `!removetag`).
+- **Rulings:** `!rulings` reads catalog; `!judgement` appends to unapproved sheet only when `SHEET_DUAL_WRITE=1`. Hellfall rulings write API is future work.
+- **Username mappings:** `config/username_mappings.json` (`{"CanonicalName": ["alias1"]}`) or env `USERNAME_MAPPINGS_PATH`; else sheet tab.
+- **Sheet writes:** `SHEET_DUAL_WRITE=0` — postcard-only accept/promote/token; catalog-first Hellfall UUID → hcid lookup.
 
 ---
 
