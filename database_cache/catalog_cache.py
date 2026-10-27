@@ -10,9 +10,15 @@ from database_cache.card_names import get_all_names
 from database_cache.database_utils import fixName
 from database_cache.setHandling import getCollectorNumSets, getGroupSets, loadSets
 
-DEFAULT_CATALOG_URL = "https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json"
-DEFAULT_SETS_URL = (
-    "https://raw.githubusercontent.com/bones-bones/hellfall/main/packages/shared/src/data/sets.json"
+import os
+
+DEFAULT_CATALOG_URL = os.environ.get(
+    "HELLFALL_CATALOG_URL",
+    "https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json",
+)
+DEFAULT_SETS_URL = os.environ.get(
+    "HELLFALL_SETS_URL",
+    "https://raw.githubusercontent.com/bones-bones/hellfall/main/packages/shared/src/data/sets.json",
 )
 
 
@@ -107,12 +113,13 @@ def catalog_to_cache(
                 continue
             alias_map[alias] = name
 
-    cache = {}
-    cache["idMap"] = id_map
-    cache["oracleMap"] = dict(oracle_map)
-    cache["nameMap"] = ({name: lookup.to_dict() for name, lookup in name_map.items()},)
-    cache["aliasMap"] = (dict(alias_map),)
-    cache["hcidMap"] = (dict(hcid_map),)
+    cache = {
+        "idMap": id_map,
+        "oracleMap": dict(oracle_map),
+        "nameMap": {name: lookup.to_dict() for name, lookup in name_map.items()},
+        "aliasMap": dict(alias_map),
+        "hcidMap": dict(hcid_map),
+    }
     skipped = len(cards) - len(id_map)
     if skipped:
         print(f"[db] catalog_to_cache: skipped {skipped} cards without id")
