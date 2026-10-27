@@ -25,7 +25,7 @@ from discord.utils import get
 from dotenv import load_dotenv
 
 import hc_constants
-from accept_card import accept_card
+from accept_card import accept_card, intake_veto_poll_message
 from check_submissions import check_submissions
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import (
@@ -55,7 +55,7 @@ from getters import (
     # getVetoDiscussionChannel,
     getVetoHellpitsChannel,
 )
-from handle_veto_post import handle_veto_post
+from handle_veto_post import hcid_from_veto_poll_thread
 from hellfall_fetcher import cardsExist, getExactCard, getSearchFromServer
 from image_response_filename import filename_from_image_response
 from is_admin import can_instaerrata, is_admin, is_veto
@@ -107,7 +107,7 @@ def card_list_channel_for_set(cardset: str) -> int:
         case "hlc" | "hc2" | "hc3" | "hc4":
             return hc_constants.SIX_ZERO_CARD_LIST
         case "hcv" | "hcv.scl":
-            return hc_constants.VETO_CARD_LIST
+            return hc_constants.GRAVEYARD_CARD_LIST
         case "hc6" | "hc6.0":
             return hc_constants.SIX_ZERO_CARD_LIST
         case "hc6.1":
@@ -136,10 +136,10 @@ def card_list_channel_for_set(cardset: str) -> int:
 
 async def _check_errata_veto_threshold(bot: commands.Bot):
     """If a message in the errata channel has upvotes - downvotes >= ERRATA_VETO_THRESHOLD,
-    add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handle_veto_post.
+    add a checkmark and post it to veto-polls with 'Errata:' prefix, then intake (no postcard until compile).
     """
 
-    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
+    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
     if not channel:
         return
     time_now = datetime.now(UTC)
@@ -187,14 +187,16 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                     content=veto_content,
                     file=discord.File(data, filename),
                 )
-                veto_poll_thread = await handle_veto_post(
-                    message=veto_message,
-                    bot=bot,
+                await intake_veto_poll_message(
+                    bot,
+                    veto_message,
                     veto_council=hc_constants.VETO_COUNCIL,
+                    skip_postcard=True,
                 )
-                errata_body = "\n".join(parts[1:]).strip()
-                if errata_body:
-                    await veto_poll_thread.send(errata_body)
+                guild = cast(Guild, veto_message.guild)
+
+                thread = cast(Thread, guild.get_channel_or_thread(veto_message.id))
+                await thread.send("\n".join(parts[1:]))
 
             except Exception:
                 print("errata veto threshold:")
@@ -383,6 +385,14 @@ class LifecycleCog(commands.Cog):
                 copy_of_file_for_veto_channel = await attachment_reference.to_file()
                 copy2 = await attachment_reference.to_file()
                 if copy_of_file_for_veto_channel and copy2:
+                    resubmit_hcid: str | None = None
+                    og_thread = cast(
+                        Thread | None,
+                        guild.get_channel_or_thread(ogMessage.id),
+                    )
+                    if og_thread:
+                        resubmit_hcid = await hcid_from_veto_poll_thread(og_thread)
+
                     vetoChannel = getVetoChannel(bot=self.bot)
                     vetoEntry = await vetoChannel.send(
                         content=first_message.content,
@@ -390,58 +400,22 @@ class LifecycleCog(commands.Cog):
                     )
 
                     veto_council_to_notify = hc_constants.VETO_COUNCIL
-                    # (
-                    #     hc_constants.VETO_COUNCIL_PORTAL
-                    #     if get(ogMessage.reactions, emoji=hc_constants.CLOCK)
-                    #     else (
-                    #         hc_constants.VETO_COUNCIL_2
-                    #         if get(ogMessage.reactions, emoji=hc_constants.WOLF)
-                    #         else None
-                    #     )
-                    # )
-                    await handle_veto_post(
-                        message=vetoEntry,
-                        bot=self.bot,
-                        veto_council=veto_council_to_notify,
-                    )
+                    try:
+                        await intake_veto_poll_message(
+                            self.bot,
+                            vetoEntry,
+                            veto_council=veto_council_to_notify,
+                            existing_hcid=resubmit_hcid,
+                        )
+                    except Exception as e:
+                        print(f"hellpit resubmit intake_veto_poll_message failed: {e}")
+                        return
                     await ogMessage.add_reaction(hc_constants.DELETE)
                     errata_submissions_channel = getErrataTrackingChannel(bot=self.bot)
                     errata_submission_message = await errata_submissions_channel.send(
                         content=first_message.content, file=copy2
                     )
                     await errata_submission_message.add_reaction("☑️")
-
-        # The sneaky errata case for HC8
-        if (
-            reaction.emoji.id == hc_constants.SYMBOL_UNTAP
-            and reaction.user_id == hc_constants.TRUSTED_USER
-        ):
-            file = await message.attachments[0].to_file()
-            acceptanceMessage = message.content
-            # consider putting most of this into accept_card
-            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
-            resolvedName = dbname if dbname != "" else "Crazy card with no name"
-            resolvedAuthor = card_author if card_author != "" else "no author"
-            cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
-
-            set_to_add_to = "HC8.1"
-
-            channel_to_add_to = hc_constants.HC_EIGHT_LIST
-
-            await accept_card(
-                bot=self.bot,
-                file=file,
-                cardMessage=cardMessage,
-                cardName=dbname,
-                authorName=card_author,
-                message_set_id=set_to_add_to,
-                channelIdForCard=channel_to_add_to,
-            )
-
-            await message.add_reaction(hc_constants.ACCEPT)
-            thread = cast(Thread, guild.get_channel_or_thread(message.id))
-            if thread:
-                await thread.edit(archived=True)
 
         # Scube Lair: admin medal reactions accept cards into set card lists
         if reaction.channel_id == hc_constants.SCUBE_LAIR_SUBMISSION_CHANNEL and str(
@@ -505,7 +479,6 @@ class LifecycleCog(commands.Cog):
                 message_set_id=message_set_id,
                 channelIdForCard=list_channel,
                 wasVetoed=wasVetoed,
-                require_hellfall_postcard=True,
             )
             await message.add_reaction(hc_constants.ACCEPT)
             return
@@ -696,7 +669,12 @@ class LifecycleCog(commands.Cog):
                 await message.delete()
 
             case hc_constants.VETO_POLLS_CHANNEL:
-                await handle_veto_post(message=message, bot=self.bot, veto_council=None)
+                if not message.attachments:
+                    return
+                try:
+                    await intake_veto_poll_message(self.bot, message, veto_council=None)
+                except Exception as e:
+                    print(f"human veto poll intake failed: {e}")
 
             case hc_constants.MODWORK_REQUEST_CHANNEL:
                 text = (message.content or "").strip()
@@ -715,7 +693,7 @@ class LifecycleCog(commands.Cog):
                     message, self.bot, active_submission_set()
                 )
 
-            case hc_constants.ERRATA_SUBMISSIONS:
+            case hc_constants.ERRATA_SUBMISSIONS | hc_constants.ERRATA_TRACKING:
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
                 print(f"errata submission: {card_id_input}")
@@ -736,8 +714,13 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                    # TODO: Make this use set blocks instead
-                if card.set not in [hc_constants.CUBE_NAME,"HC9.1","HC9.0", "PL1"]:
+                # TODO: Make this use set blocks instead
+                if card.set not in [
+                    hc_constants.CUBE_NAME,
+                    "HC9.1",
+                    "HC9.0",
+                    "PL1",
+                ]:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} or PL1 cards are allowed for errata."
                     )
@@ -943,6 +926,18 @@ class LifecycleCog(commands.Cog):
                     acceptanceMessage
                 )
 
+            poll_thread = cast(
+                Thread | None,
+                guild.get_channel_or_thread(messageEntry.id),
+            )
+            existing_hcid = None
+            if poll_thread:
+                existing_hcid = await hcid_from_veto_poll_thread(poll_thread)
+
+            errata_id_for_accept = errata_id
+            if errata_id and existing_hcid:
+                errata_id_for_accept = None
+
             await accept_card(
                 bot=self.bot,
                 file=file,
@@ -952,9 +947,10 @@ class LifecycleCog(commands.Cog):
                 message_set_id=set_to_add_to,
                 channelIdForCard=channel_to_add_to,
                 errata=errata_id is not None,
-                errataId=errata_id,
+                errataId=errata_id_for_accept,
                 skip_reddit=skip_reddit,
                 deferred_reddit_dir=deferred_reddit_dir,
+                existing_hcid=existing_hcid,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)
@@ -980,6 +976,14 @@ class LifecycleCog(commands.Cog):
 
             vetoedCards.append(get_card_message(messageEntry.content))
 
+            existing_hcid = None
+            poll_thread = cast(
+                Thread | None,
+                guild.get_channel_or_thread(messageEntry.id),
+            )
+            if poll_thread:
+                existing_hcid = await hcid_from_veto_poll_thread(poll_thread)
+
             await accept_card(
                 bot=self.bot,
                 file=file,
@@ -991,6 +995,7 @@ class LifecycleCog(commands.Cog):
                 wasVetoed=True,
                 skip_reddit=skip_reddit,
                 deferred_reddit_dir=deferred_reddit_dir,
+                existing_hcid=existing_hcid,
             )
 
             await messageEntry.add_reaction(hc_constants.ACCEPT)  # see ./README.md

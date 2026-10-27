@@ -1,3 +1,4 @@
+import io
 from typing import cast
 
 import discord
@@ -5,8 +6,9 @@ from discord import RawReactionActionEvent, TextChannel
 from discord.ext import commands
 
 import hc_constants
-from accept_card import accept_card
+from accept_card import promote_from_submissions
 from get_card_message import parseCardNameAndAuthor
+from getters import getMorkSubmissionsLoggingChannel, getSubmissionDiscussionChannel
 from is_mork import is_mork
 
 
@@ -18,66 +20,85 @@ class MiscCog(commands.Cog):
     async def on_raw_reaction_add(self, reaction: RawReactionActionEvent):
         if is_mork(reaction.user_id):
             return
+        if (
+            reaction.emoji.id != hc_constants.SYMBOL_UNTAP
+            or reaction.user_id != hc_constants.LLLLLL
+        ):
+            return
+        print(f"reaction: {reaction.emoji}")
         guild = cast(discord.Guild, self.bot.get_guild(cast(int, reaction.guild_id)))
         channel = guild.get_channel_or_thread(reaction.channel_id)
-
         if channel is None:
             return
 
-        channelAsText = cast(discord.TextChannel, channel)
-        message = await channelAsText.fetch_message(reaction.message_id)
-        # The sneaky errata case for HC8
-        if (
-            reaction.emoji.id == hc_constants.SYMBOL_UNTAP
-            and reaction.user_id == hc_constants.LLLLLL
-        ):
-            # <MessageReference message_id=1438689619209097308 channel_id=798690672512335932 guild_id=631288872814247966>
-            og_message = message
-            reference = message.reference
+        channel_as_text = cast(TextChannel, channel)
+        message = await channel_as_text.fetch_message(reaction.message_id)
+        og_message = message
 
-            if reference is not None and reference.message_id is not None:
-                original_channel = cast(
-                    TextChannel,
-                    guild.get_channel_or_thread(reference.channel_id),
-                )
-                message = await original_channel.fetch_message(reference.message_id)
-
-            file = await message.attachments[0].to_file()
-            acceptanceMessage = message.content
-
-            print(acceptanceMessage)
-
-            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
-            resolvedName = dbname if dbname != "" else "Crazy card with no name"
-            resolvedAuthor = card_author if card_author != "" else "no author"
-            cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
-
-            set_to_add_to = "HCV"
-
-            channel_to_add_to = hc_constants.VETO_CARD_LIST
-
-            await accept_card(
-                bot=self.bot,
-                file=file,
-                cardMessage=cardMessage,
-                cardName=dbname,
-                authorName=card_author,
-                message_set_id=set_to_add_to,
-                channelIdForCard=channel_to_add_to,
+        reference = message.reference
+        if reference is not None and reference.message_id is not None:
+            original_channel = cast(
+                TextChannel,
+                guild.get_channel_or_thread(reference.channel_id),
             )
+            message = await original_channel.fetch_message(reference.message_id)
 
+        if not message.attachments:
+            return
+
+        dbname, card_author = parseCardNameAndAuthor(message.content)
+        if not dbname:
+            return
+
+        resolved_author = card_author if card_author.strip() else "no author"
+        veto_content = f"{dbname} by {resolved_author}"
+
+        attachment = message.attachments[0]
+        attachment_data = await attachment.read()
+        attachment_filename = attachment.filename or "card.png"
+
+        submission_thread = guild.get_channel_or_thread(message.id)
+        submission_thread_url = submission_thread.jump_url if submission_thread else None
+
+        try:
+            await promote_from_submissions(
+                bot=self.bot,
+                veto_content=veto_content,
+                file=discord.File(
+                    fp=io.BytesIO(attachment_data),
+                    filename=attachment_filename,
+                ),
+                cardName=dbname,
+                authorName=resolved_author,
+                submission_thread_url=submission_thread_url,
+            )
+        except Exception as e:
+            print(f"untap promote_from_submissions failed: {e}")
+            return
+
+        accept_content = f"{veto_content} was accepted"
+        discussion = getSubmissionDiscussionChannel(self.bot)
+        log_channel = getMorkSubmissionsLoggingChannel(self.bot)
+        await discussion.send(content=f"✨✨ {accept_content} ✨✨ (untap)")
+        await discussion.send(
+            content="",
+            file=discord.File(
+                fp=io.BytesIO(attachment_data),
+                filename=attachment_filename,
+            ),
+        )
+        await log_channel.send(
+            content=f"{accept_content}, message id: {message.id}, untap: true",
+            file=discord.File(
+                fp=io.BytesIO(attachment_data),
+                filename=attachment_filename,
+            ),
+        )
+
+        try:
             await og_message.delete()
-
-
-# @commands.command()
-# async def test(
-#     self,
-#     ctx: commands.Context,
-# ):
-#     if ctx.author.id == hc_constants.LLLLLL:
-#         ...
-#     else:
-#         await ctx.send("no")
+        except discord.HTTPException as e:
+            print(f"untap cleanup delete failed: {e}")
 
 
 async def setup(bot: commands.Bot):

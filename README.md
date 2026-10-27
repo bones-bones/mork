@@ -93,7 +93,7 @@ Right after Mork sends the message in #submissions-discussion, it'll create a th
 Cong!
 rats!
 
-Your card will go down in infamy. By that, I mean it gets posted to reddit with the Accepted flair, added to the unapproved database sheet (Copie van Database), and posted to card-list.
+Your card will go down in infamy. By that, I mean it gets posted to reddit with the Accepted flair, synced to Hellfall (catalog), optionally mirrored on the unapproved database sheet (Copie van Database), and posted to card-list.
 
 ## 4.2 It needs errata!
 The good news is, the card has a good concept. The bad news is that it needs balancing. Once you've been made aware, you can reach out in #errata-discussion for input, tweak your card, then submit it to #errata-submissions. From there, a Veto Council member will post it to the secret channel, and Mork will create a new thread and votes there. Rinse and repeat.
@@ -107,8 +107,8 @@ Essentially purgatory. A decision wasn't reached one way or another in time... b
 ## 4.5 ????
 There's always the chance a process fails. Who knows what happens then.
 
-## 5. It percolates out
-From time to time, a mod will take the entries in the unapproved sheet of the database, and transcribe them to the main sheet. Once the cards are in the main sheet, they'll start to show up in other places. Mork will search against them, hellfall will list them, cube XML files will be created that include them, and draftmancer wil show them. (The exact timings on when these will happen is fuzzy at best.)
+## 5. It shows up everywhere
+After accept, the card is in the Hellfall catalog (via postcard). Mork search, Hellfall, cube XML, Draftmancer, and the printable pipeline read from there. Legacy sheet mirrors may still exist for export/backfill, but mods no longer need to manually copy unapproved rows into the approved Database tab for cards to go live.
 
 
 ## Attrib

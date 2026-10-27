@@ -1,3 +1,4 @@
+import os
 import random
 from datetime import UTC, datetime, timedelta
 from random import randrange
@@ -22,7 +23,8 @@ from hellfall_fetcher import (
 )
 from post_card_images import send_single_image_reply
 from shared_vars import googleClient, intents
-from username_mappings import set_username_mappings
+from sheet_dual_write import sheet_dual_write_enabled
+from username_mappings import load_username_mappings_from_file, set_username_mappings
 
 databaseSheets = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
 
@@ -51,8 +53,12 @@ class HellscubeDatabaseCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
-        set_username_mappings(usernameMappingSheet.get_all_values()[1:])
+        mappings_path = os.environ.get(
+            "USERNAME_MAPPINGS_PATH", "config/username_mappings.json"
+        )
+        if not load_username_mappings_from_file(mappings_path):
+            usernameMappingSheet = databaseSheets.worksheet("Username Mappings")
+            set_username_mappings(usernameMappingSheet.get_all_values()[1:])
 
     @commands.command(aliases=["synccache"])
     async def syncDb(self, ctx: commands.Context):
@@ -182,12 +188,21 @@ class HellscubeDatabaseCog(commands.Cog):
             await ctx.send(message)
             return
 
+        if not sheet_dual_write_enabled():
+            await ctx.send(
+                "Ruling writes still use the unapproved sheet. Set SHEET_DUAL_WRITE=1 "
+                "until a Hellfall rulings write API exists. "
+                f"Current catalog rulings for {response.name} are unchanged."
+            )
+            return
+
         cardSheetUnapproved = getUnapprovedCardSheet()
         cell = cardSheetUnapproved.find(response.hcid, in_column=1)
         if not cell:
             await ctx.send("Unable to find the card... this shouldn't happen")
             return
-        currentRuling = cardSheetUnapproved.cell(cell.row, 8)
+        # Reads for !rulings use catalog; dual-write period still appends via sheet col H.
+        currentRuling = str(response.rulings or cardSheetUnapproved.cell(cell.row, 8).value or "")
 
         prefix = f"{currentRuling}\n" if currentRuling != "" else ""
         newRuling = f"{prefix}{ruling}- {ctx.author.name} {datetime.now(UTC).strftime('%Y-%m-%d')}"

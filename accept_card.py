@@ -4,6 +4,7 @@ import io
 import os
 import re
 import uuid
+from dataclasses import dataclass
 from typing import cast
 
 import aiofiles
@@ -13,12 +14,12 @@ from gspread import Cell
 
 import hc_constants
 from cogs.HellscubeDatabase import getUnapprovedCardSheet
+from database_cache.database import get_card_by_id, get_id_by_hcid
 from database_cache.setHandling import getVetoSetCode
 from deferred_reddit import format_deferred_manifest_entry, safe_card_filename
 from hellfall_postcard import (
     PostcardSyncError,
     PostcardWrite,
-    postcard_sync_enabled,
     rollback_postcard_write,
     sync_accepted_card,
 )
@@ -28,6 +29,11 @@ from image_response_filename import (
 )
 from reddit_devvit import post_accept_via_devvit, reddit_accept_via_devvit_enabled
 from reddit_functions import post_to_reddit, reddit_title_for_acceptance
+from getters import getVetoChannel
+from get_card_message import parseCardNameAndAuthor
+from handle_veto_post import handle_veto_post
+from hellfall_fetcher import getExactCard
+from sheet_dual_write import sheet_dual_write_enabled
 from username_mappings import resolve_authors
 
 cardSheetUnapproved = getUnapprovedCardSheet()
@@ -36,10 +42,8 @@ cardSheetUnapproved = getUnapprovedCardSheet()
 # otherwise race across the postcard await and reuse the same row index.
 _unapproved_sheet_lock = asyncio.Lock()
 
-# Column BB (header UUID) — Hellfall card ``id`` from postcard response
 _HELLFALL_ID_COL = 54
 
-# Column BC (header Oracle ID) — Hellfall card ``oracle_id`` from postcard response
 _ORACLE_ID_COL = 55
 
 # Column W — accepted order
@@ -48,6 +52,65 @@ _ACCEPTED_ORDER_COL = 23
 # Hellfall getAcceptedOrderSet: all SCL drops share one AO pool under parent SCL.
 # Must include SCL.X (and any SCL.*), not only SCL.<digits>.
 _SCL_AO_POOL = re.compile(r"^SCL([._].+)?$", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class PromotedSubmission:
+    """Result of ``promote_from_submissions`` — card is in Hellfall + unapproved sheet."""
+
+    hcid: str
+    image_url: str
+    sheet_row: int
+    hellfall_id: str
+
+
+def parse_errata_id_from_veto_content(content: str) -> str | None:
+    """Second line ``Errata: <hcid>`` on veto poll messages."""
+    lines = (content or "").splitlines()
+    if len(lines) < 2:
+        return None
+    second = lines[1].strip()
+    if not second.lower().startswith("errata:"):
+        return None
+    errata_id = second.split(":", 1)[1].strip()
+    return errata_id or None
+
+
+def _veto_poll_title_line(content: str) -> str:
+    first = (content or "").splitlines()[0] if content else ""
+    cube_prefix = f"{hc_constants.CUBE_NAME}:"
+    if first.startswith(cube_prefix):
+        return first[len(cube_prefix) :].strip()
+    return first.strip()
+
+
+def hcid_from_unapproved_hellfall_id(hellfall_id: str) -> str | None:
+    """Resolve hcid from Hellfall print UUID (catalog first, then sheet col BB)."""
+    card = get_card_by_id(hellfall_id)
+    if card:
+        hcid = str(card.hcid or "").strip()
+        if hcid:
+            return hcid
+    if not sheet_dual_write_enabled():
+        return None
+    cell = cardSheetUnapproved.find(hellfall_id, in_column=_HELLFALL_ID_COL)
+    if not cell:
+        return None
+    value = cardSheetUnapproved.cell(cell.row, 1).value
+    if value is None or str(value).strip() == "":
+        return None
+    return str(value).strip()
+
+
+def _image_url_from_catalog_hcid(hcid: str) -> str | None:
+    card_uuid = get_id_by_hcid(hcid)
+    if not card_uuid:
+        return None
+    card = get_card_by_id(card_uuid)
+    if not card:
+        return None
+    url = str(card.image or "").strip()
+    return url or None
 
 
 def _normalize_set_code(set_id: str) -> str:
@@ -85,22 +148,50 @@ def _next_accepted_order_for_set(set_id: str) -> str:
     return str(max_num + 1)
 
 
-async def _resolve_accepted_image_url(
+def _new_card_sheet_cells(
+    *,
+    index: int,
+    sheet_hcid: str,
+    card_name: str,
+    author_name: str,
+    set_id: str,
+    postcard_write: PostcardWrite | None,
+    include_accepted_order: bool,
+) -> list[Cell]:
+    cells = [
+        Cell(row=index, col=1, value=str(sheet_hcid)),
+        Cell(row=index, col=2, value=card_name),
+        Cell(row=index, col=4, value=author_name),
+        Cell(row=index, col=5, value=set_id.replace("_", ".")),
+    ]
+    if include_accepted_order:
+        cells.append(
+            Cell(
+                row=index,
+                col=_ACCEPTED_ORDER_COL,
+                value=_next_accepted_order_for_set(set_id),
+            )
+        )
+    if postcard_write is not None and postcard_write.hellfall_id:
+        cells.append(
+            Cell(row=index, col=_HELLFALL_ID_COL, value=postcard_write.hellfall_id)
+        )
+    if postcard_write is not None and postcard_write.oracle_id:
+        cells.append(
+            Cell(row=index, col=_ORACLE_ID_COL, value=postcard_write.oracle_id)
+        )
+    return cells
+
+
+async def _sync_postcard_from_bytes(
     *,
     file_data: bytes,
     card_name: str,
     author_name: str,
     set_id: str,
     hcid: str | None,
-    require_hellfall_postcard: bool,
-) -> tuple[str, PostcardWrite | None]:
-    if not postcard_sync_enabled() and not require_hellfall_postcard:
-        raise PostcardSyncError(
-            "MORK_POSTCARD_SYNC is disabled; mork no longer uploads images to GCS"
-        )
-
+) -> tuple[str, PostcardWrite]:
     image_base64 = base64.b64encode(file_data).decode("ascii")
-    require_sync = require_hellfall_postcard
     postcard_write = await sync_accepted_card(
         name=card_name,
         image_base64=image_base64,
@@ -109,15 +200,180 @@ async def _resolve_accepted_image_url(
         set_id=set_id,
         hcid=hcid,
         kind="card",
-        require_sync=require_sync,
     )
-    if require_sync and not postcard_write:
-        raise PostcardSyncError("hellfall postcard sync did not complete")
 
-    image_url = postcard_write.image_url if postcard_write else None
+    image_url = postcard_write.image_url
     if not image_url:
         raise PostcardSyncError("hellfall did not return imageUrl")
     return image_url, postcard_write
+
+
+async def promote_card_to_database(
+    *,
+    file_data: bytes,
+    cardName: str,
+    authorName: str,
+    message_set_id: str = hc_constants.ACTIVE_CUBE_ID,
+    existing_hcid: str | None = None,
+) -> PromotedSubmission:
+    """Hellfall postcard + unapproved sheet row (no accepted order).
+
+    Creates a new card when ``existing_hcid`` is omitted; otherwise updates the
+    existing print (hellpit resubmit, etc.)."""
+    author_name = ";".join(resolve_authors(authorName))
+    set_id = message_set_id
+    if cardName == "":
+        cardName = "NO NAME"
+
+    postcard_write = None
+    dual_write = sheet_dual_write_enabled()
+    async with _unapproved_sheet_lock:
+        existing_row = None
+        index = 0
+        if dual_write:
+            existing_row = (
+                cardSheetUnapproved.find(existing_hcid, in_column=1) if existing_hcid else None
+            )
+            index = (
+                existing_row.row
+                if existing_row
+                else len(cardSheetUnapproved.get_all_values()) + 1
+            )
+        try:
+            image_url, postcard_write = await _sync_postcard_from_bytes(
+                file_data=file_data,
+                card_name=cardName,
+                author_name=author_name,
+                set_id=set_id,
+                hcid=existing_hcid,
+            )
+            sheet_hcid = existing_hcid or (postcard_write.hcid if postcard_write else None)
+            if not sheet_hcid:
+                raise PostcardSyncError("hellfall did not return hcid")
+            hellfall_id = postcard_write.hellfall_id if postcard_write else None
+            if not hellfall_id:
+                raise PostcardSyncError("hellfall did not return id")
+
+            if dual_write:
+                cardSheetUnapproved.update_cell(index, 3, image_url)
+                if existing_row:
+                    cardSheetUnapproved.update_cells(
+                        [
+                            Cell(row=index, col=2, value=cardName),
+                            Cell(row=index, col=4, value=author_name),
+                            Cell(row=index, col=5, value=set_id.replace("_", ".")),
+                        ]
+                    )
+                else:
+                    cardSheetUnapproved.update_cells(
+                        _new_card_sheet_cells(
+                            index=index,
+                            sheet_hcid=str(sheet_hcid),
+                            card_name=cardName,
+                            author_name=author_name,
+                            set_id=set_id,
+                            postcard_write=postcard_write,
+                            include_accepted_order=False,
+                        )
+                    )
+        except Exception:
+            if postcard_write is not None:
+                await rollback_postcard_write(postcard_write)
+            raise
+
+    return PromotedSubmission(
+        hcid=str(sheet_hcid),
+        image_url=image_url,
+        sheet_row=index,
+        hellfall_id=str(hellfall_id),
+    )
+
+
+async def intake_veto_poll_message(
+    bot: commands.Bot,
+    message: discord.Message,
+    *,
+    veto_council: int | None = None,
+    submission_thread_url: str | None = None,
+    existing_hcid: str | None = None,
+    skip_postcard: bool = False,
+    message_set_id: str | None = None,
+    vc_mention_user_ids: tuple[int, ...] = (),
+) -> PromotedSubmission | None:
+    """Hellfall + sheet on veto intake, then veto poll setup (hellpit, reactions, ``uuid:`` line).
+
+    When ``skip_postcard`` is true (errata channel auto-promote), only runs ``handle_veto_post``.
+    Errata lines on the message use postcard **update** with existing ``hcid``, not create."""
+    if not message.attachments:
+        raise PostcardSyncError("veto poll message has no attachment")
+
+    errata_id = parse_errata_id_from_veto_content(message.content or "")
+    title_line = _veto_poll_title_line(message.content or "")
+    card_name, author_name = parseCardNameAndAuthor(title_line)
+
+    promote_hcid = existing_hcid or errata_id
+    set_id = message_set_id or hc_constants.ACTIVE_CUBE_ID
+    if errata_id:
+        errata_card = await getExactCard(errata_id)
+        if errata_card:
+            set_id = errata_card.set
+            if not card_name:
+                card_name = errata_card.name
+
+    promoted: PromotedSubmission | None = None
+    if not skip_postcard:
+        file_data = await message.attachments[0].read()
+        promoted = await promote_card_to_database(
+            file_data=file_data,
+            cardName=card_name or "NO NAME",
+            authorName=author_name or "no author",
+            message_set_id=set_id,
+            existing_hcid=promote_hcid,
+        )
+
+    hellfall_uuid = promoted.hellfall_id if promoted else None
+    await handle_veto_post(
+        message=message,
+        bot=bot,
+        veto_council=veto_council,
+        submission_thread_url=submission_thread_url,
+        hellfall_uuid=hellfall_uuid,
+        vc_mention_user_ids=vc_mention_user_ids,
+    )
+    return promoted
+
+
+async def promote_from_submissions(
+    bot: commands.Bot,
+    veto_content: str,
+    file: discord.File,
+    cardName: str,
+    authorName: str,
+    message_set_id: str = hc_constants.ACTIVE_CUBE_ID,
+    submission_thread_url: str | None = None,
+    existing_hcid: str | None = None,
+    vc_mention_user_ids: tuple[int, ...] = (),
+) -> PromotedSubmission:
+    """Post to #veto-polls, then ``intake_veto_poll_message`` (postcard + poll setup)."""
+    file_data = file.fp.read()
+    attachment_filename = file.filename or "card.png"
+
+    veto_channel = getVetoChannel(bot)
+    veto_entry = await veto_channel.send(
+        content=veto_content,
+        file=discord.File(
+            fp=io.BytesIO(file_data),
+            filename=attachment_filename,
+        ),
+    )
+    return await intake_veto_poll_message(
+        bot,
+        veto_entry,
+        submission_thread_url=submission_thread_url,
+        existing_hcid=existing_hcid,
+        message_set_id=message_set_id,
+        vc_mention_user_ids=vc_mention_user_ids,
+    )
 
 
 async def accept_card(
@@ -133,14 +389,20 @@ async def accept_card(
     wasVetoed: bool = False,
     skip_reddit: bool = False,
     deferred_reddit_dir: str | None = None,
-    require_hellfall_postcard: bool = False,
+    existing_hcid: str | None = None,
 ):
-    """Accepts a card into the DB. This also includes posting it to reddit and the appropriate card list channel.
+    """Card is official in the cube (accepted) or vetoed: card-list, Reddit, sheet finalize.
 
-    If the card was vetoed, the set id should be the id of the set it was vetoed from, not the set it goes to."""
+    Updates set + accepted order on the unapproved row; for submission cards that were
+    already promoted, pass ``existing_hcid`` from the veto poll thread (no second postcard).
+
+    Paths without promotion (scube lair, errata, …) still do database + cube in one call
+    via postcard here.
+
+    If the card was vetoed, ``message_set_id`` is the set it was vetoed *from*, not HCV."""
     set_id = (
         (getVetoSetCode(message_set_id) or message_set_id) if wasVetoed else message_set_id
-    )  # The set id in the db
+    )
     authorName = ";".join(resolve_authors(authorName))
     ext_match = re.search(r"(\.[^.]+)$", file.filename or "")
     os.makedirs("tempImages", exist_ok=True)
@@ -156,71 +418,129 @@ async def accept_card(
     file_copy_for_cardlist = discord.File(fp=io.BytesIO(file_data), filename=new_file_name)
 
     newCard = True
+    dual_write = sheet_dual_write_enabled()
+    finalize_hcid = existing_hcid if not errataId else None
+    if (
+        dual_write
+        and finalize_hcid
+        and not cardSheetUnapproved.find(finalize_hcid, in_column=1)
+    ):
+        finalize_hcid = None
 
     async with aiofiles.open(image_path, "wb") as out:
         await out.write(file_data)
 
-    # Hold the lock across postcard → sheet write so concurrent accepts cannot
-    # reuse the same row or accepted-order slot.
     async with _unapproved_sheet_lock:
         index = 0
         if errataId:
-            cell = cardSheetUnapproved.find(errataId, in_column=1)
-            if cell and cardName:
-                newCard = False
+            # Catalog is source of truth for errata identity (not approved sheet).
+            if not get_id_by_hcid(errataId):
+                raise PostcardSyncError(f"errata hcid {errataId} not found in catalog")
+            newCard = False
+            if dual_write:
+                cell = cardSheetUnapproved.find(errataId, in_column=1)
+                if cell:
+                    index = cell.row
+                else:
+                    print(
+                        f"[accept] errata hcid {errataId} in catalog but no unapproved "
+                        "sheet row — postcard update only for this accept"
+                    )
+        elif finalize_hcid:
+            newCard = False
+            if dual_write:
+                cell = cardSheetUnapproved.find(finalize_hcid, in_column=1)
+                if not cell:
+                    raise PostcardSyncError(f"no unapproved sheet row for hcid {finalize_hcid}")
                 index = cell.row
-        else:
+            else:
+                print(
+                    f"[accept] SHEET_DUAL_WRITE=0: finalize hcid {finalize_hcid} "
+                    "without sheet row — Hellfall postcard only, skipping sheet AO/set"
+                )
+        elif dual_write:
             index = len(cardSheetUnapproved.get_all_values()) + 1
 
         if cardName == "" and newCard:
             cardName = "NO NAME"
-        if index == 0:
+        # Errata may exist in catalog without an unapproved row (postcard-only update).
+        if dual_write and index == 0 and finalize_hcid and not errataId:
+            raise IndexError("index not found")
+        if dual_write and index == 0 and errataId and newCard:
             raise IndexError("index not found")
         postcard_write = None
+        imageUrl = ""
         try:
-            imageUrl, postcard_write = await _resolve_accepted_image_url(
-                file_data=file_data,
-                card_name=cardName,
-                author_name=authorName,
-                set_id=set_id,
-                hcid=errataId,
-                require_hellfall_postcard=require_hellfall_postcard,
-            )
-
-            cardSheetUnapproved.update_cell(index, 3, imageUrl)
-
-            if newCard:
-                sheet_hcid = errataId or (postcard_write.hcid if postcard_write else None)
-                if not sheet_hcid:
-                    raise PostcardSyncError("hellfall did not return hcid")
-                new_card_cells = [
-                    Cell(row=index, col=1, value=str(sheet_hcid)),
-                    Cell(row=index, col=2, value=cardName),
-                    Cell(row=index, col=4, value=authorName),
-                    Cell(row=index, col=5, value=set_id.replace("_", ".")),
-                    Cell(
-                        row=index,
-                        col=_ACCEPTED_ORDER_COL,
-                        value=_next_accepted_order_for_set(set_id),
-                    ),
-                ]
-                if postcard_write is not None and postcard_write.hellfall_id:
-                    new_card_cells.append(
-                        Cell(
-                            row=index,
-                            col=_HELLFALL_ID_COL,
-                            value=postcard_write.hellfall_id,
-                        )
+            if finalize_hcid and not errataId:
+                if wasVetoed:
+                    imageUrl, postcard_write = await _sync_postcard_from_bytes(
+                        file_data=file_data,
+                        card_name=cardName,
+                        author_name=authorName,
+                        set_id=set_id,
+                        hcid=finalize_hcid,
                     )
-                if postcard_write is not None and postcard_write.oracle_id:
-                    new_card_cells.append(
-                        Cell(
-                            row=index,
-                            col=_ORACLE_ID_COL,
-                            value=postcard_write.oracle_id,
+                    if dual_write:
+                        cardSheetUnapproved.update_cell(index, 3, imageUrl)
+                        cardSheetUnapproved.update_cells(
+                            [
+                                Cell(row=index, col=5, value=set_id.replace("_", ".")),
+                                Cell(
+                                    row=index,
+                                    col=_ACCEPTED_ORDER_COL,
+                                    value=_next_accepted_order_for_set(set_id),
+                                ),
+                            ]
                         )
-                    )
-                cardSheetUnapproved.update_cells(new_card_cells)
+                else:
+                    if dual_write:
+                        imageUrl = str(cardSheetUnapproved.cell(index, 3).value or "").strip()
+                    else:
+                        imageUrl = _image_url_from_catalog_hcid(finalize_hcid) or ""
+                    if not imageUrl:
+                        raise PostcardSyncError(
+                            f"missing image URL for hcid {finalize_hcid} "
+                            "(sheet row or catalog)"
+                        )
+                    if dual_write:
+                        cardSheetUnapproved.update_cells(
+                            [
+                                Cell(row=index, col=5, value=set_id.replace("_", ".")),
+                                Cell(
+                                    row=index,
+                                    col=_ACCEPTED_ORDER_COL,
+                                    value=_next_accepted_order_for_set(set_id),
+                                ),
+                            ]
+                        )
+            else:
+                imageUrl, postcard_write = await _sync_postcard_from_bytes(
+                    file_data=file_data,
+                    card_name=cardName,
+                    author_name=authorName,
+                    set_id=set_id,
+                    hcid=errataId,
+                )
+
+                if dual_write and index:
+                    cardSheetUnapproved.update_cell(index, 3, imageUrl)
+
+                if newCard:
+                    sheet_hcid = errataId or (postcard_write.hcid if postcard_write else None)
+                    if not sheet_hcid:
+                        raise PostcardSyncError("hellfall did not return hcid")
+                    if dual_write and index:
+                        cardSheetUnapproved.update_cells(
+                            _new_card_sheet_cells(
+                                index=index,
+                                sheet_hcid=str(sheet_hcid),
+                                card_name=cardName,
+                                author_name=authorName,
+                                set_id=set_id,
+                                postcard_write=postcard_write,
+                                include_accepted_order=True,
+                            )
+                        )
         except Exception:
             if postcard_write is not None:
                 await rollback_postcard_write(postcard_write)

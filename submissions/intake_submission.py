@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import os
 import traceback
 from datetime import UTC, datetime
@@ -13,13 +14,13 @@ from discord import Message
 from discord.ext import commands
 
 import hc_constants
+from accept_card import promote_from_submissions
 from cogs.lifecycle.post_daily_submissions import gallery_uses_manifest
 from cogs.lifecycle.submissions_closed import is_submissions_closed
 from get_card_message import submission_card_name
 from getters import (
     getMorkSubmissionsLoggingChannel,
     getSubmissionDiscussionChannel,
-    getVetoChannel,
 )
 from is_admin import is_admin
 from is_mork import reasonable_card
@@ -98,19 +99,32 @@ async def intake_submission_post(
 
     file = await message.attachments[0].to_file()
     if reasonable_card():
-        veto_channel = getVetoChannel(bot=bot)
         acceptedChannel = getSubmissionDiscussionChannel(bot)
         logChannel = getMorkSubmissionsLoggingChannel(bot)
         acceptContent = f"{card_name} by {author} was accepted"
-        accepted_message_no_mentions = acceptContent
-        for index, mentionEntry in enumerate(message.raw_mentions):
-            accepted_message_no_mentions = accepted_message_no_mentions.replace(
-                f"<@{mentionEntry}>",
-                message.mentions[index].name,
+        attachment = message.attachments[0]
+        attachment_data = await attachment.read()
+        attachment_filename = attachment.filename or "card.png"
+        try:
+            await promote_from_submissions(
+                bot=bot,
+                veto_content=f"{card_name} by {message.author.name}",
+                file=discord.File(
+                    fp=io.BytesIO(attachment_data),
+                    filename=attachment_filename,
+                ),
+                cardName=card_name,
+                authorName=author,
+                message_set_id=config.set_id,
+                vc_mention_user_ids=config.vc_mention_user_ids,
             )
-        copy = await message.attachments[0].to_file()
-        await veto_channel.send(content=card_name + " by " + message.author.name, file=copy)
-        copy2 = await message.attachments[0].to_file()
+        except Exception as e:
+            print(f"reasonable_card promote_from_submissions failed: {e}")
+            return
+        copy2 = discord.File(
+            fp=io.BytesIO(attachment_data),
+            filename=attachment_filename,
+        )
         logContent = (
             f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
         )

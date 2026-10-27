@@ -5,13 +5,18 @@ Sync Hellscube images to Google Cloud Storage from two sheet flows (run in paral
 tab (cols A=name, B=image URL). Uploads raw images to the token bucket and writes the GCS URL
 back to column B (or ``--write-column``).
 
-**Printable** — Hellscube **Database** tab → border prep (arc-aware edge stretch from
-``prepare_card_for_printing_stretch``) → ``hellscube-printable-images`` GCS →
-append or update rows on the [Printable DB](https://docs.google.com/spreadsheets/d/1FdnGhkjxnOAbjBEeLGC_QDMVcmEjoOLiuEkM9MeiPFs/edit?gid=0)
+**Printable** — card art from the Hellscube **Database** tab (``--printable-source sheet``,
+default) or the Hellfall catalog JSON (``--printable-source catalog``) → border prep
+(arc-aware edge stretch from ``prepare_card_for_printing_stretch``) →
+``hellscube-printable-images`` GCS → append or update rows on the
+[Printable DB](https://docs.google.com/spreadsheets/d/1FdnGhkjxnOAbjBEeLGC_QDMVcmEjoOLiuEkM9MeiPFs/edit?gid=0)
 sheet: missing sides are appended; when a new side 2+ appears, side 1 is
 re-processed in place too. With ``--assess`` (default ``auto``: on when
 Ollama is reachable), each prepared card gets a vision QA verdict written to the
 appended row (``Is good?`` E, ``Bot?`` F, ``Bot comment`` G).
+
+Catalog mode fetches ``HELLFALL_CATALOG_URL`` (see ``database_cache.catalog_cache``).
+Multi-face image layout assumptions are documented in ``printable_catalog_source.py``.
 
 Use ``--tokens-only`` or ``--printable-only`` to run one flow. Default runs both concurrently
 (two threads; sheet API calls are serialized with a lock).
@@ -57,7 +62,13 @@ if _scripts in sys.path:
     sys.path.remove(_scripts)
 sys.path.insert(0, _scripts)
 
+from database_cache.catalog_cache import DEFAULT_CATALOG_URL
 from prepare_card_for_printing_stretch import prepare_card_for_printing_stretch
+from printable_catalog_source import (
+    PrintableCatalogCard,
+    fetch_catalog,
+    iter_printable_catalog_cards,
+)
 from printable_image_qa import (
     cleanup_temp_paths,
     format_assessment_comment,
@@ -295,9 +306,13 @@ def _handle_bad_printable_url(
     printable_sheet=None,
     printable_row: int | None = None,
     sheet_lock: threading.Lock | None = None,
+    source_col: str | None = None,
 ) -> None:
-    col = _database_url_col_1based(side_idx, uses_primary=uses_primary)
-    col_letter = _column_letter(col)
+    if source_col is not None:
+        col_letter = source_col
+    else:
+        col = _database_url_col_1based(side_idx, uses_primary=uses_primary)
+        col_letter = _column_letter(col)
     _append_bad_url_log(
         log_path,
         card_id=str(card_id),
@@ -658,59 +673,30 @@ def _printable_sides_to_sync(
     return to_process
 
 
-def run_printable(
-    args: argparse.Namespace,
+def _printable_cards_from_database_sheet(
+    main_sheet,
     *,
-    sheet_lock: threading.Lock,
-    storage_client: storage.Client,
-) -> None:
-    tag = "printable"
-    bucket = storage_client.bucket(args.printable_bucket)
+    start: int,
+    end: int,
+) -> list[PrintableCatalogCard]:
+    card_ids = _cell_values(main_sheet, f"A{start}:A{end}")
+    card_names = _cell_values(main_sheet, f"B{start}:B{end}")
+    primary_urls = _cell_values(main_sheet, f"C{start}:C{end}")
+    side1_urls = _cell_values(main_sheet, f"T{start}:T{end}")
+    side2_urls = _cell_values(main_sheet, f"AF{start}:AF{end}")
+    side3_urls = _cell_values(main_sheet, f"AP{start}:AP{end}")
+    side4_urls = _cell_values(main_sheet, f"AZ{start}:AZ{end}")
+    side1_types = _cell_values(main_sheet, f"M{start}:M{end}")
+    side2_types = _cell_values(main_sheet, f"Y{start}:Y{end}")
+    side3_types = _cell_values(main_sheet, f"AI{start}:AI{end}")
+    side4_types = _cell_values(main_sheet, f"AS{start}:AS{end}")
+    side1_supertypes = _cell_values(main_sheet, f"L{start}:L{end}")
+    side2_supertypes = _cell_values(main_sheet, f"X{start}:X{end}")
+    side3_supertypes = _cell_values(main_sheet, f"AH{start}:AH{end}")
+    side4_supertypes = _cell_values(main_sheet, f"AR{start}:AR{end}")
+    card_sets = _cell_values(main_sheet, f"E{start}:E{end}")
 
-    database = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
-    main_sheet = database.worksheet(SOURCE_SHEET_NAME)
-    target_db = googleClient.open_by_key(args.printable_sheet_key)
-    target_sheet = target_db.get_worksheet(args.printable_worksheet)
-
-    start = args.printable_first_row
-    end = args.printable_last_row
-    if end is None:
-        end = main_sheet.row_count
-
-    with sheet_lock:
-        printable_rows = target_sheet.get_all_values()
-        printable_index = _load_printable_side_index(printable_rows)
-        card_ids = _cell_values(main_sheet, f"A{start}:A{end}")
-        card_names = _cell_values(main_sheet, f"B{start}:B{end}")
-        primary_urls = _cell_values(main_sheet, f"C{start}:C{end}")
-        side1_urls = _cell_values(main_sheet, f"T{start}:T{end}")
-        side2_urls = _cell_values(main_sheet, f"AF{start}:AF{end}")
-        side3_urls = _cell_values(main_sheet, f"AP{start}:AP{end}")
-        side4_urls = _cell_values(main_sheet, f"AZ{start}:AZ{end}")
-        side1_types = _cell_values(main_sheet, f"M{start}:M{end}")
-        side2_types = _cell_values(main_sheet, f"Y{start}:Y{end}")
-        side3_types = _cell_values(main_sheet, f"AI{start}:AI{end}")
-        side4_types = _cell_values(main_sheet, f"AS{start}:AS{end}")
-        side1_supertypes = _cell_values(main_sheet, f"L{start}:L{end}")
-        side2_supertypes = _cell_values(main_sheet, f"X{start}:X{end}")
-        side3_supertypes = _cell_values(main_sheet, f"AH{start}:AH{end}")
-        side4_supertypes = _cell_values(main_sheet, f"AR{start}:AR{end}")
-        card_sets = _cell_values(main_sheet, f"E{start}:E{end}")
-
-    _log(
-        tag,
-        f"Printable DB has {len(printable_index)} side rows; processing {len(card_ids)} cards",
-    )
-
-    assess = args.assess != "off"
-    if assess and not _ollama_reachable(args.ollama_host):
-        if args.assess == "on":
-            raise RuntimeError(f"--assess on but Ollama unreachable at {args.ollama_host}")
-        _log(tag, f"Ollama unreachable at {args.ollama_host}; skipping assessment")
-        assess = False
-
-    bad_url_log = Path(args.bad_url_log)
-
+    cards: list[PrintableCatalogCard] = []
     for row_offset, (
         card_id,
         name,
@@ -748,10 +734,8 @@ def run_printable(
             card_sets,
         )
     ):
-        db_row = start + row_offset
         if card_set == "HCV":
             continue
-
         uses_primary = side1 == ""
         if uses_primary:
             side_entries = [(primary_url, type1, sup1, 0)]
@@ -769,6 +753,81 @@ def run_printable(
             ]
         if not side_entries:
             continue
+        cards.append(
+            PrintableCatalogCard(
+                card_id=str(card_id),
+                name=str(name),
+                card_set=str(card_set),
+                uses_primary=uses_primary,
+                side_entries=side_entries,
+                source_row=start + row_offset,
+            )
+        )
+    return cards
+
+
+def run_printable(
+    args: argparse.Namespace,
+    *,
+    sheet_lock: threading.Lock,
+    storage_client: storage.Client,
+) -> None:
+    tag = "printable"
+    bucket = storage_client.bucket(args.printable_bucket)
+
+    target_db = googleClient.open_by_key(args.printable_sheet_key)
+    target_sheet = target_db.get_worksheet(args.printable_worksheet)
+
+    catalog_source = args.printable_source == "catalog"
+    bad_url_source_col = "catalog" if catalog_source else None
+
+    with sheet_lock:
+        printable_rows = target_sheet.get_all_values()
+        printable_index = _load_printable_side_index(printable_rows)
+
+    if catalog_source:
+        _log(tag, f"Fetching catalog from {args.catalog_url}")
+        payload = fetch_catalog(args.catalog_url)
+        work_cards = iter_printable_catalog_cards(
+            payload,
+            first_ordinal=args.printable_first_row,
+            last_ordinal=args.printable_last_row,
+        )
+    else:
+        database = googleClient.open_by_key(hc_constants.HELLSCUBE_DATABASE)
+        main_sheet = database.worksheet(SOURCE_SHEET_NAME)
+        start = args.printable_first_row
+        end = args.printable_last_row
+        if end is None:
+            end = main_sheet.row_count
+        with sheet_lock:
+            work_cards = _printable_cards_from_database_sheet(
+                main_sheet,
+                start=start,
+                end=end,
+            )
+
+    _log(
+        tag,
+        f"Printable DB has {len(printable_index)} side rows; processing {len(work_cards)} cards "
+        f"(source={args.printable_source})",
+    )
+
+    assess = args.assess != "off"
+    if assess and not _ollama_reachable(args.ollama_host):
+        if args.assess == "on":
+            raise RuntimeError(f"--assess on but Ollama unreachable at {args.ollama_host}")
+        _log(tag, f"Ollama unreachable at {args.ollama_host}; skipping assessment")
+        assess = False
+
+    bad_url_log = Path(args.bad_url_log)
+
+    for card in work_cards:
+        card_id = card.card_id
+        name = card.name
+        uses_primary = card.uses_primary
+        side_entries = card.side_entries
+        db_row = card.source_row
 
         sides_to_sync = _printable_sides_to_sync(
             str(card_id),
@@ -828,6 +887,7 @@ def run_printable(
                     printable_sheet=target_sheet if is_update else None,
                     printable_row=printable_row,
                     sheet_lock=sheet_lock if is_update else None,
+                    source_col=bad_url_source_col,
                 )
                 continue
 
@@ -862,6 +922,7 @@ def run_printable(
                         printable_sheet=target_sheet if is_update else None,
                         printable_row=printable_row,
                         sheet_lock=sheet_lock if is_update else None,
+                        source_col=bad_url_source_col,
                     )
                     continue
 
@@ -1026,6 +1087,20 @@ def main() -> None:
     )
 
     # --- Printable ---
+    parser.add_argument(
+        "--printable-source",
+        choices=["sheet", "catalog"],
+        default="sheet",
+        help=(
+            "Where printable art URLs come from: Database sheet columns (sheet) or "
+            "Hellfall catalog JSON (catalog). Printable DB sheet is still the QA ledger."
+        ),
+    )
+    parser.add_argument(
+        "--catalog-url",
+        default=DEFAULT_CATALOG_URL,
+        help="Hellfall catalog URL when --printable-source catalog (or HELLFALL_CATALOG_URL)",
+    )
     parser.add_argument(
         "--printable-bucket",
         default=DEFAULT_PRINTABLE_BUCKET,
