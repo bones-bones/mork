@@ -91,7 +91,7 @@ flowchart TD
 
 ## Card pile 1 (`#card-pile-1` · set **PL1**)
 
-**Entry:** `#card-pile-1` (channel id `1564479507446890506`) · same background poll checker as `#submissions` · `!wait` in channel or `#bot-test`
+**Entry:** `#card-pile-1` (channel id `1564479507446890506`) · same background poll checker as `#submissions` · `!wait` remains `#bot-test` only
 
 | Policy | Value |
 | --- | --- |
