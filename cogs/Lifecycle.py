@@ -68,7 +68,7 @@ from reddit_devvit import (
     reddit_reply_via_devvit_enabled,
 )
 from reddit_functions import post_to_reddit
-from set_config import (
+from set_configs import (
     PL1_CARD_PILE,
     compile_targets_for_veto_content,
     config_for_submission_channel,

@@ -17,11 +17,8 @@ from getters import (
 from handle_veto_post import handle_veto_post
 from is_admin import is_admin
 from is_mork import is_mork
-from set_config import (
-    SetConfig,
-    submission_check_configs,
-    veto_content_for_submission,
-)
+from set_config import SetConfig, veto_content_for_submission
+from set_configs import submission_check_configs
 
 
 async def check_submissions(bot: commands.Bot):

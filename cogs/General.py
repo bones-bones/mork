@@ -14,12 +14,8 @@ from discord.utils import get
 
 import hc_constants
 from cogs.lifecycle.submissions_closed import elapsed_open_hours
-from set_config import (
-    HC91_SUBMISSIONS,
-    config_for_submission_channel,
-    cooldown_wait_message,
-    hours_since_last_submission,
-)
+from set_config import cooldown_wait_message, hours_since_last_submission
+from set_configs import HC91_SUBMISSIONS, config_for_submission_channel
 from shared_vars import drive
 from utils import at
 
