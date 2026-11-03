@@ -14,6 +14,12 @@ from discord.utils import get
 
 import hc_constants
 from cogs.lifecycle.submissions_closed import elapsed_open_hours
+from set_config import (
+    HC91_SUBMISSIONS,
+    config_for_submission_channel,
+    cooldown_wait_message,
+    hours_since_last_submission,
+)
 from shared_vars import drive
 from utils import at
 
@@ -519,8 +525,16 @@ class GeneralCog(commands.Cog):
 
     @commands.command()
     async def wait(self, ctx: commands.Context):
-        if ctx.channel.id != hc_constants.BOT_TEST_CHANNEL:
-            await ctx.send("wait only works in #bot-test")
+        submission_cfg = config_for_submission_channel(ctx.channel.id)
+        if submission_cfg is None and ctx.channel.id == hc_constants.BOT_TEST_CHANNEL:
+            submission_cfg = HC91_SUBMISSIONS
+        allowed = (
+            submission_cfg is not None
+            or ctx.channel.id == hc_constants.MASTERPIECE_CHANNEL
+            or ctx.channel.id == hc_constants.BOT_TEST_CHANNEL
+        )
+        if not allowed:
+            await ctx.send("wait only works in submission channels, #pause-projects, or #bot-test")
             return
         # From https://www.resiliencelab.us/thought-lab/self-care-ideas
         possibleActivities = [
@@ -626,12 +640,20 @@ class GeneralCog(commands.Cog):
             "give yourself permission to rest when you feel tired.",
         ]
 
-        state_file = (
-            hc_constants.MASTERPIECE_STATE_FILE
-            if ctx.channel.id == hc_constants.MASTERPIECE_CHANNEL
-            else hc_constants.SUBMISSIONS_STATE_FILE
-        )
-        if os.path.exists(state_file):
+        if ctx.channel.id == hc_constants.MASTERPIECE_CHANNEL:
+            state_file = hc_constants.MASTERPIECE_STATE_FILE
+            cooldown_hours = float(hc_constants.SUBMISSION_COOLDOWN)
+            use_scubusiness = True
+        elif submission_cfg:
+            state_file = submission_cfg.state_file
+            cooldown_hours = float(submission_cfg.cooldown_hours or 0)
+            use_scubusiness = submission_cfg.cooldown_mode == "scubusiness"
+        else:
+            state_file = hc_constants.SUBMISSIONS_STATE_FILE
+            cooldown_hours = float(hc_constants.SUBMISSION_COOLDOWN)
+            use_scubusiness = True
+
+        if state_file and os.path.exists(state_file):
             async with aiofiles.open(state_file, "r") as file:
                 lines = await file.readlines()
                 for line in lines:
@@ -641,28 +663,31 @@ class GeneralCog(commands.Cog):
                             "%Y-%m-%dT%H:%M:%S%z",
                         )
 
-                        if state_file == hc_constants.SUBMISSIONS_STATE_FILE:
+                        if use_scubusiness:
                             timeSinceLast = elapsed_open_hours(tempDate)
+                        elif submission_cfg:
+                            timeSinceLast = hours_since_last_submission(tempDate, submission_cfg)
                         else:
                             timeSinceLast = (
                                 (datetime.now(tz=UTC) - tempDate).total_seconds()
                             ) / (60 * 60)
 
-                        # Check if user is admin
                         member = cast(discord.Member, ctx.author)
-                        is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
+                        is_admin_user = any(role.id == hc_constants.ADMIN for role in member.roles)
 
-                        text = ""
-                        if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin:
-                            text += (
-                                f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast} scubusiness hours. "
-                                f"You need to wait {hc_constants.SUBMISSION_COOLDOWN} scubusiness hours between submitting cards. "
-                                f"(Scubusiness hours exclude Saturday and Tuesday.) While you wait, why don't you "
-                            )
-                            randomActivity = random.choice(possibleActivities)
-                            text += randomActivity
-
-                            await ctx.send(text)
+                        if timeSinceLast < cooldown_hours and not is_admin_user:
+                            if submission_cfg and not use_scubusiness:
+                                base = (
+                                    f"<@{ctx.author.id}>, {cooldown_wait_message(submission_cfg, timeSinceLast)} "
+                                    "While you wait, why don't you "
+                                )
+                            else:
+                                base = (
+                                    f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast:.1f} scubusiness hours. "
+                                    f"You need to wait {cooldown_hours} scubusiness hours between submitting cards. "
+                                    f"(Scubusiness hours exclude Saturday and Tuesday.) While you wait, why don't you "
+                                )
+                            await ctx.send(base + random.choice(possibleActivities))
                             return
         await ctx.send(f"<@{ctx.author.id}>, you have no pending cards. You may submit a card")
         return

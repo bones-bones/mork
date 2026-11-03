@@ -29,7 +29,6 @@ from accept_card import accept_card
 from check_submissions import check_submissions
 from cogs.lifecycle.check_reddit import check_reddit
 from cogs.lifecycle.post_daily_submissions import (
-    gallery_uses_manifest,
     post_daily_submissions,
 )
 from cogs.lifecycle.scube_lair_acceptance import (
@@ -38,7 +37,6 @@ from cogs.lifecycle.scube_lair_acceptance import (
 )
 from cogs.lifecycle.submissions_closed import (
     elapsed_open_hours,
-    is_submissions_closed,
 )
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
 from cogs.lifecycle.submissions_gates import ensure_submissions_gates
@@ -51,7 +49,6 @@ from get_veto_polls_results import (
 )
 from getters import (
     getErrataTrackingChannel,
-    getMorkSubmissionsLoggingChannel,
     getScubeLairDiscussionChannel,
     getSubmissionDiscussionChannel,
     getVetoChannel,
@@ -62,7 +59,7 @@ from handle_veto_post import handle_veto_post
 from hellfall_fetcher import cardsExist, getExactCard, getSearchFromServer
 from image_response_filename import filename_from_image_response
 from is_admin import can_instaerrata, is_admin, is_veto
-from is_mork import is_mork, is_reddit_mirror_author, reasonable_card
+from is_mork import is_mork, is_reddit_mirror_author
 from post_card_images import post_card_images
 from reddit_devvit import (
     post_reply_via_devvit,
@@ -71,8 +68,15 @@ from reddit_devvit import (
     reddit_reply_via_devvit_enabled,
 )
 from reddit_functions import post_to_reddit
+from set_config import (
+    PL1_CARD_PILE,
+    compile_targets_for_veto_content,
+    config_for_submission_channel,
+    strip_veto_set_prefix,
+)
 from shared_vars import googleClient, intents
 from submissions.check_masterpiece_submissions import check_masterpiece_submissions
+from submissions.intake_submission import intake_submission_post
 from submissions.token_submissions import checkTokenSubmissions
 
 load_dotenv()
@@ -121,6 +125,8 @@ def card_list_channel_for_set(cardset: str) -> int:
             return hc_constants.HKL_CARD_LIST
         case "hc9" | "hc9.0" | "hc9.1":
             return hc_constants.NINE_CARD_LIST
+        case "pl1":
+            return hc_constants.HKL_CARD_LIST
         case "soh":
             return hc_constants.SOH_CARD_LIST
         case _:
@@ -704,119 +710,8 @@ class LifecycleCog(commands.Cog):
                 await sent_message.add_reaction(hc_constants.VOTE_DOWN)
                 await message.delete()
 
-            case hc_constants.SUBMISSIONS_CHANNEL:
-                if is_submissions_closed() and not is_admin(cast(discord.Member, message.author)):
-                    # todo: remove this in the future
-                    author_id = message.author.id
-                    preview = (message.content or "").strip()
-                    attachment_count = len(message.attachments)
-                    await message.delete()
-                    parts = [f"<@{author_id}> tried to post in #submissions while it was closed."]
-                    if preview:
-                        parts.append(preview[:500])
-                    if attachment_count:
-                        parts.append(f"({attachment_count} attachment(s))")
-                    print("\n".join(parts))
-                    return
-
-                if len(message.attachments) == 0:
-                    return
-
-                split_string = message.content.split("\n")
-                card_name = split_string[0]
-                if "@" in card_name:
-                    # No ping case
-                    user = await self.bot.fetch_user(message.author.id)
-                    await user.send(
-                        'No "@" are allowed in card title submissions to prevent me from spamming'
-                    )
-                    return  # no pings allowed
-
-                if not submission_card_name(message.content):
-                    discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                    file = await message.attachments[0].to_file()
-                    await discussionChannel.send(
-                        f"<@{message.author.id}>, make sure to include the name of your card",
-                        file=file,
-                    )
-                    await message.delete()
-                    return
-
-                author = message.author.mention
-
-
-                if len(split_string) > 1:
-                    author = "; ".join([f"<@{raw}>" for raw in message.raw_mentions])
-
-                async with aiofiles.open(hc_constants.SUBMISSIONS_STATE_FILE, "r") as file:
-                    lines = await file.readlines()
-                    for line in lines:
-                        if line.startswith(f"{message.author.id}—"):
-                            tempDate = datetime.strptime(
-                                line.split("—")[1].replace("\n", ""),
-                                "%Y-%m-%dT%H:%M:%S%z",
-                            )
-
-                            timeSinceLast = elapsed_open_hours(tempDate)
-
-                            if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin(
-                                cast(discord.Member, message.author)
-                            ):
-                                discussionChannel = getSubmissionDiscussionChannel(self.bot)
-                                await discussionChannel.send(
-                                    f"<@{message.author.id}>, you've submitted a card within the past {timeSinceLast} scubusiness hours. You need to wait {hc_constants.SUBMISSION_COOLDOWN} scubusiness hours between submitting cards. (Scubusiness hours exclude Saturday and Tuesday.)"
-                                )
-                                await message.delete()
-                                return
-                async with aiofiles.open(hc_constants.SUBMISSIONS_STATE_FILE, "a") as file:
-                    await file.write(
-                        f"{message.author.id}—{datetime.now(tz=UTC).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
-                    )
-
-                file = await message.attachments[0].to_file()
-                if reasonable_card():
-                    veto_channel = getVetoChannel(bot=self.bot)
-                    acceptedChannel = getSubmissionDiscussionChannel(self.bot)
-                    logChannel = getMorkSubmissionsLoggingChannel(self.bot)
-                    acceptContent = f"{card_name} by {author} was accepted"
-                    accepted_message_no_mentions = acceptContent
-                    for index, mentionEntry in enumerate(message.raw_mentions):
-                        accepted_message_no_mentions = accepted_message_no_mentions.replace(
-                            f"<@{mentionEntry}>",
-                            message.mentions[index].name,
-                        )
-                    copy = await message.attachments[0].to_file()
-                    await veto_channel.send(
-                        content=card_name + " by " + message.author.name, file=copy
-                    )
-                    copy2 = await message.attachments[0].to_file()
-                    logContent = f"{acceptContent}, message id: {message.id}, upvotes: 0, downvotes: 0, magic: true"
-                    await acceptedChannel.send(content=f"✨✨ {acceptContent} ✨✨")
-                    await acceptedChannel.send(content="", file=file)
-                    await logChannel.send(content=logContent, file=copy2)
-                else:
-                    contentMessage = f"{card_name} by {author}"
-                    sent_message = await message.channel.send(content=contentMessage, file=file)
-                    await sent_message.add_reaction(hc_constants.VOTE_UP)
-                    await sent_message.add_reaction(hc_constants.VOTE_DOWN)
-                    await sent_message.add_reaction(hc_constants.DELETE)
-
-                    await sent_message.create_thread(name=card_name[0:99])
-                    if gallery_uses_manifest():
-                        try:
-                            from submissions_gallery_manifest import append_submission
-
-                            attachment = message.attachments[0]
-                            image_bytes = await attachment.read()
-                            append_submission(
-                                message_id=str(sent_message.id),
-                                image_bytes=image_bytes,
-                                filename=attachment.filename or "card.png",
-                                card_name=card_name,
-                            )
-                        except Exception:
-                            traceback.print_exc()
-                await message.delete()
+            case channel if (submission_cfg := config_for_submission_channel(channel)):
+                await intake_submission_post(message, self.bot, submission_cfg)
 
             case hc_constants.ERRATA_SUBMISSIONS:
                 parts = message.content.split("\n", 1)
@@ -1024,7 +919,8 @@ class LifecycleCog(commands.Cog):
                 else None
             )
             first_line = errataLinens[0] if errataLinens else ""
-            dbname, card_author = parseCardNameAndAuthor(first_line)
+            parse_line = strip_veto_set_prefix(first_line) if not errata_id else first_line
+            dbname, card_author = parseCardNameAndAuthor(parse_line)
             card_author = card_author.strip()
             # Resolve display name from card id (errata messages use id on first line)
             errata_card = await getExactCard(errata_id) if errata_id else None
@@ -1040,8 +936,9 @@ class LifecycleCog(commands.Cog):
                 set_to_add_to = errata_card.set
                 channel_to_add_to = card_list_channel_for_set(errata_card.set)
             else:
-                set_to_add_to = hc_constants.ACTIVE_CUBE_ID
-                channel_to_add_to = hc_constants.NINE_CARD_LIST
+                set_to_add_to, channel_to_add_to = compile_targets_for_veto_content(
+                    acceptanceMessage
+                )
 
             await accept_card(
                 bot=self.bot,
@@ -1068,11 +965,15 @@ class LifecycleCog(commands.Cog):
             print(f"cvV processing {messageEntry.content}")
 
             acceptanceMessage = messageEntry.content
-            dbname, card_author = parseCardNameAndAuthor(acceptanceMessage)
+            dbname, card_author = parseCardNameAndAuthor(
+                strip_veto_set_prefix(acceptanceMessage.splitlines()[0])
+                if acceptanceMessage
+                else acceptanceMessage
+            )
             resolvedName = dbname if dbname != "" else "Crazy card with no name"
             resolvedAuthor = card_author if card_author != "" else "no author"
             cardMessage = f"**{resolvedName}** by **{resolvedAuthor}**"
-            set_to_add_to = hc_constants.ACTIVE_CUBE_ID
+            set_to_add_to, _channel_to_add_to = compile_targets_for_veto_content(acceptanceMessage)
 
             vetoedCards.append(get_card_message(messageEntry.content))
 
@@ -1312,9 +1213,15 @@ async def setup(bot: commands.Bot):
     await bot.add_cog(LifecycleCog(bot))
 
 
-def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = False):
+def _reset_countdowns_for_file(
+    state_file: str,
+    *,
+    pause_on_closed_days: bool = False,
+    cooldown_hours: float | None = None,
+):
     if not os.path.exists(state_file):
         return
+    limit = cooldown_hours if cooldown_hours is not None else hc_constants.SUBMISSION_COOLDOWN
     now = datetime.now(tz=UTC)
     lines_to_write = ""
     with open(state_file, "r") as file:
@@ -1332,7 +1239,7 @@ def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = 
                 else:
                     timeSinceLast = (now - tempDate).total_seconds() / (60 * 60)
 
-                if timeSinceLast <= hc_constants.SUBMISSION_COOLDOWN:
+                if timeSinceLast <= limit:
                     lines_to_write += f"{line}"
     with open(state_file, "w") as file:
         file.write(lines_to_write)
@@ -1340,8 +1247,21 @@ def _reset_countdowns_for_file(state_file: str, *, pause_on_closed_days: bool = 
 
 def reset_countdowns():
     print("reset")
-    _reset_countdowns_for_file(hc_constants.SUBMISSIONS_STATE_FILE, pause_on_closed_days=True)
-    _reset_countdowns_for_file(hc_constants.MASTERPIECE_STATE_FILE, pause_on_closed_days=True)
+    _reset_countdowns_for_file(
+        hc_constants.SUBMISSIONS_STATE_FILE,
+        pause_on_closed_days=True,
+        cooldown_hours=float(hc_constants.SUBMISSION_COOLDOWN),
+    )
+    _reset_countdowns_for_file(
+        hc_constants.MASTERPIECE_STATE_FILE,
+        pause_on_closed_days=True,
+        cooldown_hours=float(hc_constants.SUBMISSION_COOLDOWN),
+    )
+    _reset_countdowns_for_file(
+        hc_constants.CARD_PILE_STATE_FILE,
+        pause_on_closed_days=False,
+        cooldown_hours=PL1_CARD_PILE.cooldown_hours,
+    )
     print("end reset")
 
 
