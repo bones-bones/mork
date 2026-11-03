@@ -126,7 +126,7 @@ def card_list_channel_for_set(cardset: str) -> int:
         case "hc9" | "hc9.0" | "hc9.1":
             return hc_constants.NINE_CARD_LIST
         case "pl1":
-            return hc_constants.HKL_CARD_LIST
+            return hc_constants.VETO_CARD_LIST
         case "soh":
             return hc_constants.SOH_CARD_LIST
         case _:

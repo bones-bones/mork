@@ -99,7 +99,7 @@ flowchart TD
 | Cooldown | **4 wall-clock hours** (`../mork-card-pile-1-state`) |
 | Tue/Sat closed | **No** (intake always open) |
 | Veto-polls prefix | `PL1: CardName by author` → `!compileveto` writes set **PL1** |
-| Card-list channel | **#hkl** (`HKL_CARD_LIST`) until a dedicated PL1 list exists |
+| Card-list channel | **veto card list** (`VETO_CARD_LIST`) until a dedicated PL1 list exists |
 | Hellpit / VC ping | Users `259904996563222529`, `253992237120225281` (not `@VETO_COUNCIL`) |
 
 Intake validation matches `#submissions` (attachment, no `@` in title, card name, cooldown). Graveyard 🪦 fast-track applies only to `#submissions` (HC9.1), not card pile.

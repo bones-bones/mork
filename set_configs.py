@@ -86,7 +86,7 @@ def card_list_channel_for_set_config(set_id: str) -> int:
     cfg = config_for_set_id(set_id)
     if cfg and cfg.card_list_channel is not None:
         return cfg.card_list_channel
-    return hc_constants.HKL_CARD_LIST
+    return hc_constants.VETO_CARD_LIST
 
 
 def compile_targets_for_veto_content(content: str) -> tuple[str, int]:
