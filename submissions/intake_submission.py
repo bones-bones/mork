@@ -31,9 +31,7 @@ async def intake_submission_post(
     bot: commands.Bot,
     config: SetConfig,
 ) -> None:
-    if config.closed_on_tue_sat and is_submissions_closed() and not is_admin(
-        cast(discord.Member, message.author)
-    ):
+    if is_submissions_closed() and not is_admin(cast(discord.Member, message.author)):
         author_id = message.author.id
         preview = (message.content or "").strip()
         attachment_count = len(message.attachments)

@@ -13,7 +13,6 @@ HC91_SUBMISSIONS = SetConfig(
     cooldown_hours=float(hc_constants.SUBMISSION_COOLDOWN),
     cooldown_mode="scubusiness",
     state_file=hc_constants.SUBMISSIONS_STATE_FILE,
-    closed_on_tue_sat=True,
 )
 
 PL1_CARD_PILE = SetConfig(
@@ -26,7 +25,6 @@ PL1_CARD_PILE = SetConfig(
     state_file=hc_constants.CARD_PILE_STATE_FILE,
     vc_mention_user_ids=hc_constants.CARD_PILE_VC_USERS,
     veto_content_prefix="PL1: ",
-    closed_on_tue_sat=False,
 )
 
 SET_CONFIGS: tuple[SetConfig, ...] = (HC91_SUBMISSIONS, PL1_CARD_PILE)

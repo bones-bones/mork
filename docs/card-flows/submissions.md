@@ -79,7 +79,7 @@ flowchart TD
 | **Non-image attachment** | e.g. PDF attached                 | Poll created anyway                          | Deleted (reposted as poll) | Consumed       |
 | **Magic skip**           | 1/4001 roll                       | Straight to veto (no poll)                   | Deleted                    | Consumed       |
 
-**Closed day:** Checked first. Non-admin posts in `#submissions` on Tuesday or Saturday (US Eastern) are deleted. Admins bypass the closed-day gate (same as cooldown). Cooldown timestamps are not written on closed days for blocked posts, and elapsed wait time ignores those days. At the start of each closed day Mork posts `@here THE GATES OF HELL ARE CLOSED` in `#submissions` and `#submissions-discussion`; at the start of Wednesday and Sunday (US Eastern) Mork posts `@here THE GATES OF HELL HAVE OPENED` in those channels.
+**Closed day:** Checked first. Non-admin posts in configured submission channels (`#submissions`, `#card-pile-1`, …) on Tuesday or Saturday (US Eastern) are deleted. Admins bypass the closed-day gate (same as cooldown). Cooldown timestamps are not written on closed days for blocked posts, and elapsed wait time ignores those days. At the start of each closed day Mork posts `@here THE GATES OF HELL ARE CLOSED` in `#submissions` and `#submissions-discussion`; at the start of Wednesday and Sunday (US Eastern) Mork posts `@here THE GATES OF HELL HAVE OPENED` in those channels.
 
 **Missing name:** Intake bails before cooldown write or repost. The card image is reattached in `#submissions-discussion` so the user can fix the title and resubmit. Whitespace-only first lines count as missing.
 
@@ -97,7 +97,7 @@ flowchart TD
 | --- | --- |
 | Poll threshold | up − down ≥ **30**, age ≥ 1 day |
 | Cooldown | **4 wall-clock hours** (`../mork-card-pile-1-state`) |
-| Tue/Sat closed | **No** (intake always open) |
+| Tue/Sat closed | **Yes** (same gate as `#submissions`) |
 | Veto-polls prefix | `PL1: CardName by author` → `!compileveto` writes set **PL1** |
 | Card-list channel | **veto card list** (`VETO_CARD_LIST`) until a dedicated PL1 list exists |
 | Hellpit / VC ping | Users `259904996563222529`, `253992237120225281` (not `@VETO_COUNCIL`) |
@@ -108,7 +108,7 @@ Intake validation matches `#submissions` (attachment, no `@` in title, card name
 
 ## Masterpiece / Pause Projects submission
 
-Same intake validation as standard submission (attachment, `@` in title, card name, cooldown); different channel, poll threshold, and cooldown state file. Tuesday/Saturday **intake closures** apply only to `#submissions`; masterpiece cooldowns use the same scubusiness-hour clock (Tue/Sat excluded from the 22h wait).
+Same intake validation as standard submission (attachment, `@` in title, card name, cooldown); different channel, poll threshold, and cooldown state file. Tuesday/Saturday **intake closures** apply to SetConfig submission channels; masterpiece is separate and does not use that gate. Masterpiece cooldowns use the same scubusiness-hour clock (Tue/Sat excluded from the 22h wait).
 
 ```mermaid
 flowchart TD
