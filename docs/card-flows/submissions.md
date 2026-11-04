@@ -89,6 +89,23 @@ flowchart TD
 
 ---
 
+## Card pile 1 (`#card-pile-1` · set **PL1**)
+
+**Entry:** `#card-pile-1` (channel id `1564479507446890506`) · same background poll checker as `#submissions` · `!wait` remains `#bot-test` only
+
+| Policy | Value |
+| --- | --- |
+| Poll threshold | up − down ≥ **30**, age ≥ 1 day |
+| Cooldown | **4 wall-clock hours** (`../mork-card-pile-1-state`) |
+| Tue/Sat closed | **No** (intake always open) |
+| Veto-polls prefix | `PL1: CardName by author` → `!compileveto` writes set **PL1** |
+| Card-list channel | **veto card list** (`VETO_CARD_LIST`) until a dedicated PL1 list exists |
+| Hellpit / VC ping | Users `259904996563222529`, `253992237120225281` (not `@VETO_COUNCIL`) |
+
+Intake validation matches `#submissions` (attachment, no `@` in title, card name, cooldown). Graveyard 🪦 fast-track applies only to `#submissions` (HC9.1), not card pile.
+
+---
+
 ## Masterpiece / Pause Projects submission
 
 Same intake validation as standard submission (attachment, `@` in title, card name, cooldown); different channel, poll threshold, and cooldown state file. Tuesday/Saturday **intake closures** apply only to `#submissions`; masterpiece cooldowns use the same scubusiness-hour clock (Tue/Sat excluded from the 22h wait).

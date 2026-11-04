@@ -12,17 +12,28 @@ from accept_card import accept_card
 from get_card_message import parseCardNameAndAuthor
 from getters import (
     getSubmissionDiscussionChannel,
-    getSubmissionsChannel,
     getVetoChannel,
 )
 from handle_veto_post import handle_veto_post
 from is_admin import is_admin
 from is_mork import is_mork
+from set_config import SetConfig, veto_content_for_submission
+from set_configs import submission_check_configs
 
 
 async def check_submissions(bot: commands.Bot):
-    print("checking submissions")
-    subChannel = getSubmissionsChannel(bot)
+    for config in submission_check_configs():
+        await _check_submissions_for_config(bot, config)
+
+
+async def _check_submissions_for_config(bot: commands.Bot, config: SetConfig):
+    channel_id = config.submission_channel
+    if channel_id is None or config.threshold is None:
+        return
+    print(f"checking submissions for {config.set_id}")
+    subChannel = cast(TextChannel, bot.get_channel(channel_id))
+    if not subChannel:
+        return
     vetoChannel = getVetoChannel(bot)
     acceptedChannel = getSubmissionDiscussionChannel(bot)
     logChannel = cast(TextChannel, bot.get_channel(hc_constants.MORK_SUBMISSIONS_LOGGING_CHANNEL))
@@ -33,6 +44,8 @@ async def check_submissions(bot: commands.Bot):
         return
 
     messages = [message async for message in messages]
+    threshold = config.threshold
+    reminder_margin = threshold - 10
 
     for messageEntry in messages:
         # Drastic measure: throttle hard to avoid Discord 429 rate limits
@@ -57,9 +70,7 @@ async def check_submissions(bot: commands.Bot):
             messageAge = timeNow - messageEntry.created_at
 
             positiveMargin = upCount - downCount
-            if positiveMargin >= (hc_constants.SUBMISSIONS_THRESHOLD) and messageAge >= timedelta(
-                days=1
-            ):
+            if positiveMargin >= threshold and messageAge >= timedelta(days=1):
                 guild = cast(Guild, messageEntry.guild)
                 await asyncio.sleep(1)
                 upvoteUsers = [user async for user in upvote.users()]
@@ -82,7 +93,7 @@ async def check_submissions(bot: commands.Bot):
                 attachment = messageEntry.attachments[0]
                 attachment_data = await attachment.read()
                 attachment_filename = attachment.filename
-                if positiveMargin >= hc_constants.SUBMISSIONS_THRESHOLD * 2:
+                if positiveMargin >= threshold * 2:
                     acceptContent = messageEntry.content + " has won hellscube!"
                 else:
                     acceptContent = messageEntry.content + " was accepted"
@@ -99,11 +110,11 @@ async def check_submissions(bot: commands.Bot):
 
                 dbname, card_author = parseCardNameAndAuthor(accepted_message_no_mentions)
                 resolvedName = dbname if dbname != "" else "Crazy card with no name"
-                print(f"Processing submission: {resolvedName}")
+                print(f"Processing submission ({config.set_id}): {resolvedName}")
 
                 # The spooky block is to determine if cards should automatically go to the graveyard channel
                 tombstone = get(messageEntry.reactions, emoji=hc_constants.TOMBSTONE)
-                if tombstone:
+                if tombstone and config.set_id == hc_constants.ACTIVE_CUBE_ID:
                     spooky = False
                     await asyncio.sleep(1)
                     async for user in tombstone.users():
@@ -129,28 +140,14 @@ async def check_submissions(bot: commands.Bot):
                             errata=False,
                         )
                         await asyncio.sleep(1)
-                        # If this submission was previously marked with a time reminder,
-                        # delete the bot's reminder ping message in the submissions channel.
-                        time_reacts = get(messageEntry.reactions, emoji="🕛")
-                        if time_reacts:
-                            await asyncio.sleep(1)
-                            async for rem_msg in subChannel.history(limit=200):
-                                if (
-                                    rem_msg.author == bot.user
-                                    and messageEntry.jump_url in rem_msg.content
-                                ):
-                                    try:
-                                        await asyncio.sleep(1)
-                                        await rem_msg.delete()
-                                    except Exception as e:
-                                        print(f"submissions check error: {e}")
-
+                        await _delete_time_reminder(bot, subChannel, messageEntry)
                         await messageEntry.delete()
                         continue  # and then stop processing the card
 
+                veto_body = veto_content_for_submission(config, accepted_message_no_mentions)
                 await asyncio.sleep(1)
                 vetoEntry = await vetoChannel.send(
-                    content=accepted_message_no_mentions,
+                    content=veto_body,
                     file=File(
                         fp=io.BytesIO(attachment_data),
                         filename=attachment_filename,
@@ -168,9 +165,10 @@ async def check_submissions(bot: commands.Bot):
                     submission_thread_url=(
                         submission_thread.jump_url if submission_thread else None
                     ),
+                    vc_mention_user_ids=config.vc_mention_user_ids,
                 )
 
-                logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
+                logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}, set: {config.set_id}"
                 await asyncio.sleep(1)
                 await acceptedChannel.send(
                     content=acceptContent,
@@ -196,24 +194,11 @@ async def check_submissions(bot: commands.Bot):
                 await logChannel.send(content=yesUsers[: hc_constants.LITERALLY_1984])
 
                 await asyncio.sleep(1)
-                # If this submission was previously marked with a time reminder,
-                # delete the bot's reminder ping message in the submissions channel.
-                time_reacts = get(messageEntry.reactions, emoji="🕛")
-                if time_reacts:
-                    await asyncio.sleep(1)
-                    async for rem_msg in subChannel.history(limit=200):
-                        if rem_msg.author == bot.user and messageEntry.jump_url in rem_msg.content:
-                            try:
-                                await asyncio.sleep(1)
-                                await rem_msg.delete()
-                            except Exception as e:
-                                print(f"submissions check error: {e}")
+                await _delete_time_reminder(bot, subChannel, messageEntry)
 
                 await messageEntry.delete()
                 continue
-            elif positiveMargin >= (
-                hc_constants.SUBMISSIONS_THRESHOLD - 10
-            ) and messageAge >= timedelta(days=5.5):
+            elif positiveMargin >= reminder_margin and messageAge >= timedelta(days=5.5):
                 has_mork_marked_it = False
                 timeReacts = get(messageEntry.reactions, emoji="🕛")
                 if timeReacts:
@@ -229,4 +214,19 @@ async def check_submissions(bot: commands.Bot):
                     await asyncio.sleep(1)
                     await messageEntry.add_reaction("🕛")
 
-    print("------done checking submissions-----")
+    print(f"------done checking submissions for {config.set_id}-----")
+
+
+async def _delete_time_reminder(
+    bot: commands.Bot, subChannel: TextChannel, messageEntry: Message
+):
+    time_reacts = get(messageEntry.reactions, emoji="🕛")
+    if time_reacts:
+        await asyncio.sleep(1)
+        async for rem_msg in subChannel.history(limit=200):
+            if rem_msg.author == bot.user and messageEntry.jump_url in rem_msg.content:
+                try:
+                    await asyncio.sleep(1)
+                    await rem_msg.delete()
+                except Exception as e:
+                    print(f"submissions check error: {e}")

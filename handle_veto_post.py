@@ -16,6 +16,7 @@ async def handle_veto_post(
     bot: commands.Bot,
     veto_council: int | None,
     submission_thread_url: str | None = None,
+    vc_mention_user_ids: tuple[int, ...] = (),
 ):
     if portal_time:
         veto_council = hc_constants.VETO_COUNCIL_PORTAL
@@ -46,15 +47,20 @@ async def handle_veto_post(
 
     veto_poll_thread = await message.create_thread(name=message.content[0:99])
 
-    role = cast(
-        Role,
-        get(cast(Member, message.author).guild.roles, id=veto_council),
-    )
     judgeRole = cast(Role, get(cast(Member, message.author).guild.roles, id=hc_constants.JUDGES))
 
     copy_for_discussion = await message.attachments[0].to_file()
 
-    mentions = [role.mention, judgeRole.mention]
+    if vc_mention_user_ids:
+        mentions = [f"<@{uid}>" for uid in vc_mention_user_ids]
+        mentions.append(judgeRole.mention)
+    else:
+        role = cast(
+            Role,
+            get(cast(Member, message.author).guild.roles, id=veto_council),
+        )
+        mentions = [role.mention, judgeRole.mention]
+
     splitted = message.content.rsplit(" by ", 1)
     author_s = at(splitted, 1, "NO AUTHOR")
     creator_mentions = author_s.split("; ")
