@@ -22,7 +22,6 @@ class SetConfig:
     state_file: str | None = None
     vc_mention_user_ids: tuple[int, ...] = ()
     veto_content_prefix: str | None = None
-    closed_on_tue_sat: bool = False
 
 
 def hours_since_last_submission(last: datetime, config: SetConfig) -> float:
