@@ -17,7 +17,7 @@ async def handle_veto_post(
     veto_council: int | None,
     submission_thread_url: str | None = None,
     vc_mention_user_ids: tuple[int, ...] = (),
-):
+) -> discord.Thread:
     if portal_time:
         veto_council = hc_constants.VETO_COUNCIL_PORTAL
     else:
@@ -87,3 +87,4 @@ async def handle_veto_post(
         await hellpit_discussion_thread.send(submission_thread_url)
 
     await veto_poll_thread.edit(locked=True)
+    return veto_poll_thread

@@ -2,9 +2,9 @@
 
 [← Card flows](README.md)
 
-## Errata submission (`#errata-submissions`)
+## Errata submission (`#errata-submissions` / `#errata-tracking`)
 
-**Entry:** `#errata-submissions` message handler · background auto-promote every 5 min
+**Entry:** shared `on_message` for `ERRATA_SUBMISSIONS` and `ERRATA_TRACKING` · background auto-promote every 5 min (scans `ERRATA_SUBMISSIONS` only)
 
 ```mermaid
 flowchart TD

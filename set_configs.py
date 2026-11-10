@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import hc_constants
+from cogs.lifecycle.submissions_closed import elapsed_open_hours
 from set_config import SetConfig
 
 HC9_1 = SetConfig(
@@ -14,7 +17,7 @@ HC9_1 = SetConfig(
 
 PL1_CARD_PILE = SetConfig(
     set_id=hc_constants.PL1,
-    card_list_channel=hc_constants.CARD_PILE_1_CHANNEL,
+    card_list_channel=hc_constants.VETO_CARD_LIST,
     threshold=30,
     cooldown_hours=4,
     vc_mention_user_ids=hc_constants.CARD_PILE_VC_USERS,
@@ -34,6 +37,27 @@ _CONFIG_BY_SET_ID: dict[str, SetConfig] = {
 
 def active_submission_set() -> SetConfig:
     return ACTIVE_SUBMISSION_SET_CONFIG
+
+
+def submission_cooldown_still_active(
+    last_submit: datetime, now: datetime | None = None
+) -> bool:
+    """Ledger retention: keep rows while any known set's cooldown could still apply."""
+    now = now or datetime.now(tz=UTC)
+    elapsed = elapsed_open_hours(last_submit, now)
+    for cfg in KNOWN_SET_CONFIGS:
+        if elapsed <= float(cfg.cooldown_hours or 0):
+            return True
+    return False
+
+
+def active_set_cooldown_blocks(
+    last_submit: datetime, config: SetConfig, now: datetime | None = None
+) -> bool:
+    """Intake gate for the currently active submission set only."""
+    now = now or datetime.now(tz=UTC)
+    elapsed = elapsed_open_hours(last_submit, now)
+    return elapsed < float(config.cooldown_hours or 0)
 
 
 def is_submissions_intake_channel(channel_id: int) -> bool:

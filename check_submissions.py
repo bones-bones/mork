@@ -129,7 +129,7 @@ async def _check_submissions_for_config(
                         await asyncio.sleep(1)
                         await accept_card(
                             bot=bot,
-                            channelIdForCard=hc_constants.GRAVEYARD_CARD_LIST,
+                            channelIdForCard=hc_constants.VETO_CARD_LIST,
                             message_set_id="HCV",
                             file=File(
                                 fp=io.BytesIO(attachment_data),
