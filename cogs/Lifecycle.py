@@ -715,7 +715,7 @@ class LifecycleCog(commands.Cog):
                     message, self.bot, active_submission_set()
                 )
 
-            case hc_constants.ERRATA_TRACKING | hc_constants.ERRATA_SUBMISSIONS:
+            case hc_constants.ERRATA_SUBMISSIONS:
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
                 print(f"errata submission: {card_id_input}")
@@ -736,9 +736,9 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                if not (card.set.startswith(hc_constants.CUBE_NAME)):
+                if not (card.set in [hc_constants.CUBE_NAME, "PL1"]):
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
-                        f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} cards are allowed for errata."
+                        f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} or PL1 cards are allowed for errata."
                     )
                     await message.delete()
                     return
