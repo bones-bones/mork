@@ -24,6 +24,7 @@ from getters import (
 from is_admin import is_admin
 from is_mork import reasonable_card
 from set_config import SetConfig, cooldown_wait_message, hours_since_last_submission
+from set_configs import active_set_cooldown_blocks
 
 
 async def intake_submission_post(
@@ -71,7 +72,6 @@ async def intake_submission_post(
         author = "; ".join([f"<@{raw}>" for raw in message.raw_mentions])
 
     state_file = hc_constants.SUBMISSIONS_STATE_FILE
-    cooldown_hours = config.cooldown_hours or 0
     if os.path.exists(state_file):
         async with aiofiles.open(state_file, "r") as file:
             lines = await file.readlines()
@@ -81,10 +81,10 @@ async def intake_submission_post(
                         line.split("—")[1].replace("\n", ""),
                         "%Y-%m-%dT%H:%M:%S%z",
                     )
-                    timeSinceLast = hours_since_last_submission(tempDate, config)
-                    if timeSinceLast < cooldown_hours and not is_admin(
+                    if active_set_cooldown_blocks(tempDate, config) and not is_admin(
                         cast(discord.Member, message.author)
                     ):
+                        timeSinceLast = hours_since_last_submission(tempDate, config)
                         discussionChannel = getSubmissionDiscussionChannel(bot)
                         await discussionChannel.send(
                             f"<@{message.author.id}>, {cooldown_wait_message(config, timeSinceLast)}"

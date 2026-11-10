@@ -73,6 +73,7 @@ from set_configs import (
     compile_targets_for_veto_content,
     is_submissions_intake_channel,
     strip_veto_set_prefix,
+    submission_cooldown_still_active,
 )
 from shared_vars import googleClient, intents
 from submissions.check_masterpiece_submissions import check_masterpiece_submissions
@@ -106,7 +107,7 @@ def card_list_channel_for_set(cardset: str) -> int:
         case "hlc" | "hc2" | "hc3" | "hc4":
             return hc_constants.SIX_ZERO_CARD_LIST
         case "hcv" | "hcv.scl":
-            return hc_constants.GRAVEYARD_CARD_LIST
+            return hc_constants.VETO_CARD_LIST
         case "hc6" | "hc6.0":
             return hc_constants.SIX_ZERO_CARD_LIST
         case "hc6.1":
@@ -138,7 +139,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
     add a checkmark and post it to veto-polls with 'Errata:' prefix, then run handle_veto_post.
     """
 
-    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
+    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
     if not channel:
         return
     time_now = datetime.now(UTC)
@@ -186,15 +187,14 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
                     content=veto_content,
                     file=discord.File(data, filename),
                 )
-                await handle_veto_post(
+                veto_poll_thread = await handle_veto_post(
                     message=veto_message,
                     bot=bot,
                     veto_council=hc_constants.VETO_COUNCIL,
                 )
-                guild = cast(Guild, veto_message.guild)
-
-                thread = cast(Thread, guild.get_channel_or_thread(veto_message.id))
-                await thread.send("\n".join(parts[1:]))
+                errata_body = "\n".join(parts[1:]).strip()
+                if errata_body:
+                    await veto_poll_thread.send(errata_body)
 
             except Exception:
                 print("errata veto threshold:")
@@ -715,7 +715,7 @@ class LifecycleCog(commands.Cog):
                     message, self.bot, active_submission_set()
                 )
 
-            case hc_constants.ERRATA_SUBMISSIONS | hc_constants.ERRATA_TRACKING:
+            case hc_constants.ERRATA_TRACKING | hc_constants.ERRATA_SUBMISSIONS:
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
                 print(f"errata submission: {card_id_input}")
@@ -1247,13 +1247,6 @@ def _reset_countdowns_for_file(
         file.write(lines_to_write)
 
 
-def _submission_cooldown_still_active(temp_date: datetime, now: datetime) -> bool:
-    """Keep ledger rows while any SetConfig submission cooldown still applies."""
-    cfg = active_submission_set()
-    limit = float(cfg.cooldown_hours or 0)
-    return elapsed_open_hours(temp_date, now) <= limit
-
-
 def _reset_shared_submission_state_file():
     state_file = hc_constants.SUBMISSIONS_STATE_FILE
     if not os.path.exists(state_file):
@@ -1269,7 +1262,7 @@ def _reset_shared_submission_state_file():
                 split_line[1].replace("\n", ""),
                 "%Y-%m-%dT%H:%M:%S%z",
             )
-            if _submission_cooldown_still_active(temp_date, now):
+            if submission_cooldown_still_active(temp_date, now):
                 lines_to_write += line
     with open(state_file, "w") as file:
         file.write(lines_to_write)

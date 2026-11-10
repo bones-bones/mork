@@ -4,7 +4,7 @@
 
 ## Errata submission (`#errata-submissions` / `#errata-tracking`)
 
-**Entry:** shared `on_message` for `ERRATA_SUBMISSIONS` and `ERRATA_TRACKING` · background auto-promote every 5 min (scans `ERRATA_TRACKING` only)
+**Entry:** shared `on_message` for `ERRATA_SUBMISSIONS` and `ERRATA_TRACKING` · background auto-promote every 5 min (scans `ERRATA_SUBMISSIONS` only)
 
 ```mermaid
 flowchart TD
