@@ -17,11 +17,11 @@ HC91_SUBMISSIONS = SetConfig(
 
 PL1_CARD_PILE = SetConfig(
     set_id=hc_constants.PL1,
-    submission_channel=hc_constants.CARD_PILE_1_CHANNEL,
-    card_list_channel=None,
-    threshold=hc_constants.CARD_PILE_THRESHOLD,
-    cooldown_hours=float(hc_constants.CARD_PILE_COOLDOWN),
-    cooldown_mode="wall",
+    submission_channel=hc_constants.SUBMISSIONS_CHANNEL,
+    card_list_channel=hc_constants.CARD_PILE_1_CHANNEL,
+    threshold=30,
+    cooldown_hours=4,
+    cooldown_mode="scubusiness",
     state_file=hc_constants.CARD_PILE_STATE_FILE,
     vc_mention_user_ids=hc_constants.CARD_PILE_VC_USERS,
     veto_content_prefix="PL1: ",
