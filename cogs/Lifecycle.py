@@ -736,7 +736,7 @@ class LifecycleCog(commands.Cog):
                     await message.delete()
 
                     return
-                if not (card.set in [hc_constants.CUBE_NAME, "PL1"]):
+                if card.set not in [hc_constants.CUBE_NAME, "PL1"]:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
                         f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} or PL1 cards are allowed for errata."
                     )
