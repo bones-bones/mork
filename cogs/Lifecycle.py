@@ -713,10 +713,10 @@ class LifecycleCog(commands.Cog):
             case channel if (submission_cfg := config_for_submission_channel(channel)):
                 await intake_submission_post(message, self.bot, submission_cfg)
 
-            case hc_constants.ERRATA_SUBMISSIONS:
+            case hc_constants.ERRATA_SUBMISSIONS | hc_constants.ERRATA_TRACKING:
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
-                print(f"HC8 errata submission: {card_id_input}")
+                print(f"errata submission: {card_id_input}")
                 body = "\n".join(parts[1:]).strip() if len(parts) > 1 else ""
                 if not card_id_input:
                     await getSubmissionDiscussionChannel(bot=self.bot).send(
