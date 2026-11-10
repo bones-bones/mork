@@ -11,13 +11,13 @@ from set_config import SetConfig
 HC9_1 = SetConfig(
     set_id=hc_constants.ACTIVE_CUBE_ID,
     card_list_channel=hc_constants.NINE_CARD_LIST,
-    threshold=hc_constants.SUBMISSIONS_THRESHOLD,
+    threshold=60,
     cooldown_hours=22,
 )
 
 PL1_CARD_PILE = SetConfig(
-    set_id=hc_constants.PL1,
-    card_list_channel=hc_constants.VETO_CARD_LIST,
+    set_id="PL1",
+    card_list_channel=hc_constants.PL1_CARD_LIST,
     threshold=30,
     cooldown_hours=4,
     vc_mention_user_ids=hc_constants.CARD_PILE_VC_USERS,
