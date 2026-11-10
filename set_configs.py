@@ -5,75 +5,56 @@ from __future__ import annotations
 import hc_constants
 from set_config import SetConfig
 
-HC91_SUBMISSIONS = SetConfig(
+HC9_1 = SetConfig(
     set_id=hc_constants.ACTIVE_CUBE_ID,
-    submission_channel=hc_constants.SUBMISSIONS_CHANNEL,
     card_list_channel=hc_constants.NINE_CARD_LIST,
     threshold=hc_constants.SUBMISSIONS_THRESHOLD,
-    cooldown_hours=float(hc_constants.SUBMISSION_COOLDOWN),
-    cooldown_mode="scubusiness",
-    state_file=hc_constants.SUBMISSIONS_STATE_FILE,
+    cooldown_hours=22,
 )
 
 PL1_CARD_PILE = SetConfig(
     set_id=hc_constants.PL1,
-    submission_channel=hc_constants.SUBMISSIONS_CHANNEL,
     card_list_channel=hc_constants.CARD_PILE_1_CHANNEL,
     threshold=30,
     cooldown_hours=4,
-    cooldown_mode="scubusiness",
-    state_file=hc_constants.CARD_PILE_STATE_FILE,
     vc_mention_user_ids=hc_constants.CARD_PILE_VC_USERS,
-    veto_content_prefix="PL1: ",
 )
 
-SET_CONFIGS: tuple[SetConfig, ...] = (HC91_SUBMISSIONS, PL1_CARD_PILE)
+KNOWN_SET_CONFIGS: tuple[SetConfig, ...] = (HC9_1, PL1_CARD_PILE)
 
-_CONFIG_BY_CHANNEL: dict[int, SetConfig] = {
-    cfg.submission_channel: cfg
-    for cfg in SET_CONFIGS
-    if cfg.submission_channel is not None
-}
+# Only one submission set is open at a time; switch when the community changes intake.
+ACTIVE_SUBMISSION_SET_CONFIG = HC9_1
+
+SUBMISSIONS_INTAKE_CHANNEL = hc_constants.SUBMISSIONS_CHANNEL
 
 _CONFIG_BY_SET_ID: dict[str, SetConfig] = {
-    cfg.set_id.strip().lower().replace("_", "."): cfg for cfg in SET_CONFIGS
+    cfg.set_id.strip().lower().replace("_", "."): cfg for cfg in KNOWN_SET_CONFIGS
 }
 
 
-def config_for_submission_channel(channel_id: int) -> SetConfig | None:
-    return _CONFIG_BY_CHANNEL.get(channel_id)
+def active_submission_set() -> SetConfig:
+    return ACTIVE_SUBMISSION_SET_CONFIG
+
+
+def is_submissions_intake_channel(channel_id: int) -> bool:
+    return channel_id == SUBMISSIONS_INTAKE_CHANNEL
 
 
 def config_for_set_id(set_id: str) -> SetConfig | None:
     return _CONFIG_BY_SET_ID.get(set_id.strip().lower().replace("_", "."))
 
 
-def submission_check_configs() -> tuple[SetConfig, ...]:
-    """Sets that use the shared community-poll → veto-polls background checker."""
-    return SET_CONFIGS
-
-
 def set_id_from_veto_poll_content(content: str) -> str | None:
-    """Return configured set id when veto-polls content carries a known prefix."""
+    """Legacy cube prefix on veto-polls lines; otherwise compile uses active submission set."""
     text = (content or "").strip()
-    for cfg in SET_CONFIGS:
-        prefix = cfg.veto_content_prefix
-        if not prefix:
-            continue
-        if text.startswith(prefix.strip()):
-            return cfg.set_id
     if text.startswith(f"{hc_constants.CUBE_NAME}:"):
         return hc_constants.ACTIVE_CUBE_ID
     return None
 
 
 def strip_veto_set_prefix(content: str) -> str:
-    """First line content without set prefix (for parsing card name / author)."""
+    """Strip legacy Hellscube: prefix before parsing card name / author."""
     text = (content or "").strip()
-    for cfg in SET_CONFIGS:
-        prefix = cfg.veto_content_prefix
-        if prefix and text.startswith(prefix.strip()):
-            return text[len(prefix.strip()) :].lstrip()
     cube_prefix = f"{hc_constants.CUBE_NAME}:"
     if text.startswith(cube_prefix):
         return text[len(cube_prefix) :].lstrip()
@@ -92,4 +73,6 @@ def compile_targets_for_veto_content(content: str) -> tuple[str, int]:
     detected = set_id_from_veto_poll_content(content)
     if detected:
         return detected, card_list_channel_for_set_config(detected)
-    return hc_constants.ACTIVE_CUBE_ID, hc_constants.NINE_CARD_LIST
+    active = active_submission_set()
+    channel = active.card_list_channel or hc_constants.NINE_CARD_LIST
+    return active.set_id, channel

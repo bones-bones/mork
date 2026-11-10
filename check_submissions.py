@@ -17,18 +17,20 @@ from getters import (
 from handle_veto_post import handle_veto_post
 from is_admin import is_admin
 from is_mork import is_mork
-from set_config import SetConfig, veto_content_for_submission
-from set_configs import submission_check_configs
+from set_config import SetConfig
+from set_configs import active_submission_set
 
 
 async def check_submissions(bot: commands.Bot):
-    for config in submission_check_configs():
-        await _check_submissions_for_config(bot, config)
+    await _check_submissions_for_config(
+        bot, hc_constants.SUBMISSIONS_CHANNEL, active_submission_set()
+    )
 
 
-async def _check_submissions_for_config(bot: commands.Bot, config: SetConfig):
-    channel_id = config.submission_channel
-    if channel_id is None or config.threshold is None:
+async def _check_submissions_for_config(
+    bot: commands.Bot, channel_id: int, config: SetConfig
+):
+    if config.threshold is None:
         return
     print(f"checking submissions for {config.set_id}")
     subChannel = cast(TextChannel, bot.get_channel(channel_id))
@@ -60,7 +62,6 @@ async def _check_submissions_for_config(bot: commands.Bot, config: SetConfig):
             or not is_mork(messageEntry.author.id)
         ):
             continue
-
         upvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_UP)
         downvote = get(messageEntry.reactions, emoji=hc_constants.VOTE_DOWN)
 
@@ -144,7 +145,7 @@ async def _check_submissions_for_config(bot: commands.Bot, config: SetConfig):
                         await messageEntry.delete()
                         continue  # and then stop processing the card
 
-                veto_body = veto_content_for_submission(config, accepted_message_no_mentions)
+                veto_body = accepted_message_no_mentions
                 await asyncio.sleep(1)
                 vetoEntry = await vetoChannel.send(
                     content=veto_body,

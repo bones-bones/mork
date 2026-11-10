@@ -79,7 +79,7 @@ flowchart TD
 | **Non-image attachment** | e.g. PDF attached                 | Poll created anyway                          | Deleted (reposted as poll) | Consumed       |
 | **Magic skip**           | 1/4001 roll                       | Straight to veto (no poll)                   | Deleted                    | Consumed       |
 
-**Closed day:** Checked first. Non-admin posts in configured submission channels (`#submissions`, `#card-pile-1`, …) on Tuesday or Saturday (US Eastern) are deleted. Admins bypass the closed-day gate (same as cooldown). Cooldown timestamps are not written on closed days for blocked posts, and elapsed wait time ignores those days. At the start of each closed day Mork posts `@here THE GATES OF HELL ARE CLOSED` in `#submissions` and `#submissions-discussion`; at the start of Wednesday and Sunday (US Eastern) Mork posts `@here THE GATES OF HELL HAVE OPENED` in those channels.
+**Closed day:** Checked first. Non-admin posts in `#submissions` on Tuesday or Saturday (US Eastern) are deleted. Admins bypass the closed-day gate (same as cooldown). Cooldown timestamps are not written on closed days for blocked posts, and elapsed wait time ignores those days. At the start of each closed day Mork posts `@here THE GATES OF HELL ARE CLOSED` in `#submissions` and `#submissions-discussion`; at the start of Wednesday and Sunday (US Eastern) Mork posts `@here THE GATES OF HELL HAVE OPENED` in those channels.
 
 **Missing name:** Intake bails before cooldown write or repost. The card image is reattached in `#submissions-discussion` so the user can fix the title and resubmit. Whitespace-only first lines count as missing.
 
@@ -89,20 +89,16 @@ flowchart TD
 
 ---
 
-## Card pile 1 (`#card-pile-1` · set **PL1**)
+## Alternate submission sets (e.g. card pile **PL1**)
 
-**Entry:** `#card-pile-1` (channel id `1564479507446890506`) · same background poll checker as `#submissions` · `!wait` remains `#bot-test` only
+Only **one** submission set is active at a time (`ACTIVE_SUBMISSION_SET_CONFIG` in `set_configs.py`). Intake is always plain `CardName by @author` in `#submissions` — same format as HC9.1, no line prefix.
 
-| Policy | Value |
-| --- | --- |
-| Poll threshold | up − down ≥ **30**, age ≥ 1 day |
-| Cooldown | **4 wall-clock hours** (`../mork-card-pile-1-state`) |
-| Tue/Sat closed | **Yes** (same gate as `#submissions`) |
-| Veto-polls prefix | `PL1: CardName by author` → `!compileveto` writes set **PL1** |
-| Card-list channel | **veto card list** (`VETO_CARD_LIST`) until a dedicated PL1 list exists |
-| Hellpit / VC ping | Users `259904996563222529`, `253992237120225281` (not `@VETO_COUNCIL`) |
+| Set | Poll threshold | Cooldown | Notes |
+| --- | --- | --- | --- |
+| **HC9.1** | `SUBMISSIONS_THRESHOLD` | 22 scubusiness h | Gallery manifest, graveyard 🪦 fast-track |
+| **PL1** | 30 | 4 scubusiness h | Hellpit VC users (not `@VETO_COUNCIL`) |
 
-Intake validation matches `#submissions` (attachment, no `@` in title, card name, cooldown). Graveyard 🪦 fast-track applies only to `#submissions` (HC9.1), not card pile.
+Switch the active config when the community moves intake to another set; veto / `!compileveto` accept into that set unless a legacy `Hellscube:` veto-polls prefix is present.
 
 ---
 
