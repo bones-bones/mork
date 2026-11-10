@@ -1,6 +1,6 @@
 import unittest
 
-from accept_card import parse_errata_id_from_veto_content, _veto_poll_title_line
+from accept_card import _veto_poll_title_line, parse_errata_id_from_veto_content
 
 
 class VetoPollIntakeParseTests(unittest.TestCase):

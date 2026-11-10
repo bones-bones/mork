@@ -62,7 +62,6 @@ if _scripts in sys.path:
     sys.path.remove(_scripts)
 sys.path.insert(0, _scripts)
 
-from database_cache.catalog_cache import DEFAULT_CATALOG_URL
 from prepare_card_for_printing_stretch import prepare_card_for_printing_stretch
 from printable_catalog_source import (
     PrintableCatalogCard,
@@ -79,6 +78,7 @@ from printable_image_qa import (
 )
 
 import hc_constants
+from database_cache.catalog_cache import DEFAULT_CATALOG_URL
 from shared_vars import googleClient
 
 DEFAULT_CREDENTIALS = "./bot_secrets/client_secrets.json"

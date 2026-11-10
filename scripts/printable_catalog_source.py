@@ -38,7 +38,7 @@ def fetch_catalog(url: str, *, timeout: float = 120.0) -> dict[str, Any]:
     resp.raise_for_status()
     data = resp.json()
     if not isinstance(data, dict):
-        raise ValueError(f"catalog JSON root must be object, got {type(data).__name__}")
+        raise TypeError(f"catalog JSON root must be object, got {type(data).__name__}")
     return data
 
 
@@ -46,12 +46,12 @@ def _cards_from_catalog_payload(payload: dict[str, Any]) -> list[dict[str, Any]]
     if "idMap" in payload:
         id_map = payload.get("idMap")
         if not isinstance(id_map, dict):
-            raise ValueError("catalog idMap must be an object")
+            raise TypeError("catalog idMap must be an object")
         return [v for v in id_map.values() if isinstance(v, dict)]
     cards = payload.get("data")
     if not isinstance(cards, list):
         keys = list(payload.keys())[:12]
-        raise ValueError(f"catalog missing data list or idMap; keys={keys!r}")
+        raise TypeError(f"catalog missing data list or idMap; keys={keys!r}")
     return [c for c in cards if isinstance(c, dict)]
 
 

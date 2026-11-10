@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from typing import Any
 
@@ -9,8 +10,6 @@ from database_cache.cacheCompare import shouldSwap
 from database_cache.card_names import get_all_names
 from database_cache.database_utils import fixName
 from database_cache.setHandling import getCollectorNumSets, getGroupSets, loadSets
-
-import os
 
 DEFAULT_CATALOG_URL = os.environ.get(
     "HELLFALL_CATALOG_URL",
