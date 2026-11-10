@@ -1,4 +1,4 @@
-"""Shared intake for configured submission channels (#submissions, #card-pile-1)."""
+"""Intake for #submissions using the currently active submission set config."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ async def intake_submission_post(
         attachment_count = len(message.attachments)
         await message.delete()
         parts = [
-            f"<@{author_id}> tried to post in <#{config.submission_channel}> while it was closed."
+            f"<@{author_id}> tried to post in <#{message.channel.id}> while it was closed."
         ]
         if preview:
             parts.append(preview[:500])
@@ -70,32 +70,31 @@ async def intake_submission_post(
     if len(split_string) > 1:
         author = "; ".join([f"<@{raw}>" for raw in message.raw_mentions])
 
-    state_file = config.state_file
+    state_file = hc_constants.SUBMISSIONS_STATE_FILE
     cooldown_hours = config.cooldown_hours or 0
-    if state_file:
-        if os.path.exists(state_file):
-            async with aiofiles.open(state_file, "r") as file:
-                lines = await file.readlines()
-                for line in lines:
-                    if line.startswith(f"{message.author.id}—"):
-                        tempDate = datetime.strptime(
-                            line.split("—")[1].replace("\n", ""),
-                            "%Y-%m-%dT%H:%M:%S%z",
+    if os.path.exists(state_file):
+        async with aiofiles.open(state_file, "r") as file:
+            lines = await file.readlines()
+            for line in lines:
+                if line.startswith(f"{message.author.id}—"):
+                    tempDate = datetime.strptime(
+                        line.split("—")[1].replace("\n", ""),
+                        "%Y-%m-%dT%H:%M:%S%z",
+                    )
+                    timeSinceLast = hours_since_last_submission(tempDate, config)
+                    if timeSinceLast < cooldown_hours and not is_admin(
+                        cast(discord.Member, message.author)
+                    ):
+                        discussionChannel = getSubmissionDiscussionChannel(bot)
+                        await discussionChannel.send(
+                            f"<@{message.author.id}>, {cooldown_wait_message(config, timeSinceLast)}"
                         )
-                        timeSinceLast = hours_since_last_submission(tempDate, config)
-                        if timeSinceLast < cooldown_hours and not is_admin(
-                            cast(discord.Member, message.author)
-                        ):
-                            discussionChannel = getSubmissionDiscussionChannel(bot)
-                            await discussionChannel.send(
-                                f"<@{message.author.id}>, {cooldown_wait_message(config, timeSinceLast)}"
-                            )
-                            await message.delete()
-                            return
-        async with aiofiles.open(state_file, "a") as file:
-            await file.write(
-                f"{message.author.id}—{datetime.now(tz=UTC).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
-            )
+                        await message.delete()
+                        return
+    async with aiofiles.open(state_file, "a") as file:
+        await file.write(
+            f"{message.author.id}—{datetime.now(tz=UTC).strftime('%Y-%m-%dT%H:%M:%S%z')}\n"
+        )
 
     file = await message.attachments[0].to_file()
     if reasonable_card():
@@ -126,7 +125,7 @@ async def intake_submission_post(
         await sent_message.add_reaction(hc_constants.DELETE)
 
         await sent_message.create_thread(name=card_name[0:99])
-        if gallery_uses_manifest() and config.submission_channel == hc_constants.SUBMISSIONS_CHANNEL:
+        if gallery_uses_manifest() and config.set_id == hc_constants.ACTIVE_CUBE_ID:
             try:
                 from submissions_gallery_manifest import append_submission
 

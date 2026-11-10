@@ -69,9 +69,9 @@ from reddit_devvit import (
 )
 from reddit_functions import post_to_reddit
 from set_configs import (
-    PL1_CARD_PILE,
+    active_submission_set,
     compile_targets_for_veto_content,
-    config_for_submission_channel,
+    is_submissions_intake_channel,
     strip_veto_set_prefix,
 )
 from shared_vars import googleClient, intents
@@ -710,8 +710,10 @@ class LifecycleCog(commands.Cog):
                 await sent_message.add_reaction(hc_constants.VOTE_DOWN)
                 await message.delete()
 
-            case channel if (submission_cfg := config_for_submission_channel(channel)):
-                await intake_submission_post(message, self.bot, submission_cfg)
+            case channel if is_submissions_intake_channel(channel):
+                await intake_submission_post(
+                    message, self.bot, active_submission_set()
+                )
 
             case hc_constants.ERRATA_SUBMISSIONS | hc_constants.ERRATA_TRACKING:
                 parts = message.content.split("\n", 1)
@@ -1245,22 +1247,41 @@ def _reset_countdowns_for_file(
         file.write(lines_to_write)
 
 
+def _submission_cooldown_still_active(temp_date: datetime, now: datetime) -> bool:
+    """Keep ledger rows while any SetConfig submission cooldown still applies."""
+    cfg = active_submission_set()
+    limit = float(cfg.cooldown_hours or 0)
+    return elapsed_open_hours(temp_date, now) <= limit
+
+
+def _reset_shared_submission_state_file():
+    state_file = hc_constants.SUBMISSIONS_STATE_FILE
+    if not os.path.exists(state_file):
+        return
+    now = datetime.now(tz=UTC)
+    lines_to_write = ""
+    with open(state_file, "r") as file:
+        for line in file:
+            split_line = line.split("—")
+            if len(split_line) < 2:
+                continue
+            temp_date = datetime.strptime(
+                split_line[1].replace("\n", ""),
+                "%Y-%m-%dT%H:%M:%S%z",
+            )
+            if _submission_cooldown_still_active(temp_date, now):
+                lines_to_write += line
+    with open(state_file, "w") as file:
+        file.write(lines_to_write)
+
+
 def reset_countdowns():
     print("reset")
-    _reset_countdowns_for_file(
-        hc_constants.SUBMISSIONS_STATE_FILE,
-        pause_on_closed_days=True,
-        cooldown_hours=float(hc_constants.SUBMISSION_COOLDOWN),
-    )
+    _reset_shared_submission_state_file()
     _reset_countdowns_for_file(
         hc_constants.MASTERPIECE_STATE_FILE,
         pause_on_closed_days=True,
         cooldown_hours=float(hc_constants.SUBMISSION_COOLDOWN),
-    )
-    _reset_countdowns_for_file(
-        hc_constants.CARD_PILE_STATE_FILE,
-        pause_on_closed_days=False,
-        cooldown_hours=PL1_CARD_PILE.cooldown_hours,
     )
     print("end reset")
 
