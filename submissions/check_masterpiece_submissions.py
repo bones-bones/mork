@@ -6,11 +6,11 @@ from discord.ext import commands
 from discord.utils import get
 
 import hc_constants
+from accept_card import intake_veto_poll_message
 from getters import (
     getSubmissionDiscussionChannel,
     getVetoChannel,
 )
-from accept_card import intake_veto_poll_message
 from is_admin import is_admin
 from is_mork import is_mork
 
