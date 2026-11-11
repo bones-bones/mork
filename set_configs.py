@@ -12,14 +12,14 @@ HC9_1 = SetConfig(
     set_id=hc_constants.ACTIVE_CUBE_ID,
     card_list_channel=hc_constants.NINE_CARD_LIST,
     threshold=60,
-    cooldown_hours=22,
+    cooldown_hours=22.0,
 )
 
 PL1_CARD_PILE = SetConfig(
     set_id="PL1",
     card_list_channel=hc_constants.PL1_CARD_LIST,
     threshold=30,
-    cooldown_hours=4,
+    cooldown_hours=4.0,
     vc_mention_user_ids=hc_constants.CARD_PILE_VC_USERS,
 )
 
