@@ -4,7 +4,7 @@
 
 ## Standard card submission
 
-**Entry:** `#submissions` · background check every 5 min · `!wait` for cooldown
+**Entry:** `#submissions` · background check every 5 min · `!wait` for cooldown (`#bot-test` only; uses `ACTIVE_SUBMISSION_SET_CONFIG` cooldown)
 
 Closed all day **Tuesday and Saturday** in US Eastern (`America/New_York`, EST/EDT). Those days do not count toward the 22h cooldown. `#pause-projects` and other intake channels stay open.
 
@@ -91,7 +91,7 @@ flowchart TD
 
 ## Alternate submission sets (e.g. card pile **PL1**)
 
-Only **one** submission set is active at a time (`ACTIVE_SUBMISSION_SET_CONFIG` in `set_configs.py`). Intake is always plain `CardName by @author` in `#submissions` — same format as HC9.1, no line prefix.
+Only **one** submission set is active at a time (`ACTIVE_SUBMISSION_SET_CONFIG` in `set_configs.py`). Intake is always plain `CardName by @author` in `#submissions` — same format as HC9.1, no line prefix. `!wait` reports that active set's cooldown hours.
 
 | Set | Poll threshold | Cooldown | Notes |
 | --- | --- | --- | --- |
