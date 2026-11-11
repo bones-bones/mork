@@ -233,6 +233,8 @@ async def setup(bot: commands.Bot):
 
 
 async def addToDrive(message, user, fileID):
+    if QUOTE_SPLIT in message or authorSplit in message:
+        raise ValueError("Quote contains a reserved separator")
     text = ";%;%;"
     text += message
     text += authorSplit
