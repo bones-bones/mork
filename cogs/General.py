@@ -13,7 +13,8 @@ from discord.ext import commands
 from discord.utils import get
 
 import hc_constants
-from cogs.lifecycle.submissions_closed import elapsed_open_hours
+from set_config import cooldown_wait_message, hours_since_last_submission
+from set_configs import active_set_cooldown_blocks, active_submission_set
 from shared_vars import drive
 from utils import at
 
@@ -626,11 +627,8 @@ class GeneralCog(commands.Cog):
             "give yourself permission to rest when you feel tired.",
         ]
 
-        state_file = (
-            hc_constants.MASTERPIECE_STATE_FILE
-            if ctx.channel.id == hc_constants.MASTERPIECE_CHANNEL
-            else hc_constants.SUBMISSIONS_STATE_FILE
-        )
+        config = active_submission_set()
+        state_file = hc_constants.SUBMISSIONS_STATE_FILE
         if os.path.exists(state_file):
             async with aiofiles.open(state_file, "r") as file:
                 lines = await file.readlines()
@@ -641,28 +639,16 @@ class GeneralCog(commands.Cog):
                             "%Y-%m-%dT%H:%M:%S%z",
                         )
 
-                        if state_file == hc_constants.SUBMISSIONS_STATE_FILE:
-                            timeSinceLast = elapsed_open_hours(tempDate)
-                        else:
-                            timeSinceLast = (
-                                (datetime.now(tz=UTC) - tempDate).total_seconds()
-                            ) / (60 * 60)
-
-                        # Check if user is admin
                         member = cast(discord.Member, ctx.author)
                         is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
 
-                        text = ""
-                        if timeSinceLast < hc_constants.SUBMISSION_COOLDOWN and not is_admin:
-                            text += (
-                                f"<@{ctx.author.id}>, you've submitted a card within the past {timeSinceLast} scubusiness hours. "
-                                f"You need to wait {hc_constants.SUBMISSION_COOLDOWN} scubusiness hours between submitting cards. "
-                                f"(Scubusiness hours exclude Saturday and Tuesday.) While you wait, why don't you "
+                        if active_set_cooldown_blocks(tempDate, config) and not is_admin:
+                            timeSinceLast = hours_since_last_submission(tempDate, config)
+                            activity = random.choice(possibleActivities)
+                            await ctx.send(
+                                f"<@{ctx.author.id}>, {cooldown_wait_message(config, timeSinceLast)} "
+                                f"While you wait, why don't you {activity}"
                             )
-                            randomActivity = random.choice(possibleActivities)
-                            text += randomActivity
-
-                            await ctx.send(text)
                             return
         await ctx.send(f"<@{ctx.author.id}>, you have no pending cards. You may submit a card")
         return

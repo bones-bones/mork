@@ -26,7 +26,7 @@ PL1_CARD_PILE = SetConfig(
 KNOWN_SET_CONFIGS: tuple[SetConfig, ...] = (HC9_1, PL1_CARD_PILE)
 
 # Only one submission set is open at a time; switch when the community changes intake.
-ACTIVE_SUBMISSION_SET_CONFIG = HC9_1
+ACTIVE_SUBMISSION_SET_CONFIG = PL1_CARD_PILE
 
 SUBMISSIONS_INTAKE_CHANNEL = hc_constants.SUBMISSIONS_CHANNEL
 
