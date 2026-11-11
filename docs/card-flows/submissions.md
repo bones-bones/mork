@@ -4,7 +4,7 @@
 
 ## Standard card submission
 
-**Entry:** `#submissions` · background check every 5 min · `!wait` for cooldown (`#bot-test` only; uses `ACTIVE_SUBMISSION_SET_CONFIG` cooldown)
+**Entry:** `#submissions` · background check every 5 min · `!wait` for cooldown (`#bot-test` only; uses `ACTIVE_SUBMISSION_SET_CONFIG` cooldown; admins still see the wait message, but intake does not block them)
 
 Closed all day **Tuesday and Saturday** in US Eastern (`America/New_York`, EST/EDT). Those days do not count toward the 22h cooldown. `#pause-projects` and other intake channels stay open.
 

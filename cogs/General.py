@@ -639,10 +639,7 @@ class GeneralCog(commands.Cog):
                             "%Y-%m-%dT%H:%M:%S%z",
                         )
 
-                        member = cast(discord.Member, ctx.author)
-                        is_admin = any(role.id == hc_constants.ADMIN for role in member.roles)
-
-                        if active_set_cooldown_blocks(tempDate, config) and not is_admin:
+                        if active_set_cooldown_blocks(tempDate, config):
                             timeSinceLast = hours_since_last_submission(tempDate, config)
                             activity = random.choice(possibleActivities)
                             await ctx.send(

@@ -24,7 +24,7 @@ def hours_since_last_submission(last: datetime, _config: SetConfig) -> float:
 def cooldown_wait_message(config: SetConfig, hours_elapsed: float) -> str:
     need = config.cooldown_hours or 0
     return (
-        f"You've submitted a card within the past {hours_elapsed:.1f} scubusiness hours. "
+        f"You've submitted a card within the past {hours_elapsed} scubusiness hours. "
         f"You need to wait {need} scubusiness hours between submitting cards. "
         f"(Scubusiness hours exclude Saturday and Tuesday.)"
     )
