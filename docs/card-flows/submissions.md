@@ -91,12 +91,12 @@ flowchart TD
 
 ## Alternate submission sets (e.g. card pile **PL1**)
 
-Only **one** submission set is active at a time (`ACTIVE_SUBMISSION_SET_CONFIG` in `set_configs.py`). Intake is always plain `CardName by @author` in `#submissions` — same format as HC9.1, no line prefix. `!wait` reports that active set's cooldown hours.
+Only **one** submission set is active at a time (`ACTIVE_SUBMISSION_SET_CONFIG` in `set_configs.py`; currently **PL1**). Intake is always plain `CardName by @author` in `#submissions` — same format as HC9.1, no line prefix. `!wait` reports that active set's cooldown hours.
 
 | Set | Poll threshold | Cooldown | Notes |
 | --- | --- | --- | --- |
 | **HC9.1** | `SUBMISSIONS_THRESHOLD` | 22 scubusiness h | Gallery manifest, graveyard 🪦 fast-track |
-| **PL1** | 30 | 4 scubusiness h | Hellpit VC users (not `@VETO_COUNCIL`) |
+| **PL1** (active) | 30 | 4 scubusiness h | Hellpit VC users (not `@VETO_COUNCIL`) |
 
 Switch the active config when the community moves intake to another set; veto / `!compileveto` accept into that set unless a legacy `Hellscube:` veto-polls prefix is present.
 
