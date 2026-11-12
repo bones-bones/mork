@@ -13,27 +13,47 @@ portal_time = False
 VETO_POLL_UUID_PREFIX = "uuid: "
 
 
+def _is_discord_channel_url(text: str) -> bool:
+    lowered = text.lower()
+    return "discord.com/channels/" in lowered or "discordapp.com/channels/" in lowered
+
+
 def parse_hellfall_uuid_from_veto_poll_messages(contents: list[str]) -> str | None:
-    """Second thread message: ``uuid: <hellfall print id>`` (after hellpit link)."""
-    if len(contents) < 2:
-        return None
-    second = contents[1].strip()
-    if not second.lower().startswith("uuid:"):
-        return None
-    uuid_value = second.split(":", 1)[1].strip()
-    return uuid_value or None
+    """Find ``uuid: <hellfall print id>`` anywhere in the veto-poll thread messages."""
+    for content in contents:
+        text = (content or "").strip()
+        if not text.lower().startswith("uuid:"):
+            continue
+        uuid_value = text.split(":", 1)[1].strip()
+        if uuid_value:
+            return uuid_value
+    return None
 
 
 def parse_hcid_from_veto_poll_messages(contents: list[str]) -> str | None:
-    """Legacy second line: numeric hcid only."""
-    if len(contents) < 2:
-        return None
-    second = contents[1].strip()
-    return second if second.isdigit() else None
+    """Legacy: a thread message that is only a numeric hcid."""
+    for content in contents:
+        text = (content or "").strip()
+        if text.isdigit():
+            return text
+    return None
+
+
+def parse_hellpit_thread_id_from_veto_poll_messages(contents: list[str]) -> int | None:
+    """Find the hellpit Discord jump URL in the veto-poll thread (not fixed index)."""
+    for content in contents:
+        text = (content or "").strip()
+        if not text or not _is_discord_channel_url(text):
+            continue
+        try:
+            return int(text.rstrip("/").split("/").pop())
+        except ValueError:
+            continue
+    return None
 
 
 async def hcid_from_veto_poll_thread(thread: discord.Thread) -> str | None:
-    messages = [message async for message in thread.history(limit=5, oldest_first=True)]
+    messages = [message async for message in thread.history(limit=10, oldest_first=True)]
     contents = [message.content for message in messages]
     uuid_value = parse_hellfall_uuid_from_veto_poll_messages(contents)
     if uuid_value:
