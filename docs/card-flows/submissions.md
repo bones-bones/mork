@@ -36,17 +36,14 @@ flowchart TD
   REMINDER_CHECK -->|yes| REM["🕛 nearing-end ping"]
   REM --> POLL
   REMINDER_CHECK -->|no| POLL
-  CHK -->|yes| GRAVE_CHECK{"Admin 🪦 reacted?"}
-  GRAVE_CHECK -->|yes| GY["accept → HCV graveyard"]
-  GRAVE_CHECK -->|no| ADMIN_SAFEGUARD{"Admin 👍 among upvotes<br/>or downvotes ≠ 1?"}
+  CHK -->|yes| ADMIN_SAFEGUARD{"Admin 👍 among upvotes<br/>or downvotes ≠ 1?"}
   ADMIN_SAFEGUARD -->|no| ADM["DM admin to verify"]
   ADM --> POLL
-  ADMIN_SAFEGUARD -->|yes| VP2["#veto-polls"]
-  VP2 --> HVP["Veto poll setup"]
-  VP --> HVP
+  ADMIN_SAFEGUARD -->|yes| PROMO["promote_from_submissions<br/>official in database"]
+  PROMO --> VP2["#veto-polls"]
+  VP2 --> HVP["Veto poll setup<br/>thread uuid: … line"]
   HVP --> ANN["#submissions-discussion + log"]
   ANN --> DEL2["Delete submission poll"]
-  GY --> DEL2
 ```
 
 ### Missing / invalid submission cases
@@ -95,7 +92,7 @@ Only **one** submission set is active at a time (`ACTIVE_SUBMISSION_SET_CONFIG` 
 
 | Set | Poll threshold | Cooldown | Notes |
 | --- | --- | --- | --- |
-| **HC9.1** | `SUBMISSIONS_THRESHOLD` | 22 scubusiness h | Gallery manifest, graveyard 🪦 fast-track |
+| **HC9.1** | `SUBMISSIONS_THRESHOLD` | 22 scubusiness h | Gallery manifest |
 | **PL1** (active) | 30 | 4 scubusiness h | Hellpit VC users (not `@VETO_COUNCIL`) |
 
 Switch the active config when the community moves intake to another set; veto / `!compileveto` accept into that set unless a legacy `Hellscube:` veto-polls prefix is present.

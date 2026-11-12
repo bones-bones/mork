@@ -6,11 +6,11 @@ from discord.ext import commands
 from discord.utils import get
 
 import hc_constants
+from accept_card import intake_veto_poll_message
 from getters import (
     getSubmissionDiscussionChannel,
     getVetoChannel,
 )
-from handle_veto_post import handle_veto_post
 from is_admin import is_admin
 from is_mork import is_mork
 
@@ -87,14 +87,17 @@ async def check_masterpiece_submissions(bot: commands.Bot):
                     else None
                 )
 
-                await handle_veto_post(
-                    vetoEntry,
-                    bot,
-                    None,
-                    submission_thread_url=(
-                        submission_thread.jump_url if submission_thread else None
-                    ),
-                )
+                try:
+                    await intake_veto_poll_message(
+                        bot,
+                        vetoEntry,
+                        submission_thread_url=(
+                            submission_thread.jump_url if submission_thread else None
+                        ),
+                    )
+                except Exception as e:
+                    print(f"masterpiece veto intake failed: {e}")
+                    continue
 
                 copy2 = await messageEntry.attachments[0].to_file()
                 logContent = f"{acceptContent}, datetime: {f'<t:{int(messageEntry.created_at.timestamp())}:f>'}, message id: {messageEntry.id}, upvotes: {upCount}, downvotes: {downCount}"
