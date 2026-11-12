@@ -55,7 +55,10 @@ from getters import (
     # getVetoDiscussionChannel,
     getVetoHellpitsChannel,
 )
-from handle_veto_post import hcid_from_veto_poll_thread
+from handle_veto_post import (
+    hcid_from_veto_poll_thread,
+    parse_hellpit_thread_id_from_veto_poll_messages,
+)
 from hellfall_fetcher import cardsExist, getExactCard, getSearchFromServer
 from image_response_filename import filename_from_image_response
 from is_admin import can_instaerrata, is_admin, is_veto
@@ -1018,9 +1021,14 @@ class LifecycleCog(commands.Cog):
                     thread = cast(Thread, guild.get_channel_or_thread(messageEntry.id))
 
                     if thread:
-                        threadMessages = thread.history(oldest_first=True, limit=2)
-                        threadMessages = [tm async for tm in threadMessages]
-                        hellpit_target = int(threadMessages[1].content.split("/").pop())
+                        threadMessages = [
+                            tm async for tm in thread.history(oldest_first=True, limit=10)
+                        ]
+                        hellpit_target = parse_hellpit_thread_id_from_veto_poll_messages(
+                            [tm.content for tm in threadMessages]
+                        )
+                        if hellpit_target is None:
+                            raise ValueError("no hellpit jump URL in veto-poll thread")
                         hellpit_thread = cast(Thread, guild.get_channel_or_thread(hellpit_target))
                         newest_message = await anext(hellpit_thread.history(limit=1))
                         threadMessageAge = timeNow - newest_message.created_at

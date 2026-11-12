@@ -146,7 +146,7 @@ flowchart TD
   HCID -->|no| LEG["Legacy: veto only at compile"]
   PROMO --> REPOST["Repost fixed card to #veto-polls"]
   LEG --> REPOST
-  REPOST --> HVP["Veto poll setup<br/>thread line 2 = uuid: … when known"]
+  REPOST --> HVP["Veto poll setup<br/>thread uuid: … line when known"]
   READ --> MARK["Mark original veto poll ❌"]
   MARK --> ERR["Copy to #errata-submissions with ☑️"]
 ```

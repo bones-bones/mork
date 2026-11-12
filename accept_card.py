@@ -419,13 +419,9 @@ async def accept_card(
 
     newCard = True
     dual_write = sheet_dual_write_enabled()
+    # Never clear a resolved existing_hcid: a missing sheet row must fail (or
+    # postcard-update) rather than falling through to a create that duplicates Hellfall.
     finalize_hcid = existing_hcid if not errataId else None
-    if (
-        dual_write
-        and finalize_hcid
-        and not cardSheetUnapproved.find(finalize_hcid, in_column=1)
-    ):
-        finalize_hcid = None
 
     async with aiofiles.open(image_path, "wb") as out:
         await out.write(file_data)
