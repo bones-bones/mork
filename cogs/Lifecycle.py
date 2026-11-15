@@ -147,7 +147,7 @@ async def _check_errata_veto_threshold(bot: commands.Bot):
     add a checkmark and post it to veto-polls with 'Errata:' prefix, then intake (no postcard until compile).
     """
 
-    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
+    channel = cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
     if not channel:
         return
     time_now = datetime.now(UTC)
@@ -698,7 +698,7 @@ class LifecycleCog(commands.Cog):
             case channel if is_submissions_intake_channel(channel):
                 await intake_submission_post(message, self.bot, active_submission_set())
 
-            case hc_constants.ERRATA_SUBMISSIONS | hc_constants.ERRATA_TRACKING:
+            case hc_constants.ERRATA_SUBMISSIONS:
                 parts = message.content.split("\n", 1)
                 card_id_input = parts[0].strip() if parts else ""
                 print(f"errata submission: {card_id_input}")

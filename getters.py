@@ -19,7 +19,7 @@ def getScubeLairDiscussionChannel(bot: commands.Bot):
 
 
 def getErrataTrackingChannel(bot: commands.Bot):
-    return cast(TextChannel, bot.get_channel(hc_constants.ERRATA_SUBMISSIONS))
+    return cast(TextChannel, bot.get_channel(hc_constants.ERRATA_TRACKING))
 
 
 def getSubmissionsChannel(bot: commands.Bot):
