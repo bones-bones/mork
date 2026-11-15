@@ -54,7 +54,6 @@ MASTERPIECE_THRESHOLD = 45
 SUBMISSIONS_STATE_FILE = "../mork-state"
 MASTERPIECE_STATE_FILE = "../mork-masterpiece-state"
 GATES_STATE_FILE = "../mork-gates-state"
-VC_THRESHOLD = 5
 
 # Errata channel: if upvotes - downvotes >= this, add checkmark and post to veto-polls.
 ERRATA_VETO_THRESHOLD = 20

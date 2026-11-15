@@ -8,6 +8,7 @@ from discord.utils import get
 
 import hc_constants
 from getters import getVetoChannel
+from set_configs import active_submission_set
 
 """
 This function groups previous poll results. It's used in two ways: for the compile veto command, where actual processing is done, and in personalhell, which is a read-only op.
@@ -73,6 +74,8 @@ async def get_veto_polls_results(bot: commands.Bot, ctx: commands.Context):
 
     messages = [message async for message in messages]
 
+    vc_threshold = active_submission_set().vc_threshold
+
     errataCardMessages: list[Message] = []
     judgeCardMessages: list[Message] = []
     acceptedCardMessages: list[Message] = []
@@ -106,15 +109,15 @@ async def get_veto_polls_results(bot: commands.Bot, ctx: commands.Context):
             judgeCardMessages.append(messageEntry)
 
         # Errata needed case
-        if errata > 4 and errata >= upvote and errata >= downvote:
+        if errata > vc_threshold and errata >= upvote and errata >= downvote:
             errataCardMessages.append(messageEntry)
 
         # Veto case
-        elif downvote > 4 and downvote >= upvote and downvote >= errata:
+        elif downvote > vc_threshold and downvote >= upvote and downvote >= errata:
             vetoCardMessages.append(messageEntry)
 
-        # Accepted case (HKL / jumpstart list threshold)
-        elif upvote > hc_constants.VC_THRESHOLD and upvote >= downvote and upvote >= errata:
+        # Accepted case 
+        elif upvote > vc_threshold and upvote >= downvote and upvote >= errata:
             acceptedCardMessages.append(messageEntry)
 
         # Purgatorio Hell

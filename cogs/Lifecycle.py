@@ -1014,9 +1014,9 @@ class LifecycleCog(commands.Cog):
 
                     if thread:
                         print(f"cvP thread found: {thread.id}")
-                        threadMessages = thread.history(oldest_first=True, limit=2)
-                        threadMessages = [tm async for tm in threadMessages]
-                        hellpit_target = int(threadMessages[1].content.split("/").pop())
+                        thread_messages = thread.history(oldest_first=True, limit=2)
+                        thread_messages = [tm async for tm in thread_messages]
+                        hellpit_target = int(thread_messages[1].content.split("/").pop())
                         hellpit_thread = cast(Thread, guild.get_channel_or_thread(hellpit_target))
                         newest_message = await anext(hellpit_thread.history(limit=1))
                         threadMessageAge = timeNow - newest_message.created_at

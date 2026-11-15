@@ -21,6 +21,7 @@ PL1_CARD_PILE = SetConfig(
     threshold=30,
     cooldown_hours=4,
     vc_mention_user_ids=hc_constants.CARD_PILE_VC_USERS,
+    vc_threshold=2,
 )
 
 KNOWN_SET_CONFIGS: tuple[SetConfig, ...] = (HC9_1, PL1_CARD_PILE)

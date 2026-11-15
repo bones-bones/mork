@@ -15,6 +15,7 @@ class SetConfig:
     threshold: int | None
     cooldown_hours: float | None
     vc_mention_user_ids: tuple[int, ...] = ()
+    vc_threshold: int = 5
 
 
 def hours_since_last_submission(last: datetime, _config: SetConfig) -> float:
