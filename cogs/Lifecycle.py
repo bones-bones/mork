@@ -1013,6 +1013,7 @@ class LifecycleCog(commands.Cog):
                     thread = cast(Thread, guild.get_channel_or_thread(messageEntry.id))
 
                     if thread:
+                        print(f"cvP thread found: {thread.id}")
                         threadMessages = thread.history(oldest_first=True, limit=2)
                         threadMessages = [tm async for tm in threadMessages]
                         hellpit_target = int(threadMessages[1].content.split("/").pop())
@@ -1025,11 +1026,6 @@ class LifecycleCog(commands.Cog):
                         if not recentlyNotified:
                             veto_council_to_notify = hc_constants.VETO_COUNCIL
 
-                            # (
-                            #     hc_constants.VETO_COUNCIL_PORTAL
-                            #     if get(messageEntry.reactions, emoji=hc_constants.CLOCK)
-                            #     else hc_constants.VETO_COUNCIL_2
-                            # )
 
                             role = cast(Role, get(guild.roles, id=veto_council_to_notify))
 
