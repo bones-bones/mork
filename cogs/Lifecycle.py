@@ -651,6 +651,7 @@ class LifecycleCog(commands.Cog):
                         f"i'd say: {lastTwo[0].content}"
                     )
                     if reddit_reply_via_devvit_enabled():
+                        print("replying via devvit")
                         try:
                             await post_reply_via_devvit(
                                 post_id=post_id,

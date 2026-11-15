@@ -9,7 +9,7 @@ Devvit [Scheduler](https://developers.reddit.com/docs/capabilities/server/schedu
 | **Task**      | `card-of-the-day` in `devvit.json`                                                     |
 | **Cron**      | `0 10 * * *` (10:00 UTC daily)                                                         |
 | **Handler**   | `POST /internal/scheduler/card-of-the-day`                                             |
-| **Catalog**   | Subreddit setting `catalogUrl` (default: Hellfall GCS `catalog.json`)                  |
+| **Catalog**   | Global setting `catalogUrl` (default: Hellfall GCS `catalog.json`; accepts `{data}` or `{idMap}` cache shape) |
 | **Flair**     | Global app setting `officialHcRedditFlair`                                             |
 | **Card pick** | HC6 cards (`set` matches `HC6_*`), catalog order, index `726 - days_since(2025-11-26)` |
 | **Dedup**     | Redis key `cotd:lastDate` (UTC `YYYY-MM-DD`)                                           |
