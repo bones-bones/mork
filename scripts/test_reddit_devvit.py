@@ -4,9 +4,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from reddit_devvit import (
     deferred_status_via_devvit,
+    devvit_external_url,
     drain_deferred_via_devvit,
     enqueue_deferred_via_devvit,
-    devvit_external_url,
     post_accept_via_devvit,
     post_gallery_via_devvit,
     post_reply_via_devvit,
@@ -21,9 +21,7 @@ from reddit_devvit import (
     validate_devvit_post_card_url,
 )
 
-EXTERNAL_URL = (
-    "https://hellscube-bridge-21otlg-external.devvit.net/external/post-card"
-)
+EXTERNAL_URL = "https://hellscube-bridge-21otlg-external.devvit.net/external/post-card"
 MANAGED_TOKEN = "devvit_at_test_token_for_unit_tests"
 
 
@@ -155,8 +153,9 @@ class PostAcceptViaDevvitTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["postId"], "t3_abc")
         mock_session.post.assert_called_once()
         call_kwargs = mock_session.post.call_args.kwargs
-        self.assertEqual(call_kwargs["json"]["imageUrl"],
-                         "https://storage.googleapis.com/bucket/card.png")
+        self.assertEqual(
+            call_kwargs["json"]["imageUrl"], "https://storage.googleapis.com/bucket/card.png"
+        )
         self.assertEqual(
             call_kwargs["headers"]["Authorization"],
             f"Bearer {MANAGED_TOKEN}",

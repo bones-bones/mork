@@ -75,8 +75,7 @@ async def check_masterpiece_submissions(bot: commands.Bot):
 
                 copy = await messageEntry.attachments[0].to_file()
                 vetoEntry = await vetoChannel.send(
-                    content=f"{hc_constants.CUBE_NAME}: "
-                    + accepted_message_no_mentions,
+                    content=f"{hc_constants.CUBE_NAME}: " + accepted_message_no_mentions,
                     file=copy,
                 )
 
@@ -106,10 +105,7 @@ async def check_masterpiece_submissions(bot: commands.Bot):
                 time_reacts = get(messageEntry.reactions, emoji="🕛")
                 if time_reacts:
                     async for rem_msg in subChannel.history(limit=200):
-                        if (
-                            rem_msg.author == bot.user
-                            and messageEntry.jump_url in rem_msg.content
-                        ):
+                        if rem_msg.author == bot.user and messageEntry.jump_url in rem_msg.content:
                             try:
                                 await rem_msg.delete()
                             except Exception as e:

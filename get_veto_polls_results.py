@@ -116,7 +116,7 @@ async def get_veto_polls_results(bot: commands.Bot, ctx: commands.Context):
         elif downvote > vc_threshold and downvote >= upvote and downvote >= errata:
             vetoCardMessages.append(messageEntry)
 
-        # Accepted case 
+        # Accepted case
         elif upvote > vc_threshold and upvote >= downvote and upvote >= errata:
             acceptedCardMessages.append(messageEntry)
 

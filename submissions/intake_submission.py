@@ -37,9 +37,7 @@ async def intake_submission_post(
         preview = (message.content or "").strip()
         attachment_count = len(message.attachments)
         await message.delete()
-        parts = [
-            f"<@{author_id}> tried to post in <#{message.channel.id}> while it was closed."
-        ]
+        parts = [f"<@{author_id}> tried to post in <#{message.channel.id}> while it was closed."]
         if preview:
             parts.append(preview[:500])
         if attachment_count:

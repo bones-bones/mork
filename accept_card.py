@@ -255,8 +255,7 @@ async def accept_card(
                         os.remove(image_path)
                 except Exception as e:
                     print(
-                        "Devvit deferred enqueue failed; "
-                        "falling back to filesystem:",
+                        "Devvit deferred enqueue failed; falling back to filesystem:",
                         e,
                     )
             if not deferred_enqueued:
@@ -269,9 +268,7 @@ async def accept_card(
                 deferred_path = os.path.join(deferred_reddit_dir, new_file_name)
                 os.rename(image_path, deferred_path)
                 manifest_path = os.path.join(deferred_reddit_dir, "manifest.txt")
-                async with aiofiles.open(
-                    manifest_path, "a", encoding="utf-8"
-                ) as manifest:
+                async with aiofiles.open(manifest_path, "a", encoding="utf-8") as manifest:
                     await manifest.write(
                         format_deferred_manifest_entry(
                             new_file_name,

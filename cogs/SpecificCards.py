@@ -65,9 +65,7 @@ async def get_card_json(targetUrl: str, query: str = "") -> dict[str, Any]:
     headers = {"User-Agent": hc_constants.USER_AGENT}
     async with (
         aiohttp.ClientSession() as session,
-        session.get(
-            targetUrl, params={"q": query} if query else None, headers=headers
-        ) as resp,
+        session.get(targetUrl, params={"q": query} if query else None, headers=headers) as resp,
     ):
         return await resp.json()
 
@@ -737,7 +735,6 @@ class SpecificCardsCog(commands.Cog):
             "thing (game:paper) prefer:best -otag:unset-mechanics -type:stickers unique:cards",
         )
 
-    
     @commands.command()
     async def grunch(self, ctx: commands.Context):
         """for cards that grunch"""
@@ -804,6 +801,7 @@ class SpecificCardsCog(commands.Cog):
         message_parts.append("-# [original](https://g0m.github.io/howtoPRUNCH/)")
 
         await ctx.send("\n".join(message_parts))
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(SpecificCardsCog(bot))
