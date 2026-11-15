@@ -20,7 +20,7 @@ flowchart TD
   CL --> RD{"Errata or skip Reddit?"}
   RD -->|yes| DONE["Done"]
   RD -->|no| BATCH{"> 5 Reddit-eligible<br/>cards this compile?"}
-  BATCH -->|yes| DEF["Defer to deferred_reddit/<br/>(asyncpraw via catchup)"]
+  BATCH -->|yes| DEF["Defer Reddit post<br/>(Devvit KV or deferred_reddit/)"]
   BATCH -->|no| IMM["Immediate Reddit post"]
   DEF --> DONE
   IMM --> DONE
@@ -28,7 +28,7 @@ flowchart TD
 
 ### Reddit posting (immediate accepts only)
 
-When compile-veto has **≤ 5** Reddit-eligible cards, each accept/veto posts immediately. Larger batches defer everything to `deferred_reddit/` (always asyncpraw today).
+When compile-veto has **≤ 5** Reddit-eligible cards, each accept/veto posts immediately. Larger batches defer everything: Devvit Redis when `REDDIT_DEFERRED_VIA_DEVVIT=1`, else `deferred_reddit/` + asyncpraw.
 
 ```mermaid
 flowchart TD
@@ -48,9 +48,9 @@ flowchart TD
 
 **Reddit title:** `post_to_reddit` builds `"… was accepted into {set_id}"` (or `"… was vetoed from {set_id}"`) from the card's set — not `CUBE_NAME`. Scube Lair gold uses the pinned set (e.g. `SCL.X`); compile-veto accepts use `ACTIVE_CUBE_ID`.
 
-**Stage-1 Devvit (optional):** when `REDDIT_ACCEPT_VIA_DEVVIT=1`, immediate posts go to `mork-devvit` `/api/post-card` using the Hellfall GCS `imageUrl`; falls back to asyncpraw on failure. Deferred batches still use `deferred_reddit/` + asyncpraw.
+**Stage-1 Devvit (optional):** when `REDDIT_ACCEPT_VIA_DEVVIT=1`, immediate posts go to `mork-devvit` `/external/post-card` using the Hellfall GCS `imageUrl`; falls back to asyncpraw on failure.
 
-**Deferred overflow** (`deferred_reddit/` when batch > 5): manifest stores one JSON object per line (`filename`, `card_message`, `set_id`, `was_vetoed`) so Unicode, tabs, and quotes in card names round-trip safely. Older tab-separated manifests still parse.
+**Deferred overflow** (batch > 5): with `REDDIT_DEFERRED_VIA_DEVVIT=1`, enqueue `{ title, imageUrl, flairId }` to Devvit Redis (`/external/deferred-enqueue`); catchup drains via `/external/deferred-drain` (filesystem/asyncpraw fallback). Legacy path: `deferred_reddit/` manifest JSON lines (`filename`, `card_message`, `set_id`, `was_vetoed`); older tab-separated manifests still parse. See [`deferred.md`](../hellscube-bridge/deferred.md).
 
 ---
 

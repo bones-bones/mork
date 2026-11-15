@@ -25,11 +25,40 @@
                 "scopes": [
                     "global"
                 ]
+            },
+            "deferredEnqueue": {
+                "endpoint": "/external/deferred-enqueue",
+                "scopes": [
+                    "global"
+                ]
+            },
+            "deferredDrain": {
+                "endpoint": "/external/deferred-drain",
+                "scopes": [
+                    "global"
+                ]
+            },
+            "deferredStatus": {
+                "endpoint": "/external/deferred-status",
+                "scopes": [
+                    "global"
+                ]
             }
         }
     },
     "triggers": {
         "onPostSubmit": "/internal/triggers/on-post-submit"
+    },
+    "menu": {
+        "items": [
+            {
+                "label": "Post 1 deferred Reddit card",
+                "description": "Drain one acceptance/veto post from the Devvit deferred queue",
+                "endpoint": "/internal/menu/drain-deferred",
+                "location": "subreddit",
+                "forUserType": "moderator"
+            }
+        ]
     },
     "scheduler": {
         "tasks": {

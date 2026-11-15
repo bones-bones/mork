@@ -5,7 +5,16 @@ import type {
   PostCardErrorResponse,
   PostCardRequest,
 } from '../../shared/postCard.js';
+import type {
+  DeferredDrainRequest,
+  DeferredEnqueueRequest,
+} from '../../shared/deferredQueue.js';
 import { badRequest, handlePostCard } from '../postCard.js';
+import {
+  handleDeferredDrain,
+  handleDeferredEnqueue,
+  handleDeferredStatus,
+} from '../deferredQueue.js';
 import { handlePostGallery } from '../postGallery.js';
 import { handleReplyToPost } from '../replyToPost.js';
 import type { ReplyToPostRequest } from '../../shared/replyToPost.js';
@@ -83,5 +92,36 @@ external.post('/post-gallery', async (c) => {
   }
 
   const { response, status } = await handlePostGallery(body);
+  return c.json(response, status as ContentfulStatusCode);
+});
+
+external.post('/deferred-enqueue', async (c) => {
+  let body: DeferredEnqueueRequest;
+  try {
+    body = await c.req.json<DeferredEnqueueRequest>();
+  } catch {
+    return c.json(badRequest('invalid JSON body'), 400);
+  }
+
+  const { response, status } = await handleDeferredEnqueue(body);
+  return c.json(response, status as ContentfulStatusCode);
+});
+
+external.post('/deferred-drain', async (c) => {
+  let body: DeferredDrainRequest;
+  try {
+    body = await c.req.json<DeferredDrainRequest>();
+  } catch {
+    return c.json(badRequest('invalid JSON body'), 400);
+  }
+
+  const { response, status } = await handleDeferredDrain(body);
+  return c.json(response, status as ContentfulStatusCode);
+});
+
+external.post('/deferred-status', async (c) => {
+  // Body optional; gateway clients may POST {} or empty.
+  await c.req.text().catch(() => "");
+  const { response, status } = await handleDeferredStatus();
   return c.json(response, status as ContentfulStatusCode);
 });

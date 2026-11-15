@@ -2,7 +2,7 @@
 
 Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscube-bridge/deploy-checklist.md).
 
-**Last updated:** 2026-08-29
+**Last updated:** 2026-11-14
 
 ## Platform
 
@@ -25,7 +25,7 @@ Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscub
 | Card-of-the-day scheduler (10:00 UTC)                        | ✅                       |
 | `/external/post-gallery` (Mork → pictures)                   | ✅                       | Native multi-image still 501; asyncpraw fallback |
 | Mork feature flags + asyncpraw fallback (`reddit_devvit.py`) | ✅                       |
-| Deferred queue on Devvit KV                                  | ⬜                       | Still `deferred_reddit.py` + `!redditcatchup` |
+| Deferred queue on Devvit KV                                  | ✅                       | Redis sorted set + `/external/deferred-*`; mod menu drain-1; VM flag off |
 | `scripts/verify_devvit_connectivity.py`                      | 🔄                       | In progress (scripts branch)                  |
 
 ## Production cutover
@@ -37,6 +37,7 @@ Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscub
 | **Reddit → Discord mirror** | `check_reddit.py` poll   | ✅           | off                        | `redditMirrorViaDevvit=false` |
 | **Discord → Reddit reply**  | asyncpraw                | ✅           | off                        | n/a                           |
 | **Daily gallery**           | asyncpraw + GCS URLs     | partial      | off                        | n/a (Mork POSTs `/external/post-gallery`) |
+| **Deferred redditcatchup**  | `deferred_reddit/` + asyncpraw | ✅     | off (`REDDIT_DEFERRED_VIA_DEVVIT`) | n/a (Redis queue + mod menu) |
 
 Legend: ✅ done · ⏳ waiting on external dependency · ⬜ not started · 🔄 in progress
 
@@ -61,6 +62,7 @@ REDDIT_COTD_VIA_DEVVIT=1
 REDDIT_GALLERY_USE_MANIFEST=1
 # REDDIT_GALLERY_VIA_DEVVIT=1
 # REDDIT_REPLY_VIA_DEVVIT=1
+# REDDIT_DEFERRED_VIA_DEVVIT=1
 # DEVVIT_POST_CARD_URL=...
 # DEVVIT_POST_CARD_SECRET=devvit_at_…
 ```
@@ -71,7 +73,7 @@ REDDIT_GALLERY_USE_MANIFEST=1
 2. **Acceptance** — after external endpoints approved; set token + `REDDIT_ACCEPT_VIA_DEVVIT=1`; smoke via `verify_devvit_connectivity.py --post-smoke`
 3. **Reply** — same token; `REDDIT_REPLY_VIA_DEVVIT=1`
 4. **Gallery** — same token; `REDDIT_GALLERY_VIA_DEVVIT=1`; native multi-image still 501 so expect asyncpraw fallback until Reddit adds a gallery `submitPost`
-5. **Deferred queue** — port to Devvit KV + mod menu
+5. **Deferred queue** — publish deferred endpoints; `REDDIT_DEFERRED_VIA_DEVVIT=1`; drain leftover `deferred_reddit/` first (see [`deferred.md`](../hellscube-bridge/deferred.md))
 
 ## Verify after each flip
 

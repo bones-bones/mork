@@ -54,6 +54,15 @@ def reddit_gallery_via_devvit_enabled() -> bool:
     }
 
 
+def reddit_deferred_via_devvit_enabled() -> bool:
+    """When true, deferred catchup uses hellscube-bridge Redis queue + /external/deferred-*."""
+    return os.environ.get("REDDIT_DEFERRED_VIA_DEVVIT", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
 def devvit_external_url(endpoint: str) -> str:
     """Build a hellscube-bridge external URL from DEVVIT_POST_CARD_URL + endpoint name."""
     base_url = os.environ.get("DEVVIT_POST_CARD_URL", "").strip()
@@ -194,3 +203,35 @@ async def post_gallery_via_devvit(
             "subredditName": subreddit_name,
         },
     )
+
+
+async def enqueue_deferred_via_devvit(
+    *,
+    title: str,
+    image_url: str,
+    flair_id: str,
+    subreddit_name: str = DEFAULT_DEVVIT_SUBREDDIT,
+) -> dict:
+    """Enqueue a deferred acceptance/veto post on Devvit Redis."""
+    return await _post_devvit_external(
+        "deferred-enqueue",
+        {
+            "title": title,
+            "imageUrl": image_url,
+            "flairId": flair_id,
+            "subredditName": subreddit_name,
+        },
+    )
+
+
+async def drain_deferred_via_devvit(*, count: int) -> dict:
+    """Drain up to ``count`` deferred posts from the Devvit Redis queue."""
+    return await _post_devvit_external(
+        "deferred-drain",
+        {"count": count},
+    )
+
+
+async def deferred_status_via_devvit() -> dict:
+    """Return pending deferred count from Devvit Redis."""
+    return await _post_devvit_external("deferred-status", {})

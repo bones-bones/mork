@@ -40,7 +40,10 @@ from cogs.lifecycle.submissions_closed import (
 )
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
 from cogs.lifecycle.submissions_gates import ensure_submissions_gates
-from deferred_reddit import list_pending_deferred_posts, process_deferred_reddit_posts
+from deferred_reddit import (
+    count_pending_deferred_posts,
+    process_deferred_reddit_posts,
+)
 from get_card_message import get_card_message, parseCardNameAndAuthor, submission_card_name
 from get_veto_polls_results import (
     VetoPollResults,
@@ -854,12 +857,12 @@ class LifecycleCog(commands.Cog):
         if count < 1:
             await ctx.send("Count must be a positive number")
             return
-        pending = list_pending_deferred_posts()
-        if not pending:
+        pending = await count_pending_deferred_posts()
+        if pending < 1:
             await ctx.send("No deferred Reddit posts")
             return
         await ctx.send(
-            f"Posting up to {count} deferred Reddit submissions ({len(pending)} pending)..."
+            f"Posting up to {count} deferred Reddit submissions ({pending} pending)..."
         )
         posted, errors = await process_deferred_reddit_posts(count)
         message = f"Posted {posted} to Reddit."
@@ -1278,8 +1281,8 @@ def reset_countdowns():
 
 async def redditcatchup():
 
-    pending = list_pending_deferred_posts()
-    if not pending:
+    pending = await count_pending_deferred_posts()
+    if pending < 1:
         return
     print("Posting up to 1 deferred Reddit submissions")
 

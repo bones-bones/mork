@@ -4,6 +4,11 @@ import re
 from dataclasses import dataclass
 
 import hc_constants
+from reddit_devvit import (
+    deferred_status_via_devvit,
+    drain_deferred_via_devvit,
+    reddit_deferred_via_devvit_enabled,
+)
 from reddit_functions import post_to_reddit
 
 DEFERRED_REDDIT_ROOT = "deferred_reddit"
@@ -115,6 +120,19 @@ def list_pending_deferred_posts() -> list[DeferredRedditPost]:
     return pending
 
 
+async def count_pending_deferred_posts() -> int:
+    """Filesystem pending plus Devvit Redis pending when the deferred flag is on."""
+    local = len(list_pending_deferred_posts())
+    if not reddit_deferred_via_devvit_enabled():
+        return local
+    try:
+        status = await deferred_status_via_devvit()
+        return local + int(status.get("pending", 0))
+    except Exception as e:
+        print("Devvit deferred status failed; using filesystem count only:", e)
+        return local
+
+
 def _is_reddit_media_too_large(exc: BaseException) -> bool:
     return "too large" in str(exc).lower()
 
@@ -153,7 +171,7 @@ def _cleanup_deferred_batch(batch_dir: str) -> None:
         os.rmdir(batch_dir)
 
 
-async def process_deferred_reddit_posts(count: int) -> tuple[int, list[str]]:
+async def _process_filesystem_deferred_posts(count: int) -> tuple[int, list[str]]:
     posts = list_pending_deferred_posts()[:count]
     posted = 0
     errors: list[str] = []
@@ -190,4 +208,28 @@ async def process_deferred_reddit_posts(count: int) -> tuple[int, list[str]]:
                 errors.append(f"{post.filename}: {e}")
     for batch_dir in affected_batches:
         _cleanup_deferred_batch(batch_dir)
+    return posted, errors
+
+
+async def process_deferred_reddit_posts(count: int) -> tuple[int, list[str]]:
+    """Drain deferred posts: Devvit Redis first (when flagged), then filesystem/asyncpraw."""
+    posted = 0
+    errors: list[str] = []
+    remaining = count
+
+    if reddit_deferred_via_devvit_enabled() and remaining > 0:
+        try:
+            result = await drain_deferred_via_devvit(count=remaining)
+            posted += int(result.get("posted", 0))
+            for err in result.get("errors") or []:
+                errors.append(str(err))
+            remaining = count - posted
+        except Exception as e:
+            errors.append(f"devvit drain: {e}")
+
+    if remaining > 0:
+        fs_posted, fs_errors = await _process_filesystem_deferred_posts(remaining)
+        posted += fs_posted
+        errors.extend(fs_errors)
+
     return posted, errors
