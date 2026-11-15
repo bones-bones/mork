@@ -26,7 +26,12 @@ from image_response_filename import (
     extension_from_image_bytes,
     mime_type_from_image_bytes,
 )
-from reddit_devvit import post_accept_via_devvit, reddit_accept_via_devvit_enabled
+from reddit_devvit import (
+    enqueue_deferred_via_devvit,
+    post_accept_via_devvit,
+    reddit_accept_via_devvit_enabled,
+    reddit_deferred_via_devvit_enabled,
+)
 from reddit_functions import post_to_reddit, reddit_title_for_acceptance
 from username_mappings import resolve_authors
 
@@ -236,21 +241,43 @@ async def accept_card(
         reddit_title = reddit_title_for_acceptance(
             card_message_for_reddit, message_set_id, was_vetoed=wasVetoed
         )
-        if skip_reddit and deferred_reddit_dir:
-            os.makedirs(deferred_reddit_dir, exist_ok=True)
-            deferred_path = os.path.join(deferred_reddit_dir, new_file_name)
-            os.rename(image_path, deferred_path)
-            manifest_path = os.path.join(deferred_reddit_dir, "manifest.txt")
-            async with aiofiles.open(manifest_path, "a", encoding="utf-8") as manifest:
-                await manifest.write(
-                    format_deferred_manifest_entry(
-                        new_file_name,
-                        card_message_for_reddit,
-                        message_set_id,
-                        wasVetoed,
+        if skip_reddit:
+            deferred_enqueued = False
+            if reddit_deferred_via_devvit_enabled():
+                try:
+                    await enqueue_deferred_via_devvit(
+                        title=reddit_title,
+                        image_url=imageUrl,
+                        flair_id=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
                     )
-                    + "\n"
-                )
+                    deferred_enqueued = True
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                except Exception as e:
+                    print(
+                        "Devvit deferred enqueue failed; falling back to filesystem:",
+                        e,
+                    )
+            if not deferred_enqueued:
+                if not deferred_reddit_dir:
+                    raise RuntimeError(
+                        "skip_reddit requires deferred_reddit_dir when "
+                        "Devvit deferred enqueue is unavailable"
+                    )
+                os.makedirs(deferred_reddit_dir, exist_ok=True)
+                deferred_path = os.path.join(deferred_reddit_dir, new_file_name)
+                os.rename(image_path, deferred_path)
+                manifest_path = os.path.join(deferred_reddit_dir, "manifest.txt")
+                async with aiofiles.open(manifest_path, "a", encoding="utf-8") as manifest:
+                    await manifest.write(
+                        format_deferred_manifest_entry(
+                            new_file_name,
+                            card_message_for_reddit,
+                            message_set_id,
+                            wasVetoed,
+                        )
+                        + "\n"
+                    )
         else:
             posted = False
             if reddit_accept_via_devvit_enabled():

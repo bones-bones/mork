@@ -8,5 +8,9 @@ export type CatalogCard = {
 };
 
 export type CatalogRoot = {
-  data: CatalogCard[];
+  /** Legacy Hellfall list payload. */
+  data?: CatalogCard[];
+  /** Pre-built cache payload (current GCS catalog.json). */
+  idMap?: Record<string, CatalogCard>;
+  nameMap?: unknown;
 };

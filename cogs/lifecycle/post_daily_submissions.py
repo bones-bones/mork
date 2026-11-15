@@ -32,11 +32,7 @@ def _gallery_urls_from_manifest() -> list[str]:
     if not entries:
         return []
     picked = random.sample(entries, min(10, len(entries)))
-    return [
-        image_url
-        for entry in picked
-        if (image_url := str(entry.get("imageUrl", "")).strip())
-    ]
+    return [image_url for entry in picked if (image_url := str(entry.get("imageUrl", "")).strip())]
 
 
 async def _download_image_to_temp(image_url: str, message_id: str) -> str:
@@ -72,9 +68,7 @@ async def _gallery_images_from_discord(bot) -> list[dict[str, str]]:
 
     import discord
 
-    sub_channel = cast(
-        discord.TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL)
-    )
+    sub_channel = cast(discord.TextChannel, bot.get_channel(hc_constants.SUBMISSIONS_CHANNEL))
     time_now = datetime.now(UTC)
     one_day = time_now + timedelta(days=-1)
     messages = [message async for message in sub_channel.history(after=one_day, limit=None)]
@@ -99,10 +93,7 @@ async def post_daily_submissions(bot):
     if gallery_uses_manifest() and reddit_gallery_via_devvit_enabled():
         urls = _gallery_urls_from_manifest()
         if not urls:
-            print(
-                "daily submissions gallery: no images "
-                f"(manifest={manifest_url()})"
-            )
+            print(f"daily submissions gallery: no images (manifest={manifest_url()})")
             return
         try:
             await post_gallery_via_devvit(

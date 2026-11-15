@@ -13,9 +13,7 @@ from gcs_card_images import DEFAULT_BUCKET, DEFAULT_CREDENTIALS, public_gcs_url
 from image_response_filename import extension_from_image_bytes, with_image_extension
 
 DEFAULT_MANIFEST_OBJECT = "mork/submissions-gallery-manifest.json"
-DEFAULT_MANIFEST_URL = (
-    f"https://storage.googleapis.com/{DEFAULT_BUCKET}/{DEFAULT_MANIFEST_OBJECT}"
-)
+DEFAULT_MANIFEST_URL = f"https://storage.googleapis.com/{DEFAULT_BUCKET}/{DEFAULT_MANIFEST_OBJECT}"
 MANIFEST_RETENTION_DAYS = 7
 
 
@@ -32,9 +30,7 @@ def _manifest_object_key() -> str:
 
 
 def _storage_client() -> storage.Client:
-    credentials_path = os.environ.get(
-        "GOOGLE_APPLICATION_CREDENTIALS", DEFAULT_CREDENTIALS
-    )
+    credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", DEFAULT_CREDENTIALS)
     return storage.Client.from_service_account_json(credentials_path)
 
 

@@ -27,9 +27,7 @@ async def check_submissions(bot: commands.Bot):
     )
 
 
-async def _check_submissions_for_config(
-    bot: commands.Bot, channel_id: int, config: SetConfig
-):
+async def _check_submissions_for_config(bot: commands.Bot, channel_id: int, config: SetConfig):
     if config.threshold is None:
         return
     print(f"checking submissions for {config.set_id}")
@@ -218,9 +216,7 @@ async def _check_submissions_for_config(
     print(f"------done checking submissions for {config.set_id}-----")
 
 
-async def _delete_time_reminder(
-    bot: commands.Bot, subChannel: TextChannel, messageEntry: Message
-):
+async def _delete_time_reminder(bot: commands.Bot, subChannel: TextChannel, messageEntry: Message):
     time_reacts = get(messageEntry.reactions, emoji="🕛")
     if time_reacts:
         await asyncio.sleep(1)

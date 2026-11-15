@@ -39,6 +39,18 @@ function isHc6Card(card: CatalogCard): boolean {
   return /^HC6/i.test(card.set?.trim() ?? '');
 }
 
+function catalogCardsFromRoot(body: CatalogRoot): CatalogCard[] {
+  // Live GCS catalog is the pre-built cache shape ({ idMap, nameMap, ... }).
+  // Older payloads used { data: CatalogCard[] }. Match hellfall_fetcher.py.
+  if (body.idMap && typeof body.idMap === 'object') {
+    return Object.values(body.idMap);
+  }
+  if (Array.isArray(body.data)) {
+    return body.data;
+  }
+  throw new Error('catalog missing data array or idMap');
+}
+
 export async function fetchHc6CatalogCards(catalogUrl: string): Promise<CatalogCard[]> {
   const response = await fetch(catalogUrl);
   if (!response.ok) {
@@ -46,11 +58,7 @@ export async function fetchHc6CatalogCards(catalogUrl: string): Promise<CatalogC
   }
 
   const body = (await response.json()) as CatalogRoot;
-  if (!Array.isArray(body.data)) {
-    throw new Error('catalog missing data array');
-  }
-
-  return body.data.filter(isHc6Card);
+  return catalogCardsFromRoot(body).filter(isHc6Card);
 }
 
 export function pickCardOfTheDay(cards: CatalogCard[]): CatalogCard | null {

@@ -65,7 +65,7 @@ Stage 2: optional Devvit path via `/external/reply-to-post` when `REDDIT_REPLY_V
 
 **Outbound titles:** card acceptance posts use the card's **set ID** in the title (e.g. `was accepted into HC9.1`, `was accepted into SCL.X`), not `CUBE_NAME`.
 
-Stage 1 Devvit migration: **immediate acceptance/veto posts only** can route through `mork-devvit` when flagged. Everything else still uses asyncpraw.
+Stage 1 Devvit migration: acceptance, gallery, reply, and deferred catchup can route through `mork-devvit` when flagged (defaults off except COTD).
 
 ```mermaid
 flowchart TD
@@ -87,10 +87,18 @@ flowchart TD
     PRAWG --> RED
   end
 
-  subgraph asyncpraw_only["asyncpraw only (not yet ported)"]
-    RC["Redditcatchup / deferred_reddit"] --> PRAW2["asyncpraw"]
-    COTD_FLAG{"REDDIT_COTD_VIA_DEVVIT off?"} -->|yes| COTD["HC6 card-of-the-day"] --> PRAW2
+  subgraph deferred["Deferred catchup"]
+    RC["Redditcatchup / !redditcatchup"] --> DFLAG{"REDDIT_DEFERRED_VIA_DEVVIT?"}
+    DFLAG -->|yes| DDEV["Devvit Redis drain<br/>/external/deferred-drain"]
+    DFLAG -->|no| PRAW2["asyncpraw + deferred_reddit/"]
+    DDEV -->|fail / leftover files| PRAW2
+    DDEV --> RED
     PRAW2 --> RED
+  end
+
+  subgraph asyncpraw_only["asyncpraw only when COTD flag off"]
+    COTD_FLAG{"REDDIT_COTD_VIA_DEVVIT off?"} -->|yes| COTD["HC6 card-of-the-day"] --> PRAW3["asyncpraw"]
+    PRAW3 --> RED
   end
 
   subgraph devvit_scheduled["Devvit scheduler (flag on)"]
@@ -102,7 +110,7 @@ flowchart TD
 | Outbound path | Transport | Image source |
 | ------------- | --------- | ------------ |
 | Immediate accept/veto | Devvit (optional) → asyncpraw fallback | Hellfall GCS URL or `tempImages/` |
-| Deferred batch (`> 5` cards) | asyncpraw | `deferred_reddit/` files |
+| Deferred batch (`> 5` cards) | Devvit Redis queue when `REDDIT_DEFERRED_VIA_DEVVIT=1` (default off); else `deferred_reddit/` + asyncpraw | Hellfall GCS URL (Devvit) or local files |
 | Daily gallery | GCS HTTPS URLs (`REDDIT_GALLERY_USE_MANIFEST=1`); optional Devvit `/external/post-gallery` when `REDDIT_GALLERY_VIA_DEVVIT=1` (default off; native multi-image 501 → asyncpraw fallback) |
 | Card of the day (Devvit) | Devvit scheduler when `REDDIT_COTD_VIA_DEVVIT=1` + app setting | [Hellfall catalog](https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json) |
 | Card of the day (legacy) | Lifecycle/asyncpraw when flag off | HC6 sheet image URL → temp file |

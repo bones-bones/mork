@@ -3,12 +3,16 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from reddit_devvit import (
+    deferred_status_via_devvit,
     devvit_external_url,
+    drain_deferred_via_devvit,
+    enqueue_deferred_via_devvit,
     post_accept_via_devvit,
     post_gallery_via_devvit,
     post_reply_via_devvit,
     reddit_accept_via_devvit_enabled,
     reddit_cotd_via_devvit_enabled,
+    reddit_deferred_via_devvit_enabled,
     reddit_gallery_via_devvit_enabled,
     reddit_mirror_via_devvit_enabled,
     reddit_reply_via_devvit_enabled,
@@ -17,9 +21,7 @@ from reddit_devvit import (
     validate_devvit_post_card_url,
 )
 
-EXTERNAL_URL = (
-    "https://hellscube-bridge-21otlg-external.devvit.net/external/post-card"
-)
+EXTERNAL_URL = "https://hellscube-bridge-21otlg-external.devvit.net/external/post-card"
 MANAGED_TOKEN = "devvit_at_test_token_for_unit_tests"
 
 
@@ -56,6 +58,12 @@ class RedditDevvitTests(unittest.TestCase):
         with patch.dict(os.environ, {"REDDIT_GALLERY_VIA_DEVVIT": "0"}, clear=False):
             self.assertFalse(reddit_gallery_via_devvit_enabled())
 
+    def test_deferred_feature_flag(self):
+        with patch.dict(os.environ, {"REDDIT_DEFERRED_VIA_DEVVIT": "1"}, clear=False):
+            self.assertTrue(reddit_deferred_via_devvit_enabled())
+        with patch.dict(os.environ, {"REDDIT_DEFERRED_VIA_DEVVIT": "0"}, clear=False):
+            self.assertFalse(reddit_deferred_via_devvit_enabled())
+
     def test_devvit_external_url_rewrite(self):
         with patch.dict(os.environ, {"DEVVIT_POST_CARD_URL": EXTERNAL_URL}, clear=False):
             self.assertEqual(
@@ -65,6 +73,10 @@ class RedditDevvitTests(unittest.TestCase):
             self.assertEqual(
                 devvit_external_url("post-gallery"),
                 "https://hellscube-bridge-21otlg-external.devvit.net/external/post-gallery",
+            )
+            self.assertEqual(
+                devvit_external_url("deferred-enqueue"),
+                "https://hellscube-bridge-21otlg-external.devvit.net/external/deferred-enqueue",
             )
 
     def test_title_uses_set_id(self):
@@ -141,8 +153,9 @@ class PostAcceptViaDevvitTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["postId"], "t3_abc")
         mock_session.post.assert_called_once()
         call_kwargs = mock_session.post.call_args.kwargs
-        self.assertEqual(call_kwargs["json"]["imageUrl"],
-                         "https://storage.googleapis.com/bucket/card.png")
+        self.assertEqual(
+            call_kwargs["json"]["imageUrl"], "https://storage.googleapis.com/bucket/card.png"
+        )
         self.assertEqual(
             call_kwargs["headers"]["Authorization"],
             f"Bearer {MANAGED_TOKEN}",
@@ -243,6 +256,71 @@ class PostGalleryViaDevvitTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             mock_session.post.call_args.args[0],
             "https://hellscube-bridge-21otlg-external.devvit.net/external/post-gallery",
+        )
+
+
+class DeferredViaDevvitTests(unittest.IsolatedAsyncioTestCase):
+    async def test_enqueue_drain_and_status_payloads(self):
+        env = {
+            "DEVVIT_POST_CARD_URL": EXTERNAL_URL,
+            "DEVVIT_POST_CARD_SECRET": MANAGED_TOKEN,
+        }
+
+        mock_resp = AsyncMock()
+        mock_resp.status = 200
+        mock_resp.json = AsyncMock(
+            side_effect=[
+                {"ok": True, "id": "1", "pending": 1},
+                {"ok": True, "posted": 1, "pending": 0, "errors": []},
+                {"ok": True, "pending": 0},
+            ]
+        )
+
+        mock_post_cm = AsyncMock()
+        mock_post_cm.__aenter__.return_value = mock_resp
+        mock_post_cm.__aexit__.return_value = False
+
+        mock_session = MagicMock()
+        mock_session.post.return_value = mock_post_cm
+
+        mock_session_cm = AsyncMock()
+        mock_session_cm.__aenter__.return_value = mock_session
+        mock_session_cm.__aexit__.return_value = False
+
+        with (
+            patch.dict(os.environ, env, clear=False),
+            patch(
+                "reddit_devvit.aiohttp.ClientSession",
+                return_value=mock_session_cm,
+            ),
+        ):
+            enqueued = await enqueue_deferred_via_devvit(
+                title="Card was accepted into SOH",
+                image_url="https://storage.googleapis.com/bucket/card.png",
+                flair_id="flair-id",
+            )
+            drained = await drain_deferred_via_devvit(count=1)
+            status = await deferred_status_via_devvit()
+
+        self.assertEqual(enqueued["pending"], 1)
+        self.assertEqual(drained["posted"], 1)
+        self.assertEqual(status["pending"], 0)
+        urls = [call.args[0] for call in mock_session.post.call_args_list]
+        self.assertEqual(
+            urls,
+            [
+                "https://hellscube-bridge-21otlg-external.devvit.net/external/deferred-enqueue",
+                "https://hellscube-bridge-21otlg-external.devvit.net/external/deferred-drain",
+                "https://hellscube-bridge-21otlg-external.devvit.net/external/deferred-status",
+            ],
+        )
+        self.assertEqual(
+            mock_session.post.call_args_list[0].kwargs["json"]["imageUrl"],
+            "https://storage.googleapis.com/bucket/card.png",
+        )
+        self.assertEqual(
+            mock_session.post.call_args_list[1].kwargs["json"]["count"],
+            1,
         )
 
 

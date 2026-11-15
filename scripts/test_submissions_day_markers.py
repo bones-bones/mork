@@ -64,9 +64,7 @@ def test_previous_week_body():
 def test_is_submissions_card():
     card = _msg("Cool Card by @user", author_id=hc_constants.MORK_2, attachments=[_attachment()])
     assert is_submissions_card(card)
-    assert not is_submissions_card(
-        _msg(day_marker_content(datetime(2026, 6, 1, tzinfo=UTC)))
-    )
+    assert not is_submissions_card(_msg(day_marker_content(datetime(2026, 6, 1, tzinfo=UTC))))
     assert not is_submissions_card(_msg("no attachment", author_id=hc_constants.MORK_2))
     assert not is_submissions_card(
         _msg(

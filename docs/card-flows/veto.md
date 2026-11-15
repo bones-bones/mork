@@ -110,7 +110,7 @@ flowchart TD
   SET1 --> AC1B["Accept + GCS + Hellfall"]
   SET2 --> AC1B
   AC1B --> RD1{"> 5 Reddit-eligible<br/>cards this compile?"}
-  RD1 -->|yes| DEF["Defer to deferred_reddit/<br/>(asyncpraw via catchup)"]
+  RD1 -->|yes| DEF["Defer Reddit<br/>(Devvit KV if flagged, else deferred_reddit/)"]
   RD1 -->|no| RED1["Immediate Reddit post<br/>(Devvit if flagged, else asyncpraw)"]
   AC1B --> ARC1["Archive veto thread + ✅"]
 
@@ -129,10 +129,10 @@ flowchart TD
   PUR --> PING["Ping council in veto thread"]
   PUR --> HELL["List as VETO HELL"]
 
-  DEF --> CATCH["Auto redditcatchup 1/hour<br/>+ !redditcatchup N manual drain<br/>(asyncpraw only)"]
+  DEF --> CATCH["Auto redditcatchup 1/hour<br/>+ !redditcatchup N (+ mod menu drain-1)"]
 ```
 
-See [Acceptance → Reddit posting](acceptance.md#reddit-posting-immediate-accepts-only) for the Devvit vs asyncpraw detail on immediate posts.
+See [Acceptance → Reddit posting](acceptance.md#reddit-posting-immediate-accepts-only) and [`deferred.md`](../hellscube-bridge/deferred.md) for Devvit vs asyncpraw detail.
 
 ## Hellpit resubmit (errata rework)
 

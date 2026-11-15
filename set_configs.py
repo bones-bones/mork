@@ -40,9 +40,7 @@ def active_submission_set() -> SetConfig:
     return ACTIVE_SUBMISSION_SET_CONFIG
 
 
-def submission_cooldown_still_active(
-    last_submit: datetime, now: datetime | None = None
-) -> bool:
+def submission_cooldown_still_active(last_submit: datetime, now: datetime | None = None) -> bool:
     """Ledger retention: keep rows while any known set's cooldown could still apply."""
     now = now or datetime.now(tz=UTC)
     elapsed = elapsed_open_hours(last_submit, now)

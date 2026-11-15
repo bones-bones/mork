@@ -49,6 +49,9 @@ REDDIT_GALLERY_USE_MANIFEST=1
 
 # Discord #reddit → Reddit comment via Devvit (off until external endpoints approved)
 # REDDIT_REPLY_VIA_DEVVIT=1
+
+# Deferred catchup via Devvit Redis (off until external endpoints approved)
+# REDDIT_DEFERRED_VIA_DEVVIT=1
 ```
 
 To force COTD off later: `npx devvit settings set cardOfTheDayViaDevvit` → enter `false`.
@@ -63,3 +66,4 @@ Redeploy / restart Mork after editing `.env`.
 - Mirror: after cutover, new inbound-flair posts appear in `#reddit` without `check_reddit` running
 - Reply: with `REDDIT_REPLY_VIA_DEVVIT=1`, `#reddit` replies use `/external/reply-to-post` (asyncpraw fallback on failure)
 - Gallery: hour-4 still Mork asyncpraw; with `REDDIT_GALLERY_VIA_DEVVIT=1`, POSTs `/external/post-gallery` (asyncpraw fallback while native multi-image is 501)
+- Deferred: with `REDDIT_DEFERRED_VIA_DEVVIT=1`, enqueue/drain use `/external/deferred-*` (filesystem/asyncpraw fallback); see [`deferred.md`](deferred.md)

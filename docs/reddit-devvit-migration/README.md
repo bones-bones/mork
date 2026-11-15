@@ -112,7 +112,7 @@ mork-devvit/
 | Feature | Devvit approach | Effort |
 |---------|-----------------|--------|
 | Acceptance posts | Mork → Devvit `/api/post-card` (stage 1) | **Done** — optional via feature flag |
-| Deferred queue | Devvit KV queue + mod menu “Post N deferred” | Medium — replaces filesystem + `!redditcatchup` |
+| Deferred queue | Devvit Redis sorted-set queue + `/external/deferred-*` + mod menu “Post 1 deferred” | **Done** — optional via `REDDIT_DEFERRED_VIA_DEVVIT` |
 | Reddit → Discord mirror | `PostSubmit` trigger + flair filter | **Easy** — better than current polling |
 | Discord → Reddit replies | Discord webhook → Devvit → `comment.reply()` | Medium |
 | Card of the day | Scheduler + GCP proxy for sheet data | Medium |
@@ -125,7 +125,7 @@ mork-devvit/
 1. **Scaffold** — `mork-devvit/` Devvit app (done on `reddit-devvit-migration`)
 2. **Phase 1 (in progress)** — Devvit `/external/post-card` + Mork feature flag `REDDIT_ACCEPT_VIA_DEVVIT` ([external endpoints](https://developers.reddit.com/docs/capabilities/server/external-endpoints) access pending)
 3. **Phase 2** — `PostSubmit` trigger replaces `check_reddit.py` polling
-4. **Phase 3** — Mod menu for deferred queue + card-of-the-day scheduler
+4. **Phase 3** — Deferred Redis queue + mod menu drain + card-of-the-day scheduler (**code done**; deferred flag off until cutover)
 5. **Launch** — Install on r/HellsCube; Terms/Privacy Policy required for HTTP Fetch; apply for Developer Funds
 
 Phase 1 code lives in `mork-devvit/` and `reddit_devvit.py`. Deploy Devvit via `.github/workflows/devvit-deploy.yml` (manual; needs `DEVVIT_TOKEN` secret). Enable on the VM only after playtest confirms posting works.

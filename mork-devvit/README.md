@@ -84,6 +84,20 @@ Details: [`docs/hellscube-bridge/mirror.md`](../docs/hellscube-bridge/mirror.md)
 
 Details: [`reply.md`](reply.md).
 
+## Deferred redditcatchup queue
+
+Large compile-veto batches enqueue Hellfall GCS URLs into Devvit Redis; Discord `!redditcatchup` / hourly catchup / mod menu drain them.
+
+|                  |                                                              |
+| ---------------- | ------------------------------------------------------------ |
+| **Manifest keys** | `deferredEnqueue`, `deferredDrain`, `deferredStatus`        |
+| **Routes**       | `/external/deferred-enqueue`, `-drain`, `-status`            |
+| **Redis**        | `deferred:queue` (zset) + `deferred:items` (hash)            |
+| **Mod menu**     | “Post 1 deferred Reddit card” → `/internal/menu/drain-deferred` |
+| **VM flag**      | `REDDIT_DEFERRED_VIA_DEVVIT=1` (default off)                 |
+
+Details: [`docs/hellscube-bridge/deferred.md`](../docs/hellscube-bridge/deferred.md).
+
 ## Daily submissions gallery
 
 Mork POSTs picked `#submissions` picture URLs to Devvit. **Native multi-image gallery posts are blocked** until Reddit exposes a gallery API; Mork then falls back to asyncpraw.
@@ -108,6 +122,7 @@ Config is in place for when Reddit enables external endpoints on your account:
 - [x] Reddit → Discord mirror (`onPostSubmit` + webhook; default off)
 - [x] Discord → Reddit replies (`/external/reply-to-post`; default off on VM)
 - [x] Daily gallery `/external/post-gallery` (native multi-image blocked; default off on VM)
+- [x] Deferred Redis queue (`/external/deferred-*` + mod menu; default off on VM)
 - [x] Mork client (`reddit_devvit.py`) validates external URL + managed token format
 - [x] Mod-facing endpoint documentation
 - [ ] Reddit [external endpoints access](https://developers.reddit.com/docs/capabilities/server/external-endpoints) approved for your account
