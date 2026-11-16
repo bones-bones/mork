@@ -51,6 +51,17 @@ Body optional (`{}`). Success: `{ "ok": true, "pending": 11 }`
 
 `!redditcatchup N` and the hourly Lifecycle drain still orchestrate from Discord; pending count is filesystem + Devvit when the flag is on.
 
+## On-demand test (after flag + restart)
+
+Veto discussion channel only:
+
+| Command | Effect |
+| --- | --- |
+| `!redditcatchup` or `!redditcatchup 0` | Status only: local vs Devvit pending + which transport is active (no Reddit posts) |
+| `!redditcatchup 1` | Drain **one** live post (Devvit first when flagged) |
+
+Also: r/HellsCube mod menu **Post 1 deferred Reddit card**, or `curl` to `/external/deferred-status` / `deferred-drain` with the managed app token (see endpoints above).
+
 ## Mod menu
 
 Subreddit menu (moderators): **Post 1 deferred Reddit card** → `/internal/menu/drain-deferred` (drains one item; toast with remaining count).
@@ -61,3 +72,4 @@ Subreddit menu (moderators): **Post 1 deferred Reddit card** → `/internal/menu
 2. Publish hellscube-bridge with deferred routes.
 3. Drain any leftover `deferred_reddit/` batches (or leave flag off until empty).
 4. Set `REDDIT_DEFERRED_VIA_DEVVIT=1` and restart Mork.
+5. In veto discussion: `!redditcatchup` → confirm `transport=Devvit Redis + filesystem`, then `!redditcatchup 1` when ready to post one.
