@@ -1,8 +1,21 @@
+import os
 import random
 from typing import Any
 
 import hc_constants
 from shared_vars import drive
+
+_DEFAULT_REASONABLE_CARD_MAX = 5000
+
+
+def reasonable_card_max() -> int:
+    """Upper bound for the auto-accept lottery (`random.randint(0, max)`)."""
+    raw = os.environ.get("REASONABLE_CARD_MAX", str(_DEFAULT_REASONABLE_CARD_MAX)).strip()
+    try:
+        value = int(raw)
+    except ValueError:
+        return _DEFAULT_REASONABLE_CARD_MAX
+    return value if value >= 0 else _DEFAULT_REASONABLE_CARD_MAX
 
 
 def is_mork(user_id: int):
@@ -20,8 +33,8 @@ def is_reddit_mirror_author(user_id: int) -> bool:
 
 
 def reasonable_card():
-    """This function is used to determine if a card gets auto-magically accepted. Be sure to add 1000 each time it happens"""
-    return random.randint(0, 4000) == 69
+    """Auto-accept lottery. Bump REASONABLE_CARD_MAX (default 5000) after it fires."""
+    return random.randint(0, reasonable_card_max()) == 69
 
 
 def uploadToDrive(path: str, id: str | None = None, folder_id: str | None = None):
