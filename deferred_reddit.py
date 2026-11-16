@@ -5,11 +5,10 @@ from dataclasses import dataclass
 
 import hc_constants
 from reddit_devvit import (
-    deferred_status_via_devvit,
-    drain_deferred_via_devvit,
+    post_accept_via_devvit,
     reddit_deferred_via_devvit_enabled,
 )
-from reddit_functions import post_to_reddit
+from reddit_functions import post_to_reddit, reddit_title_for_acceptance
 
 DEFERRED_REDDIT_ROOT = "deferred_reddit"
 _FILENAME_UNSAFE_RE = re.compile(r'[/\\:*?"<>|\x00-\x1f]')
@@ -28,16 +27,17 @@ def format_deferred_manifest_entry(
     card_message: str,
     set_id: str,
     was_vetoed: bool,
+    image_url: str | None = None,
 ) -> str:
-    return json.dumps(
-        {
-            "filename": filename,
-            "card_message": card_message,
-            "set_id": set_id,
-            "was_vetoed": was_vetoed,
-        },
-        ensure_ascii=False,
-    )
+    entry: dict = {
+        "filename": filename,
+        "card_message": card_message,
+        "set_id": set_id,
+        "was_vetoed": was_vetoed,
+    }
+    if image_url:
+        entry["image_url"] = image_url
+    return json.dumps(entry, ensure_ascii=False)
 
 
 @dataclass
@@ -49,6 +49,7 @@ class DeferredRedditPost:
     card_message: str = ""
     set_id: str = ""
     was_vetoed: bool = False
+    image_url: str = ""
 
 
 def _parse_manifest_line(line: str) -> DeferredRedditPost | None:
@@ -70,6 +71,7 @@ def _parse_manifest_line(line: str) -> DeferredRedditPost | None:
             card_message=data.get("card_message", ""),
             set_id=data.get("set_id", ""),
             was_vetoed=bool(data.get("was_vetoed", False)),
+            image_url=(data.get("image_url") or "").strip(),
         )
     parts = stripped.split("\t")
     if len(parts) == 2:
@@ -121,16 +123,18 @@ def list_pending_deferred_posts() -> list[DeferredRedditPost]:
 
 
 async def count_pending_deferred_posts() -> int:
-    """Filesystem pending plus Devvit Redis pending when the deferred flag is on."""
-    local = len(list_pending_deferred_posts())
-    if not reddit_deferred_via_devvit_enabled():
-        return local
-    try:
-        status = await deferred_status_via_devvit()
-        return local + int(status.get("pending", 0))
-    except Exception as e:
-        print("Devvit deferred status failed; using filesystem count only:", e)
-        return local
+    """Pending count for the Mork-owned `deferred_reddit/` backlog."""
+    return len(list_pending_deferred_posts())
+
+
+def _deferred_reddit_title(post: DeferredRedditPost) -> str:
+    if post.title:
+        return post.title
+    return reddit_title_for_acceptance(
+        post.card_message,
+        post.set_id,
+        was_vetoed=post.was_vetoed,
+    )
 
 
 def _is_reddit_media_too_large(exc: BaseException) -> bool:
@@ -171,27 +175,55 @@ def _cleanup_deferred_batch(batch_dir: str) -> None:
         os.rmdir(batch_dir)
 
 
-async def _process_filesystem_deferred_posts(count: int) -> tuple[int, list[str]]:
+async def _post_deferred_via_asyncpraw(post: DeferredRedditPost) -> None:
+    if post.title:
+        await post_to_reddit(
+            image_path=post.image_path,
+            title=post.title,
+            flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+        )
+    else:
+        await post_to_reddit(
+            image_path=post.image_path,
+            set_id=post.set_id,
+            card_message=post.card_message,
+            was_vetoed=post.was_vetoed,
+            flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+        )
+
+
+async def process_deferred_reddit_posts(count: int) -> tuple[int, list[str]]:
+    """Drain Mork `deferred_reddit/` backlog.
+
+    When ``REDDIT_DEFERRED_VIA_DEVVIT`` is on and the item has ``image_url``,
+    post via Devvit ``/external/post-card``; otherwise (or on Devvit failure)
+    fall back to asyncpraw with the local file.
+    """
     posts = list_pending_deferred_posts()[:count]
     posted = 0
     errors: list[str] = []
     affected_batches: set[str] = set()
+    via_devvit = reddit_deferred_via_devvit_enabled()
+
     for post in posts:
+        title = _deferred_reddit_title(post)
         try:
-            if post.title:
-                await post_to_reddit(
-                    image_path=post.image_path,
-                    title=post.title,
-                    flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
-                )
-            else:
-                await post_to_reddit(
-                    image_path=post.image_path,
-                    set_id=post.set_id,
-                    card_message=post.card_message,
-                    was_vetoed=post.was_vetoed,
-                    flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
-                )
+            posted_via_devvit = False
+            if via_devvit and post.image_url:
+                try:
+                    await post_accept_via_devvit(
+                        title=title,
+                        image_url=post.image_url,
+                        flair_id=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+                    )
+                    posted_via_devvit = True
+                except Exception as e:
+                    print(
+                        "Devvit deferred post failed; falling back to asyncpraw:",
+                        e,
+                    )
+            if not posted_via_devvit:
+                await _post_deferred_via_asyncpraw(post)
             os.remove(post.image_path)
             posted += 1
             affected_batches.add(post.batch_dir)
@@ -206,30 +238,7 @@ async def _process_filesystem_deferred_posts(count: int) -> tuple[int, list[str]
                 affected_batches.add(post.batch_dir)
             else:
                 errors.append(f"{post.filename}: {e}")
+
     for batch_dir in affected_batches:
         _cleanup_deferred_batch(batch_dir)
-    return posted, errors
-
-
-async def process_deferred_reddit_posts(count: int) -> tuple[int, list[str]]:
-    """Drain deferred posts: Devvit Redis first (when flagged), then filesystem/asyncpraw."""
-    posted = 0
-    errors: list[str] = []
-    remaining = count
-
-    if reddit_deferred_via_devvit_enabled() and remaining > 0:
-        try:
-            result = await drain_deferred_via_devvit(count=remaining)
-            posted += int(result.get("posted", 0))
-            for err in result.get("errors") or []:
-                errors.append(str(err))
-            remaining = count - posted
-        except Exception as e:
-            errors.append(f"devvit drain: {e}")
-
-    if remaining > 0:
-        fs_posted, fs_errors = await _process_filesystem_deferred_posts(remaining)
-        posted += fs_posted
-        errors.extend(fs_errors)
-
     return posted, errors

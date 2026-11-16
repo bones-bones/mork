@@ -1,55 +1,28 @@
-# hellscube-bridge — deferred Reddit queue
+# hellscube-bridge — deferred Reddit posting
 
-Replaces Mork’s `deferred_reddit/` filesystem queue when `REDDIT_DEFERRED_VIA_DEVVIT=1`. Large compile-veto batches (`> 5` Reddit-eligible cards) enqueue Hellfall GCS `imageUrl`s into Devvit Redis; `!redditcatchup` / hourly catchup / mod menu drain them via `submitImagePost`.
+Mork always owns the backlog in `deferred_reddit/` (local image + manifest, including Hellfall `image_url` when available). `REDDIT_DEFERRED_VIA_DEVVIT` only switches **who posts** on catchup: Devvit `/external/post-card` vs asyncpraw.
 
-## Redis layout
+`!compileveto` overflow never enqueues to Devvit Redis.
 
-| Key | Type | Role |
-| --- | ---- | ---- |
-| `deferred:queue` | sorted set | FIFO by enqueue timestamp (`score`); `member` = item id |
-| `deferred:items` | hash | `field` = item id → JSON `{ id, title, imageUrl, flairId?, subredditName?, enqueuedAt }` |
+## Catchup path
 
-Devvit Redis has no list type; sorted sets are the supported queue pattern.
-
-## External endpoints
-
-All use the managed App Token (`Authorization: Bearer devvit_at_…`), same host as `/external/post-card`.
-
-### `POST /external/deferred-enqueue`
-
-```json
-{
-  "title": "Card Name by Author was accepted into SET",
-  "imageUrl": "https://storage.googleapis.com/.../card.png",
-  "flairId": "optional-flair-uuid",
-  "subredditName": "HellsCube"
-}
+```mermaid
+flowchart TD
+  compile["!compileveto skip_reddit"] --> fs["Always write deferred_reddit/"]
+  catchup["!redditcatchup / hourly"] --> flag{"REDDIT_DEFERRED_VIA_DEVVIT?"}
+  flag -->|yes + image_url| postCard["Devvit /external/post-card"]
+  flag -->|no / no URL / fail| praw["asyncpraw from local file"]
+  postCard -->|fail| praw
 ```
-
-Success: `{ "ok": true, "id": "…", "pending": 12 }`
-
-### `POST /external/deferred-drain`
-
-```json
-{ "count": 1 }
-```
-
-Success: `{ "ok": true, "posted": 1, "pending": 11, "errors": [] }`
-
-Failed posts stay at the front of the queue (errors listed); later items in the same drain still run.
-
-### `POST /external/deferred-status`
-
-Body optional (`{}`). Success: `{ "ok": true, "pending": 11 }`
 
 ## Mork flags
 
 | Env | Default | Behavior |
 | --- | ------- | -------- |
-| `REDDIT_DEFERRED_VIA_DEVVIT=1` | off | Enqueue + drain via Devvit; filesystem/`asyncpraw` fallback on enqueue/drain failure |
-| unset / `0` | — | Legacy `deferred_reddit/` + `asyncpraw` only |
+| `REDDIT_DEFERRED_VIA_DEVVIT=1` | off | Catchup posts via `/external/post-card` when the manifest has `image_url`; asyncpraw fallback |
+| unset / `0` | — | Catchup posts via asyncpraw from local files only |
 
-`!redditcatchup N` and the hourly Lifecycle drain still orchestrate from Discord; pending count is filesystem + Devvit when the flag is on.
+Pending count is always the Mork filesystem backlog.
 
 ## On-demand test (after flag + restart)
 
@@ -57,19 +30,18 @@ Veto discussion channel only:
 
 | Command | Effect |
 | --- | --- |
-| `!redditcatchup` or `!redditcatchup 0` | Status only: local vs Devvit pending + which transport is active (no Reddit posts) |
-| `!redditcatchup 1` | Drain **one** live post (Devvit first when flagged) |
+| `!redditcatchup` or `!redditcatchup 0` | Status only: Mork pending + transport (`Devvit post-card` or `asyncpraw`) |
+| `!redditcatchup 1` | Drain **one** live post from `deferred_reddit/` |
 
-Also: r/HellsCube mod menu **Post 1 deferred Reddit card**, or `curl` to `/external/deferred-status` / `deferred-drain` with the managed app token (see endpoints above).
+Items without `image_url` (older backlog) still use asyncpraw even when the flag is on.
 
-## Mod menu
+## Legacy Devvit Redis endpoints (unused by Mork)
 
-Subreddit menu (moderators): **Post 1 deferred Reddit card** → `/internal/menu/drain-deferred` (drains one item; toast with remaining count).
+hellscube-bridge still ships `/external/deferred-{enqueue,drain,status}` and the mod menu **Post 1 deferred Reddit card**. Mork no longer writes or drains that Redis queue; leave it unused unless you probe those endpoints manually.
 
 ## Cutover
 
-1. External endpoints approved + `DEVVIT_POST_CARD_*` on the VM.
-2. Publish hellscube-bridge with deferred routes.
-3. Drain any leftover `deferred_reddit/` batches (or leave flag off until empty).
-4. Set `REDDIT_DEFERRED_VIA_DEVVIT=1` and restart Mork.
-5. In veto discussion: `!redditcatchup` → confirm `transport=Devvit Redis + filesystem`, then `!redditcatchup 1` when ready to post one.
+1. `DEVVIT_POST_CARD_*` on the VM (same token as other external posts).
+2. Set `REDDIT_DEFERRED_VIA_DEVVIT=1` and restart Mork.
+3. In veto discussion: `!redditcatchup` → confirm `transport=Devvit post-card`, then `!redditcatchup 1` when ready.
+4. New compileveto batches store `image_url` and can post via Devvit; drain old filesystem-only rows with asyncpraw as needed.

@@ -66,7 +66,6 @@ from is_admin import can_instaerrata, is_admin, is_veto
 from is_mork import is_mork, is_reddit_mirror_author
 from post_card_images import post_card_images
 from reddit_devvit import (
-    deferred_status_via_devvit,
     post_reply_via_devvit,
     reddit_cotd_via_devvit_enabled,
     reddit_deferred_via_devvit_enabled,
@@ -853,8 +852,9 @@ class LifecycleCog(commands.Cog):
     async def redditcatchup(self, ctx: commands.Context, count: int | None = None):
         """Drain deferred Reddit posts, or status-only with no args / 0.
 
-        On-demand Devvit cutover check: `!redditcatchup` shows pending + transport
-        without posting; `!redditcatchup 1` drains one live post.
+        Backlog is always Mork `deferred_reddit/`. Flag only switches who posts:
+        Devvit `/external/post-card` vs asyncpraw. `!redditcatchup` / `0` is
+        status-only; `!redditcatchup 1` drains one live post.
         """
         if ctx.channel.id != hc_constants.VETO_DISCUSSION_CHANNEL:
             await ctx.send("Veto Council Only")
@@ -863,23 +863,9 @@ class LifecycleCog(commands.Cog):
             await ctx.send("Count must be zero (status) or a positive number")
             return
 
-        local = len(list_pending_deferred_posts())
-        via_devvit = reddit_deferred_via_devvit_enabled()
-        devvit_pending = 0
-        status_note = ""
-        if via_devvit:
-            try:
-                status = await deferred_status_via_devvit()
-                devvit_pending = int(status.get("pending", 0))
-            except Exception as e:
-                status_note = f" (Devvit status failed: {e})"
-        pending = local + (devvit_pending if via_devvit else 0)
-        transport = "Devvit Redis + filesystem" if via_devvit else "filesystem only"
-        status_line = (
-            f"Deferred Reddit: {pending} pending "
-            f"({local} local, {devvit_pending} Devvit); transport={transport}."
-            f"{status_note}"
-        )
+        pending = len(list_pending_deferred_posts())
+        transport = "Devvit post-card" if reddit_deferred_via_devvit_enabled() else "asyncpraw"
+        status_line = f"Deferred Reddit: {pending} pending (Mork backlog); transport={transport}."
 
         if count is None or count == 0:
             await ctx.send(f"{status_line} Use `!redditcatchup N` to drain.")

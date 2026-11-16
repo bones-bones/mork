@@ -55,7 +55,7 @@ def reddit_gallery_via_devvit_enabled() -> bool:
 
 
 def reddit_deferred_via_devvit_enabled() -> bool:
-    """When true, deferred catchup uses hellscube-bridge Redis queue + /external/deferred-*."""
+    """When true, deferred catchup posts via /external/post-card (Mork still owns the backlog)."""
     return os.environ.get("REDDIT_DEFERRED_VIA_DEVVIT", "").strip().lower() in {
         "1",
         "true",

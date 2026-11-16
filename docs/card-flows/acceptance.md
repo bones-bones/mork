@@ -20,7 +20,7 @@ flowchart TD
   CL --> RD{"Errata or skip Reddit?"}
   RD -->|yes| DONE["Done"]
   RD -->|no| BATCH{"> 5 Reddit-eligible<br/>cards this compile?"}
-  BATCH -->|yes| DEF["Defer Reddit post<br/>(Devvit KV or deferred_reddit/)"]
+  BATCH -->|yes| DEF["Defer Reddit post<br/>(always deferred_reddit/)"]
   BATCH -->|no| IMM["Immediate Reddit post"]
   DEF --> DONE
   IMM --> DONE
@@ -28,7 +28,7 @@ flowchart TD
 
 ### Reddit posting (immediate accepts only)
 
-When compile-veto has **≤ 5** Reddit-eligible cards, each accept/veto posts immediately. Larger batches defer everything: Devvit Redis when `REDDIT_DEFERRED_VIA_DEVVIT=1`, else `deferred_reddit/` + asyncpraw.
+When compile-veto has **≤ 5** Reddit-eligible cards, each accept/veto posts immediately. Larger batches always defer into Mork `deferred_reddit/`; catchup posts via Devvit `/external/post-card` when `REDDIT_DEFERRED_VIA_DEVVIT=1`, else asyncpraw.
 
 ```mermaid
 flowchart TD
@@ -50,7 +50,7 @@ flowchart TD
 
 **Stage-1 Devvit (optional):** when `REDDIT_ACCEPT_VIA_DEVVIT=1`, immediate posts go to `mork-devvit` `/external/post-card` using the Hellfall GCS `imageUrl`; falls back to asyncpraw on failure.
 
-**Deferred overflow** (batch > 5): with `REDDIT_DEFERRED_VIA_DEVVIT=1`, enqueue `{ title, imageUrl, flairId }` to Devvit Redis (`/external/deferred-enqueue`); catchup drains via `/external/deferred-drain` (filesystem/asyncpraw fallback). Legacy path: `deferred_reddit/` manifest JSON lines (`filename`, `card_message`, `set_id`, `was_vetoed`); older tab-separated manifests still parse. See [`deferred.md`](../hellscube-bridge/deferred.md).
+**Deferred overflow** (batch > 5): always write `deferred_reddit/` (local image + manifest JSON with `filename`, `card_message`, `set_id`, `was_vetoed`, optional Hellfall `image_url`). Catchup with `REDDIT_DEFERRED_VIA_DEVVIT=1` posts via `/external/post-card` when `image_url` is present (asyncpraw fallback); otherwise asyncpraw from the local file. Older tab-separated manifests still parse. See [`deferred.md`](../hellscube-bridge/deferred.md).
 
 ---
 

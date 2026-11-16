@@ -25,7 +25,7 @@ Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscub
 | Card-of-the-day scheduler (10:00 UTC)                        | ✅                       |
 | `/external/post-gallery` (Mork → pictures)                   | ✅                       | Native multi-image still 501; asyncpraw fallback |
 | Mork feature flags + asyncpraw fallback (`reddit_devvit.py`) | ✅                       |
-| Deferred queue on Devvit KV                                  | ✅                       | Redis sorted set + `/external/deferred-*`; mod menu drain-1; VM flag off |
+| Deferred catchup via Devvit post-card                        | ✅                       | Mork owns `deferred_reddit/`; flag only switches catchup poster |
 | `scripts/verify_devvit_connectivity.py`                      | 🔄                       | In progress (scripts branch)                  |
 
 ## Production cutover
@@ -37,7 +37,7 @@ Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscub
 | **Reddit → Discord mirror** | `check_reddit.py` poll   | ✅           | off                        | `redditMirrorViaDevvit=false` |
 | **Discord → Reddit reply**  | asyncpraw                | ✅           | off                        | n/a                           |
 | **Daily gallery**           | asyncpraw + GCS URLs     | partial      | off                        | n/a (Mork POSTs `/external/post-gallery`) |
-| **Deferred redditcatchup**  | `deferred_reddit/` + asyncpraw | ✅     | off (`REDDIT_DEFERRED_VIA_DEVVIT`) | n/a (Redis queue + mod menu) |
+| **Deferred redditcatchup**  | `deferred_reddit/` + asyncpraw | ✅     | off (`REDDIT_DEFERRED_VIA_DEVVIT`) | n/a (flag → Devvit post-card on catchup) |
 
 Legend: ✅ done · ⏳ waiting on external dependency · ⬜ not started · 🔄 in progress
 
@@ -73,7 +73,7 @@ REDDIT_GALLERY_USE_MANIFEST=1
 2. **Acceptance** — after external endpoints approved; set token + `REDDIT_ACCEPT_VIA_DEVVIT=1`; smoke via `verify_devvit_connectivity.py --post-smoke`
 3. **Reply** — same token; `REDDIT_REPLY_VIA_DEVVIT=1`
 4. **Gallery** — same token; `REDDIT_GALLERY_VIA_DEVVIT=1`; native multi-image still 501 so expect asyncpraw fallback until Reddit adds a gallery `submitPost`
-5. **Deferred queue** — publish deferred endpoints; `REDDIT_DEFERRED_VIA_DEVVIT=1`; drain leftover `deferred_reddit/` first (see [`deferred.md`](../hellscube-bridge/deferred.md))
+5. **Deferred catchup** — `REDDIT_DEFERRED_VIA_DEVVIT=1`; backlog stays on Mork; catchup posts via `/external/post-card` (see [`deferred.md`](../hellscube-bridge/deferred.md))
 
 ## Verify after each flip
 
