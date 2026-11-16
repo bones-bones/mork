@@ -88,7 +88,7 @@ flowchart TD
   end
 
   subgraph deferred["Deferred catchup"]
-    RC["Redditcatchup / !redditcatchup"] --> DFLAG{"REDDIT_DEFERRED_VIA_DEVVIT?"}
+    RC["!redditcatchup / hourly"] --> DFLAG{"REDDIT_DEFERRED_VIA_DEVVIT?"}
     DFLAG -->|yes| DDEV["Devvit Redis drain<br/>/external/deferred-drain"]
     DFLAG -->|no| PRAW2["asyncpraw + deferred_reddit/"]
     DDEV -->|fail / leftover files| PRAW2
@@ -106,6 +106,8 @@ flowchart TD
     DEV2 --> RED
   end
 ```
+
+On-demand: `!redditcatchup` / `!redditcatchup 0` in veto discussion is status-only (local vs Devvit pending + transport); `!redditcatchup N` drains. See [`deferred.md`](../hellscube-bridge/deferred.md).
 
 | Outbound path | Transport | Image source |
 | ------------- | --------- | ------------ |
