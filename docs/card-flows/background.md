@@ -88,10 +88,10 @@ flowchart TD
   end
 
   subgraph deferred["Deferred catchup"]
-    RC["!redditcatchup / hourly"] --> DFLAG{"REDDIT_DEFERRED_VIA_DEVVIT?"}
-    DFLAG -->|yes| DDEV["Devvit Redis drain<br/>/external/deferred-drain"]
-    DFLAG -->|no| PRAW2["asyncpraw + deferred_reddit/"]
-    DDEV -->|fail / leftover files| PRAW2
+    RC["!redditcatchup / hourly<br/>from deferred_reddit/"] --> DFLAG{"REDDIT_DEFERRED_VIA_DEVVIT<br/>+ image_url?"}
+    DFLAG -->|yes| DDEV["Devvit /external/post-card"]
+    DFLAG -->|no| PRAW2["asyncpraw local file"]
+    DDEV -->|fail| PRAW2
     DDEV --> RED
     PRAW2 --> RED
   end
@@ -107,12 +107,12 @@ flowchart TD
   end
 ```
 
-On-demand: `!redditcatchup` / `!redditcatchup 0` in veto discussion is status-only (local vs Devvit pending + transport); `!redditcatchup N` drains. See [`deferred.md`](../hellscube-bridge/deferred.md).
+On-demand: `!redditcatchup` / `!redditcatchup 0` in veto discussion is status-only (Mork pending + transport); `!redditcatchup N` drains. See [`deferred.md`](../hellscube-bridge/deferred.md).
 
 | Outbound path | Transport | Image source |
 | ------------- | --------- | ------------ |
 | Immediate accept/veto | Devvit (optional) → asyncpraw fallback | Hellfall GCS URL or `tempImages/` |
-| Deferred batch (`> 5` cards) | Devvit Redis queue when `REDDIT_DEFERRED_VIA_DEVVIT=1` (default off); else `deferred_reddit/` + asyncpraw | Hellfall GCS URL (Devvit) or local files |
+| Deferred batch (`> 5` cards) | Always `deferred_reddit/` backlog; catchup via Devvit `/external/post-card` when `REDDIT_DEFERRED_VIA_DEVVIT=1` + `image_url`, else asyncpraw | Hellfall GCS URL (manifest) or local files |
 | Daily gallery | GCS HTTPS URLs (`REDDIT_GALLERY_USE_MANIFEST=1`); optional Devvit `/external/post-gallery` when `REDDIT_GALLERY_VIA_DEVVIT=1` (default off; native multi-image 501 → asyncpraw fallback) |
 | Card of the day (Devvit) | Devvit scheduler when `REDDIT_COTD_VIA_DEVVIT=1` + app setting | [Hellfall catalog](https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json) |
 | Card of the day (legacy) | Lifecycle/asyncpraw when flag off | HC6 sheet image URL → temp file |
