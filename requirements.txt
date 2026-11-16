@@ -4,12 +4,12 @@ aiofiles
 discord.py==2.3.2
 python-dotenv
 dnspython>=2.6.1
-pyopenssl>=23.0.0,<24.2.0  # oauth2client JWT signing needs OpenSSL.crypto.sign
 PyNaCl
 async-timeout==3.0.1
 pandas
 gspread
 oauth2client
+pyopenssl>=23.0.0,<24.2.0  # oauth2client JWT signing needs OpenSSL.crypto.sign
 psycopg2-binary
 pydrive2
 dpymenus

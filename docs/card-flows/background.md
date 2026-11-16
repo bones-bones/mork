@@ -133,7 +133,7 @@ On-demand: `!redditcatchup` / `!redditcatchup 0` in veto discussion is status-on
 | `!rulings`              | `fuzzy` → rulings                 | —                            |
 | `{{card name}}` in chat | `multiple_fuzzy` → image          | —                            |
 | `!judgement`            | `exact` → hcid                    | Unapproved · rulings (col 8) |
-| `!tag` / `!removetag`   | `api/cards/:id/tags` via `exact`  | live db (adds changeset)     |
+| `!tag` / `!removetag`   | `api/cards/:id/tags` via `exact`  | live db (applied immediately; audit entry) |
 
 Lookup replies, errata images, and legacy COTD temp files name the attachment from **magic bytes** (then `Content-Type`), not the URL suffix — so a GIF stored at a `.png` GCS URL still posts as `.gif`.
 
