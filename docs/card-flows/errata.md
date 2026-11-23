@@ -51,6 +51,6 @@ flowchart TD
   TYPE -->|yes| ACC["Accept as errata"]
   ACC --> CL["Post to set's card-list channel"]
   ACC --> SH[("Database (Unapproved)")]
-  ACC --> HF["GCS + Hellfall postcard sync"]
+  ACC --> HF["Hellfall postcard sync<br/>(Hellfall uploads GCS)"]
   ACC --> RED["Reddit skipped (errata)"]
 ```

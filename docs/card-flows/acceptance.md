@@ -16,7 +16,7 @@ flowchart TD
   UPD --> IMG
   NEW --> IMG
   IMG["POST /api/cards/postcard (imageBase64)<br/>Hellfall uploads to GCS"]
-  IMG --> CL["Post **Name** by **Author** + image<br/>to card-list Discord channel"]
+  IMG -->   CL["Post Name by Author + image<br/>to card-list Discord channel"]
   CL --> RD{"Errata or skip Reddit?"}
   RD -->|yes| DONE["Done"]
   RD -->|no| BATCH{"> 5 Reddit-eligible<br/>cards this compile?"}

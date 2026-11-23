@@ -23,20 +23,20 @@ flowchart TD
   PING -->|no| NAME{"First line has card name?"}
   NAME -->|no| NONAME["#submissions-discussion:<br/>include card name + image returned<br/>Post deleted · cooldown NOT consumed"]
   NAME -->|yes| CD{"User is on the submission cooldown?"}
-  CD -->|no| X["#submissions-discussion:<br/>wait N hours + delete post"]
-  CD -->|yes| COOL["Write cooldown timestamp"]
+  CD -->|yes| X["#submissions-discussion:<br/>wait N hours + delete post"]
+  CD -->|no| COOL["Write cooldown timestamp"]
   COOL --> DEL["Delete user post"]
   DEL --> MAGIC{"Feeling lucky?"}
   MAGIC -->|yes| VP["#veto-polls + discussion + log<br/>(no community poll)"]
   MAGIC -->|no| POLL["Mork reposts with 👍👎❌ + thread"]
 
   POLL --> LOOP["Background check · 5 min"]
-  LOOP --> CHK{"Mork poll:<br/>up − down ≥ 60<br/>age ≥ 1 day?"}
-  CHK -->|no| REMINDER_CHECK{"margin ≥ 50<br/>age ≥ 5.5 d"}
+  LOOP --> CHK{"Mork poll:<br/>up − down ≥ threshold<br/>(PL1 = 30)<br/>age ≥ 1 day?"}
+  CHK -->|no| REMINDER_CHECK{"margin ≥ threshold−10<br/>(PL1 = 20)<br/>age ≥ 5.5 d"}
   REMINDER_CHECK -->|yes| REM["🕛 nearing-end ping"]
   REM --> POLL
   REMINDER_CHECK -->|no| POLL
-  CHK -->|yes| GRAVE_CHECK{"Admin 🪦 reacted?"}
+  CHK -->|yes| GRAVE_CHECK{"Admin 🪦 reacted?<br/>(HC9.1 only)"}
   GRAVE_CHECK -->|yes| GY["accept → HCV graveyard"]
   GRAVE_CHECK -->|no| ADMIN_SAFEGUARD{"Admin 👍 among upvotes<br/>or downvotes ≠ 1?"}
   ADMIN_SAFEGUARD -->|no| ADM["DM admin to verify"]
@@ -48,6 +48,7 @@ flowchart TD
   ANN --> DEL2["Delete submission poll"]
   GY --> DEL2
 ```
+
 
 ### Missing / invalid submission cases
 
@@ -61,8 +62,8 @@ flowchart TD
 
   A -->|no| MI["Missing image<br/>No bot reply<br/>Post stays in channel<br/>Cooldown NOT consumed"]
   A -->|yes| B{"First line has card name?<br/>(non-empty after trim)"}
-  B -->|yes| NN["Missing name<br/>Ping in #submissions-discussion<br/>Image returned · post deleted<br/>Cooldown NOT consumed"]
-  B -->|no| OK["Normal submission flow"]
+  B -->|no| NN["Missing name<br/>Ping in #submissions-discussion<br/>Image returned · post deleted<br/>Cooldown NOT consumed"]
+  B -->|yes| OK["Normal submission flow"]
 
   A -->|non-image file<br/>e.g. .pdf| NI["No image-type check on intake<br/>Poll still created"]
   NI --> GAL["Excluded from day markers /<br/>daily submissions gallery"]
@@ -115,16 +116,18 @@ flowchart TD
   NAME -->|yes| PING{"@ in card title?"}
   PING -->|yes| DM["DM user: no @ in title<br/>original post kept"]
   PING -->|no| CD{"User on masterpiece cooldown?"}
-  CD -->|no| WAIT["#submissions-discussion:<br/>wait message + delete post"]
-  CD -->|yes| COOL["Write masterpiece cooldown timestamp"]
+  CD -->|yes| WAIT["#submissions-discussion:<br/>wait message + delete post"]
+  CD -->|no| COOL["Write masterpiece cooldown timestamp"]
   COOL --> POLL["Mork poll 👍👎❌"]
   POLL --> CHK{"up − down ≥ 45<br/>age ≥ 1 day?"}
   CHK -->|yes| VP["#veto-polls"]
   VP --> HVP["Veto poll setup"]
-  CHK -->|no, margin ≥ 35<br/>age ≥ 5.5 d| REM["🕛 reminder"]
+  CHK -->|no| REMINDER_CHECK{"margin ≥ 35<br/>age ≥ 5.5 d"}
+  REMINDER_CHECK -->|yes| REM["🕛 reminder"]
   REM --> POLL
-  CHK -->|no| POLL
+  REMINDER_CHECK -->|no| POLL
 ```
+
 
 ---
 
@@ -175,7 +178,7 @@ flowchart TD
   TITLE -->|yes| PIN["Read Set: from pinned prompt"]
   PIN -->|no set| NOSET["DM admin:<br/>no set found"]
   PIN -->|found| SL["Accept → secret lair channel"]
-  VETO --> ACC["GCS + mandatory Hellfall postcard"]
+  VETO --> ACC["Mandatory Hellfall postcard<br/>(Hellfall uploads GCS)"]
   SL --> ACC
   ACC --> SH[("Database (Unapproved)")]
   ACC --> OK["✅ on submission"]
