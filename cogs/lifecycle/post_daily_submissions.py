@@ -9,7 +9,7 @@ import discord
 
 import hc_constants
 from cogs.lifecycle.submissions_day_markers import is_submissions_card
-from gcs_card_images import upload_card_image
+from gcs_card_images import delete_gcs_public_url, upload_card_image
 from reddit_devvit import post_gallery_via_devvit, reddit_gallery_via_devvit_enabled
 from reddit_functions import post_gallery_to_reddit
 
@@ -53,6 +53,15 @@ def _upload_gallery_urls(images: list[dict[str, str]]) -> list[str]:
     return urls
 
 
+def _cleanup_gcs_urls(urls: list[str]) -> None:
+    for url in urls:
+        try:
+            delete_gcs_public_url(url)
+        except Exception:
+            traceback.print_exc()
+            print(f"daily submissions gallery: failed to delete staged GCS object {url}")
+
+
 async def _post_via_asyncpraw(images: list[dict[str, str]]) -> None:
     await post_gallery_to_reddit(
         title=GALLERY_TITLE,
@@ -73,6 +82,7 @@ async def post_daily_submissions(bot):
         print("daily submissions gallery: no images (discord)")
         return
 
+    gcs_urls: list[str] = []
     try:
         if not reddit_gallery_via_devvit_enabled():
             print(
@@ -82,10 +92,10 @@ async def post_daily_submissions(bot):
             await _post_via_asyncpraw(images)
             return
 
-        urls = _upload_gallery_urls(images)
+        gcs_urls = _upload_gallery_urls(images)
         await post_gallery_via_devvit(
             title=GALLERY_TITLE,
-            image_urls=urls,
+            image_urls=gcs_urls,
             flair_id=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
         )
     except Exception:
@@ -93,6 +103,7 @@ async def post_daily_submissions(bot):
         print("daily submissions gallery: Devvit failed; falling back to asyncpraw")
         await _post_via_asyncpraw(images)
     finally:
+        _cleanup_gcs_urls(gcs_urls)
         for image_entry in images:
             path = next(iter(image_entry.values()))
             if os.path.exists(path):

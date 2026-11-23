@@ -98,3 +98,21 @@ def upload_card_image(
     blob.cache_control = "public, max-age=31536000"
     blob.patch()
     return public_gcs_url(bucket_name, object_key)
+
+
+def delete_gcs_public_url(
+    url: str,
+    *,
+    bucket_name: str | None = None,
+    credentials_path: str | None = None,
+) -> bool:
+    """Delete a public GCS object by URL. Returns True if a delete was attempted."""
+    bucket_name = bucket_name or DEFAULT_BUCKET
+    credentials_path = credentials_path or DEFAULT_CREDENTIALS
+    parsed = parse_gcs_public_url(url, expected_bucket=bucket_name)
+    if not parsed:
+        return False
+    _, object_key = parsed
+    client = storage.Client.from_service_account_json(credentials_path)
+    client.bucket(bucket_name).blob(object_key).delete()
+    return True

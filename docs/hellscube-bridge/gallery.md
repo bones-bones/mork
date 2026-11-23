@@ -19,10 +19,11 @@ sequenceDiagram
   M->>D: POST /external/post-gallery<br/>{ title, imageUrls }
   D->>R: reddit.submitPost (image; native gallery TBD)
   D-->>M: { ok, postId, permalink }
-  Note over M: On Devvit failure (incl. multi-image 501), asyncpraw fallback
+  M->>GCS: Delete staged objects
+  Note over M: On Devvit failure (incl. multi-image 501), asyncpraw fallback; GCS still cleaned up
 ```
 
-Mork owns card selection from Discord. At post time it stages copies on GCS (`storage.googleapis.com`, already HTTP-allowlisted for Devvit), then posts through the bridge. There is no intake-time gallery manifest.
+Mork owns card selection from Discord. At post time it stages copies on GCS (`storage.googleapis.com`, already HTTP-allowlisted for Devvit), posts through the bridge, then deletes the staged objects. There is no intake-time gallery manifest.
 
 ## Endpoint
 
