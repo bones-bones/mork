@@ -6,6 +6,8 @@ import {
   COTD_START_INDEX,
   DEFAULT_CARD_OF_THE_DAY_VIA_DEVVIT,
   DEFAULT_SUBREDDIT,
+  HELLFALL_COTD_ORIGIN,
+  HELLFALL_COTD_USER_AGENT,
 } from '../shared/constants.js';
 import {
   getAppBooleanSetting,
@@ -54,7 +56,12 @@ export function hellfallHc6SearchUrl(apiBase: string): string {
 
 export async function fetchHc6SearchCards(apiBase: string): Promise<CatalogCard[]> {
   const url = hellfallHc6SearchUrl(apiBase);
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      Origin: HELLFALL_COTD_ORIGIN,
+      'User-Agent': HELLFALL_COTD_USER_AGENT,
+    },
+  });
   if (!response.ok) {
     throw new Error(`hellfall search failed: ${response.status} (${url})`);
   }
