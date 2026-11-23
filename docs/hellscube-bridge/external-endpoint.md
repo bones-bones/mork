@@ -105,7 +105,7 @@ Mork enables this path with `REDDIT_REPLY_VIA_DEVVIT=1` (default off). See [`rep
 
 Up to 10 HTTPS picture URLs. Native multi-image gallery submit is not available yet; more than one URL returns `501` `reddit_gallery_api_unavailable`. See [`gallery.md`](gallery.md).
 
-Mork enables this path with `REDDIT_GALLERY_VIA_DEVVIT=1` (default off).
+Mork uses this path by default (`REDDIT_GALLERY_VIA_DEVVIT=1`; set `0` for asyncpraw-only rollback).
 
 ## Data handling
 

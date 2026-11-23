@@ -99,7 +99,7 @@ Only **one** submission set is active at a time (`ACTIVE_SUBMISSION_SET_CONFIG` 
 | **HC9.1** | `SUBMISSIONS_THRESHOLD` | 22 scubusiness h | Graveyard 🪦 fast-track |
 | **PL1** (active) | 30 | 4 scubusiness h | Hellpit VC users (not `@VETO_COUNCIL`) |
 
-Daily Reddit gallery reads recent Mork polls from `#submissions` Discord history (set-agnostic). Switch the active config when the community moves intake to another set; veto / `!compileveto` accept into that set unless a legacy `Hellscube:` veto-polls prefix is present.
+Daily Reddit gallery picks recent Mork polls from `#submissions` Discord history (set-agnostic), stages them on GCS, and posts through Devvit. Switch the active config when the community moves intake to another set; veto / `!compileveto` accept into that set unless a legacy `Hellscube:` veto-polls prefix is present.
 
 ---
 

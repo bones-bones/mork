@@ -44,8 +44,8 @@ REDDIT_COTD_VIA_DEVVIT=1
 # Reddit → Discord mirror — OFF until webhook + app setting enabled
 # REDDIT_MIRROR_VIA_DEVVIT=1
 
-# Daily gallery: Discord history → asyncpraw unless:
-# REDDIT_GALLERY_VIA_DEVVIT=1
+# Daily gallery: Discord → GCS → Devvit (default on)
+REDDIT_GALLERY_VIA_DEVVIT=1
 
 # Discord #reddit → Reddit comment via Devvit (off until external endpoints approved)
 # REDDIT_REPLY_VIA_DEVVIT=1
@@ -65,5 +65,5 @@ Redeploy / restart Mork after editing `.env`.
 - No double COTD posts (both `REDDIT_COTD_VIA_DEVVIT=1` and Devvit flag on)
 - Mirror: after cutover, new inbound-flair posts appear in `#reddit` without `check_reddit` running
 - Reply: with `REDDIT_REPLY_VIA_DEVVIT=1`, `#reddit` replies use `/external/reply-to-post` (asyncpraw fallback on failure)
-- Gallery: hour-4 still Mork asyncpraw; with `REDDIT_GALLERY_VIA_DEVVIT=1`, POSTs `/external/post-gallery` (asyncpraw fallback while native multi-image is 501)
+- Gallery: hour-4 Discord → GCS → `/external/post-gallery` (asyncpraw fallback while native multi-image is 501)
 - Deferred: backlog always `deferred_reddit/`; with `REDDIT_DEFERRED_VIA_DEVVIT=1`, catchup uses `/external/post-card` (asyncpraw fallback); see [`deferred.md`](deferred.md)

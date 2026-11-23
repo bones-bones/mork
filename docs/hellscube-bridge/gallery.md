@@ -8,23 +8,21 @@ Daily gallery of recent `#submissions` cards posted to r/HellsCube (~04:00 UTC).
 sequenceDiagram
   participant CH as #submissions
   participant M as Mork VM
+  participant GCS as hellscube-images
   participant D as hellscube-bridge
   participant R as r/HellsCube
 
   Note over M: Hour 4 UTC
   M->>CH: History last 24h (Mork polls)
-  M->>M: Pick up to 10 cards
-  alt REDDIT_GALLERY_VIA_DEVVIT=1
-    M->>D: POST /external/post-gallery<br/>{ title, imageUrls from Discord CDN }
-    D->>R: reddit.submitPost (image; native gallery TBD)
-    D-->>M: { ok, postId, permalink }
-    Note over M: On Devvit failure, download + asyncpraw fallback
-  else default
-    M->>R: asyncpraw gallery from local downloads
-  end
+  M->>M: Pick up to 10 cards + download
+  M->>GCS: Stage images (allowlisted HTTPS)
+  M->>D: POST /external/post-gallery<br/>{ title, imageUrls }
+  D->>R: reddit.submitPost (image; native gallery TBD)
+  D-->>M: { ok, postId, permalink }
+  Note over M: On Devvit failure (incl. multi-image 501), asyncpraw fallback
 ```
 
-Mork owns card selection from Discord. The optional Devvit path only posts URLs Mork already picked — there is no intake-time GCS gallery manifest.
+Mork owns card selection from Discord. At post time it stages copies on GCS (`storage.googleapis.com`, already HTTP-allowlisted for Devvit), then posts through the bridge. There is no intake-time gallery manifest.
 
 ## Endpoint
 
@@ -43,18 +41,10 @@ Mork owns card selection from Discord. The optional Devvit path only posts URLs 
 
 | Switch | Where | Effect |
 |--------|-------|--------|
-| `REDDIT_GALLERY_VIA_DEVVIT=1` | VM `.env` (default off) | Hour-4 POSTs Discord CDN URLs to `/external/post-gallery`; asyncpraw fallback on failure |
-| *(none on Devvit)* | — | Mork chooses transport |
+| `REDDIT_GALLERY_VIA_DEVVIT` | VM `.env` (**default on**) | Hour-4 stages Discord picks on GCS and POSTs to `/external/post-gallery` |
+| `REDDIT_GALLERY_VIA_DEVVIT=0` | VM `.env` | Emergency asyncpraw-only rollback |
 
-Requires the same `DEVVIT_POST_CARD_URL` + `DEVVIT_POST_CARD_SECRET` as acceptance posts (base URL is rewritten to `/external/post-gallery`).
-
-## Cutover
-
-```bash
-REDDIT_GALLERY_VIA_DEVVIT=1
-```
-
-Keep asyncpraw fallback until a native gallery `submitPost` exists (or a single-image smoke test succeeds).
+Requires `DEVVIT_POST_CARD_URL` + `DEVVIT_POST_CARD_SECRET` (base URL is rewritten to `/external/post-gallery`).
 
 ## Rollback
 

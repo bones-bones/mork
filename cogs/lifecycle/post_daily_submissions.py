@@ -9,6 +9,7 @@ import discord
 
 import hc_constants
 from cogs.lifecycle.submissions_day_markers import is_submissions_card
+from gcs_card_images import upload_card_image
 from reddit_devvit import post_gallery_via_devvit, reddit_gallery_via_devvit_enabled
 from reddit_functions import post_gallery_to_reddit
 
@@ -41,45 +42,58 @@ async def _download_discord_images(messages: list[discord.Message]) -> list[dict
     return images
 
 
-def _discord_attachment_urls(messages: list[discord.Message]) -> list[str]:
+def _upload_gallery_urls(images: list[dict[str, str]]) -> list[str]:
+    """Stage local Discord downloads on GCS so Devvit can fetch allowlisted HTTPS URLs."""
     urls: list[str] = []
-    for message_entry in messages:
-        url = str(message_entry.attachments[0].url or "").strip()
-        if url:
-            urls.append(url)
+    for image_entry in images:
+        image_path = next(iter(image_entry.values()))
+        basename = os.path.basename(image_path)
+        object_name = f"submissions-gallery/{os.path.splitext(basename)[0]}"
+        urls.append(upload_card_image(image_path, object_name=object_name))
     return urls
 
 
+async def _post_via_asyncpraw(images: list[dict[str, str]]) -> None:
+    await post_gallery_to_reddit(
+        title=GALLERY_TITLE,
+        images=images,
+        flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+    )
+
+
 async def post_daily_submissions(bot):
-    """Pick recent #submissions polls from Discord, then post via Devvit or asyncpraw."""
+    """Pick recent #submissions polls from Discord, stage on GCS, post via Devvit."""
     picked = await _recent_submission_cards(bot)
     if not picked:
         print("daily submissions gallery: no images (discord)")
         return
-
-    if reddit_gallery_via_devvit_enabled():
-        urls = _discord_attachment_urls(picked)
-        if urls:
-            try:
-                await post_gallery_via_devvit(
-                    title=GALLERY_TITLE,
-                    image_urls=urls,
-                    flair_id=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
-                )
-                return
-            except Exception:
-                traceback.print_exc()
-                print("daily submissions gallery: Devvit failed; falling back to asyncpraw")
 
     images = await _download_discord_images(picked)
     if not images:
         print("daily submissions gallery: no images (discord)")
         return
 
-    await post_gallery_to_reddit(
-        title=GALLERY_TITLE,
-        images=images,
-        flair=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
-    )
-    for image_entry in images:
-        os.remove(next(iter(image_entry.values())))
+    try:
+        if not reddit_gallery_via_devvit_enabled():
+            print(
+                "daily submissions gallery: REDDIT_GALLERY_VIA_DEVVIT off; "
+                "falling back to asyncpraw"
+            )
+            await _post_via_asyncpraw(images)
+            return
+
+        urls = _upload_gallery_urls(images)
+        await post_gallery_via_devvit(
+            title=GALLERY_TITLE,
+            image_urls=urls,
+            flair_id=hc_constants.OFFICIAL_HC_REDDIT_FLAIR,
+        )
+    except Exception:
+        traceback.print_exc()
+        print("daily submissions gallery: Devvit failed; falling back to asyncpraw")
+        await _post_via_asyncpraw(images)
+    finally:
+        for image_entry in images:
+            path = next(iter(image_entry.values()))
+            if os.path.exists(path):
+                os.remove(path)

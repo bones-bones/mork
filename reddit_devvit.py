@@ -46,11 +46,14 @@ def reddit_reply_via_devvit_enabled() -> bool:
 
 
 def reddit_gallery_via_devvit_enabled() -> bool:
-    """When true, daily gallery POSTs to hellscube-bridge /external/post-gallery."""
-    return os.environ.get("REDDIT_GALLERY_VIA_DEVVIT", "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
+    """Daily gallery posts via hellscube-bridge /external/post-gallery (default on).
+
+    Set REDDIT_GALLERY_VIA_DEVVIT=0 only for emergency asyncpraw rollback.
+    """
+    return os.environ.get("REDDIT_GALLERY_VIA_DEVVIT", "1").strip().lower() not in {
+        "0",
+        "false",
+        "no",
     }
 
 
