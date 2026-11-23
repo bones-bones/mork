@@ -114,7 +114,7 @@ On-demand: `!redditcatchup` / `!redditcatchup 0` in veto discussion is status-on
 | Immediate accept/veto | Devvit (optional) → asyncpraw fallback | Hellfall GCS URL or `tempImages/` |
 | Deferred batch (`> 5` cards) | Always `deferred_reddit/` backlog; catchup via Devvit `/external/post-card` when `REDDIT_DEFERRED_VIA_DEVVIT=1` + `image_url`, else asyncpraw | Hellfall GCS URL (manifest) or local files |
 | Daily gallery | GCS HTTPS URLs (`REDDIT_GALLERY_USE_MANIFEST=1`); optional Devvit `/external/post-gallery` when `REDDIT_GALLERY_VIA_DEVVIT=1` (default off; native multi-image 501 → asyncpraw fallback) |
-| Card of the day (Devvit) | Devvit scheduler when `REDDIT_COTD_VIA_DEVVIT=1` + app setting | [Hellfall catalog](https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json) |
+| Card of the day (Devvit) | Devvit scheduler when `REDDIT_COTD_VIA_DEVVIT=1` + app setting | Hellfall `GET /api/cards/search?q=set:HC6 unique:prints` |
 | Card of the day (legacy) | Lifecycle/asyncpraw when flag off | HC6 sheet image URL → temp file |
 | Discord → Reddit reply | asyncpraw; optional Devvit when `REDDIT_REPLY_VIA_DEVVIT=1` (default off) | — |
 

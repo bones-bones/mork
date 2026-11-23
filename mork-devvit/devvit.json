@@ -78,8 +78,13 @@
             },
             "catalogUrl": {
                 "type": "string",
-                "label": "Hellfall catalog URL",
-                "helpText": "JSON catalog for card-of-the-day (https; must be HTTP-fetch allow-listed). Set via devvit settings set."
+                "label": "Hellfall catalog URL (unused)",
+                "helpText": "Unused. COTD uses hellfallApiUrl + /api/cards/search."
+            },
+            "hellfallApiUrl": {
+                "type": "string",
+                "label": "Hellfall API base URL",
+                "helpText": "Base for COTD search (default https://api.skeleton.club). Must be HTTP-fetch allow-listed."
             },
             "officialHcRedditFlair": {
                 "type": "string",
@@ -90,7 +95,7 @@
                 "type": "boolean",
                 "label": "Card of the day via Devvit",
                 "defaultValue": true,
-                "helpText": "Scheduler posts HC6 card-of-the-day. Pair with REDDIT_COTD_VIA_DEVVIT=1 on the Discord bot."
+                "helpText": "Scheduler posts HC6 card-of-the-day via Hellfall search. Pair with REDDIT_COTD_VIA_DEVVIT=1 on the Discord bot."
             },
             "redditMirrorWebhookUrl": {
                 "type": "string",
@@ -126,6 +131,7 @@
         "http": {
             "enable": true,
             "domains": [
+                "api.skeleton.club",
                 "storage.googleapis.com",
                 "discord.com"
             ]
