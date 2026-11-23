@@ -1,6 +1,7 @@
 import { settings } from '@devvit/web/server';
 import {
   DEFAULT_CATALOG_URL,
+  DEFAULT_HELLFALL_API_URL,
   DEFAULT_OFFICIAL_HC_REDDIT_FLAIR,
 } from '../shared/constants.js';
 
@@ -39,8 +40,15 @@ export async function getOfficialHcRedditFlair(): Promise<string> {
   return trimmed || DEFAULT_OFFICIAL_HC_REDDIT_FLAIR;
 }
 
+/** @deprecated Unused by COTD (search API); retained for existing installs. */
 export async function getCatalogUrl(): Promise<string> {
   const value = await settings.get<string>('catalogUrl');
   const trimmed = value?.trim();
   return trimmed || DEFAULT_CATALOG_URL;
+}
+
+export async function getHellfallApiUrl(): Promise<string> {
+  const value = await settings.get<string>('hellfallApiUrl');
+  const trimmed = value?.trim();
+  return (trimmed || DEFAULT_HELLFALL_API_URL).replace(/\/$/, '');
 }

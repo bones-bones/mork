@@ -44,7 +44,7 @@ Use the subreddit **t5 id without the `t5_` prefix** (e.g. `t5_21otlg` → `21ot
 
 ## Card of the day (scheduler)
 
-Daily HC6 post at **10:00 UTC** via Devvit Scheduler when enabled. Reads the [Hellfall catalog](https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json).
+Daily HC6 post at **10:00 UTC** via Devvit Scheduler when enabled. Uses Hellfall `GET /api/cards/search?q=set:HC6 unique:prints` (same query as Lifecycle), not the full GCS catalog.
 
 **Flag (pair with Discord):**
 
@@ -117,8 +117,8 @@ Config is in place for when Reddit enables external endpoints on your account:
 
 - [x] `devvit.json` declares `server.externalEndpoints.postCard` → `/external/post-card` with `scopes: ["global"]`
 - [x] Server handler at `src/server/routes/api.ts` (`external.post('/post-card', …)`)
-- [x] `permissions.reddit` (moderator) + `permissions.http` (`storage.googleapis.com`, `lh3.googleusercontent.com`)
-- [x] Card-of-the-day scheduler (`card-of-the-day` cron + catalog fetch)
+- [x] `permissions.reddit` (moderator) + `permissions.http` (`api.skeleton.club`, `storage.googleapis.com`, `discord.com`)
+- [x] Card-of-the-day scheduler (`card-of-the-day` cron + Hellfall search)
 - [x] Reddit → Discord mirror (`onPostSubmit` + webhook; default off)
 - [x] Discord → Reddit replies (`/external/reply-to-post`; default off on VM)
 - [x] Daily gallery `/external/post-gallery` (native multi-image blocked; default off on VM)

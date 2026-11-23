@@ -1,6 +1,7 @@
 import { redis } from '@devvit/web/server';
-import type { CatalogCard, CatalogRoot } from '../shared/catalog.js';
+import type { CatalogCard } from '../shared/catalog.js';
 import {
+  COTD_HC6_SEARCH_QUERY,
   COTD_START_DATE,
   COTD_START_INDEX,
   DEFAULT_CARD_OF_THE_DAY_VIA_DEVVIT,
@@ -8,7 +9,7 @@ import {
 } from '../shared/constants.js';
 import {
   getAppBooleanSetting,
-  getCatalogUrl,
+  getHellfallApiUrl,
   getOfficialHcRedditFlair,
 } from './appSettings.js';
 import { submitImagePost } from './postCard.js';
@@ -23,6 +24,12 @@ export type CardOfTheDayResult = {
   permalink?: string;
 };
 
+type HellfallSearchResponse = {
+  object?: string;
+  total_cards?: number;
+  data?: CatalogCard[];
+};
+
 function utcDateString(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -35,30 +42,28 @@ function daysSinceStart(startDate: string): number {
   return Math.floor((todayUtc - startUtc) / (24 * 60 * 60 * 1000));
 }
 
-function isHc6Card(card: CatalogCard): boolean {
-  return /^HC6/i.test(card.set?.trim() ?? '');
+/** Build search URL matching Lifecycle.py `getSearchFromServer("set:HC6 unique:prints")`. */
+export function hellfallHc6SearchUrl(apiBase: string): string {
+  const base = apiBase.replace(/\/$/, '');
+  const params = new URLSearchParams({
+    q: COTD_HC6_SEARCH_QUERY,
+    format: 'json',
+  });
+  return `${base}/api/cards/search?${params.toString()}`;
 }
 
-function catalogCardsFromRoot(body: CatalogRoot): CatalogCard[] {
-  // Live GCS catalog is the pre-built cache shape ({ idMap, nameMap, ... }).
-  // Older payloads used { data: CatalogCard[] }. Match hellfall_fetcher.py.
-  if (body.idMap && typeof body.idMap === 'object') {
-    return Object.values(body.idMap);
-  }
-  if (Array.isArray(body.data)) {
-    return body.data;
-  }
-  throw new Error('catalog missing data array or idMap');
-}
-
-export async function fetchHc6CatalogCards(catalogUrl: string): Promise<CatalogCard[]> {
-  const response = await fetch(catalogUrl);
+export async function fetchHc6SearchCards(apiBase: string): Promise<CatalogCard[]> {
+  const url = hellfallHc6SearchUrl(apiBase);
+  const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`catalog fetch failed: ${response.status} (${catalogUrl})`);
+    throw new Error(`hellfall search failed: ${response.status} (${url})`);
   }
 
-  const body = (await response.json()) as CatalogRoot;
-  return catalogCardsFromRoot(body).filter(isHc6Card);
+  const body = (await response.json()) as HellfallSearchResponse;
+  if (!Array.isArray(body.data)) {
+    throw new Error('hellfall search missing data array');
+  }
+  return body.data;
 }
 
 export function pickCardOfTheDay(cards: CatalogCard[]): CatalogCard | null {
@@ -84,9 +89,9 @@ export async function runCardOfTheDay(): Promise<CardOfTheDayResult> {
     return { skipped: true, reason: 'already_ran_today' };
   }
 
-  const catalogUrl = await getCatalogUrl();
+  const hellfallApiUrl = await getHellfallApiUrl();
   const flairId = await getOfficialHcRedditFlair();
-  const hc6Cards = await fetchHc6CatalogCards(catalogUrl);
+  const hc6Cards = await fetchHc6SearchCards(hellfallApiUrl);
   const card = pickCardOfTheDay(hc6Cards);
   if (!card) {
     return { skipped: true, reason: 'no_card_for_today' };

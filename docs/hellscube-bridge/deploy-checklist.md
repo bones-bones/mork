@@ -21,7 +21,8 @@ npx devvit install r/HellsCube hellscube-bridge@latest
 | Setting | Target | CLI |
 |---------|--------|-----|
 | `cardOfTheDayViaDevvit` | `true` | `printf 'true\n' \| npx devvit settings set cardOfTheDayViaDevvit` (code also defaults `true` when unset) |
-| `catalogUrl` | Hellfall catalog | `npx devvit settings set catalogUrl` (optional) |
+| `hellfallApiUrl` | Hellfall API base | optional; defaults to `https://api.skeleton.club` |
+| `catalogUrl` | unused (COTD uses search) | leftover |
 | `officialHcRedditFlair` | Official HC UUID | `npx devvit settings set officialHcRedditFlair` (optional) |
 | `redditMirrorWebhookUrl` | Discord webhook | `npx devvit settings set redditMirrorWebhookUrl` (required for mirror) |
 | `redditMirrorViaDevvit` | `false` until cutover | `npx devvit settings set redditMirrorViaDevvit` → `true` when ready |

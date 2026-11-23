@@ -46,7 +46,8 @@ Legend: ✅ done · ⏳ waiting on external dependency · ⬜ not started · �
 | Setting                         | Target                    | Done                           |
 | ------------------------------- | ------------------------- | ------------------------------ |
 | `cardOfTheDayViaDevvit`         | `true`                    | ✅                             |
-| `catalogUrl`                    | Hellfall catalog          | ⬜ optional                    |
+| `hellfallApiUrl`                | `https://api.skeleton.club` | ⬜ optional (code default)   |
+| `catalogUrl`                    | unused (COTD uses search) | leftover                       |
 | `officialHcRedditFlair`         | Official HC UUID          | ⬜ optional                    |
 | `redditMirrorWebhookUrl`        | Discord `#reddit` webhook | ⬜ required for mirror cutover |
 | `redditMirrorViaDevvit`         | `false` until verified    | ⬜                             |

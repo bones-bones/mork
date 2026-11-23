@@ -4,11 +4,16 @@ export const DEFAULT_SUBREDDIT = 'HellsCube';
 export const DEFAULT_OFFICIAL_HC_REDDIT_FLAIR =
   '5778f0e4-52c0-11eb-9a1d-0ebf18b4acab';
 
+/** @deprecated COTD uses Hellfall search; kept for leftover app setting. */
 export const DEFAULT_CATALOG_URL =
   'https://storage.googleapis.com/hellfall-489004-hellfall-catalog/catalog.json';
+
+/** Matches Mork `HELLFALL_API_URL` / Lifecycle COTD search host. */
+export const DEFAULT_HELLFALL_API_URL = 'https://api.skeleton.club';
 
 /** Matches `cogs/Lifecycle.py` card-of-the-day schedule. */
 export const COTD_START_DATE = '2025-11-26';
 export const COTD_START_INDEX = 726;
+export const COTD_HC6_SEARCH_QUERY = 'set:HC6 unique:prints';
 export const COTD_CRON = '0 10 * * *';
 export const DEFAULT_CARD_OF_THE_DAY_VIA_DEVVIT = true;
