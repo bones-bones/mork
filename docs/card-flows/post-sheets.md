@@ -14,8 +14,7 @@ Target architecture once card data lives in **Hellfall** (via postcard API + cat
 flowchart LR
   subgraph today["Today"]
     D1["Discord lifecycle"] --> A1["accept"]
-    A1 --> G1["GCS images"]
-    A1 --> H1["Hellfall postcard<br/>(optional)"]
+    A1 --> H1["Hellfall postcard<br/>(Hellfall uploads GCS)"]
     A1 --> S1["Unapproved sheet"]
     S1 -->|"manual mod"| S2["Approved sheet"]
     S2 --> B1["Bot search / Hellfall / print scripts"]
@@ -32,7 +31,7 @@ flowchart LR
 | Concern | Today | Target |
 |---------|-------|--------|
 | Card record on accept | Row on unapproved sheet | Hellfall document via postcard API |
-| Image URL | Mork uploads GCS + copied to sheet col C | Hellfall uploads GCS via postcard; `imageUrl` from response |
+| Image URL | Hellfall uploads GCS via postcard; `imageUrl` → sheet col C | Hellfall uploads GCS via postcard; `imageUrl` from response |
 | HC numeric id | Sheet col A (increment) | `hcid` passed to postcard; Hellfall assigns UUID |
 | Bot `!search`, `!info`, etc. | Load approved **Database** sheet at startup | Load Hellfall catalog (or API) |
 | Mod percolation | Manual sheet copy | **Removed** — postcard write is approval |
@@ -168,7 +167,7 @@ flowchart LR
 
 | Phase | Discord | Accept | Read path | Sheets |
 |-------|---------|--------|-----------|--------|
-| 1 (partial now) | unchanged | mork GCS + postcard; sheet still updated | approved sheet | source of truth for search |
+| 1 (partial now) | unchanged | postcard required (Hellfall GCS); sheet still updated | approved sheet | source of truth for search |
 | 2 | unchanged | postcard required; Hellfall GCS | catalog + sheet fallback | dual-write |
 | 3 | unchanged | postcard only; Hellfall GCS | catalog | read-only / deprecated |
 | 4 | unchanged | postcard only; Hellfall GCS | catalog | removed |

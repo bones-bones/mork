@@ -107,7 +107,7 @@ flowchart TD
   ACC --> AC1{"Errata card ID<br/>on message?"}
   AC1 -->|yes| SET1["Set from errata card's cardset"]
   AC1 -->|no| SET2["Set ACTIVE_CUBE_ID → nine card list"]
-  SET1 --> AC1B["Accept + GCS + Hellfall"]
+  SET1 --> AC1B["Accept + Hellfall postcard"]
   SET2 --> AC1B
   AC1B --> RD1{"> 5 Reddit-eligible<br/>cards this compile?"}
   RD1 -->|yes| DEF["Defer Reddit<br/>(always deferred_reddit/)"]
@@ -144,5 +144,5 @@ flowchart TD
   READ --> REPOST["Repost fixed card to #veto-polls"]
   REPOST --> HVP["Veto poll setup (new poll)"]
   READ --> MARK["Mark original veto poll ❌"]
-  MARK --> ERR["Copy to #errata-submissions with ☑️"]
+  MARK --> ERR["Copy to #errata-tracking with ☑️"]
 ```

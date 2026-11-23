@@ -12,16 +12,16 @@ flowchart TD
     IN -->|yes| MAG{"Feeling lucky?"}
     MAG -->|no| POLL["Mork reposts poll<br/>👍 👎 ❌ + thread"]
     POLL --> LOOP["Background check · 5 min"]
-    LOOP -- no --> CHK{"Mork poll:<br/>up − down ≥ threshold<br/>age ≥ 1 day?"}
-    CHK -- no --> REMINDER_CHECK{"margin ≥ 50<br/>age ≥ 5.5 d"}
-    REMINDER_CHECK -- yes --> REM["🕛 nearing-end ping"]
-
-
-    CHK -- yes --> GRAVE_CHECK["Has admin has 🪦 reacted?"]
-    GRAVE_CHECK -- yes --> GRAVE_ACCEPT["accept → HCV graveyard"]
-    GRAVE_CHECK -- no --> ADMIN_SAFEGUARD{"Has an admin 👍 or is there at least one downvote"}
-
-    ADMIN_SAFEGUARD -- no --> ADM["DM admin to verify"]
+    LOOP --> CHK{"Mork poll:<br/>up − down ≥ threshold<br/>age ≥ 1 day?"}
+    CHK -->|no| REMINDER_CHECK{"margin ≥ threshold−10<br/>age ≥ 5.5 d"}
+    REMINDER_CHECK -->|yes| REM["🕛 nearing-end ping"]
+    REM --> POLL
+    REMINDER_CHECK -->|no| POLL
+    CHK -->|yes| GRAVE_CHECK{"Admin 🪦 reacted?<br/>(HC9.1 only)"}
+    GRAVE_CHECK -->|yes| GRAVE_ACCEPT["accept → HCV graveyard"]
+    GRAVE_CHECK -->|no| ADMIN_SAFEGUARD{"Admin 👍 among upvotes<br/>or downvotes ≠ 1?"}
+    ADMIN_SAFEGUARD -->|no| ADM["DM admin to verify"]
+    ADM --> POLL
   end
 
   MAG -->|yes| VETO_FLOW
@@ -36,13 +36,13 @@ flowchart TD
     K -->|vetoed| M["accept → HCV graveyard"]
     K -->|errata| N["NEEDS ERRATA list"]
     K -->|purgatory| O["VETO HELL ping"]
-    K -->|judge react| P["Tagged in parallel<br/>(does not block classification)"]
+    K -.->|judge react parallel| P["Tagged in parallel<br/>(does not block classification)"]
   end
 
   subgraph persist["3 · Persistence"]
-    L --> Q[("Database (Unapproved)<br/>+ GCS + Hellfall postcard")]
+    L --> Q[("Database (Unapproved)<br/>+ Hellfall postcard")]
     M --> Q
-    G --> Q
+    GRAVE_ACCEPT --> Q
     Q --> R["Manual mod copy → Database"]
     R --> S["Search / Hellfall / print scripts"]
   end
