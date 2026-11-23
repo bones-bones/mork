@@ -44,8 +44,7 @@ REDDIT_COTD_VIA_DEVVIT=1
 # Reddit → Discord mirror — OFF until webhook + app setting enabled
 # REDDIT_MIRROR_VIA_DEVVIT=1
 
-# Daily gallery: Mork still writes GCS URLs; posting asyncpraw unless:
-REDDIT_GALLERY_USE_MANIFEST=1
+# Daily gallery: Discord history → asyncpraw unless:
 # REDDIT_GALLERY_VIA_DEVVIT=1
 
 # Discord #reddit → Reddit comment via Devvit (off until external endpoints approved)

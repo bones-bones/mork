@@ -8,21 +8,23 @@ Daily gallery of recent `#submissions` cards posted to r/HellsCube (~04:00 UTC).
 sequenceDiagram
   participant CH as #submissions
   participant M as Mork VM
-  participant GCS as hellcube-images
   participant D as hellscube-bridge
   participant R as r/HellsCube
 
-  CH->>M: Card image at intake
-  M->>GCS: Store image + manifest entry
   Note over M: Hour 4 UTC
-  M->>M: Pick up to 10 HTTPS URLs
-  M->>D: POST /external/post-gallery<br/>{ title, imageUrls }
-  D->>R: reddit.submitPost (image; native gallery TBD)
-  D-->>M: { ok, postId, permalink }
-  Note over M: On Devvit failure, asyncpraw gallery fallback
+  M->>CH: History last 24h (Mork polls)
+  M->>M: Pick up to 10 cards
+  alt REDDIT_GALLERY_VIA_DEVVIT=1
+    M->>D: POST /external/post-gallery<br/>{ title, imageUrls from Discord CDN }
+    D->>R: reddit.submitPost (image; native gallery TBD)
+    D-->>M: { ok, postId, permalink }
+    Note over M: On Devvit failure, download + asyncpraw fallback
+  else default
+    M->>R: asyncpraw gallery from local downloads
+  end
 ```
 
-Mork still writes the GCS manifest so it has public HTTPS URLs to send. Devvit does **not** fetch that JSON. Manifest append runs for the **active** `#submissions` set (`ACTIVE_SUBMISSION_SET_CONFIG`), not only `ACTIVE_CUBE_ID`.
+Mork owns card selection from Discord. The optional Devvit path only posts URLs Mork already picked — there is no intake-time GCS gallery manifest.
 
 ## Endpoint
 
@@ -41,8 +43,7 @@ Mork still writes the GCS manifest so it has public HTTPS URLs to send. Devvit d
 
 | Switch | Where | Effect |
 |--------|-------|--------|
-| `REDDIT_GALLERY_USE_MANIFEST=1` | VM `.env` (default on) | Gallery reads GCS image URLs, not Discord history |
-| `REDDIT_GALLERY_VIA_DEVVIT=1` | VM `.env` (default off) | Hour-4 POSTs to `/external/post-gallery`; asyncpraw fallback on failure |
+| `REDDIT_GALLERY_VIA_DEVVIT=1` | VM `.env` (default off) | Hour-4 POSTs Discord CDN URLs to `/external/post-gallery`; asyncpraw fallback on failure |
 | *(none on Devvit)* | — | Mork chooses transport |
 
 Requires the same `DEVVIT_POST_CARD_URL` + `DEVVIT_POST_CARD_SECRET` as acceptance posts (base URL is rewritten to `/external/post-gallery`).
@@ -61,4 +62,4 @@ Keep asyncpraw fallback until a native gallery `submitPost` exists (or a single-
 REDDIT_GALLERY_VIA_DEVVIT=0
 ```
 
-Gallery resumes on Mork via manifest + asyncpraw only.
+Gallery resumes on Mork via Discord history + asyncpraw only.

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import traceback
 from datetime import UTC, datetime
 from typing import cast
 
@@ -13,7 +12,6 @@ from discord import Message
 from discord.ext import commands
 
 import hc_constants
-from cogs.lifecycle.post_daily_submissions import gallery_uses_manifest
 from cogs.lifecycle.submissions_closed import is_submissions_closed
 from get_card_message import submission_card_name
 from getters import (
@@ -123,19 +121,4 @@ async def intake_submission_post(
         await sent_message.add_reaction(hc_constants.DELETE)
 
         await sent_message.create_thread(name=card_name[0:99])
-        # Active intake set (e.g. PL1), not gated on ACTIVE_CUBE_ID / HC9.1.
-        if gallery_uses_manifest():
-            try:
-                from submissions_gallery_manifest import append_submission
-
-                attachment = message.attachments[0]
-                image_bytes = await attachment.read()
-                append_submission(
-                    message_id=str(sent_message.id),
-                    image_bytes=image_bytes,
-                    filename=attachment.filename or "card.png",
-                    card_name=card_name,
-                )
-            except Exception:
-                traceback.print_exc()
     await message.delete()
