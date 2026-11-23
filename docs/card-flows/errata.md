@@ -2,16 +2,16 @@
 
 [← Card flows](README.md)
 
-## Errata submission (`#errata-submissions` / `#errata-tracking`)
+## Errata submission (`#errata-submissions`)
 
-**Entry:** shared `on_message` for `ERRATA_SUBMISSIONS` and `ERRATA_TRACKING` · background auto-promote every 5 min (scans `ERRATA_SUBMISSIONS` only)
+**Entry:** `on_message` for `ERRATA_SUBMISSIONS` · background auto-promote every 5 min (same channel)
 
 ```mermaid
 flowchart TD
   subgraph submit["Submission"]
-    U["Line 1: card ID<br/>Body: errata description"] --> VAL{"ID exists<br/>set is HC9.0 or HC9.1?"}
-    VAL -->|no| STOP["Rejected + delete"]
-    VAL -->|yes| REP["Replace with DB image<br/>👍👎 + thread"]
+    U["Line 1: card ID<br/>Body: errata description"] --> VAL{"ID exists<br/>set in HC9 family or PL1?"}
+    VAL -->|no| STOP["Reject in-channel + delete"]
+    VAL -->|yes| REP["Repost with DB image<br/>👍👎 + thread<br/>then delete original"]
   end
 
   subgraph promote["Auto-promote"]
@@ -24,7 +24,11 @@ flowchart TD
   end
 ```
 
+Allowed sets are resolved via catalog set children of `CUBE_NAME` (`HC9`, `HC9_0`, `HC9_1`, …) plus `PL1`. Rejection pings go in `#errata-submissions` so the submitter sees them.
+
 Auto-promote scans the last **14 days**, up to **200 messages**.
+
+Hellpit resubmits still land in `#errata-tracking` (`ERRATA_TRACKING`) with ☑️ — that path is separate from user intake.
 
 ---
 
@@ -50,5 +54,3 @@ flowchart TD
   ACC --> HF["GCS + Hellfall postcard sync"]
   ACC --> RED["Reddit skipped (errata)"]
 ```
-
----

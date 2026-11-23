@@ -40,6 +40,7 @@ from cogs.lifecycle.submissions_closed import (
 )
 from cogs.lifecycle.submissions_day_markers import ensure_submissions_day_marker
 from cogs.lifecycle.submissions_gates import ensure_submissions_gates
+from database_cache.setHandling import getSetAndChildSets, toSetCode
 from deferred_reddit import (
     count_pending_deferred_posts,
     list_pending_deferred_posts,
@@ -722,8 +723,9 @@ class LifecycleCog(commands.Cog):
                 card_id_input = parts[0].strip() if parts else ""
                 print(f"errata submission: {card_id_input}")
                 body = "\n".join(parts[1:]).strip() if len(parts) > 1 else ""
+                errata_channel = cast(TextChannel, message.channel)
                 if not card_id_input:
-                    await getSubmissionDiscussionChannel(bot=self.bot).send(
+                    await errata_channel.send(
                         f"<@{message.author.id}>, start your message with a card ID on the first line."
                     )
                     await message.delete()
@@ -732,16 +734,22 @@ class LifecycleCog(commands.Cog):
 
                 card = await getExactCard(card_id_input)
                 if not card:
-                    await getSubmissionDiscussionChannel(bot=self.bot).send(
+                    await errata_channel.send(
                         f'<@{message.author.id}>, card ID "{card_id_input}" not found'
                     )
                     await message.delete()
 
                     return
-                    # TODO: Make this use set blocks instead
-                if card.set not in [hc_constants.CUBE_NAME, "HC9.1", "HC9.0", "PL1"]:
-                    await getSubmissionDiscussionChannel(bot=self.bot).send(
-                        f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} or PL1 cards are allowed for errata."
+                # Catalog uses backend set codes (HC9_0 / HC9_1), not display (HC9.0 / HC9.1).
+                hc9_fallback = {hc_constants.CUBE_NAME, "HC9_0", "HC9_1"}
+                hc9 = toSetCode(hc_constants.CUBE_NAME)
+                allowed_sets: set[str] = set(getSetAndChildSets(hc9)) if hc9 else set()
+                if not allowed_sets:
+                    allowed_sets = set(hc9_fallback)
+                allowed_sets.add(hc_constants.PL1)
+                if card.set not in allowed_sets:
+                    await errata_channel.send(
+                        f"<@{message.author.id}>, only {hc_constants.CUBE_NAME} or {hc_constants.PL1} cards are allowed for errata."
                     )
                     await message.delete()
                     return
@@ -752,7 +760,7 @@ class LifecycleCog(commands.Cog):
                     session.get(img_url) as resp,
                 ):
                     if resp.status != 200:
-                        await message.channel.send(
+                        await errata_channel.send(
                             f"<@{message.author.id}>, couldn't fetch the card image."
                         )
                         return
@@ -765,17 +773,17 @@ class LifecycleCog(commands.Cog):
                         body=data_bytes,
                     )
                     data = io.BytesIO(data_bytes)
-                    await message.delete()
                     content = card_id_input
                     if body:
                         content += "\n\n" + body
-                    sent_message = await message.channel.send(
+                    sent_message = await errata_channel.send(
                         content=content,
                         file=discord.File(data, filename),
                     )
                     await sent_message.add_reaction(hc_constants.VOTE_UP)
                     await sent_message.add_reaction(hc_constants.VOTE_DOWN)
                     await sent_message.create_thread(name=card.name[:99])
+                    await message.delete()
 
             case _:
                 pass
