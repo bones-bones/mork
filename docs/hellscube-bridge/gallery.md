@@ -22,7 +22,7 @@ sequenceDiagram
   Note over M: On Devvit failure, asyncpraw gallery fallback
 ```
 
-Mork still writes the GCS manifest so it has public HTTPS URLs to send. Devvit does **not** fetch that JSON.
+Mork still writes the GCS manifest so it has public HTTPS URLs to send. Devvit does **not** fetch that JSON. Manifest append runs for the **active** `#submissions` set (`ACTIVE_SUBMISSION_SET_CONFIG`), not only `ACTIVE_CUBE_ID`.
 
 ## Endpoint
 

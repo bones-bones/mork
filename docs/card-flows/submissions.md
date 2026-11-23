@@ -96,10 +96,10 @@ Only **one** submission set is active at a time (`ACTIVE_SUBMISSION_SET_CONFIG` 
 
 | Set | Poll threshold | Cooldown | Notes |
 | --- | --- | --- | --- |
-| **HC9.1** | `SUBMISSIONS_THRESHOLD` | 22 scubusiness h | Gallery manifest, graveyard 🪦 fast-track |
+| **HC9.1** | `SUBMISSIONS_THRESHOLD` | 22 scubusiness h | Graveyard 🪦 fast-track |
 | **PL1** (active) | 30 | 4 scubusiness h | Hellpit VC users (not `@VETO_COUNCIL`) |
 
-Switch the active config when the community moves intake to another set; veto / `!compileveto` accept into that set unless a legacy `Hellscube:` veto-polls prefix is present.
+Daily gallery manifest append runs for the **active** submission set (not only `ACTIVE_CUBE_ID` / HC9.1). Switch the active config when the community moves intake to another set; veto / `!compileveto` accept into that set unless a legacy `Hellscube:` veto-polls prefix is present.
 
 ---
 

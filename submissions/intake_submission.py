@@ -123,7 +123,8 @@ async def intake_submission_post(
         await sent_message.add_reaction(hc_constants.DELETE)
 
         await sent_message.create_thread(name=card_name[0:99])
-        if gallery_uses_manifest() and config.set_id == hc_constants.ACTIVE_CUBE_ID:
+        # Active intake set (e.g. PL1), not gated on ACTIVE_CUBE_ID / HC9.1.
+        if gallery_uses_manifest():
             try:
                 from submissions_gallery_manifest import append_submission
 
