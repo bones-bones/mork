@@ -733,6 +733,14 @@ class SpecificCardsCog(commands.Cog):
         )
 
     @commands.command()
+    async def yogg(self, ctx: commands.Context, cost):
+        """for the card "Oh My Yogg!" """
+        try:
+            await fetch_random_from_scryfall(ctx, f"mv={cost}")
+        except Exception:
+            await ctx.send("Not a valid mana cost.")
+
+    @commands.command()
     async def grunch(self, ctx: commands.Context):
         """for cards that grunch"""
         # Original: https://zaxer2.github.io/howtogrunch
