@@ -587,7 +587,7 @@ class SpecificCardsCog(commands.Cog):
     async def homelands(self, ctx: commands.Context, cost):
         """for the card "Department of Homelands Security" """
         try:
-            await fetch_random_from_scryfall(ctx, f"is:permanent mv={cost}")
+            await fetch_random_from_scryfall(ctx, f"is:permanent mv={cost} set:hml")
         except Exception:
             await ctx.send("Not a valid mana cost.")
 
