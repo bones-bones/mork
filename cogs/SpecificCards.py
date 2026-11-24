@@ -505,9 +505,6 @@ class SpecificCardsCog(commands.Cog):
     async def wickyp(self, ctx: commands.Context):
         """for the card Wicky P, Vintage Banworthy" """
         await send_images(ctx, sample(wicky_sheets, k=3))
-        selected = sample(wicky_sheets, k=3)
-        for sheet in selected:
-            await send_drive_image(ctx, sheet)
 
     @commands.command()
     async def willsSchemes(self, ctx: commands.Context):
