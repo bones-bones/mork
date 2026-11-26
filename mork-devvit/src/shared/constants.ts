@@ -11,6 +11,13 @@ export const DEFAULT_CATALOG_URL =
 /** Matches Mork `HELLFALL_API_URL` / Lifecycle COTD search host. */
 export const DEFAULT_HELLFALL_API_URL = 'https://api.skeleton.club';
 
+/**
+ * Caller identity for Hellfall `[cards/search]` logs.
+ * Server-side fetch omits Origin unless set; this marks Devvit COTD.
+ */
+export const HELLFALL_COTD_ORIGIN = 'https://hellscube-bridge.devvit';
+export const HELLFALL_COTD_USER_AGENT = 'hellscube-bridge/cotd';
+
 /** Matches `cogs/Lifecycle.py` card-of-the-day schedule. */
 export const COTD_START_DATE = '2025-11-26';
 export const COTD_START_INDEX = 726;
