@@ -27,7 +27,7 @@ flowchart TD
 
 Flag `REDDIT_COTD_VIA_DEVVIT=1` skips the hour-10 branch here; Devvit scheduler handles COTD instead (when `cardOfTheDayViaDevvit` app setting is on).
 
-Hour-4 gallery always runs here. With `REDDIT_GALLERY_VIA_DEVVIT=1`, Mork POSTs picture URLs to `/external/post-gallery` and falls back to asyncpraw on failure.
+Hour-4 gallery always runs here: Discord history → GCS stage → Devvit `/external/post-gallery` (default on; asyncpraw fallback on failure / multi-image 501).
 
 `reset_countdowns` keeps cooldown rows until 22 **open** hours have passed (Tuesday and Saturday in US Eastern do not count) for both `#submissions` and `#pause-projects`.
 
@@ -79,9 +79,8 @@ flowchart TD
   end
 
   subgraph gallery["Daily gallery (hour 4)"]
-    GAL["Daily submissions gallery"] --> GFLAG{"REDDIT_GALLERY_VIA_DEVVIT?"}
-    GFLAG -->|yes| GDEV["mork-devvit /external/post-gallery"]
-    GFLAG -->|no| PRAWG["asyncpraw post_gallery_to_reddit"]
+    GAL["Daily submissions gallery"] --> GDEV["Discord pick → GCS → /external/post-gallery"]
+    GDEV -->|fail / 501| PRAWG["asyncpraw fallback"]
     GDEV -->|fail| PRAWG
     GDEV --> RED
     PRAWG --> RED
@@ -113,7 +112,7 @@ On-demand: `!redditcatchup` / `!redditcatchup 0` in veto discussion is status-on
 | ------------- | --------- | ------------ |
 | Immediate accept/veto | Devvit (optional) → asyncpraw fallback | Hellfall GCS URL or `tempImages/` |
 | Deferred batch (`> 5` cards) | Always `deferred_reddit/` backlog; catchup via Devvit `/external/post-card` when `REDDIT_DEFERRED_VIA_DEVVIT=1` + `image_url`, else asyncpraw | Hellfall GCS URL (manifest) or local files |
-| Daily gallery | GCS HTTPS URLs (`REDDIT_GALLERY_USE_MANIFEST=1`); optional Devvit `/external/post-gallery` when `REDDIT_GALLERY_VIA_DEVVIT=1` (default off; native multi-image 501 → asyncpraw fallback) |
+| Daily gallery | Discord `#submissions` history → GCS stage → Devvit `/external/post-gallery` (default on; native multi-image 501 → asyncpraw fallback) |
 | Card of the day (Devvit) | Devvit scheduler when `REDDIT_COTD_VIA_DEVVIT=1` + app setting | Hellfall `GET /api/cards/search?q=set:HC6 unique:prints` |
 | Card of the day (legacy) | Lifecycle/asyncpraw when flag off | HC6 sheet image URL → temp file |
 | Discord → Reddit reply | asyncpraw; optional Devvit when `REDDIT_REPLY_VIA_DEVVIT=1` (default off) | — |

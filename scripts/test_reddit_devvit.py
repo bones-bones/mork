@@ -57,6 +57,10 @@ class RedditDevvitTests(unittest.TestCase):
             self.assertTrue(reddit_gallery_via_devvit_enabled())
         with patch.dict(os.environ, {"REDDIT_GALLERY_VIA_DEVVIT": "0"}, clear=False):
             self.assertFalse(reddit_gallery_via_devvit_enabled())
+        env = os.environ.copy()
+        env.pop("REDDIT_GALLERY_VIA_DEVVIT", None)
+        with patch.dict(os.environ, env, clear=True):
+            self.assertTrue(reddit_gallery_via_devvit_enabled())
 
     def test_deferred_feature_flag(self):
         with patch.dict(os.environ, {"REDDIT_DEFERRED_VIA_DEVVIT": "1"}, clear=False):

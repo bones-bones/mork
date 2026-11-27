@@ -36,7 +36,7 @@ Living tracker for cutover state. Ops steps: [`deploy-checklist.md`](../hellscub
 | **Acceptance posts**        | asyncpraw                | ✅           | off                        | n/a                           |
 | **Reddit → Discord mirror** | `check_reddit.py` poll   | ✅           | off                        | `redditMirrorViaDevvit=false` |
 | **Discord → Reddit reply**  | asyncpraw                | ✅           | off                        | n/a                           |
-| **Daily gallery**           | asyncpraw + GCS URLs     | partial      | off                        | n/a (Mork POSTs `/external/post-gallery`) |
+| **Daily gallery**           | Discord → GCS → Devvit   | partial      | on (default)               | n/a (Mork POSTs `/external/post-gallery`) |
 | **Deferred redditcatchup**  | `deferred_reddit/` + asyncpraw | ✅     | off (`REDDIT_DEFERRED_VIA_DEVVIT`) | n/a (flag → Devvit post-card on catchup) |
 
 Legend: ✅ done · ⏳ waiting on external dependency · ⬜ not started · 🔄 in progress
@@ -60,8 +60,7 @@ Legend: ✅ done · ⏳ waiting on external dependency · ⬜ not started · �
 REDDIT_ACCEPT_VIA_DEVVIT=0          # or unset
 REDDIT_COTD_VIA_DEVVIT=1
 # REDDIT_MIRROR_VIA_DEVVIT=1
-REDDIT_GALLERY_USE_MANIFEST=1
-# REDDIT_GALLERY_VIA_DEVVIT=1
+REDDIT_GALLERY_VIA_DEVVIT=1
 # REDDIT_REPLY_VIA_DEVVIT=1
 # REDDIT_DEFERRED_VIA_DEVVIT=1
 # DEVVIT_POST_CARD_URL=...
