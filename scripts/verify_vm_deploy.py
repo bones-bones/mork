@@ -83,6 +83,15 @@ def check_startup_imports() -> None:
         importlib.import_module(name)
 
 
+def check_duplicate_commands() -> None:
+    result = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "scripts" / "check_duplicate_commands.py")],
+        check=False,
+    )
+    if result.returncode != 0:
+        raise SystemExit("Duplicate Discord command names/aliases found")
+
+
 def check_cog_imports() -> None:
     # Import top-level cog modules without starting the bot (no token, no bot.run).
     importlib.import_module("cogs.General")
@@ -118,6 +127,7 @@ def main() -> None:
         ("syntax (compileall)", check_syntax),
         ("utils.at", check_utils_import),
         ("startup imports", check_startup_imports),
+        ("duplicate commands", check_duplicate_commands),
     ]
     if args.with_cogs:
         checks.append(("cog imports", check_cog_imports))
