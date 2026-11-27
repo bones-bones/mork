@@ -14,3 +14,11 @@ repos:
     rev: v4.5.0
     hooks:
       - id: check-ast
+  - repo: local
+    hooks:
+      - id: check-duplicate-commands
+        name: check duplicate Discord command names/aliases
+        entry: python scripts/check_duplicate_commands.py
+        language: system
+        pass_filenames: false
+        files: ^(cogs/.*\.py|mork\.py)$

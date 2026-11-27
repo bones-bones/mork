@@ -37,3 +37,5 @@ jobs:
         run: pip install -r requirements.txt
       - name: VM deploy smoke test
         run: python scripts/verify_vm_deploy.py
+      - name: Duplicate Discord command names
+        run: python scripts/check_duplicate_commands.py
