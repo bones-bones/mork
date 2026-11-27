@@ -377,7 +377,7 @@ class SpecificCardsCog(commands.Cog):
             totalToughness += t
         await ctx.send("Total (new) stats: (" + str(totalPower) + "/" + str(totalToughness) + ")")
 
-    @commands.command(aliases=["puzzle", "box", "pbox", "yogg", "yoggsaron", "pb"])
+    @commands.command(aliases=["puzzle", "box", "pbox", "yoggsaron", "pb", "puzzleBox"])
     async def puzzlebox(self, ctx: commands.Context):
         """for the card "Puzzle Box of Yogg-Saron" """
         await fetch_random_from_scryfall(ctx, "t:instant or t:sorcery game:paper", 10)
@@ -731,6 +731,14 @@ class SpecificCardsCog(commands.Cog):
             ctx,
             "thing (game:paper) prefer:best -otag:unset-mechanics -type:stickers unique:cards",
         )
+
+    @commands.command()
+    async def yogg(self, ctx: commands.Context, cost):
+        """for the card "Oh My Yogg!" """
+        try:
+            await fetch_random_from_scryfall(ctx, f"mv={cost}")
+        except Exception:
+            await ctx.send("Not a valid mana cost.")
 
     @commands.command()
     async def grunch(self, ctx: commands.Context):
