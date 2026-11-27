@@ -16,7 +16,7 @@ HC9_1 = SetConfig(
 )
 
 PL1_CARD_PILE = SetConfig(
-    set_id="PL1",
+    set_id=hc_constants.PL1,
     card_list_channel=hc_constants.PL1_CARD_LIST,
     threshold=30,
     cooldown_hours=4,
